@@ -18,6 +18,8 @@ Record ProtoCxtSystem :=
   ; _ : forall γ : ProtoCxt, is_extend_by_1 (vars (protocxt_extend γ)) (vars γ)
   }.
 
+Global Arguments protocxt_coprod {_} _ _.
+
 Coercion vars : ProtoCxt >-> Sortclass.
 
 Definition deBruijn : ProtoCxtSystem.
@@ -66,6 +68,9 @@ Section Signatures.
          class : Symbol -> Syn_Class ;
          arity : Symbol -> Arity }.
 
+  Global Arguments class {_} _.
+  Global Arguments arity {_} _.
+
   (* Alternatives:
     := { Symbols : Syn_Class -> Arity -> Type }.
 
@@ -82,12 +87,6 @@ Section Signatures.
 End Signatures.
 
 Section Raw_Syntax.
-
-  (* If I put these in their respective section, it doesn't apply in this
-   * one...  *)
-  Arguments class {_} _.
-  Arguments arity {_} _.
-  Arguments protocxt_coprod {_} _ _.
 
   Inductive Raw_Syntax (Σ : Signature)
   : Syn_Class -> PCxt -> Type
