@@ -8,6 +8,8 @@ Section ProtoCxts.
 Record ProtoCxtSystem :=
   { ProtoCxt :> Type
   ; vars : ProtoCxt -> Type (* maybe should be to sets?? *)
+  ; protocxt_empty : ProtoCxt
+  ; protocxt_is_empty : is_empty (vars protocxt_empty)
   ; protocxt_coprod : ProtoCxt -> ProtoCxt -> ProtoCxt
   ; protocxt_is_coprod
      : forall γ δ : ProtoCxt,
@@ -20,6 +22,7 @@ Record ProtoCxtSystem :=
 
 Global Arguments protocxt_coprod {_} _ _.
 Global Arguments protocxt_is_coprod {_} [_ _].
+Global Arguments protocxt_is_empty {_}.
 
 Coercion vars : ProtoCxt >-> Sortclass.
 
@@ -46,13 +49,14 @@ Section Signatures.
   Definition arg_class {a : Arity} (i : a) : Syn_Class := fst (a i).
   Definition arg_pcxt {a : Arity} (i : a) : PCxt := snd (a i).
 
-  Record Signature : Type
-    := { Symbol : Type ;
-         class : Symbol -> Syn_Class ;
-         arity : Symbol -> Arity }.
+  Definition Signature : Type
+    := Family (Syn_Class * Arity).
 
-  Global Arguments class {_} _.
-  Global Arguments arity {_} _.
+  Definition class {Σ : Signature} (S : Σ) : Syn_Class 
+  := fst (Σ S).
+
+  Definition arity {Σ : Signature} (S : Σ) : Arity 
+  := snd (Σ S).
 
   (* Alternatives:
     := { Symbols : Syn_Class -> Arity -> Type }.
@@ -71,14 +75,14 @@ End Signatures.
 
 Section Raw_Syntax.
 
-  Parameter (Σ : Signature).
+  Context {Σ : Signature}.
 
   Inductive Raw_Syntax
     : Syn_Class -> PCxt -> Type
   :=
     | var_raw (γ : PCxt) (i : γ)
         : Raw_Syntax Tm γ
-    | symb_raw (γ : PCxt) (S : Symbol Σ)
+    | symb_raw (γ : PCxt) (S : Σ)
                (args : forall (i : arity S),
                    Raw_Syntax (arg_class i)
                               (protocxt_coprod γ (arg_pcxt i)))
@@ -99,12 +103,23 @@ Section Raw_Syntax.
   Definition Raw_Context_Map (γ δ : PCxt)
     := δ -> Raw_Syntax Tm γ.
 
-  (* Not really weakining, but weakening + contraction + exchange *)
+End Raw_Syntax.
+
+Global Arguments Raw_Syntax _ _ _ : clear implicits.
+Global Arguments Raw_Context_Map _ _ _ : clear implicits.
+
+Section Raw_Subst.
+
+  Context {Σ : Signature}.
+
+  (* First define weakening, as an auxiliary function for substition. *)
+
+  (* Actually easier to define not just  weakining, but “weakening + contraction + exchange”, i.e. substitution of variables for variables. *)
   Fixpoint Raw_Weaken {γ γ' : PCxt} (f : γ -> γ')
-      {cl : Syn_Class} (t : Raw_Syntax cl γ)
-    : Raw_Syntax cl γ'.
+      {cl : Syn_Class} (e : Raw_Syntax Σ cl γ)
+    : Raw_Syntax Σ cl γ'.
   Proof.
-    destruct t as [ γ i | γ S args ].
+    destruct e as [ γ i | γ S args ].
   - exact (var_raw (f i)).
   - refine (symb_raw S _). intros i.
     refine (Raw_Weaken _ _ _ _ (args i)).
@@ -114,8 +129,8 @@ Section Raw_Syntax.
   Defined.
 
   Definition Raw_Context_Map_Extending (γ γ' δ : PCxt)
-    : Raw_Context_Map γ' γ
-   -> Raw_Context_Map (protocxt_coprod γ' δ) (protocxt_coprod γ δ).
+    : Raw_Context_Map Σ γ' γ
+   -> Raw_Context_Map Σ (protocxt_coprod γ' δ) (protocxt_coprod γ δ).
   Proof.
     intros f.
     simple refine (coprod_rect (protocxt_is_coprod) _ _ _); cbn.
@@ -126,18 +141,62 @@ Section Raw_Syntax.
   Defined.
 
   Fixpoint Raw_Subst
-      {γ γ' : PCxt} (f : Raw_Context_Map γ' γ)
-      {cl : Syn_Class} (t : Raw_Syntax cl γ)
-    : Raw_Syntax cl γ'.
+      {γ γ' : PCxt} (f : Raw_Context_Map Σ γ' γ)
+      {cl : Syn_Class} (e : Raw_Syntax Σ cl γ)
+    : Raw_Syntax Σ cl γ'.
   Proof.
-    destruct t as [ γ i | γ S args ].
+    destruct e as [ γ i | γ S args ].
   - exact (f i).
   - refine (symb_raw S _). intros i.
     refine (Raw_Subst _ _ _ _ (args i)).
     apply Raw_Context_Map_Extending. exact f.
   Defined.
 
-End Raw_Syntax.
+End Raw_Subst.
+
+Section Algebraic_Extensions.
+
+  Definition Extend (Σ : Signature) (a : Arity) : Signature.
+  Proof.
+    refine (Sum_Family Σ _).
+    refine (Fmap_Family _ a).
+    intros cl_γ. refine (fst cl_γ,_).
+    refine {| Inds := snd (cl_γ) ; val := _ |}.
+    intros i. exact (Tm, protocxt_empty _).
+  Defined.
+
+  Definition Instantiation (a : Arity) (Σ : Signature) (γ : PCxt)
+    : Type
+  := forall i : a,
+       Raw_Syntax Σ (arg_class i) (protocxt_coprod γ (arg_pcxt i)).
+
+  Definition instantiate
+      (a : Arity) (Σ : Signature) (γ : PCxt)
+      (I : Instantiation a Σ γ)
+      {cl} {δ} (e : Raw_Syntax (Extend Σ a) cl δ)
+    : Raw_Syntax Σ cl (protocxt_coprod γ δ).
+  Proof.
+    induction e as [ δ i | δ S args Inst_arg ].
+  - refine (var_raw _).
+    exact (coprod_inj2 (protocxt_is_coprod) i).
+  - destruct S as [S | M].
+    + refine (symb_raw S _). intros i.
+      refine (Raw_Weaken _ (Inst_arg i)).
+      apply (coprod_assoc
+        protocxt_is_coprod protocxt_is_coprod
+        protocxt_is_coprod protocxt_is_coprod).
+    + simpl in M. (* Substitute [args] into the expression [I M]. *)
+      refine (Raw_Subst _ (I M)).
+      refine (coprod_rect protocxt_is_coprod _ _ _).
+      * intros i. apply var_raw, (coprod_inj1 protocxt_is_coprod), i.
+      * intros i. 
+        refine (Raw_Weaken _ (Inst_arg i)). cbn.
+        refine (fmap_coprod protocxt_is_coprod protocxt_is_coprod _ _).
+        exact (fun j => j).
+        exact (coprod_empty_r protocxt_is_coprod protocxt_is_empty).
+  Defined.
+
+End Algebraic_Extensions.
 
 
 

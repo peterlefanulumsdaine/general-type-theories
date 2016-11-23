@@ -51,6 +51,11 @@ Delimit Scope fam_scope with fam.
 Bind Scope fam_scope with Family.
 
 (* TODO: fmap of families *)
+Definition Fmap_Family {X Y} (f : X -> Y) (K : Family X) : Family Y.
+  exists K.
+  exact (fun i => f (K i)).
+Defined.
+
 End Families.
 
 (* Redeclare notations globally *)
@@ -114,6 +119,31 @@ Record is_plusone (X X0 : Type)
 
 (* TODO: consider argument plicitnesses *)
 (* TODO: as with [is_coprod], fix size issues. *)
+
+Record is_empty (X : Type)
+:=
+  { empty_rect : forall (P : X -> Type), forall x, P x }.
+
+  Definition coprod_assoc {X Y Z XY YZ XY_Z X_YZ}
+    (H_XY : is_coprod XY X Y)
+    (H_XY_Z : is_coprod XY_Z XY Z)
+    (H_YZ : is_coprod YZ Y Z)
+    (H_X_YZ : is_coprod X_YZ X YZ)
+  : X_YZ -> XY_Z.
+  Admitted. 
+ 
+  Definition fmap_coprod {X Y XY X' Y' XY'}
+    (H : is_coprod XY X Y)
+    (H' : is_coprod XY' X' Y')
+    (fX : X -> X') (fY : Y -> Y')
+  : XY -> XY'.
+  Admitted.
+
+  Definition coprod_empty_r {X Y XY}
+    (H_XY : is_coprod XY X Y)
+    (H_Y : is_empty Y)
+  : XY -> X.
+  Admitted.
 
 End Coprods.
 
