@@ -1,6 +1,5 @@
 
-Require Import Auxiliary.
-Require Import Vectors.Fin.
+Require Import Auxiliary. Require Import Vectors.Fin.
 
 (* Background: abstracting proto-contexts *)
 
@@ -20,6 +19,7 @@ Record ProtoCxtSystem :=
   }.
 
 Global Arguments protocxt_coprod {_} _ _.
+Global Arguments protocxt_is_coprod {_} [_ _].
 
 Coercion vars : ProtoCxt >-> Sortclass.
 
@@ -96,8 +96,8 @@ Section Raw_Syntax.
   Parameter (Σ : Signature).
 
   Inductive Raw_Syntax
-  : Syn_Class -> PCxt -> Type
-    :=
+    : Syn_Class -> PCxt -> Type
+  :=
     | var_raw (γ : PCxt) (i : γ)
         : Raw_Syntax Tm γ
     | symb_raw (γ : PCxt) (S : Symbol Σ)
@@ -105,6 +105,9 @@ Section Raw_Syntax.
                    Raw_Syntax (arg_class i)
                               (protocxt_coprod γ (arg_pcxt i)))
       : Raw_Syntax (class S) γ.
+
+  Global Arguments var_raw [_] _.
+  Global Arguments symb_raw [_] _ _.
 
   Record Raw_Context
   := { PCxt_of_Raw_Context :> PCxt
@@ -124,25 +127,24 @@ Section Raw_Syntax.
     : Raw_Syntax cl γ'.
   Proof.
     destruct t as [ γ i | γ S args ].
-  - exact (var_raw _ (f i)).
-  - refine (symb_raw γ' S _). intros i.
+  - exact (var_raw (f i)).
+  - refine (symb_raw S _). intros i.
     refine (Raw_Weaken _ _ _ _ (args i)).
-    simple refine (coprod_rect _ _ _ (protocxt_is_coprod _ _ _) _ _ _); cbn.
-    + intros x. apply (inj1 _ _ _ (protocxt_is_coprod _ _ _)), f, x.
-    + intros x. apply (inj2 _ _ _ (protocxt_is_coprod _ _ _)), x.
+    simple refine (coprod_rect (protocxt_is_coprod) _ _ _); cbn.
+    + intros x. apply (coprod_inj1 (protocxt_is_coprod)), f, x.
+    + intros x. apply (coprod_inj2 (protocxt_is_coprod)), x.
   Defined.
-  (* TODO: add implicit arguments as the above terms indicate *)
 
   Definition Raw_Context_Map_Extending (γ γ' δ : PCxt)
     : Raw_Context_Map γ' γ
    -> Raw_Context_Map (protocxt_coprod γ' δ) (protocxt_coprod γ δ).
   Proof.
     intros f.
-    simple refine (coprod_rect _ _ _ (protocxt_is_coprod _ _ _) _ _ _); cbn.
+    simple refine (coprod_rect (protocxt_is_coprod) _ _ _); cbn.
     - intros i. refine (Raw_Weaken _ (f i)). 
-      apply (inj1 _ _ _ (protocxt_is_coprod _ _ _)).
-    - intros i. refine (var_raw _ _). 
-      apply (inj2 _ _ _ (protocxt_is_coprod _ _ _)), i.
+      apply (coprod_inj1 (protocxt_is_coprod)).
+    - intros i. apply var_raw. 
+      apply (coprod_inj2 (protocxt_is_coprod)), i.
   Defined.
 
   Fixpoint Raw_Subst
@@ -152,7 +154,7 @@ Section Raw_Syntax.
   Proof.
     destruct t as [ γ i | γ S args ].
   - exact (f i).
-  - refine (symb_raw γ' S _). intros i.
+  - refine (symb_raw S _). intros i.
     refine (Raw_Subst _ _ _ _ (args i)).
     apply Raw_Context_Map_Extending. exact f.
   Defined.

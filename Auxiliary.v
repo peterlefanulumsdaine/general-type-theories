@@ -61,24 +61,30 @@ Section Coprods.
 
 Record is_coprod (X X1 X2 : Type)
 :=
-  { inj1 : X1 -> X
-  ; inj2 : X2 -> X
+  { coprod_inj1 : X1 -> X
+  ; coprod_inj2 : X2 -> X
   ; coprod_rect
     : forall (P : X -> Type)
-             (f1 : forall x1, P (inj1 x1))
-             (f2 : forall x2, P (inj2 x2)),
+             (f1 : forall x1, P (coprod_inj1 x1))
+             (f2 : forall x2, P (coprod_inj2 x2)),
       forall x, P x
   ; coprod_comp1
     : forall (P : X -> Type)
-             (f1 : forall x1, P (inj1 x1))
-             (f2 : forall x2, P (inj2 x2)),
-      forall x1, coprod_rect P f1 f2 (inj1 x1) = f1 x1
+             (f1 : forall x1, P (coprod_inj1 x1))
+             (f2 : forall x2, P (coprod_inj2 x2)),
+      forall x1, coprod_rect P f1 f2 (coprod_inj1 x1) = f1 x1
   ; coprod_comp2
     : forall (P : X -> Type)
-             (f1 : forall x1, P (inj1 x1))
-             (f2 : forall x2, P (inj2 x2)),
-      forall x2, coprod_rect P f1 f2 (inj2 x2) = f2 x2
+             (f1 : forall x1, P (coprod_inj1 x1))
+             (f2 : forall x2, P (coprod_inj2 x2)),
+      forall x2, coprod_rect P f1 f2 (coprod_inj2 x2) = f2 x2
   }.
+
+Global Arguments coprod_inj1 [_ _ _] _ _.
+Global Arguments coprod_inj2 [_ _ _] _ _.
+Global Arguments coprod_rect [_ _ _] _ _ _ _ _.
+Global Arguments coprod_comp1 [_ _ _ _ _ _ _] _.
+Global Arguments coprod_comp2 [_ _ _ _ _ _ _] _.
 
 (* TODO: consider naming conventions here! *)
 (* TODO: consider argument plicitnesses *)
