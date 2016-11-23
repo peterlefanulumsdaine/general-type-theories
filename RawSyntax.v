@@ -235,4 +235,32 @@ Section Judgements.
 
 End Judgements.
 
+(* Could (?should) abstract away [Judgt_Instance] to an arbitrary type in the def of closure conditions and deductive closure. *)
+Section Deductive_Closure.
+
+  Definition Derivability_Relation Σ
+    := Judgt_Instance Σ -> Type.
+
+  (* TODO: abstract out premises as a family! *)
+  Record Closure_Condition Σ
+    :=
+      { CC_prem : Family (Judgt_Instance Σ)
+      ; CC_concln : Judgt_Instance Σ
+      }.
+
+  Arguments CC_prem [_] _.
+  Arguments CC_concln [_] _.
+
+  Inductive Deductive_Closure {Σ}
+    (Rs : Family (Closure_Condition Σ))
+      : Derivability_Relation Σ
+  := deduce 
+      (R : Rs)
+      (prem_derivs : forall p : CC_prem (Rs R),
+                         Deductive_Closure Rs (CC_prem _ p))
+     : Deductive_Closure Rs (CC_concln (Rs R)).
+
+End Deductive_Closure.
+
+
 
