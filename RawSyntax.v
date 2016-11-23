@@ -4,9 +4,6 @@ Require Import Vectors.Fin.
 
 (* Background: abstracting proto-contexts *)
 
-Parameter is_coprod : forall X Y Z : Type, Type.
-Parameter is_extend_by_1 : forall X Y : Type, Type.
-
 Section ProtoCxts.
 
 Record ProtoCxtSystem :=
@@ -15,7 +12,7 @@ Record ProtoCxtSystem :=
   ; protocxt_coprod : ProtoCxt -> ProtoCxt -> ProtoCxt
   ; _ : forall γ δ : ProtoCxt, is_coprod (vars (protocxt_coprod γ δ)) (vars γ) (vars δ)
   ; protocxt_extend : ProtoCxt -> ProtoCxt
-  ; _ : forall γ : ProtoCxt, is_extend_by_1 (vars (protocxt_extend γ)) (vars γ)
+  ; _ : forall γ : ProtoCxt, is_plusone (vars (protocxt_extend γ)) (vars γ)
   }.
 
 Global Arguments protocxt_coprod {_} _ _.

@@ -56,4 +56,58 @@ End Families.
 (* Redeclare notations globally *)
 Notation "Y1 + Y2" := (Sum_Family Y1 Y2) : fam_scope.
 
+(* A sligtly idiosyncratic approach to coproducts of types, used for systems of proto-contexts. *)
+Section Coprods.
+
+Record is_coprod (X X1 X2 : Type)
+:=
+  { inj1 : X1 -> X
+  ; inj2 : X2 -> X
+  ; coprod_rect
+    : forall (P : X -> Type)
+             (f1 : forall x1, P (inj1 x1))
+             (f2 : forall x2, P (inj2 x2)),
+      forall x, P x
+  ; coprod_comp1
+    : forall (P : X -> Type)
+             (f1 : forall x1, P (inj1 x1))
+             (f2 : forall x2, P (inj2 x2)),
+      forall x1, coprod_rect P f1 f2 (inj1 x1) = f1 x1
+  ; coprod_comp2
+    : forall (P : X -> Type)
+             (f1 : forall x1, P (inj1 x1))
+             (f2 : forall x2, P (inj2 x2)),
+      forall x2, coprod_rect P f1 f2 (inj2 x2) = f2 x2
+  }.
+
+(* TODO: consider naming conventions here! *)
+(* TODO: consider argument plicitnesses *)
+(* Also: unnecessary size increase occurs, due to the large quantification in the recursor/computors.
+  TODO: make the field itself an equivalent small type (e.g. “the map to the actual sum induced by inj1, inj2 is an equiv”) and then define the recursor as a lemma. *)
+
+Record is_plusone (X X0 : Type)
+:=
+  { plusone_top : X
+  ; plusone_next : X0 -> X
+  ; plusone_rect
+    : forall (P : X -> Type)
+             (f_top : P plusone_top)
+             (f_next : forall x, P (plusone_next x)),
+      forall x, P x
+  ; plusone_comp_top
+    : forall (P : X -> Type)
+             (f_top : P plusone_top)
+             (f_next : forall x, P (plusone_next x)),
+      plusone_rect P f_top f_next plusone_top = f_top
+  ; plusone_comp_next
+    : forall (P : X -> Type)
+             (f_top : P plusone_top)
+             (f_next : forall x, P (plusone_next x)),
+      forall x, plusone_rect P f_top f_next (plusone_next x) = f_next x
+  }.
+
+(* TODO: consider argument plicitnesses *)
+(* TODO: as with [is_coprod], fix size issues. *)
+
+End Coprods.
 
