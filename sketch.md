@@ -21,7 +21,7 @@ Raw signatures:
 - raw binding-signatures: a family of arities
 - raw syntax, for a binding-signature: inductive family, dependent over pre-contexts
 - raw context: a pre-context, plus map from its variables to raw types over that pre-context
-- raw context morphisms: function between their pre-contexts, together with a family of terms of the source pre-context, indexed byt the target pre-cxt
+- raw context morphisms: together with a family of terms of the source pre-context, indexed byt the target pre-cxt
 
 Substitution on raw syntax
 
