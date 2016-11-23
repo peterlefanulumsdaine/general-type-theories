@@ -7,18 +7,18 @@ Inductive Empty : Type := .
 Definition ap {A B} (f : A -> B) {a a' : A} (p : a = a')
   : f a = f a'
 := match p with eq_refl _ => eq_refl _ end.
-  
+
 Definition transport {A} {B : A -> Type} {a a' : A} (p : a = a')
   : B a -> B a'
 := fun b => match p with eq_refl _ => b end.
-  
+
 Fixpoint entries {A} (l : list A)
   := match l with nil => Empty_set | (a :: l') => unit + entries l' end.
 
 Fixpoint lookup {A} (l : list A) : entries l -> A
   := match l with
      | nil => fun i => match i with end
-     | (a :: l') => fun i => 
+     | (a :: l') => fun i =>
            match i with inl _ => a | inr i' => lookup l' i' end
      end.
 
@@ -124,26 +124,43 @@ Record is_empty (X : Type)
 :=
   { empty_rect : forall (P : X -> Type), forall x, P x }.
 
-  Definition coprod_assoc {X Y Z XY YZ XY_Z X_YZ}
-    (H_XY : is_coprod XY X Y)
-    (H_XY_Z : is_coprod XY_Z XY Z)
-    (H_YZ : is_coprod YZ Y Z)
-    (H_X_YZ : is_coprod X_YZ X YZ)
+Definition coprod_assoc {X Y Z XY YZ XY_Z X_YZ}
+           (H_XY : is_coprod XY X Y)
+           (H_XY_Z : is_coprod XY_Z XY Z)
+           (H_YZ : is_coprod YZ Y Z)
+           (H_X_YZ : is_coprod X_YZ X YZ)
   : X_YZ -> XY_Z.
-  Admitted. 
- 
-  Definition fmap_coprod {X Y XY X' Y' XY'}
-    (H : is_coprod XY X Y)
-    (H' : is_coprod XY' X' Y')
-    (fX : X -> X') (fY : Y -> Y')
-  : XY -> XY'.
-  Admitted.
+  refine (@coprod_rect X_YZ X YZ H_X_YZ _ _ _).
+  - intro x.
+    exact (coprod_inj1 H_XY_Z (coprod_inj1 H_XY x)).
+  - refine (coprod_rect H_YZ _ _ _).
+    + intro y.
+      exact (coprod_inj1 H_XY_Z (coprod_inj2 H_XY y)).
+    + intro z.
+      exact (coprod_inj2 H_XY_Z z).
+Defined.
 
-  Definition coprod_empty_r {X Y XY}
-    (H_XY : is_coprod XY X Y)
-    (H_Y : is_empty Y)
+Definition fmap_coprod {X Y XY X' Y' XY'}
+           (H : is_coprod XY X Y)
+           (H' : is_coprod XY' X' Y')
+           (fX : X -> X') (fY : Y -> Y')
+  : XY -> XY'.
+Proof.
+  eapply coprod_rect.
+  - exact H.
+  - intro x. exact (coprod_inj1 H' (fX x)).
+  - intro y. exact (coprod_inj2 H' (fY y)).
+Defined.
+
+Definition coprod_empty_r {X Y XY}
+           (H_XY : is_coprod XY X Y)
+           (H_Y : is_empty Y)
   : XY -> X.
-  Admitted.
+Proof.
+  eapply coprod_rect.
+  exact H_XY.
+  exact (fun x => x).
+  apply H_Y.
+Defined.
 
 End Coprods.
-
