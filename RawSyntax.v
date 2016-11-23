@@ -15,7 +15,7 @@ Record ProtoCxtSystem :=
      : forall γ δ : ProtoCxt,
        is_coprod (vars (protocxt_coprod γ δ)) (vars γ) (vars δ)
   ; protocxt_extend : ProtoCxt -> ProtoCxt
-  ; protocxt_is_plusone
+  ; protocxt_is_plusone         (* TODO: change to is_extend (Andrej?) *)
      : forall γ : ProtoCxt,
        is_plusone (vars (protocxt_extend γ)) (vars γ)
   }.
@@ -77,11 +77,16 @@ Section Raw_Syntax.
 
   Context {Σ : Signature}.
 
+  (* A raw syntactic expression of a syntactic class, relative to a context *)
   Inductive Raw_Syntax
     : Syn_Class -> PCxt -> Type
   :=
+  (* a variable in a context is a term in that context *)
     | var_raw (γ : PCxt) (i : γ)
         : Raw_Syntax Tm γ
+    (* relative to a context [γ], given a symbol [S], if for each of its
+       arguments we have a raw syntactic expression relative to [γ] extended by
+       the argument's arity, [S args] is a raw syntactic expression over [γ] *)
     | symb_raw (γ : PCxt) (S : Σ)
                (args : forall (i : arity S),
                    Raw_Syntax (arg_class i)
@@ -91,6 +96,7 @@ Section Raw_Syntax.
   Global Arguments var_raw [_] _.
   Global Arguments symb_raw [_] _ _.
 
+  (* A raw context is a proto-ctx ("list of names") and a raw syntactic type expression *)
   Record Raw_Context
   := { PCxt_of_Raw_Context :> PCxt
      ; var_type_of_Raw_Context
@@ -113,7 +119,8 @@ Section Raw_Subst.
 
   (* First define weakening, as an auxiliary function for substition. *)
 
-  (* Actually easier to define not just  weakining, but “weakening + contraction + exchange”, i.e. substitution of variables for variables. *)
+  (* Actually easier to define not just weakening, but “weakening + contraction
+     + exchange”, i.e. substitution of variables for variables. *)
   Fixpoint Raw_Weaken {γ γ' : PCxt} (f : γ -> γ')
       {cl : Syn_Class} (e : Raw_Syntax Σ cl γ)
     : Raw_Syntax Σ cl γ'.

@@ -49,7 +49,6 @@ Notation "Y1 + Y2" := (Sum_Family Y1 Y2) : fam_scope.
 Delimit Scope fam_scope with fam.
 Bind Scope fam_scope with Family.
 
-(* TODO: fmap of families *)
 Definition Fmap_Family {X Y} (f : X -> Y) (K : Family X) : Family Y.
   exists K.
   exact (fun i => f (K i)).
