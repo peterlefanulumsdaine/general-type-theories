@@ -30,7 +30,7 @@ Substitution on raw syntax
 
 Algebraic extensions (i.e. extensions by “metavariables”):
 
-- def: a family of “simple arities”, i.e. only term-class args, and no bindings, and indexed by some pre-context
+- specified by an arity
 - instantiations of metavariables, *relative to a context*.  (This is where we use coproducts of pre-contexts.)
 - map of raw syntax induced by an instantiation (uses substitution)
 - (POSSIBLY go via: signature morphisms.  An instantiation induces a signature morphism; a signature morphism induces a map of syntax.  But the rôle of the context is then unclear.)

@@ -1,5 +1,5 @@
 
-Require Import Auxiliary. Require Import Vectors.Fin.
+Require Import Auxiliary.
 
 (* Background: abstracting proto-contexts *)
 
@@ -22,28 +22,6 @@ Global Arguments protocxt_coprod {_} _ _.
 Global Arguments protocxt_is_coprod {_} [_ _].
 
 Coercion vars : ProtoCxt >-> Sortclass.
-
-Definition deBruijn : ProtoCxtSystem.
-Proof.
-  simple refine (Build_ProtoCxtSystem _ _ _ _ _ _).
-  - exact nat.
-  - exact Fin.t. (* should be fin *)
-  - admit. (* should be + *)
-  - admit.
-  - admit. (* should be +1 *)
-  - admit.
-Admitted.
-
-Definition natVars : ProtoCxtSystem.
-Proof.
-  simple refine (Build_ProtoCxtSystem _ _ _ _ _ _).
-  - admit. (* finite subsets of nat *)
-  - admit. (* should be El *)
-  - admit. (* should be some implementation of disjoint union *)
-  - admit.
-  - admit. (* should be some choice of fresh var *)
-  - admit.
-Admitted.
 
 (* Should also generalise to any constructively infinite type. *)
 End ProtoCxts.
