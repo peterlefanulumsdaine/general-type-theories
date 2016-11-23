@@ -94,11 +94,9 @@ Section Raw_Syntax.
   Record Raw_Context
   := { PCxt_of_Raw_Context :> PCxt
      ; var_type_of_Raw_Context
-         : forall i : PCxt_of_Raw_Context,
-           Raw_Syntax Ty PCxt_of_Raw_Context
+         :> forall i : PCxt_of_Raw_Context,
+            Raw_Syntax Ty PCxt_of_Raw_Context
      }.
-  
-  Coercion var_type_of_Raw_Context : Raw_Context >-> Funclass.
 
   Definition Raw_Context_Map (γ δ : PCxt)
     := δ -> Raw_Syntax Tm γ.

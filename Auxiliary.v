@@ -36,11 +36,10 @@ Inductive Het_Vec {X} {A : X -> Type} (x0:X) (f : forall x, A x -> X)
 
 Section Families.
 
-Record Family (X : Type) := { Inds :> Type ; val : Inds -> X }.
+Record Family (X : Type) := { Inds :> Type ; val :> Inds -> X }.
 
 Global Arguments Inds [_] F : rename.
 Global Arguments val [_] F _ : rename.
-Coercion val : Family >-> Funclass.
 
 Definition Sum_Family {X} (Y1 Y2 : Family X) : Family X
   := {| Inds := Y1 + Y2
