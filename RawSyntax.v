@@ -52,10 +52,10 @@ Section Signatures.
   Definition Signature : Type
     := Family (Syn_Class * Arity).
 
-  Definition class {Σ : Signature} (S : Σ) : Syn_Class 
+  Definition class {Σ : Signature} (S : Σ) : Syn_Class
   := fst (Σ S).
 
-  Definition arity {Σ : Signature} (S : Σ) : Arity 
+  Definition arity {Σ : Signature} (S : Σ) : Arity
   := snd (Σ S).
 
   (* Alternatives:
@@ -130,8 +130,8 @@ Section Raw_Subst.
   - refine (symb_raw S _). intros i.
     refine (Raw_Weaken _ _ _ _ (args i)).
     simple refine (coprod_rect (protocxt_is_coprod) _ _ _); cbn.
-    + intros x. apply (coprod_inj1 (protocxt_is_coprod)), f, x.
-    + intros x. apply (coprod_inj2 (protocxt_is_coprod)), x.
+    + intros x. apply (coprod_inj1 (protocxt_is_coprod)). exact (f x).
+    + intros x. apply (coprod_inj2 (protocxt_is_coprod)). exact x.
   Defined.
 
   Definition Raw_Context_Map_Extending (γ γ' δ : PCxt)
@@ -140,9 +140,9 @@ Section Raw_Subst.
   Proof.
     intros f.
     simple refine (coprod_rect (protocxt_is_coprod) _ _ _); cbn.
-    - intros i. refine (Raw_Weaken _ (f i)). 
+    - intros i. refine (Raw_Weaken _ (f i)).
       apply (coprod_inj1 (protocxt_is_coprod)).
-    - intros i. apply var_raw. 
+    - intros i. apply var_raw.
       apply (coprod_inj2 (protocxt_is_coprod)), i.
   Defined.
 

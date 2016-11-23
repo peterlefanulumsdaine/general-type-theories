@@ -128,7 +128,7 @@ Definition coprod_assoc {X Y Z XY YZ XY_Z X_YZ}
            (H_YZ : is_coprod YZ Y Z)
            (H_X_YZ : is_coprod X_YZ X YZ)
   : X_YZ -> XY_Z.
-  refine (@coprod_rect X_YZ X YZ H_X_YZ _ _ _).
+  refine (coprod_rect H_X_YZ _ _ _).
   - intro x.
     exact (coprod_inj1 H_XY_Z (coprod_inj1 H_XY x)).
   - refine (coprod_rect H_YZ _ _ _).
