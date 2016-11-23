@@ -106,6 +106,7 @@ Section Raw_Syntax.
 End Raw_Syntax.
 
 Global Arguments Raw_Syntax _ _ _ : clear implicits.
+Global Arguments Raw_Context _ : clear implicits.
 Global Arguments Raw_Context_Map _ _ _ : clear implicits.
 
 Section Raw_Subst.
@@ -198,5 +199,40 @@ Section Algebraic_Extensions.
 
 End Algebraic_Extensions.
 
+Section Judgements.
+  (* The four basic forms are all “relative”, i.e. over a context. *)
+  Inductive Rel_Judgt_Form
+    := obj_RJF (cl : Syn_Class) | eq_RJF (cl : Syn_Class).
+  
+  (* Contexts, context morphisms, and their equalities are also included as derived judgement forms. *)
+  Inductive Judgt_Form
+    := Cxt_JF | JF (rjf : Rel_Judgt_Form).
+  
+  Definition Rel_Judgt_Bdry_Instance Σ (rjf : Rel_Judgt_Form) (γ : PCxt) : Type
+    := match rjf with
+         | obj_RJF Ty => unit
+         | eq_RJF Ty => (Raw_Syntax Σ Ty γ) * (Raw_Syntax Σ Ty γ)
+         | obj_RJF Tm => (Raw_Syntax Σ Ty γ)
+         | eq_RJF Tm => (Raw_Syntax Σ Ty γ) * (Raw_Syntax Σ Tm γ) * (Raw_Syntax Σ Tm γ) 
+       end.
+
+  Definition Rel_Judgt_Head_Instance Σ (rjf : Rel_Judgt_Form) (γ : PCxt) : Type
+    := match rjf with
+         | obj_RJF cl => Raw_Syntax Σ cl γ
+         | eq_RJF cl => unit
+       end.
+
+  Definition Judgt_Form_Instance Σ (jf : Judgt_Form) : Type
+  := match jf with 
+       | Cxt_JF => Raw_Context Σ
+       | JF rjf => { γ : Raw_Context Σ 
+                   & Rel_Judgt_Bdry_Instance Σ rjf γ
+                   * Rel_Judgt_Head_Instance Σ rjf γ }
+     end.
+
+  Definition Judgt_Instance Σ
+    := { jf : Judgt_Form & Judgt_Form_Instance Σ jf }.
+
+End Judgements.
 
 
