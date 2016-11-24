@@ -162,7 +162,19 @@ End Raw_Subst.
 
 Section Algebraic_Extensions.
 
-  Definition Extend (Σ : Signature) (a : Arity) : Signature.
+  (* The extension of a signature by symbols representing metavariables, as used to write each rule. 
+
+  The *arity* here would be the overall argument of the constructor that the rule introduces: the metavariable symbols introduced correspond to the arguments of the arity. 
+
+  E.g. lambda-abstraction has arity < (Ty,•), (Ty,{x}), (Tm,{x}) >.  So in the metavariable extension by this arity, we add three symbols — call them A, B, and b — with arities:
+
+  Symbol   Class  Arity
+  A        Ty     < > 
+  B        Ty     <(Tm,•)>
+  b        Tm     <(Tm,•)> 
+
+  allowing us to write expressions like x:A |– b(x) : B(x). *)
+  Definition Metavariable_Extension (Σ : Signature) (a : Arity) : Signature.
   Proof.
     refine (Sum_Family Σ _).
     refine (Fmap_Family _ a).
@@ -177,9 +189,9 @@ Section Algebraic_Extensions.
        Raw_Syntax Σ (arg_class i) (protocxt_coprod γ (arg_pcxt i)).
 
   Definition instantiate
-      (a : Arity) (Σ : Signature) (γ : PCxt)
+      {a : Arity} {Σ : Signature} {γ : PCxt}
       (I : Instantiation a Σ γ)
-      {cl} {δ} (e : Raw_Syntax (Extend Σ a) cl δ)
+      {cl} {δ} (e : Raw_Syntax (Metavariable_Extension Σ a) cl δ)
     : Raw_Syntax Σ cl (protocxt_coprod γ δ).
   Proof.
     induction e as [ δ i | δ [S | M] args Inst_arg ].
@@ -200,6 +212,8 @@ Section Algebraic_Extensions.
       exact (fun j => j).
       exact (coprod_empty_r protocxt_is_coprod protocxt_is_empty).
   Defined.
+
+  Global Arguments instantiate {_ _ _} _ [_ _] _.
 
 End Algebraic_Extensions.
 
@@ -237,33 +251,86 @@ Section Judgements.
   Definition Judgt_Instance Σ
     := { jf : Judgt_Form & Judgt_Form_Instance Σ jf }.
 
+  (* TODO: this is horrible, but is needed below for instantiations.  Would be better to inline it, once we have somehow refactored how judgement instances are defined.
+
+  One option: “slots”.  Other options: ???
+
+  If “slots”, then need TODO: infrastructure of families from lists. *)
+  Definition Fmap_Judgt_Instance {Σ Σ'} (f : PCxt -> PCxt)
+    (g : forall cl γ, Raw_Syntax Σ cl γ -> Raw_Syntax Σ' cl (f γ))
+    (h : Raw_Context Σ -> Raw_Context Σ')
+  : Judgt_Instance Σ -> Judgt_Instance Σ'.
+  Admitted.
+
 End Judgements.
 
-(* Could (?should) abstract away [Judgt_Instance] to an arbitrary type in the def of closure conditions and deductive closure. *)
+(* TODO: abstract out into separate file, since doesn’t depend on anything else in this file. *)
 Section Deductive_Closure.
 
-  Definition Derivability_Relation Σ
-    := Judgt_Instance Σ -> Type.
-
-  Record Closure_Condition Σ
+  Record Closure_Condition (X : Type)
     :=
-      { CC_prem : Family (Judgt_Instance Σ)
-      ; CC_concln : Judgt_Instance Σ
+      { CC_prem : Family X
+      ; CC_concln : X
       }.
 
   Arguments CC_prem [_] _.
   Arguments CC_concln [_] _.
 
-  Inductive Deductive_Closure {Σ}
-    (Rs : Family (Closure_Condition Σ))
-      : Derivability_Relation Σ
+  Inductive Derivation {X}
+    (CCs : Family (Closure_Condition X))
+      : X -> Type
   := deduce 
-      (R : Rs)
-      (prem_derivs : forall p : CC_prem (Rs R),
-                         Deductive_Closure Rs (CC_prem _ p))
-     : Deductive_Closure Rs (CC_concln (Rs R)).
+      (CC : CCs)
+      (prem_derivs : forall p : CC_prem (CCs CC),
+                         Derivation CCs (CC_prem _ p))
+     : Derivation CCs (CC_concln (CCs CC)).
 
 End Deductive_Closure.
 
+Section Raw_Rules.
+
+  Context {Σ : Signature}.
+
+  Record Raw_Rule
+  :=
+    { RR_metas : Arity
+    ; RR_prem : Family (Judgt_Instance (Metavariable_Extension Σ RR_metas))
+    ; RR_concln : (Judgt_Instance (Metavariable_Extension Σ RR_metas))
+    }.
+  
+  Definition CCs_of_RR (R : Raw_Rule)
+    : Family (Closure_Condition (Judgt_Instance Σ)).
+  Proof.
+    exists { Γ : Raw_Context Σ & Instantiation (RR_metas R) Σ Γ }.
+    intros [Γ I].
+    split.
+    - (* premises *)
+      refine (Fmap_Family _ (RR_prem R)).
+      refine (Fmap_Judgt_Instance _ _ _).
+      + exact (instantiate I).
+      + intros Δ.
+        exists (protocxt_coprod Γ Δ).
+        apply (coprod_rect protocxt_is_coprod).
+        * intros i.
+          refine (Raw_Weaken _ (Γ i)).
+          exact (coprod_inj1 protocxt_is_coprod).
+        * intros i.
+          exact (instantiate I (Δ i)).
+    - (* conclusion *)
+      refine (Fmap_Judgt_Instance _ _ _ (RR_concln R)).
+      + exact (instantiate I).
+      + intros Δ.
+        exists (protocxt_coprod Γ Δ).
+        apply (coprod_rect protocxt_is_coprod).
+        * intros i.
+          refine (Raw_Weaken _ (Γ i)).
+          exact (coprod_inj1 protocxt_is_coprod).
+        * intros i.
+          exact (instantiate I (Δ i)).
+  Defined.
+
+End Raw_Rules.
+
+Global Arguments Raw_Rule _ : clear implicits.
 
 

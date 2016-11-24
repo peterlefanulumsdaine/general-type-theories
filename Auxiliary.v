@@ -54,6 +54,7 @@ Definition Fmap_Family {X Y} (f : X -> Y) (K : Family X) : Family Y.
   exact (fun i => f (K i)).
 Defined.
 
+Definition Family 
 End Families.
 
 (* Redeclare notations globally *)
