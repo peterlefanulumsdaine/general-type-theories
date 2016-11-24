@@ -1,7 +1,8 @@
-
 Require Import Auxiliary
                RawSyntax
                Vectors.Fin.
+
+
 
 
 
@@ -27,3 +28,4 @@ Proof.
   - admit.
 Admitted.
 
+(* TODO: Should also generalise to any constructively infinite type. *)

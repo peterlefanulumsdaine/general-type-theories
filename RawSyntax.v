@@ -26,7 +26,6 @@ Global Arguments protocxt_is_empty {_}.
 
 Coercion vars : ProtoCxt >-> Sortclass.
 
-(* Should also generalise to any constructively infinite type. *)
 End ProtoCxts.
 
 Parameter PCxt : ProtoCxtSystem.
@@ -96,7 +95,8 @@ Section Raw_Syntax.
   Global Arguments var_raw [_] _.
   Global Arguments symb_raw [_] _ _.
 
-  (* A raw context is a proto-ctx ("list of names") and a raw syntactic type expression *)
+  (* A raw context is a proto-ctx ("collection of identifiers") and a raw syntactic type expression 
+     for each identifier in the proto-ctx. *)
   Record Raw_Context
   := { PCxt_of_Raw_Context :> PCxt
      ; var_type_of_Raw_Context
@@ -182,57 +182,56 @@ Section Algebraic_Extensions.
       {cl} {δ} (e : Raw_Syntax (Extend Σ a) cl δ)
     : Raw_Syntax Σ cl (protocxt_coprod γ δ).
   Proof.
-    induction e as [ δ i | δ S args Inst_arg ].
+    induction e as [ δ i | δ [S | M] args Inst_arg ].
   - refine (var_raw _).
     exact (coprod_inj2 (protocxt_is_coprod) i).
-  - destruct S as [S | M].
-    + refine (symb_raw S _). intros i.
-      refine (Raw_Weaken _ (Inst_arg i)).
-      apply (coprod_assoc
-        protocxt_is_coprod protocxt_is_coprod
-        protocxt_is_coprod protocxt_is_coprod).
-    + simpl in M. (* Substitute [args] into the expression [I M]. *)
-      refine (Raw_Subst _ (I M)).
-      refine (coprod_rect protocxt_is_coprod _ _ _).
-      * intros i. apply var_raw, (coprod_inj1 protocxt_is_coprod), i.
-      * intros i. 
-        refine (Raw_Weaken _ (Inst_arg i)). cbn.
-        refine (fmap_coprod protocxt_is_coprod protocxt_is_coprod _ _).
-        exact (fun j => j).
-        exact (coprod_empty_r protocxt_is_coprod protocxt_is_empty).
+  - refine (symb_raw S _). intros i.
+    refine (Raw_Weaken _ (Inst_arg i)).
+    apply (coprod_assoc
+             protocxt_is_coprod protocxt_is_coprod
+             protocxt_is_coprod protocxt_is_coprod).
+  - simpl in M. (* Substitute [args] into the expression [I M]. *)
+    refine (Raw_Subst _ (I M)).
+    refine (coprod_rect protocxt_is_coprod _ _ _).
+    + intros i. apply var_raw, (coprod_inj1 protocxt_is_coprod), i.
+    + intros i. 
+      refine (Raw_Weaken _ (Inst_arg i)). cbn.
+      refine (fmap_coprod protocxt_is_coprod protocxt_is_coprod _ _).
+      exact (fun j => j).
+      exact (coprod_empty_r protocxt_is_coprod protocxt_is_empty).
   Defined.
 
 End Algebraic_Extensions.
 
 Section Judgements.
-  (* The four basic forms are all “relative”, i.e. over a context. *)
-  Inductive Rel_Judgt_Form
-    := obj_RJF (cl : Syn_Class) | eq_RJF (cl : Syn_Class).
+  (* The four basic forms are “hypothetical”, i.e. over a context. *)
+  Inductive Hyp_Judgt_Form
+    := obj_HJF (cl : Syn_Class) | eq_HJF (cl : Syn_Class).
   
-  (* Contexts, context morphisms, and their equalities are also included as derived judgement forms. *)
+  (* Contexts are also a judgement form. *)
   Inductive Judgt_Form
-    := Cxt_JF | JF (rjf : Rel_Judgt_Form).
+    := Cxt_JF | JF (hjf : Hyp_Judgt_Form).
   
-  Definition Rel_Judgt_Bdry_Instance Σ (rjf : Rel_Judgt_Form) (γ : PCxt) : Type
-    := match rjf with
-         | obj_RJF Ty => unit
-         | eq_RJF Ty => (Raw_Syntax Σ Ty γ) * (Raw_Syntax Σ Ty γ)
-         | obj_RJF Tm => (Raw_Syntax Σ Ty γ)
-         | eq_RJF Tm => (Raw_Syntax Σ Ty γ) * (Raw_Syntax Σ Tm γ) * (Raw_Syntax Σ Tm γ) 
+  Definition Hyp_Judgt_Bdry_Instance Σ (hjf : Hyp_Judgt_Form) (γ : PCxt) : Type
+    := match hjf with
+         | obj_HJF Ty => unit
+         | eq_HJF Ty => (Raw_Syntax Σ Ty γ) * (Raw_Syntax Σ Ty γ)
+         | obj_HJF Tm => (Raw_Syntax Σ Ty γ)
+         | eq_HJF Tm => (Raw_Syntax Σ Ty γ) * (Raw_Syntax Σ Tm γ) * (Raw_Syntax Σ Tm γ) 
        end.
 
-  Definition Rel_Judgt_Head_Instance Σ (rjf : Rel_Judgt_Form) (γ : PCxt) : Type
-    := match rjf with
-         | obj_RJF cl => Raw_Syntax Σ cl γ
-         | eq_RJF cl => unit
+  Definition Hyp_Judgt_Head_Instance Σ (hjf : Hyp_Judgt_Form) (γ : PCxt) : Type
+    := match hjf with
+         | obj_HJF cl => Raw_Syntax Σ cl γ
+         | eq_HJF cl => unit
        end.
 
   Definition Judgt_Form_Instance Σ (jf : Judgt_Form) : Type
   := match jf with 
        | Cxt_JF => Raw_Context Σ
-       | JF rjf => { γ : Raw_Context Σ 
-                   & Rel_Judgt_Bdry_Instance Σ rjf γ
-                   * Rel_Judgt_Head_Instance Σ rjf γ }
+       | JF hjf => { γ : Raw_Context Σ 
+                   & Hyp_Judgt_Bdry_Instance Σ hjf γ
+                   * Hyp_Judgt_Head_Instance Σ hjf γ }
      end.
 
   Definition Judgt_Instance Σ
@@ -246,7 +245,6 @@ Section Deductive_Closure.
   Definition Derivability_Relation Σ
     := Judgt_Instance Σ -> Type.
 
-  (* TODO: abstract out premises as a family! *)
   Record Closure_Condition Σ
     :=
       { CC_prem : Family (Judgt_Instance Σ)
