@@ -293,6 +293,7 @@ Section Raw_Rules.
     intros [Γ I].
     split.
     - (* premises *)
+      (* TODO: need to add an extra premise here (by e.g. [Sum_Family]) for the judgement [Γ cxt]. *)  
       refine (Fmap_Family _ (RR_prem R)).
       refine (Fmap_Judgt_Instance _ _ _).
       + exact (instantiate I).
@@ -320,4 +321,17 @@ Section Raw_Rules.
 End Raw_Rules.
 
 Global Arguments Raw_Rule _ : clear implicits.
+
+Section Raw_Type_Theories.
+
+  Definition Raw_Type_Theory
+  := { Σ : Signature & Family (Raw_Rule Σ) }.
+
+(*
+  Definition Derivation_TT {Σ} (Rs : Family (Raw_Rule Σ))
+    : Judgt_Instance Σ -> Type.
+*)
+
+
+End Raw_Type_Theories.
 
