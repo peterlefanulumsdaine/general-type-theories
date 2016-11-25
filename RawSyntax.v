@@ -83,6 +83,11 @@ Section Raw_Syntax.
   Global Arguments var_raw [_] _.
   Global Arguments symb_raw [_] _ _.
 
+  (* A useful abbreviation for giving functions constructing raw syntax. *) 
+  Definition Args (a : Arity) γ : Type
+  := forall (i : a),
+    Raw_Syntax (arg_class i) (shape_coprod γ (arg_pcxt i)).
+
   (* A raw context is a proto-ctx ("collection of identifiers") and a raw syntactic type expression
      for each identifier in the proto-ctx. *)
   Record Raw_Context
@@ -100,6 +105,7 @@ End Raw_Syntax.
 Global Arguments Raw_Syntax _ _ _ : clear implicits.
 Global Arguments Raw_Context _ : clear implicits.
 Global Arguments Raw_Context_Map _ _ _ : clear implicits.
+Global Arguments Args _ _ _ : clear implicits.
 
 Section Raw_Subst.
 
@@ -148,6 +154,32 @@ Section Raw_Subst.
 
 End Raw_Subst.
 
+Section Raw_Context_Construction.
+
+Definition empty_Raw_Context {Σ} : Raw_Context Σ.
+Proof.
+  exists (shape_empty _). apply (empty_rect _ shape_is_empty).
+Defined.
+
+Definition snoc_Raw_Context {Σ} (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ)
+  : Raw_Context Σ.
+Proof.
+  exists (shape_extend _ Γ). 
+  apply (plusone_rect _ _ (shape_is_plusone _ _)).
+  - refine (Raw_Weaken _ A).
+    (* As we put the type into the context, we weaken it to live over the extended context. *)
+    apply (plusone_next _ _ (shape_is_plusone _ _)).
+  - intros i. refine (Raw_Weaken _ (Γ i)).
+    apply (plusone_next _ _ (shape_is_plusone _ _)).
+Defined.
+
+End Raw_Context_Construction.
+
+Notation " [: :] " := (empty_Raw_Context) (format "[: :]") : cxt_scope.
+Notation " [: x ; .. ; z :] " := (snoc_Raw_Context .. (snoc_Raw_Context (empty_Raw_Context) x) .. z) : cxt_scope.
+Open Scope cxt_scope.
+
+
 Section Judgements.
   (* The four basic forms are “hypothetical”, i.e. over a context. *)
   Inductive Hyp_Judgt_Form
@@ -164,13 +196,13 @@ Section Judgements.
     : Family Syn_Class
     := match hjf with
         (* Head of the type judgement *)
-        | obj_HJF Ty => [ Ty ]
+        | obj_HJF Ty => [< Ty >]
         (* Both types involved in the equality *)
-        | eq_HJF Ty  => [ Ty ; Ty ]
+        | eq_HJF Ty  => [< Ty ; Ty >]
         (* Head: term ; Boundary: its type *)
-        | obj_HJF Tm => [ Tm ; Ty ]
+        | obj_HJF Tm => [< Tm ; Ty >]
         (* Boundary : the type ; both terms involved *)
-        | eq_HJF Tm  => [ Ty ; Tm ; Tm ]
+        | eq_HJF Tm  => [< Ty ; Tm ; Tm >]
       end.
 
   Definition Judgt_Form_Instance Σ (jf : Judgt_Form) : Type
@@ -203,28 +235,41 @@ Section Algebraic_Extensions.
 
   The *arity* here would be the overall argument of the constructor that the rule introduces: the metavariable symbols introduced correspond to the arguments of the arity.
 
-  E.g. lambda-abstraction has arity < (Ty,•), (Ty,{x}), (Tm,{x}) >.  So in the metavariable extension by this arity, we add three symbols — call them A, B, and b — with arities:
+  E.g. lambda-abstraction has arity < (Ty,•), (Ty,{x}), (Tm,{x}) >.  So in the metavariable extension by this arity, we add three symbols — call them A, B, and b — with arities as follows:
 
   Symbol   Class  Arity
   A        Ty     < >
   B        Ty     <(Tm,•)>
   b        Tm     <(Tm,•)>
 
-  allowing us to write expressions like x:A |– b(x) : B(x). *)
+  allowing us to write expressions like x:A |– b(x) : B(x). 
+  *)
+
+  Definition metavariable_arity (γ : Proto_Cxt) : Arity
+  := {| Inds := γ ; val i := (Tm, shape_empty _) |}.
+
   Definition Metavariable_Extension (Σ : Signature) (a : Arity) : Signature.
   Proof.
     refine (Sum_Family Σ _).
     refine (Fmap_Family _ a).
-    intros cl_γ. refine (fst cl_γ,_).
-    refine {| Inds := snd (cl_γ) ; val := _ |}.
-    intros i. exact (Tm, shape_empty _).
+    intros cl_γ. exact (fst cl_γ, metavariable_arity (snd cl_γ)).
   Defined.
 
+  Definition inr_Metavariable {Σ} {a : Arity}
+    : a -> Metavariable_Extension Σ a
+  := inr.
+
+  Definition inl_Symbol {Σ : Signature} {a : Arity}
+    : Σ -> Metavariable_Extension Σ a
+  := inl.
+
+  (* To use rules, one *instantiates* their metavariables, as raw syntax of the ambient signature, over some context. *)
   Definition Instantiation (a : Arity) (Σ : Signature) (γ : Proto_Cxt)
     : Type
   := forall i : a,
        Raw_Syntax Σ (arg_class i) (shape_coprod γ (arg_pcxt i)).
 
+  (* Given such an instantiation, one can translate syntax over the extended signature into syntax over the base signature. *)
   Definition instantiate
       {a : Arity} {Σ : Signature} {γ : Proto_Cxt}
       (I : Instantiation a Σ γ)
@@ -282,6 +327,56 @@ Section Algebraic_Extensions.
   Defined.
 
 End Algebraic_Extensions.
+
+Section Metavariable_Notations.
+
+(* Arities of symbols will arise in two ways:
+
+  1. Arities we write by hand.
+ 
+    These will typically use [< … >] notation.
+
+  2. Arities of metavariables, from [Metavariable_Extension].
+
+    These will have only (Ty, shape_empty) arguments, and be indexed by the positions of some protocxt, which will itself probably be built up by [shape_extend].
+
+  So we give functions/notations for giving arguments for each of these forms.
+
+  Eventually, one should be able to write e.g.
+
+  [S/ A ; e1 , e2 , e3 /]
+
+  [M/ A ; e1 , e2 , e3 /]
+
+  for the expression consisting of a symbol S (resp. a metavariable symbol M) applied to expressions e1, e2, e3.
+
+  For now we provide the [M/ … /] version, but not yet the general [S/ … /] version.
+*)
+
+Definition empty_metavariable_args {Σ} {γ}
+  : Args Σ (metavariable_arity (shape_empty _)) γ
+:= empty_rect _ shape_is_empty _.
+
+Definition snoc_metavariable_args {Σ} {γ δ : Proto_Cxt}
+  : Args Σ (metavariable_arity δ) γ
+  -> Raw_Syntax Σ Tm γ
+  -> Args Σ (metavariable_arity (shape_extend _ δ)) γ.
+Proof.
+  intros ts t.
+  simple refine (plusone_rect _ _ (shape_is_plusone _ δ) _ _ _); cbn.
+  - refine (Raw_Weaken _ t).
+    exact (coprod_inj1 shape_is_coprod).
+  - exact ts.
+Defined.
+
+End Metavariable_Notations.
+
+Notation " '[M/' A /] " := (symb_raw (inr_Metavariable A) empty_metavariable_args) : raw_syntax_scope.
+
+Notation " '[M/' A ; x , .. , z /] "
+  := (symb_raw (inr_Metavariable A) (snoc_metavariable_args .. (snoc_metavariable_args (empty_metavariable_args) x) .. z)) : raw_syntax_scope.
+
+Open Scope raw_syntax_scope.
 
 
 Section Raw_Rules.

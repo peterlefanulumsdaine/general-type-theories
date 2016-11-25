@@ -1,19 +1,10 @@
+Require Import HoTT.
 
 Open Scope type_scope.
 Open Scope list_scope.
 
-Inductive Empty : Type := .
-
-Definition ap {A B} (f : A -> B) {a a' : A} (p : a = a')
-  : f a = f a'
-:= match p with eq_refl _ => eq_refl _ end.
-
-Definition transport {A} {B : A -> Type} {a a' : A} (p : a = a')
-  : B a -> B a'
-:= fun b => match p with eq_refl _ => b end.
-
 Fixpoint entries {A} (l : list A)
-  := match l with nil => Empty_set | (a :: l') => unit + entries l' end.
+  := match l with nil => Empty | (a :: l') => Unit + entries l' end.
 
 Fixpoint lookup {A} (l : list A) : entries l -> A
   := match l with
@@ -63,7 +54,7 @@ Defined.
 
 Definition Singleton_Family {X} (x:X) : Family X.
 Proof.
-  exists unit.
+  exists Unit.
   intros _; exact x.
 Defined.
 
@@ -79,9 +70,9 @@ End Families.
 
 Notation "Y1 + Y2" := (Sum_Family Y1 Y2) : fam_scope.
 Open Scope fam_scope.
-Notation " [ ] " := (Empty_Family _) (format "[ ]") : fam_scope.
-Notation " [ x ] " := (Singleton_Family x) : fam_scope.
-Notation " [ x ; .. ; z ] " := (Snoc_Family .. (Snoc_Family (Empty_Family _) x) .. z) : fam_scope.
+Notation " [< >] " := (Empty_Family _) (format "[< >]") : fam_scope.
+Notation " [< x >] " := (Singleton_Family x) : fam_scope.
+Notation " [< x ; .. ; z >] " := (Snoc_Family .. (Snoc_Family (Empty_Family _) x) .. z) : fam_scope.
 
 (*Alternative: start with [Singleton_Family] instead of [Empty_Family], i.e.
 

@@ -103,6 +103,7 @@ endif
 
 VFILES:=Auxiliary.v\
   RawSyntax.v\
+  RawRules.v\
   Examples.v
 
 ifneq ($(filter-out archclean clean cleanall printenv,$(MAKECMDGOALS)),)

@@ -2,4 +2,6 @@
 
 Auxiliary.v
 RawSyntax.v
+RawRules.v
 Examples.v
+
