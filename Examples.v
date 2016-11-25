@@ -1,4 +1,3 @@
-
 Require Import Auxiliary.
 Require Import RawSyntax.
 Require Import Arith.
@@ -214,9 +213,9 @@ Section DeBruijn.
   - admit.
 Admitted.
 
-Definition natVars : ProtoCxtSystem.
+Definition natVars : Shape_System.
 Proof.
-  simple refine (Build_ProtoCxtSystem _ _ _ _ _ _).
+  simple refine (Build_Shape_System _ _ _ _ _ _ _ _).
   - admit. (* finite subsets of nat *)
   - admit. (* should be El *)
   - admit. (* should be some implementation of disjoint union *)
@@ -225,3 +224,4 @@ Proof.
   - admit.
 Admitted.
 
+(* TODO: Should also generalise to any constructively infinite type. *)
