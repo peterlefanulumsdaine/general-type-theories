@@ -6,9 +6,9 @@ Require Import Auxiliary
 
 
 
-Definition deBruijn : ProtoCxtSystem.
+Definition deBruijn : Shape_System.
 Proof.
-  simple refine (Build_ProtoCxtSystem _ _ _ _ _ _).
+  simple refine (Build_Shape_System _ _ _ _ _ _ _ _).
   - exact nat.
   - exact Fin.t. (* should be fin *)
   - admit. (* should be + *)
@@ -17,9 +17,9 @@ Proof.
   - admit.
 Admitted.
 
-Definition natVars : ProtoCxtSystem.
+Definition natVars : Shape_System.
 Proof.
-  simple refine (Build_ProtoCxtSystem _ _ _ _ _ _).
+  simple refine (Build_Shape_System _ _ _ _ _ _ _ _).
   - admit. (* finite subsets of nat *)
   - admit. (* should be El *)
   - admit. (* should be some implementation of disjoint union *)
