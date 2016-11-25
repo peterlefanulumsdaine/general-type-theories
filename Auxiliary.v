@@ -70,9 +70,9 @@ End Families.
 
 Notation "Y1 + Y2" := (Sum_Family Y1 Y2) : fam_scope.
 Open Scope fam_scope.
-Notation " [ ] " := (Empty_Family _) (format "[ ]") : fam_scope.
-Notation " [ x ] " := (Singleton_Family x) : fam_scope.
-Notation " [ x ; .. ; z ] " := (Snoc_Family .. (Snoc_Family (Empty_Family _) x) .. z) : fam_scope.
+Notation " [< >] " := (Empty_Family _) (format "[< >]") : fam_scope.
+Notation " [< x >] " := (Singleton_Family x) : fam_scope.
+Notation " [< x ; .. ; z >] " := (Snoc_Family .. (Snoc_Family (Empty_Family _) x) .. z) : fam_scope.
 
 (*Alternative: start with [Singleton_Family] instead of [Empty_Family], i.e.
 

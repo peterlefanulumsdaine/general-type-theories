@@ -148,6 +148,32 @@ Section Raw_Subst.
 
 End Raw_Subst.
 
+Section Raw_Context_Construction.
+
+Definition empty_Raw_Context {Σ} : Raw_Context Σ.
+Proof.
+  exists (shape_empty _). apply (empty_rect _ shape_is_empty).
+Defined.
+
+Definition snoc_Raw_Context {Σ} (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ)
+  : Raw_Context Σ.
+Proof.
+  exists (shape_extend _ Γ). 
+  apply (plusone_rect _ _ (shape_is_plusone _ _)).
+  - refine (Raw_Weaken _ A).
+    (* As we put the type into the context, we weaken it to live over the extended context. *)
+    apply (plusone_next _ _ (shape_is_plusone _ _)).
+  - intros i. refine (Raw_Weaken _ (Γ i)).
+    apply (plusone_next _ _ (shape_is_plusone _ _)).
+Defined.
+
+End Raw_Context_Construction.
+
+Notation " [: :] " := (empty_Raw_Context) (format "[: :]") : cxt_scope.
+Notation " [: x ; .. ; z :] " := (snoc_Raw_Context .. (snoc_Raw_Context (empty_Raw_Context) x) .. z) : cxt_scope.
+Open Scope cxt_scope.
+
+
 Section Judgements.
   (* The four basic forms are “hypothetical”, i.e. over a context. *)
   Inductive Hyp_Judgt_Form
@@ -164,13 +190,13 @@ Section Judgements.
     : Family Syn_Class
     := match hjf with
         (* Head of the type judgement *)
-        | obj_HJF Ty => [ Ty ]
+        | obj_HJF Ty => [< Ty >]
         (* Both types involved in the equality *)
-        | eq_HJF Ty  => [ Ty ; Ty ]
+        | eq_HJF Ty  => [< Ty ; Ty >]
         (* Head: term ; Boundary: its type *)
-        | obj_HJF Tm => [ Tm ; Ty ]
+        | obj_HJF Tm => [< Tm ; Ty >]
         (* Boundary : the type ; both terms involved *)
-        | eq_HJF Tm  => [ Ty ; Tm ; Tm ]
+        | eq_HJF Tm  => [< Ty ; Tm ; Tm >]
       end.
 
   Definition Judgt_Form_Instance Σ (jf : Judgt_Form) : Type
