@@ -109,100 +109,55 @@ Section DeBruijn.
     - apply succ_db, DB_inr; exact x.
   Defined.
 
-  Definition db_extend
-             {n m : nat}
-             (P : DB_Set (n + m) -> Type) :
-    forall k, DB_Set k -> Type.
-  Proof.
-    intro k.
-    destruct (beq_nat_decide k (n + m)) as [E|_].
-    - rewrite (proj1 (eq_nat_is_eq k (n + m)) E).
-      exact P.
-    - intros _ ; exact unit.
-  Defined.
+  (** Annoyingly, stdlib makes eq_nat opaque, we roll our own. *)
 
-  Definition db_extend_inject
-             (n m : nat)
-             (P : DB_Set (n + m) -> Type)
-             (i : DB_Set (n + m)) :
-    P i -> db_extend P (n + m) i.
-  Proof.
-    intro x.
-    unfold db_extend.
+  (* Definition db_extend *)
+  (*            {n m : nat} *)
+  (*            (P : DB_Set (n + m) -> Type) : *)
+  (*   forall k, DB_Set k -> Type. *)
+  (* Proof. *)
+  (*   intro k. *)
+  (*   destruct (eq_nat_decide k (n + m)) as [E|N]. *)
+  (*   - rewrite (proj1 (eq_nat_is_eq k (n + m)) E). *)
+  (*     exact P. *)
+  (*   - intros _ ; exact unit. *)
+  (* Defined. *)
 
+  (* (* The built-in eq_nat_refl is opaque! *) *)
+  (* Lemma my_eq_nat_refl (n : nat) : eq_nat n n. *)
+  (* Proof. *)
+  (*   induction n. *)
+  (*   - exact I. *)
+  (*   - assumption. *)
+  (* Defined. *)
 
+  (* Lemma eq_nat_decide_refl (n : nat) : *)
+  (*   eq_nat_decide n n = left (my_eq_nat_refl n). *)
+  (* Proof. *)
+  (*   induction n. *)
+  (*   - reflexivity. *)
+  (*   - assumption. *)
+  (* Defined. *)
 
-             
+  (* Lemma eq_nat_is_eq_is_refl (n : nat) : *)
+  (*   proj1 (eq_nat_is_eq n n) (my_eq_nat_refl n) = eq_refl n. *)
+  (* Proof. *)
+  (*   induction n. *)
+  (*   - simpl. *)
 
-
-  Fixpoint DB_coprod_rect
-           (n m : nat)
-           (P : DB_Set (n + m) -> Type)
-           (G : forall (y : DB_Set n), P (DB_inl n m y))
-           (H : forall (z : DB_Set m), P (DB_inr n m z))
-           (x : DB_Set (n + m)) :
-    P x.
-  Proof.
-    induction n.
-    - exact x.
+  (* Definition db_extend_inject *)
+  (*            (n m : nat) *)
+  (*            (P : DB_Set (n + m) -> Type) *)
+  (*            (i : DB_Set (n + m)) : *)
+  (*   P i -> db_extend P (n + m) i. *)
+  (* Proof. *)
+  (*   intro x. *)
+  (*   unfold db_extend. *)
+  (*   destruct (eq_nat_decide_refl (n + m)) as [? E]. *)
+  (*   rewrite E. *)
 
     
-    rewrite x.
-    destruct n as [|n].
-    - apply H.
-    - dependent induction x.
-      + apply (| zero_db).
-      + apply (IH 
-      
-
-
-
-
-
-
-  Definition DB_inl (n m : nat) (x : DB_Set n) : DB_Set (n + m).
-  Proof.
-    destruct x as [k H].
-    exists k.
-    apply (lt_le_trans k n).
-    - assumption.
-    - now apply le_plus_l.
-  Defined.
-
-  Definition DB_inr (n m : nat) (y : DB_Set m) : DB_Set (n + m).
-  Proof.
-    destruct y as [k H].
-    exists (n + k)%nat.
-    now apply plus_lt_compat_l.
-  Defined.
-
-  Lemma lt_dec (n m : nat) : {n < m} + {m <= n}.
-
-  Fixpoint DB_coprod_rect (n m : nat)
-           (P : DB_Set (n + m) -> Type)
-           (G : forall (g : DB_Set n), P (DB_inl n m g))
-           (H : forall (h : DB_Set m), P (DB_inr n m h))
-           (x : DB_Set (n + m)) :
-    P x.
-  Proof.
-    destruct x as [k L].
-    destruct (lt_dec k n) as [D|E].
-    - apply G.
-  Admitted.
-
-  Lemma plus_is_coprod (n m : nat) : is_coprod (DB_Set (n + m)) (DB_Set n) (DB_Set m).
-  Proof.
-    simple refine {|
-        coprod_inj1 := DB_inl n m ;
-        coprod_inj2 := DB_inr n m ;
-        coprod_rect := DB_coprod_rect n m
-      |}.
-    (* coprod_comp1 *)
-    - intros.
-      simpl.
-    (* coprod_comp2 *)
-    - reflexivity.
-  Defined.
+  (* Defined. *)
 
   Definition DeBruijn : Shape_System.
   Proof.
