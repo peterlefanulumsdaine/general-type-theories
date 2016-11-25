@@ -3,14 +3,16 @@ Require Import RawSyntax.
 Require Import Arith.
 
 Section TypesAsContexts.
-  Definition TypesProtoCtx : ProtoCxtSystem.
+  Definition TypesProtoCtx : Shape_System.
   Proof.
     refine {|
-        ProtoCxt := Type ;
-        vars := (fun A => A) ;
-        protocxt_coprod := sum ;
-        protocxt_extend := option
+        Shape := Type ;
+        positions := (fun A => A) ;
+        shape_empty := False ;
+        shape_coprod := sum ;
+        shape_extend := option
       |}.
+    - easy.
     - intros A B.
       simple refine {|
           coprod_inj1 := @inl A B ;
@@ -77,29 +79,32 @@ Section FreeProtoCxt.
 
   Lemma f_cxt_is_coprod (c d : f_cxt) : is_coprod (f_vars (f_coprod c d)) (f_vars c) (f_vars d).
   Proof.
-    simple refine {| 
+    simple refine {|
              coprod_inj1 := f_inl c d ;
              coprod_inj2 := f_inr c d
            |}.
     - intros P G H x.
-      dependent induction x.
+      (* dependent induction x. *)
 
-      assert (forall (y : f_vars (f_coprod c
+      (* assert (forall (y : f_vars (f_coprod c *)
+  Abort.
 
 
-  Definition FreeProtoCxt : ProtoCxtSystem.
+  Definition FreeProtoCxt : Shape_System.
   Proof.
     simple refine
            {|
-             ProtoCxt := f_cxt ;
-             vars := f_vars ;
-             protocxt_coprod := f_coprod ;
-             protocxt_extend := f_extend
+             Shape := f_cxt ;
+             positions := f_vars ;
+             (* empty :=  *)
+             shape_coprod := f_coprod ;
+             shape_extend := f_extend
            |}.
-    - intros c d.
-      simple refine 
+    (* - intros c d. *)
+      (* simple refine *)
+  Abort.
 
-  
+
 
 End FreeProtoCxt.
 
@@ -109,39 +114,40 @@ Section DeBruijn.
     | DB_Zero : forall {n}, DBSet (S n)
     | DB_Succ : forall {n}, DBSet n -> DBSet (S n).
 
-  Fixpoint DB_inl (n m : nat) (x : DBSet n) : DBSet (n + m).
-  Proof.
-    destruct x.
-    - exact DB_Zero.
-    - now apply DB_Succ, DB_inl.
-  Defined.
+  (* Fixpoint DB_inl (n m : nat) (x : DBSet n) : DBSet (n + m). *)
+  (* Proof. *)
+  (*   destruct x. *)
+  (*   - exact DB_Zero. *)
+  (*   - now apply DB_Succ, DB_inl. *)
+  (* Defined. *)
 
-  Fixpoint DB_inr (n m : nat) (x : DBSet m) : DBSet (n + m).
-  Proof.
-    destruct n.
-    - exact x.
-    - apply DB_Succ, DB_inr; exact x.
-  Defined.
+  (* Fixpoint DB_inr (n m : nat) (x : DBSet m) : DBSet (n + m). *)
+  (* Proof. *)
+  (*   destruct n. *)
+  (*   - exact x. *)
+  (*   - apply DB_Succ, DB_inr; exact x. *)
+  (* Defined. *)
 
-  Fixpoint DB_coprod_rect
-           (n m : nat)
-           (P : DBSet (n + m) -> Type)
-           (G : forall (y : DBSet n), P (DB_inl n m y))
-           (H : forall (z : DBSet m), P (DB_inr n m z))
-           (x : DBSet (n + m)) :
-    P x.
-  Proof.
-    induction n.
-    - exact x.
+  (* Fixpoint DB_coprod_rect *)
+  (*          (n m : nat) *)
+  (*          (P : DBSet (n + m) -> Type) *)
+  (*          (G : forall (y : DBSet n), P (DB_inl n m y)) *)
+  (*          (H : forall (z : DBSet m), P (DB_inr n m z)) *)
+  (*          (x : DBSet (n + m)) : *)
+  (*   P x. *)
+  (* Proof. *)
+  (*   induction n. *)
+  (*   (* - exact x. *) *)
 
-    
-    rewrite x.
-    destruct n as [|n].
-    - apply H.
-    - dependent induction x.
-      + apply (G DB_Zero).
-      + apply (IH 
-      
+
+  (*   (* rewrite x. *) *)
+  (*   (* destruct n as [|n]. *) *)
+  (*   (* - apply H. *) *)
+  (*   (* - dependent induction x. *) *)
+  (*   (*   + apply (G DB_Zero). *) *)
+  (*   (*   + apply (IH *) *)
+  (* Abort. *)
+
 
 
 
@@ -150,19 +156,21 @@ Section DeBruijn.
 
   Definition DB_inl (n m : nat) (x : DBSet n) : DBSet (n + m).
   Proof.
-    destruct x as [k H].
-    exists k.
-    apply (lt_le_trans k n).
-    - assumption.
-    - now apply le_plus_l.
-  Defined.
+  (*   destruct x as [k H]. *)
+  (*   exists k. *)
+  (*   apply (lt_le_trans k n). *)
+  (*   - assumption. *)
+  (*   - now apply le_plus_l. *)
+  (* Defined. *)
+  Admitted.
 
   Definition DB_inr (n m : nat) (y : DBSet m) : DBSet (n + m).
   Proof.
-    destruct y as [k H].
-    exists (n + k)%nat.
-    now apply plus_lt_compat_l.
-  Defined.
+  (*   destruct y as [k H]. *)
+  (*   exists (n + k)%nat. *)
+  (*   now apply plus_lt_compat_l. *)
+  (* Defined. *)
+  Admitted.
 
   Lemma lt_dec (n m : nat) : {n < m} + {m <= n}.
 
@@ -173,44 +181,49 @@ Section DeBruijn.
            (x : DBSet (n + m)) :
     P x.
   Proof.
-    destruct x as [k L].
-    destruct (lt_dec k n) as [D|E].
-    - apply G.
+  (*   destruct x as [k L]. *)
+  (*   destruct (lt_dec k n) as [D|E]. *)
+  (*   - apply G. *)
+  (* Admitted. *)
+
+  (* Lemma plus_is_coprod (n m : nat) : is_coprod (DBSet (n + m)) (DBSet n) (DBSet m). *)
+  (* Proof. *)
+  (*   simple refine {| *)
+  (*       coprod_inj1 := DB_inl n m ; *)
+  (*       coprod_inj2 := DB_inr n m ; *)
+  (*       coprod_rect := DB_coprod_rect n m *)
+  (*     |}. *)
+  (*   (* coprod_comp1 *) *)
+  (*   - intros. *)
+  (*     simpl. *)
+  (*   (* coprod_comp2 *) *)
+  (*   - reflexivity. *)
+  (* Defined. *)
   Admitted.
 
-  Lemma plus_is_coprod (n m : nat) : is_coprod (DBSet (n + m)) (DBSet n) (DBSet m).
+  Definition DeBruijn : Shape_System.
   Proof.
-    simple refine {|
-        coprod_inj1 := DB_inl n m ;
-        coprod_inj2 := DB_inr n m ;
-        coprod_rect := DB_coprod_rect n m
-      |}.
-    (* coprod_comp1 *)
-    - intros.
-      simpl.
-    (* coprod_comp2 *)
-    - reflexivity.
-  Defined.
-
-  Definition DeBruijn : ProtoCxtSystem.
-  Proof.
-    refine {| ProtoCxt := nat ;
-              vars := DBSet ;
-              protocxt_coprod := plus
+    refine {| Shape := nat ;
+              positions := DBSet ;
+              shape_empty := 0 ;
+              shape_coprod := plus
            |}.
-    (* protoctx_is_coprod *)
-    - apply plus_is_coprod.
+    (* shape_is_empty *)
+    - easy.
+    (* shape_is_coprod *)
+    - (* apply plus_is_coprod. *)
+      admit.
 
-    (* protoctx_extend *)
-    (* protoctx_is_extend *)
+    (* shape_extend *)
+    (* shape_is_extend *)
 
-  simple refine (Build_ProtoCxtSystem _ _ _ _ _ _).
-  - exact nat.
-  - exact Fin.t. (* should be fin *)
-  - admit. (* should be + *)
-  - admit.
-  - admit. (* should be +1 *)
-  - admit.
+  (* simple refine (Build_ProtoCxtSystem _ _ _ _ _ _). *)
+  (* - exact nat. *)
+  (* - exact Fin.t. (* should be fin *) *)
+  (* - admit. (* should be + *) *)
+  (* - admit. *)
+  (* - admit. (* should be +1 *) *)
+  (* - admit. *)
 Admitted.
 
 Definition natVars : Shape_System.
@@ -223,5 +236,8 @@ Proof.
   - admit. (* should be some choice of fresh var *)
   - admit.
 Admitted.
+
+Abort All.
+End DeBruijn.
 
 (* TODO: Should also generalise to any constructively infinite type. *)
