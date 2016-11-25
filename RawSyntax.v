@@ -148,6 +148,55 @@ Section Raw_Subst.
 
 End Raw_Subst.
 
+Section Judgements.
+  (* The four basic forms are “hypothetical”, i.e. over a context. *)
+  Inductive Hyp_Judgt_Form
+    := obj_HJF (cl : Syn_Class) | eq_HJF (cl : Syn_Class).
+
+  (* Contexts are also a judgement form. *)
+  Inductive Judgt_Form
+    := Cxt_JF | HJF (hjf : Hyp_Judgt_Form).
+
+  (* Indices for each kind of judgement form. *)
+  (* TODO if we need to access the head and boundaries. *)
+
+  Definition Hyp_Judgt_Form_Slots (hjf : Hyp_Judgt_Form)
+    : Family Syn_Class
+    := match hjf with
+        (* Head of the type judgement *)
+        | obj_HJF Ty => [ Ty ]
+        (* Both types involved in the equality *)
+        | eq_HJF Ty  => [ Ty ; Ty ]
+        (* Head: term ; Boundary: its type *)
+        | obj_HJF Tm => [ Tm ; Ty ]
+        (* Boundary : the type ; both terms involved *)
+        | eq_HJF Tm  => [ Ty ; Tm ; Tm ]
+      end.
+
+  Definition Judgt_Form_Instance Σ (jf : Judgt_Form) : Type
+  := match jf with
+       | Cxt_JF => Raw_Context Σ
+       | HJF hjf => { Γ : Raw_Context Σ
+                   & forall i : Hyp_Judgt_Form_Slots hjf,
+                         Raw_Syntax Σ (val _ i) Γ }
+     end.
+
+  Definition Judgt_Instance Σ
+    := { jf : Judgt_Form & Judgt_Form_Instance Σ jf }.
+
+  (* TODO: this is horrible, but is needed below for instantiations.  Would be better to inline it, once we have somehow refactored how judgement instances are defined.
+
+  One option: “slots”.  Other options: ???
+
+  If “slots”, then need TODO: infrastructure of families from lists. *)
+  (* Definition Fmap_Judgt_Instance {Σ Σ'} (f : Proto_Cxt -> Proto_Cxt) *)
+  (*   (g : forall cl γ, Raw_Syntax Σ cl γ -> Raw_Syntax Σ' cl (f γ)) *)
+  (*   (h : Raw_Context Σ -> Raw_Context Σ') *)
+  (* : Judgt_Instance Σ -> Judgt_Instance Σ'. *)
+  (* Admitted. *)
+
+End Judgements.
+
 Section Algebraic_Extensions.
 
   (* The extension of a signature by symbols representing metavariables, as used to write each rule.
@@ -203,58 +252,35 @@ Section Algebraic_Extensions.
 
   Global Arguments instantiate {_ _ _} _ [_ _] _.
 
+  Definition instantiate_ji
+      {a : Arity} {Σ : Signature} {Γ : Raw_Context Σ}
+      (I : Instantiation a Σ Γ)
+      (e : Judgt_Instance (Metavariable_Extension Σ a))
+    : Judgt_Instance Σ.
+  Proof.
+    destruct e as [jf jfi]. exists jf ; destruct jf ; simpl in *.
+    - rename jfi into Δ.
+        exists (shape_coprod Γ Δ).
+        apply (coprod_rect shape_is_coprod).
+        + intros i.
+          refine (Raw_Weaken _ (Γ i)).
+          exact (coprod_inj1 shape_is_coprod).
+        + intros i.
+          exact (instantiate I (Δ i)).
+    - destruct jfi as [Δ hjfi].
+      simple refine (existT _ _ _).
+      + exists (shape_coprod Γ Δ).
+        apply (coprod_rect shape_is_coprod).
+        * intros i.
+          refine (Raw_Weaken _ (Γ i)).
+          exact (coprod_inj1 shape_is_coprod).
+        * intros i.
+          exact (instantiate I (Δ i)).
+      + simpl. intro i. apply (instantiate I (hjfi i)).
+  Defined.
+
 End Algebraic_Extensions.
 
-Section Judgements.
-  (* The four basic forms are “hypothetical”, i.e. over a context. *)
-  Inductive Hyp_Judgt_Form
-    := obj_HJF (cl : Syn_Class) | eq_HJF (cl : Syn_Class).
-
-  (* Contexts are also a judgement form. *)
-  Inductive Judgt_Form
-    := Cxt_JF | HJF (hjf : Hyp_Judgt_Form).
-
-  (* Indices for each kind of judgement form. *)
-  (* TODO if we need to access the head and boundaries. *)
-
-  (* TODO: Fix this, it is not an actual type. It is only the case because of
-     the coercion Inds. *)
-  Definition Hyp_Judgt_Form_Instance Σ (hjf : Hyp_Judgt_Form) (γ : Proto_Cxt)
-    : Type
-    := match hjf with
-        (* Head of the type judgement *)
-        | obj_HJF Ty => [ Raw_Syntax Σ Ty γ ]
-        (* Both types involved in the equality *)
-        | eq_HJF Ty  => [ Raw_Syntax Σ Ty γ ; Raw_Syntax Σ Ty γ ]
-        (* Head: term ; Boundary: its type *)
-        | obj_HJF Tm => [ Raw_Syntax Σ Tm γ ; Raw_Syntax Σ Ty γ ]
-        (* Boundary : both term involved ; their type *)
-        | eq_HJF Tm  => [ Raw_Syntax Σ Tm γ ; Raw_Syntax Σ Tm γ
-                        ; Raw_Syntax Σ Ty γ ]
-      end.
-
-  Definition Judgt_Form_Instance Σ (jf : Judgt_Form) : Type
-  := match jf with
-       | Cxt_JF => Raw_Context Σ
-       | HJF hjf => { Δ : Raw_Context Σ
-                   & Hyp_Judgt_Form_Instance Σ hjf Δ }
-     end.
-
-  Definition Judgt_Instance Σ
-    := { jf : Judgt_Form & Judgt_Form_Instance Σ jf }.
-
-  (* TODO: this is horrible, but is needed below for instantiations.  Would be better to inline it, once we have somehow refactored how judgement instances are defined.
-
-  One option: “slots”.  Other options: ???
-
-  If “slots”, then need TODO: infrastructure of families from lists. *)
-  (* Definition Fmap_Judgt_Instance {Σ Σ'} (f : Proto_Cxt -> Proto_Cxt) *)
-  (*   (g : forall cl γ, Raw_Syntax Σ cl γ -> Raw_Syntax Σ' cl (f γ)) *)
-  (*   (h : Raw_Context Σ -> Raw_Context Σ') *)
-  (* : Judgt_Instance Σ -> Judgt_Instance Σ'. *)
-  (* Admitted. *)
-
-End Judgements.
 
 Section Raw_Rules.
 
@@ -274,59 +300,11 @@ Section Raw_Rules.
     intros [Γ I].
     split.
     - (* premises *)
-      (* TODO: need to add an extra premise here (by e.g. [Sum_Family]) for the judgement [Γ cxt]. *)
       refine (Fmap_Family _ (RR_prem R)).
-
-      intros [jf jfi]. destruct jf.
-      + simpl in jfi. exists Cxt_JF. simpl.
-        rename jfi into Δ.
-        exists (shape_coprod Γ Δ).
-        apply (coprod_rect shape_is_coprod).
-        * intros i.
-          refine (Raw_Weaken _ (Γ i)).
-          exact (coprod_inj1 shape_is_coprod).
-        * intros i.
-          exact (instantiate I (Δ i)).
-      + simpl in jfi. destruct jfi as [Δ hjfi]. exists (HJF hjf).
-        simpl.
-        simple refine (existT _ _ _).
-        * exists (shape_coprod Γ Δ).
-          { apply (coprod_rect shape_is_coprod).
-            - intros i.
-              refine (Raw_Weaken _ (Γ i)).
-              exact (coprod_inj1 shape_is_coprod).
-            - intros i.
-              exact (instantiate I (Δ i)). }
-        * simpl.
-          unfold Hyp_Judgt_Form_Instance.
-          { destruct hjf ; destruct cl.
-            - simpl in hjfi.
-
-
-
-      (* refine (Fmap_Judgt_Instance _ _ _). *)
-      (* + exact (instantiate I). *)
-      (* + intros Δ. *)
-      (*   exists (shape_coprod Γ Δ). *)
-      (*   apply (coprod_rect shape_is_coprod). *)
-      (*   * intros i. *)
-      (*     refine (Raw_Weaken _ (Γ i)). *)
-      (*     exact (coprod_inj1 shape_is_coprod). *)
-      (*   * intros i. *)
-      (*     exact (instantiate I (Δ i)). *)
-    (* - (* conclusion *) *)
-      (* refine (Fmap_Judgt_Instance _ _ _ (RR_concln R)). *)
-      (* + exact (instantiate I). *)
-      (* + intros Δ. *)
-      (*   exists (shape_coprod Γ Δ). *)
-      (*   apply (coprod_rect shape_is_coprod). *)
-      (*   * intros i. *)
-      (*     refine (Raw_Weaken _ (Γ i)). *)
-      (*     exact (coprod_inj1 shape_is_coprod). *)
-      (*   * intros i. *)
-      (*     exact (instantiate I (Δ i)). *)
-  (* Defined. *)
-Admitted.
+      apply (instantiate_ji I).
+    - apply (instantiate_ji I).
+      apply (RR_concln R).
+  Defined.
 
 End Raw_Rules.
 
