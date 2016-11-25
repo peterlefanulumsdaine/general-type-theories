@@ -229,21 +229,24 @@ Section Algebraic_Extensions.
 
   The *arity* here would be the overall argument of the constructor that the rule introduces: the metavariable symbols introduced correspond to the arguments of the arity.
 
-  E.g. lambda-abstraction has arity < (Ty,•), (Ty,{x}), (Tm,{x}) >.  So in the metavariable extension by this arity, we add three symbols — call them A, B, and b — with arities:
+  E.g. lambda-abstraction has arity < (Ty,•), (Ty,{x}), (Tm,{x}) >.  So in the metavariable extension by this arity, we add three symbols — call them A, B, and b — with arities as follows:
 
   Symbol   Class  Arity
   A        Ty     < >
   B        Ty     <(Tm,•)>
   b        Tm     <(Tm,•)>
 
-  allowing us to write expressions like x:A |– b(x) : B(x). *)
+  allowing us to write expressions like x:A |– b(x) : B(x). 
+  *)
+
+  Definition metavariable_arity (γ : Proto_Cxt) : Arity
+  := {| Inds := γ ; val i := (Tm, shape_empty _) |}.
+
   Definition Metavariable_Extension (Σ : Signature) (a : Arity) : Signature.
   Proof.
     refine (Sum_Family Σ _).
     refine (Fmap_Family _ a).
-    intros cl_γ. refine (fst cl_γ,_).
-    refine {| Inds := snd (cl_γ) ; val := _ |}.
-    intros i. exact (Tm, shape_empty _).
+    intros cl_γ. exact (fst cl_γ, metavariable_arity (snd cl_γ)).
   Defined.
 
   Definition Instantiation (a : Arity) (Σ : Signature) (γ : Proto_Cxt)
