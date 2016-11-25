@@ -83,7 +83,7 @@ Section Raw_Syntax.
   Global Arguments var_raw [_] _.
   Global Arguments symb_raw [_] _ _.
 
-  (* A raw context is a proto-ctx ("collection of identifiers") and a raw syntactic type expression 
+  (* A raw context is a proto-ctx ("collection of identifiers") and a raw syntactic type expression
      for each identifier in the proto-ctx. *)
   Record Raw_Context
   := { Proto_Cxt_of_Raw_Context :> Proto_Cxt
@@ -148,18 +148,67 @@ Section Raw_Subst.
 
 End Raw_Subst.
 
+Section Judgements.
+  (* The four basic forms are “hypothetical”, i.e. over a context. *)
+  Inductive Hyp_Judgt_Form
+    := obj_HJF (cl : Syn_Class) | eq_HJF (cl : Syn_Class).
+
+  (* Contexts are also a judgement form. *)
+  Inductive Judgt_Form
+    := Cxt_JF | HJF (hjf : Hyp_Judgt_Form).
+
+  (* Indices for each kind of judgement form. *)
+  (* TODO if we need to access the head and boundaries. *)
+
+  Definition Hyp_Judgt_Form_Slots (hjf : Hyp_Judgt_Form)
+    : Family Syn_Class
+    := match hjf with
+        (* Head of the type judgement *)
+        | obj_HJF Ty => [ Ty ]
+        (* Both types involved in the equality *)
+        | eq_HJF Ty  => [ Ty ; Ty ]
+        (* Head: term ; Boundary: its type *)
+        | obj_HJF Tm => [ Tm ; Ty ]
+        (* Boundary : the type ; both terms involved *)
+        | eq_HJF Tm  => [ Ty ; Tm ; Tm ]
+      end.
+
+  Definition Judgt_Form_Instance Σ (jf : Judgt_Form) : Type
+  := match jf with
+       | Cxt_JF => Raw_Context Σ
+       | HJF hjf => { Γ : Raw_Context Σ
+                   & forall i : Hyp_Judgt_Form_Slots hjf,
+                         Raw_Syntax Σ (val _ i) Γ }
+     end.
+
+  Definition Judgt_Instance Σ
+    := { jf : Judgt_Form & Judgt_Form_Instance Σ jf }.
+
+  (* TODO: this is horrible, but is needed below for instantiations.  Would be better to inline it, once we have somehow refactored how judgement instances are defined.
+
+  One option: “slots”.  Other options: ???
+
+  If “slots”, then need TODO: infrastructure of families from lists. *)
+  (* Definition Fmap_Judgt_Instance {Σ Σ'} (f : Proto_Cxt -> Proto_Cxt) *)
+  (*   (g : forall cl γ, Raw_Syntax Σ cl γ -> Raw_Syntax Σ' cl (f γ)) *)
+  (*   (h : Raw_Context Σ -> Raw_Context Σ') *)
+  (* : Judgt_Instance Σ -> Judgt_Instance Σ'. *)
+  (* Admitted. *)
+
+End Judgements.
+
 Section Algebraic_Extensions.
 
-  (* The extension of a signature by symbols representing metavariables, as used to write each rule. 
+  (* The extension of a signature by symbols representing metavariables, as used to write each rule.
 
-  The *arity* here would be the overall argument of the constructor that the rule introduces: the metavariable symbols introduced correspond to the arguments of the arity. 
+  The *arity* here would be the overall argument of the constructor that the rule introduces: the metavariable symbols introduced correspond to the arguments of the arity.
 
   E.g. lambda-abstraction has arity < (Ty,•), (Ty,{x}), (Tm,{x}) >.  So in the metavariable extension by this arity, we add three symbols — call them A, B, and b — with arities:
 
   Symbol   Class  Arity
-  A        Ty     < > 
+  A        Ty     < >
   B        Ty     <(Tm,•)>
-  b        Tm     <(Tm,•)> 
+  b        Tm     <(Tm,•)>
 
   allowing us to write expressions like x:A |– b(x) : B(x). *)
   Definition Metavariable_Extension (Σ : Signature) (a : Arity) : Signature.
@@ -194,7 +243,7 @@ Section Algebraic_Extensions.
     refine (Raw_Subst _ (I M)).
     refine (coprod_rect shape_is_coprod _ _ _).
     + intros i. apply var_raw, (coprod_inj1 shape_is_coprod), i.
-    + intros i. 
+    + intros i.
       refine (Raw_Weaken _ (Inst_arg i)). cbn.
       refine (fmap_coprod shape_is_coprod shape_is_coprod _ _).
       exact (fun j => j).
@@ -203,54 +252,37 @@ Section Algebraic_Extensions.
 
   Global Arguments instantiate {_ _ _} _ [_ _] _.
 
+  Definition instantiate_context
+      {a : Arity} {Σ : Signature} {Γ : Raw_Context Σ}
+      (I : Instantiation a Σ Γ)
+      (Δ : Raw_Context (Metavariable_Extension Σ a))
+    : Raw_Context Σ.
+  Proof.
+     exists (shape_coprod Γ Δ).
+        apply (coprod_rect shape_is_coprod).
+        + intros i.
+          refine (Raw_Weaken _ (Γ i)).
+          exact (coprod_inj1 shape_is_coprod).
+        + intros i.
+          exact (instantiate I (Δ i)).
+  Defined.
+
+  Definition instantiate_ji
+      {a : Arity} {Σ : Signature} {Γ : Raw_Context Σ}
+      (I : Instantiation a Σ Γ)
+      (e : Judgt_Instance (Metavariable_Extension Σ a))
+    : Judgt_Instance Σ.
+  Proof.
+    destruct e as [jf jfi]. exists jf ; destruct jf ; simpl in *.
+    - apply (instantiate_context I). assumption.
+    - destruct jfi as [Δ hjfi].
+      simple refine (existT _ _ _).
+      + apply (instantiate_context I). assumption.
+      + simpl. intro i. apply (instantiate I (hjfi i)).
+  Defined.
+
 End Algebraic_Extensions.
 
-Section Judgements.
-  (* The four basic forms are “hypothetical”, i.e. over a context. *)
-  Inductive Hyp_Judgt_Form
-    := obj_HJF (cl : Syn_Class) | eq_HJF (cl : Syn_Class).
-  
-  (* Contexts are also a judgement form. *)
-  Inductive Judgt_Form
-    := Cxt_JF | JF (hjf : Hyp_Judgt_Form).
-  
-  Definition Hyp_Judgt_Bdry_Instance Σ (hjf : Hyp_Judgt_Form) (γ : Proto_Cxt) : Type
-    := match hjf with
-         | obj_HJF Ty => unit
-         | eq_HJF Ty => (Raw_Syntax Σ Ty γ) * (Raw_Syntax Σ Ty γ)
-         | obj_HJF Tm => (Raw_Syntax Σ Ty γ)
-         | eq_HJF Tm => (Raw_Syntax Σ Ty γ) * (Raw_Syntax Σ Tm γ) * (Raw_Syntax Σ Tm γ) 
-       end.
-
-  Definition Hyp_Judgt_Head_Instance Σ (hjf : Hyp_Judgt_Form) (γ : Proto_Cxt) : Type
-    := match hjf with
-         | obj_HJF cl => Raw_Syntax Σ cl γ
-         | eq_HJF cl => unit
-       end.
-
-  Definition Judgt_Form_Instance Σ (jf : Judgt_Form) : Type
-  := match jf with 
-       | Cxt_JF => Raw_Context Σ
-       | JF hjf => { γ : Raw_Context Σ 
-                   & Hyp_Judgt_Bdry_Instance Σ hjf γ
-                   * Hyp_Judgt_Head_Instance Σ hjf γ }
-     end.
-
-  Definition Judgt_Instance Σ
-    := { jf : Judgt_Form & Judgt_Form_Instance Σ jf }.
-
-  (* TODO: this is horrible, but is needed below for instantiations.  Would be better to inline it, once we have somehow refactored how judgement instances are defined.
-
-  One option: “slots”.  Other options: ???
-
-  If “slots”, then need TODO: infrastructure of families from lists. *)
-  Definition Fmap_Judgt_Instance {Σ Σ'} (f : Proto_Cxt -> Proto_Cxt)
-    (g : forall cl γ, Raw_Syntax Σ cl γ -> Raw_Syntax Σ' cl (f γ))
-    (h : Raw_Context Σ -> Raw_Context Σ')
-  : Judgt_Instance Σ -> Judgt_Instance Σ'.
-  Admitted.
-
-End Judgements.
 
 Section Raw_Rules.
 
@@ -262,7 +294,7 @@ Section Raw_Rules.
     ; RR_prem : Family (Judgt_Instance (Metavariable_Extension Σ RR_metas))
     ; RR_concln : (Judgt_Instance (Metavariable_Extension Σ RR_metas))
     }.
-  
+
   Definition CCs_of_RR (R : Raw_Rule)
     : Family (Closure_Condition (Judgt_Instance Σ)).
   Proof.
@@ -270,29 +302,10 @@ Section Raw_Rules.
     intros [Γ I].
     split.
     - (* premises *)
-      (* TODO: need to add an extra premise here (by e.g. [Sum_Family]) for the judgement [Γ cxt]. *)  
       refine (Fmap_Family _ (RR_prem R)).
-      refine (Fmap_Judgt_Instance _ _ _).
-      + exact (instantiate I).
-      + intros Δ.
-        exists (shape_coprod Γ Δ).
-        apply (coprod_rect shape_is_coprod).
-        * intros i.
-          refine (Raw_Weaken _ (Γ i)).
-          exact (coprod_inj1 shape_is_coprod).
-        * intros i.
-          exact (instantiate I (Δ i)).
-    - (* conclusion *)
-      refine (Fmap_Judgt_Instance _ _ _ (RR_concln R)).
-      + exact (instantiate I).
-      + intros Δ.
-        exists (shape_coprod Γ Δ).
-        apply (coprod_rect shape_is_coprod).
-        * intros i.
-          refine (Raw_Weaken _ (Γ i)).
-          exact (coprod_inj1 shape_is_coprod).
-        * intros i.
-          exact (instantiate I (Δ i)).
+      apply (instantiate_ji I).
+    - apply (instantiate_ji I).
+      apply (RR_concln R).
   Defined.
 
 End Raw_Rules.
@@ -311,4 +324,3 @@ Section Raw_Type_Theories.
 
 
 End Raw_Type_Theories.
-

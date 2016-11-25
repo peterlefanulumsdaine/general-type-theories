@@ -191,4 +191,7 @@ Proof.
   - admit.
 Admitted.
 
+Abort All.
+End DeBruijn.
+
 (* TODO: Should also generalise to any constructively infinite type. *)

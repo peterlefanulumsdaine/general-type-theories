@@ -195,7 +195,7 @@ Defined.
 End Coprods.
 
 
-(* Generalities on “closure conditions” and “derivations” in the most abstract setting. *) 
+(* Generalities on “closure conditions” and “derivations” in the most abstract setting. *)
 Section Deductive_Closure.
 
   Record Closure_Condition (X : Type)
@@ -209,7 +209,7 @@ Section Deductive_Closure.
 
   Inductive Derivation {X} (CCs : Family (Closure_Condition X))
       : X -> Type
-  := deduce 
+  := deduce
       (CC : CCs)
       (prem_derivs : forall p : CC_prem (CCs CC),
                          Derivation CCs (CC_prem _ p))
