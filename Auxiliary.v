@@ -41,6 +41,12 @@ Record Family (X : Type) := { Inds :> Type ; val :> Inds -> X }.
 Global Arguments Inds [_] F : rename.
 Global Arguments val [_] F _ : rename.
 
+Definition Empty_Family (X : Type) : Family X.
+Proof.
+  exists Empty.
+  intros [].
+Defined.
+
 Definition Sum_Family {X} (Y1 Y2 : Family X) : Family X
   := {| Inds := Y1 + Y2
       ; val y := match y with inl y => Y1 y | inr y => Y2 y end |}.
@@ -50,15 +56,39 @@ Delimit Scope fam_scope with fam.
 Bind Scope fam_scope with Family.
 
 Definition Fmap_Family {X Y} (f : X -> Y) (K : Family X) : Family Y.
+Proof.
   exists K.
   exact (fun i => f (K i)).
 Defined.
 
-Definition Family 
+Definition Singleton_Family {X} (x:X) : Family X.
+Proof.
+  exists unit.
+  intros _; exact x.
+Defined.
+
+Definition Snoc_Family {X} (K : Family X) (x : X) : Family X.
+Proof.
+  exists (option K).
+  intros [i | ].
+  - exact (K i).
+  - exact x.
+Defined.
+
 End Families.
 
-(* Redeclare notations globally *)
 Notation "Y1 + Y2" := (Sum_Family Y1 Y2) : fam_scope.
+Open Scope fam_scope.
+Notation " [ ] " := (Empty_Family _) (format "[ ]") : fam_scope.
+Notation " [ x ] " := (Singleton_Family x) : fam_scope.
+Notation " [ x ; .. ; z ] " := (Snoc_Family .. (Snoc_Family (Empty_Family _) x) .. z) : fam_scope.
+
+(*Alternative: start with [Singleton_Family] instead of [Empty_Family], i.e.
+
+  Notation " [ x ; y ; .. ; z ] " := (Snoc_Family .. (Snoc_Family (Singleton_Family x) y) .. z) : fam_scope.
+
+For by-hand case-by-case proofs on finite families, that might be a little nicer, avoiding a vacuous step.  TODO: see how these are used in practice; consider this choice. *)
+
 
 (* A sligtly idiosyncratic approach to coproducts of types, used for systems of proto-contexts. *)
 Section Coprods.
