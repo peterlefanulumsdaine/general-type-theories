@@ -252,6 +252,21 @@ Section Algebraic_Extensions.
 
   Global Arguments instantiate {_ _ _} _ [_ _] _.
 
+  Definition instantiate_context
+      {a : Arity} {Σ : Signature} {Γ : Raw_Context Σ}
+      (I : Instantiation a Σ Γ)
+      (Δ : Raw_Context (Metavariable_Extension Σ a))
+    : Raw_Context Σ.
+  Proof.
+     exists (shape_coprod Γ Δ).
+        apply (coprod_rect shape_is_coprod).
+        + intros i.
+          refine (Raw_Weaken _ (Γ i)).
+          exact (coprod_inj1 shape_is_coprod).
+        + intros i.
+          exact (instantiate I (Δ i)).
+  Defined.
+
   Definition instantiate_ji
       {a : Arity} {Σ : Signature} {Γ : Raw_Context Σ}
       (I : Instantiation a Σ Γ)
@@ -259,23 +274,10 @@ Section Algebraic_Extensions.
     : Judgt_Instance Σ.
   Proof.
     destruct e as [jf jfi]. exists jf ; destruct jf ; simpl in *.
-    - rename jfi into Δ.
-        exists (shape_coprod Γ Δ).
-        apply (coprod_rect shape_is_coprod).
-        + intros i.
-          refine (Raw_Weaken _ (Γ i)).
-          exact (coprod_inj1 shape_is_coprod).
-        + intros i.
-          exact (instantiate I (Δ i)).
+    - apply (instantiate_context I). assumption.
     - destruct jfi as [Δ hjfi].
       simple refine (existT _ _ _).
-      + exists (shape_coprod Γ Δ).
-        apply (coprod_rect shape_is_coprod).
-        * intros i.
-          refine (Raw_Weaken _ (Γ i)).
-          exact (coprod_inj1 shape_is_coprod).
-        * intros i.
-          exact (instantiate I (Δ i)).
+      + apply (instantiate_context I). assumption.
       + simpl. intro i. apply (instantiate I (hjfi i)).
   Defined.
 
