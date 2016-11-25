@@ -193,3 +193,26 @@ Proof.
 Defined.
 
 End Coprods.
+
+
+(* Generalities on “closure conditions” and “derivations” in the most abstract setting. *) 
+Section Deductive_Closure.
+
+  Record Closure_Condition (X : Type)
+    :=
+      { CC_prem : Family X
+      ; CC_concln : X
+      }.
+
+  Arguments CC_prem [_] _.
+  Arguments CC_concln [_] _.
+
+  Inductive Derivation {X} (CCs : Family (Closure_Condition X))
+      : X -> Type
+  := deduce 
+      (CC : CCs)
+      (prem_derivs : forall p : CC_prem (CCs CC),
+                         Derivation CCs (CC_prem _ p))
+     : Derivation CCs (CC_concln (CCs CC)).
+
+End Deductive_Closure.
