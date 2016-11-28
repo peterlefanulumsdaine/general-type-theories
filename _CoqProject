@@ -1,4 +1,5 @@
 -R . ""
+COQC = hoqc
 
 Auxiliary.v
 RawSyntax.v
