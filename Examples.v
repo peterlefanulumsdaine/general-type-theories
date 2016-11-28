@@ -1,6 +1,6 @@
+Require Import HoTT.
 Require Import Auxiliary.
 Require Import RawSyntax.
-Require Import Arith.
 
 Section Types_as_shapes.
   Definition Type_Shape : Shape_System.
@@ -8,7 +8,7 @@ Section Types_as_shapes.
     refine {|
         Shape := Type ;
         positions := (fun A => A) ;
-        shape_empty := Empty_set ;
+        shape_empty := Empty ;
         shape_coprod := sum ;
         shape_extend := option
       |}.
@@ -48,7 +48,7 @@ Section Free_shapes.
   
   Fixpoint f_positions (c : f_cxt) : Type :=
     match c with
-    | f_empty => Empty_set
+    | f_empty => Empty
     | f_coprod c d => sum (f_positions c) (f_positions d)
     | f_extend c => option (f_positions c)
     end.
@@ -91,107 +91,65 @@ End Free_shapes.
 
 Section DeBruijn.
 
-  Inductive DB_Set : nat -> Type :=
-    | zero_db : forall {n}, DB_Set (S n)
-    | succ_db : forall {n}, DB_Set n -> DB_Set (S n).
+  Inductive DB_positions : nat -> Type :=
+    | zero_db : forall {n}, DB_positions (S n)
+    | succ_db : forall {n}, DB_positions n -> DB_positions (S n).
 
-  Fixpoint DB_inl (n m : nat) (x : DB_Set n) : DB_Set (n + m).
+  Fixpoint DB_inl (n m : nat) (x : DB_positions n) : DB_positions (n + m).
   Proof.
     destruct x.
     - exact zero_db.
-    - now apply succ_db, DB_inl.
+    - apply succ_db, DB_inl; exact x.
   Defined.
 
-  Fixpoint DB_inr (n m : nat) (x : DB_Set m) : DB_Set (n + m).
+  Fixpoint DB_inr (n m : nat) (x : DB_positions m) : DB_positions (n + m).
   Proof.
     destruct n.
     - exact x.
-    - apply succ_db, DB_inr; exact x.
+    - apply succ_db, DB_inr; exact x. (* XXX Here "now" fails with f_equal. *)
   Defined.
+  
+  Lemma plus_is_coprod (n m : nat) :
+    is_coprod (DB_positions (n + m))
+              (DB_positions n)
+              (DB_positions m).
+  Proof.
+    simple refine
+      {| 
+        coprod_inj1 := DB_inl n m;
+        coprod_inj2 := DB_inr n m
+      |}.
+    (* coprod_rect *)
+    - intros P L R x.
+      pose (Q := fun k x => forall (p : k = (n + m)%nat),
+                     P (transport DB_positions p x)).
+      (* use Q instead of P *)
+      admit.
+  Admitted.
 
-  (** Annoyingly, stdlib makes eq_nat opaque, we roll our own. *)
-
-  (* Definition db_extend *)
-  (*            {n m : nat} *)
-  (*            (P : DB_Set (n + m) -> Type) : *)
-  (*   forall k, DB_Set k -> Type. *)
-  (* Proof. *)
-  (*   intro k. *)
-  (*   destruct (eq_nat_decide k (n + m)) as [E|N]. *)
-  (*   - rewrite (proj1 (eq_nat_is_eq k (n + m)) E). *)
-  (*     exact P. *)
-  (*   - intros _ ; exact unit. *)
-  (* Defined. *)
-
-  (* (* The built-in eq_nat_refl is opaque! *) *)
-  (* Lemma my_eq_nat_refl (n : nat) : eq_nat n n. *)
-  (* Proof. *)
-  (*   induction n. *)
-  (*   - exact I. *)
-  (*   - assumption. *)
-  (* Defined. *)
-
-  (* Lemma eq_nat_decide_refl (n : nat) : *)
-  (*   eq_nat_decide n n = left (my_eq_nat_refl n). *)
-  (* Proof. *)
-  (*   induction n. *)
-  (*   - reflexivity. *)
-  (*   - assumption. *)
-  (* Defined. *)
-
-  (* Lemma eq_nat_is_eq_is_refl (n : nat) : *)
-  (*   proj1 (eq_nat_is_eq n n) (my_eq_nat_refl n) = eq_refl n. *)
-  (* Proof. *)
-  (*   induction n. *)
-  (*   - simpl. *)
-
-  (* Definition db_extend_inject *)
-  (*            (n m : nat) *)
-  (*            (P : DB_Set (n + m) -> Type) *)
-  (*            (i : DB_Set (n + m)) : *)
-  (*   P i -> db_extend P (n + m) i. *)
-  (* Proof. *)
-  (*   intro x. *)
-  (*   unfold db_extend. *)
-  (*   destruct (eq_nat_decide_refl (n + m)) as [? E]. *)
-  (*   rewrite E. *)
-
-    
   (* Defined. *)
 
   Definition DeBruijn : Shape_System.
   Proof.
-    refine {| ProtoCxt := nat ;
-              vars := DB_Set ;
-              shape_coprod := plus
+    refine {| Shape := nat ;
+              positions := DB_positions ;
+              shape_empty := 0 ;
+              shape_coprod := (fun n m => (n + m)%nat) ;
+              shape_extend := S
            |}.
-    (* protoctx_is_coprod *)
+    (* shape_is_empty *)
+    - constructor.
+      intros P x.
+      admit. (* P zero_db is empty *)
+    (* shape_is_coprod *)
     - apply plus_is_coprod.
+    (* shape_is_plusone *)
+    - intro c.
+      admit.
+  Admitted.
 
-    (* protoctx_extend *)
-    (* protoctx_is_extend *)
-
-  simple refine (Build_Shape_System _ _ _ _ _ _).
-  - exact nat.
-  - exact Fin.t. (* should be fin *)
-  - admit. (* should be + *)
-  - admit.
-  - admit. (* should be +1 *)
-  - admit.
-Admitted.
-
-Definition natVars : Shape_System.
-Proof.
-  simple refine (Build_Shape_System _ _ _ _ _ _ _ _).
-  - admit. (* finite subsets of nat *)
-  - admit. (* should be El *)
-  - admit. (* should be some implementation of disjoint union *)
-  - admit.
-  - admit. (* should be some choice of fresh var *)
-  - admit.
-Admitted.
-
-Abort All.
 End DeBruijn.
+
+(* TODO: variables as strings, or as natural numbers *)
 
 (* TODO: Should also generalise to any constructively infinite type. *)
