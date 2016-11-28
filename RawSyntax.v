@@ -260,6 +260,7 @@ Proof.
   exact a.
 Defined.
 
+(* TODO: consistentise order with [give_Term_ji]. *)
 Definition give_TmEq_ji {Σ}
   (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ) (a a': Raw_Syntax Σ Tm Γ)
   : Judgt_Instance Σ.

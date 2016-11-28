@@ -465,7 +465,7 @@ Proof.
     + exact [M/ w /].
 Defined.
 
-(* rule COERCE_Ty
+(* rule COERCE_Tm
 
  ⊢ A, B type
  ⊢ A ≡ B type
@@ -474,7 +474,7 @@ Defined.
  ⊢ u : B
 *)
 
-Definition coerce_ty_raw_rule : Raw_Rule Σ.
+Definition coerce_tm_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -507,11 +507,54 @@ Proof.
       * exact [::].
       * exact [M/ u /].
       * exact [M/ A /].
-  (* Conclusion : ⊢ u ≡ w : A *)
+  (* Conclusion: ⊢ u : B *)
   - simple refine [Tm! _ |- _ ; _ !].
     + exact [::].
     + exact [M/ u /].
     + exact [M/ B /].
+Defined.
+
+(* rule COERCE_TmEq
+
+ ⊢ A, B type
+ ⊢ A ≡ B type
+ ⊢ u, u' : A 
+ ⊢ u = u' : A
+-------------
+ ⊢ u = u' : B
+*)
+
+Definition coerce_tmeq_raw_rule : Raw_Rule Σ.
+Proof.
+  (* arity/metavariables of rule *)
+  pose (Metas := [<
+      (Ty , shape_empty _)    (* [ A ] *)
+    ; (Ty , shape_empty _)    (* [ B ] *)
+    ; (Tm , shape_empty _)    (* [ u ] *)
+    ; (Tm , shape_empty _)    (* [ u' ] *)
+    >] : Arity).
+  (* Name the symbols. *)
+  pose (A := Some (Some (Some None)) : Metas).
+  pose (B := Some (Some None) : Metas).
+  pose (u := Some None : Metas).
+  pose (u' := None : Metas).
+  exists Metas.
+  (* Premise *)
+  - refine [< _ ; _ ; _ ; _ ; _ ; _ >].
+    + (* Premise ⊢ A type *)
+      exact [Ty! [::] |- [M/ A /] !].
+    + (* Premise ⊢ B type *)
+      exact [Ty! [::] |- [M/ B /] !].
+    + (* Premise ⊢ A ≡ B *)
+      exact [TyEq! [::] |- [M/ A /] ≡ [M/ B /] !].
+    + (* Premise ⊢ u : A *)
+      exact [Tm! [::] |- [M/ u /] ; [M/ A /] !].
+    + (* Premise ⊢ u' : A *)
+      exact [Tm! [::] |- [M/ u' /] ; [M/ A /] !].
+    + (* Premise ⊢ u ≡ u' : A *)
+      exact [TmEq! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ A /] !].
+  (* Conclusion: ⊢ u ≡ u' : B *)
+  - exact [TmEq! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ B /] !].
 Defined.
 
 End Equality_Rules.
