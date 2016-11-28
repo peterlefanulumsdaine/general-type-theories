@@ -54,22 +54,15 @@ Proof.
   (* Name the symbols. *)
   pose (A := None : Metas).
   exists Metas.
-  (* premises *)
-  - refine [< _ >].
-    (* Premise:  |— A type *)
-    exists (HJF (obj_HJF Ty)).
-    exists [: :].
-    intros [ [] | ].  (* destructing an “option Empty” *)
-    exact [M/ A /].
-  (* conclusion *)
-  - exists (HJF (obj_HJF Tm)).
-    (* context of conclusion *)
-    exists [: [M/ A /] :].
-    intros [ [ [] | ] | ]; cbn.  (* destructing an “opetion (option Empty)” *)
-    (* the term *)
+  (* single premise:  |— A type *)
+  - simple refine [< [Ty! _ |- _ !] >].
+    + exact [: :].
+    + exact [M/ A /].
+  (* conclusion:  x:A |- x:A *)
+  - simple refine [Tm! _ |- _ ; _ !].
+    + exact [: [M/ A /] :].
     + refine (var_raw _).
       apply (plusone_top _ _ (shape_is_plusone _ _)).
-    (* the type *)
     + exact [M/ A /].
 Defined.
 
@@ -81,14 +74,52 @@ Defined.
 x:B |– A type
 *)
 
-(* TODO: rule WKG_Tm
+
+(* rule WKG_Tm
 
  |– A type
  |– a:A
  |– B type
 -------------
 x:B |– a:A
+
 *)
+
+Definition wkg_tm_raw_rule : Raw_Rule Σ.
+Proof.
+  (* arity/metavariables of rule *)
+  pose (Metas := [< 
+      (Ty , shape_empty _ )    (* [ A ] *)
+    ; (Tm , shape_empty _ )    (* [ a ] *)
+    ; (Ty , shape_empty _ )    (* [ B ] *)
+    >] : Arity).
+  (* Name the symbols. *)
+  pose (B := None : Metas).
+  pose (a := Some (None) : Metas).
+  pose (A := Some (Some (None)) : Metas).
+  exists Metas.
+  (* premises *)
+  - refine [< _ ; _ ; _ >].
+    + (* Premise:  |— A type *)
+      simple refine [Ty!  _  |-  _  !].
+      * exact [: :].
+      * exact [M/ A /].
+    + (* Premise:  |— a : A *)
+      simple refine ( [Tm! _  |-  _ ; _  !] ).
+      * exact [: :].
+      * exact [M/ a /].
+      * exact [M/ A /].
+    + (* Premise:  |— B type  *)
+      simple refine ( [Ty! _  |-  _ !] ).
+      * exact [: :].
+      * exact [M/ B /].
+  (* conclusion: x:B |- a : A *)
+  - simple refine [Tm!  _  |-  _ ; _ !].
+    + exact [: [M/ B /] :].
+    + exact [M/ a /].
+    + exact [M/ A /].
+Defined.
+
 
 (* TODO: rule WKG_TyEq *)
 

@@ -200,10 +200,11 @@ Section Judgements.
         (* Both types involved in the equality *)
         | eq_HJF Ty  => [< Ty ; Ty >]
         (* Head: term ; Boundary: its type *)
-        | obj_HJF Tm => [< Tm ; Ty >]
+        | obj_HJF Tm => [< Ty ; Tm >]
         (* Boundary : the type ; both terms involved *)
         | eq_HJF Tm  => [< Ty ; Tm ; Tm >]
       end.
+  (* NOTE: the order of slots for term judgements follows “dependency order” — later slots are (morally) dependent on earlier ones, so the type comes before the term.  However, the functions in section [Judgement_Notations] below follow standard written order, so the term comes before the type. *)
 
   Definition Judgt_Form_Instance Σ (jf : Judgt_Form) : Type
   := match jf with
@@ -216,18 +217,61 @@ Section Judgements.
   Definition Judgt_Instance Σ
     := { jf : Judgt_Form & Judgt_Form_Instance Σ jf }.
 
-  (* TODO: this is horrible, but is needed below for instantiations.  Would be better to inline it, once we have somehow refactored how judgement instances are defined.
-
-  One option: “slots”.  Other options: ???
-
-  If “slots”, then need TODO: infrastructure of families from lists. *)
-  (* Definition Fmap_Judgt_Instance {Σ Σ'} (f : Proto_Cxt -> Proto_Cxt) *)
-  (*   (g : forall cl γ, Raw_Syntax Σ cl γ -> Raw_Syntax Σ' cl (f γ)) *)
-  (*   (h : Raw_Context Σ -> Raw_Context Σ') *)
-  (* : Judgt_Instance Σ -> Judgt_Instance Σ'. *)
-  (* Admitted. *)
-
 End Judgements.
+
+Section Judgement_Notations.
+
+Definition give_Ty_ji {Σ}
+  (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ)
+  : Judgt_Instance Σ.
+Proof.
+  exists (HJF (obj_HJF Ty)).
+  exists Γ.
+  intros [ [] | ]; exact A.
+Defined.
+
+Definition give_TyEq_ji {Σ}
+  (Γ : Raw_Context Σ) (A A' : Raw_Syntax Σ Ty Γ)
+  : Judgt_Instance Σ.
+Proof.
+  exists (HJF (eq_HJF Ty)).
+  exists Γ.
+  intros [ [ [] | ] | ].
+  exact A.
+  exact A'.
+Defined.
+
+Definition give_Tm_ji {Σ}
+  (Γ : Raw_Context Σ) (a : Raw_Syntax Σ Tm Γ) (A : Raw_Syntax Σ Ty Γ)
+  : Judgt_Instance Σ.
+Proof.
+  exists (HJF (obj_HJF Tm)).
+  exists Γ.
+  intros [ [ [] | ] | ].
+  exact A.
+  exact a.
+Defined.
+
+Definition give_TmEq_ji {Σ}
+  (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ) (a a': Raw_Syntax Σ Tm Γ)
+  : Judgt_Instance Σ.
+Proof.
+  exists (HJF (eq_HJF Tm)).
+  exists Γ.
+  intros [ [ [ [] | ] | ] | ].
+  exact A.
+  exact a.
+  exact a'.
+Defined.
+
+End Judgement_Notations.
+
+Notation "'[Ty!' Γ |- A !]" := (give_Ty_ji Γ A) : judgement_scope.
+Notation "'[TyEq!' Γ |- A = A' !]" := (give_TyEq_ji Γ A A') : judgement_scope.
+Notation "'[Tm!' Γ |- a ; A !]" := (give_Tm_ji Γ a A) : judgement_scope.
+Notation "'[TmEq!' Γ |- a = a' ; A !]" := (give_TmEq_ji Γ A a a') : judgement_scope.
+
+Open Scope judgement_scope.
 
 Section Algebraic_Extensions.
 
@@ -262,6 +306,9 @@ Section Algebraic_Extensions.
   Definition inl_Symbol {Σ : Signature} {a : Arity}
     : Σ -> Metavariable_Extension Σ a
   := inl.
+
+  (* TODO: not sure if this coercion is a good idea.  See how/if it works for a bit, then reconsider? *)
+  Coercion inl_Symbol : Inds >-> Inds.
 
   (* To use rules, one *instantiates* their metavariables, as raw syntax of the ambient signature, over some context. *)
   Definition Instantiation (a : Arity) (Σ : Signature) (γ : Proto_Cxt)
