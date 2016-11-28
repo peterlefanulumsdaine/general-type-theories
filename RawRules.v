@@ -84,175 +84,39 @@ Proof.
     + exact [M/ A /].
 Defined.
 
-(* rule WKG_Ty
+(* General substitution/weakening: another special case that has to be given directly as a closure condition, since it doesn’t fit the pattern of our raw rules. *)
 
- |– A type
- |– B type
--------------
-x:B |– A type
-*)
+(* TODO: consider names of access functions. *)
+Record Substitution_Data
+:=
+  { src : Raw_Context Σ
+  ; tgt : Raw_Context Σ
+  ; map : Raw_Context_Map Σ src tgt
+  }.
 
-Definition wkg_ty_raw_rule : Raw_Rule Σ.
+Definition subst_cc : Family (Closure_Condition (Judgt_Instance Σ)).
 Proof.
-  (* arity/metavariables of rule *)
-  pose (Metas := [<
-      (Ty, shape_empty _) (* [ A ] *)
-    ; (Ty, shape_empty _) (* [ B ] *)
-    >] : Arity).
-  (* Name the symbols. *)
-  pose (B := None : Metas).
-  pose (A := Some None : Metas).
-  exists Metas.
-  (* Premises *)
-  - refine [< _ ; _ >].
-    + (* Premise ⊢ A type *)
-      simple refine [Ty!  _  |-  _  !].
-      *  exact [: :].
-      * exact [M/ A/].
-    + (* Premise ⊢ B type *)
-      simple refine [Ty!  _  |-  _  !].
-      * exact [::].
-      * exact [M/ B/].
-  (* Conclusion: x:B ⊢ A type *)
-  - simple refine [Ty!  _  |-  _  !].
-    + exact [: [M/ B /] :].
-    + exact [M/ A /].
+  exists {f : Substitution_Data
+       & { hjf : Hyp_Judgt_Form
+       & forall i : Hyp_Judgt_Form_Slots hjf,
+                         Raw_Syntax Σ (val _ i) (tgt f) }}.
+  intros [[Γ' Γ f] [hjf hjfi]].
+  split.
+  (* premises: *)
+  - apply Snoc_Family.
+    (* f is a context morphism *)
+    + exists Γ.
+      intros i. refine [Tm! Γ' |- _ ; _ !].
+      * exact (f i).
+      * exact (Raw_Subst f (Γ i)).
+    (* the judgement holds over Γ *)
+    + exists (HJF hjf).
+      exists Γ.
+      exact hjfi.
+  - exists (HJF hjf).
+    exists Γ'.
+    intros i. exact (Raw_Subst f (hjfi i)).
 Defined.
-
-
-(* rule WKG_Tm
-
- |– A type
- |– a:A
- |– B type
--------------
-x:B |– a:A
-
-*)
-
-Definition wkg_tm_raw_rule : Raw_Rule Σ.
-Proof.
-  (* arity/metavariables of rule *)
-  pose (Metas := [<
-      (Ty , shape_empty _ )    (* [ A ] *)
-    ; (Tm , shape_empty _ )    (* [ a ] *)
-    ; (Ty , shape_empty _ )    (* [ B ] *)
-    >] : Arity).
-  (* Name the symbols. *)
-  pose (B := None : Metas).
-  pose (a := Some (None) : Metas).
-  pose (A := Some (Some (None)) : Metas).
-  exists Metas.
-  (* premises *)
-  - refine [< _ ; _ ; _ >].
-    + (* Premise:  |— A type *)
-      simple refine [Ty!  _  |-  _  !].
-      * exact [: :].
-      * exact [M/ A /].
-    + (* Premise:  |— a : A *)
-      simple refine ( [Tm! _  |-  _ ; _  !] ).
-      * exact [: :].
-      * exact [M/ a /].
-      * exact [M/ A /].
-    + (* Premise:  |— B type  *)
-      simple refine ( [Ty! _  |-  _ !] ).
-      * exact [: :].
-      * exact [M/ B /].
-  (* conclusion: x:B |- a : A *)
-  - simple refine [Tm!  _  |-  _ ; _ !].
-    + exact [: [M/ B /] :].
-    + exact [M/ a /].
-    + exact [M/ A /].
-Defined.
-
-
-(* rule WKG_TyEq
-   ⊢ A ≡ B
-   ⊢ C type
--------------
- x:C ⊢ A ≡ B
- *)
-
-Definition wkg_ty_eq_raw_rule : Raw_Rule Σ.
-  (* arity/metavariables of rule *)
-  pose (Metas := [<
-      (Ty , shape_empty _ )    (* [ A ] *)
-    ; (Ty , shape_empty _ )    (* [ B ] *)
-    ; (Ty , shape_empty _ )    (* [ C ] *)
-    >] : Arity).
-  (* Name the symbols. *)
-  pose (C := None : Metas).
-  pose (B := Some (None) : Metas).
-  pose (A := Some (Some None) : Metas).
-  exists Metas.
-  (* premises *)
-  - refine [< _ ; _ >].
-    + (* Premise ⊢ A ≡ B *)
-      simple refine [TyEq! _ |- _ ≡ _ !].
-      * exact [::].
-      * exact [M/ A /].
-      * exact [M/ B /].
-    + (* Premise ⊢ C type *)
-      simple refine [Ty! _ |- _ !].
-      * exact [::].
-      * exact [M/ C /].
-  (* Conclusion : x:C ⊢ A ≡ B *)
-  - simple refine [TyEq! _ |- _ ≡ _ !].
-    + exact [: [M/ C /] :].
-    + exact [M/ A /].
-    + exact [M/ B /].
-Defined.
-
-(* rule WKG_TmEq
-   ⊢ u ≡ v : A
-   ⊢ B type
------------------
- x:B ⊢ u ≡ v : A
- *)
-
-Definition wkg_tm_eq_raw_rule : Raw_Rule Σ.
-  (* arity/metavariables of rule *)
-  pose (Metas := [<
-      (Ty , shape_empty _ )    (* [ A ] *)
-    ; (Ty , shape_empty _ )    (* [ B ] *)
-    ; (Tm , shape_empty _ )    (* [ u ] *)
-    ; (Tm , shape_empty _ )    (* [ v ] *)
-    >] : Arity).
-  (* Name the symbols. *)
-  pose (v := None : Metas).
-  pose (u := Some (None) : Metas).
-  pose (B := Some (Some None) : Metas).
-  pose (A := Some (Some (Some None)) : Metas).
-  exists Metas.
-  (* Premises *)
-  - refine [< _ ; _ >].
-    + (* Premise ⊢ u ≡ v : A *)
-      simple refine [TmEq! _ |- _ ≡ _ ; _ !].
-      * exact [::].
-      * exact [M/ A /].
-      * exact [M/ u /].
-      * exact [M/ v /].
-    + (* Premise ⊢ B type *)
-      simple refine [Ty! _ |- _ !].
-      * exact [::].
-      * exact [M/ B /].
-  (* Conclusion : x:B ⊢ u ≡ v : A *)
-  - simple refine [TmEq! _ |- _ ≡ _ ; _ !].
-    + exact [: [M/ B /] :].
-    + exact [M/ A /].
-    + exact [M/ u /].
-    + exact [M/ v /].
-Defined.
-
-(* TODO: QUESTION — is it enough to give single-variable substitution rules, or must we give more general family of rules for substituting along context morphisms? *)
-
-(* TODO: rule SUBST_Ty *)
-
-(* TODO: rule SUBST_TmEq *)
-
-(* TODO: rule SUBST_TyEq *)
-
-(* TODO: rule SUBST_TmEq *)
 
 End Var_Subst_Wkg.
 
