@@ -83,7 +83,7 @@ Section Raw_Syntax.
   Global Arguments var_raw [_] _.
   Global Arguments symb_raw [_] _ _.
 
-  (* A useful abbreviation for giving functions constructing raw syntax. *) 
+  (* A useful abbreviation for giving functions constructing raw syntax. *)
   Definition Args (a : Arity) γ : Type
   := forall (i : a),
     Raw_Syntax (arg_class i) (shape_coprod γ (arg_pcxt i)).
@@ -164,7 +164,7 @@ Defined.
 Definition snoc_Raw_Context {Σ} (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ)
   : Raw_Context Σ.
 Proof.
-  exists (shape_extend _ Γ). 
+  exists (shape_extend _ Γ).
   apply (plusone_rect _ _ (shape_is_plusone _ _)).
   - refine (Raw_Weaken _ A).
     (* As we put the type into the context, we weaken it to live over the extended context. *)
@@ -267,9 +267,9 @@ Defined.
 End Judgement_Notations.
 
 Notation "'[Ty!' Γ |- A !]" := (give_Ty_ji Γ A) : judgement_scope.
-Notation "'[TyEq!' Γ |- A = A' !]" := (give_TyEq_ji Γ A A') : judgement_scope.
+Notation "'[TyEq!' Γ |- A ≡ A' !]" := (give_TyEq_ji Γ A A') : judgement_scope.
 Notation "'[Tm!' Γ |- a ; A !]" := (give_Tm_ji Γ a A) : judgement_scope.
-Notation "'[TmEq!' Γ |- a = a' ; A !]" := (give_TmEq_ji Γ A a a') : judgement_scope.
+Notation "'[TmEq!' Γ |- a ≡ a' ; A !]" := (give_TmEq_ji Γ A a a') : judgement_scope.
 
 Open Scope judgement_scope.
 
@@ -286,7 +286,7 @@ Section Algebraic_Extensions.
   B        Ty     <(Tm,•)>
   b        Tm     <(Tm,•)>
 
-  allowing us to write expressions like x:A |– b(x) : B(x). 
+  allowing us to write expressions like x:A |– b(x) : B(x).
   *)
 
   Definition metavariable_arity (γ : Proto_Cxt) : Arity
@@ -380,7 +380,7 @@ Section Metavariable_Notations.
 (* Arities of symbols will arise in two ways:
 
   1. Arities we write by hand.
- 
+
     These will typically use [< … >] notation.
 
   2. Arities of metavariables, from [Metavariable_Extension].
