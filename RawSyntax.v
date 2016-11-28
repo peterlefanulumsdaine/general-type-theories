@@ -221,6 +221,14 @@ End Judgements.
 
 Section Judgement_Notations.
 
+Definition give_Cxt_ji {Σ}
+  (Γ : Raw_Context Σ)
+  : Judgt_Instance Σ.
+Proof.
+  exists Cxt_JF.
+  exact Γ.
+Defined.
+
 Definition give_Ty_ji {Σ}
   (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ)
   : Judgt_Instance Σ.
@@ -266,6 +274,7 @@ Defined.
 
 End Judgement_Notations.
 
+Notation "'[Cxt!' |- Γ !]" := (give_Cxt_ji Γ) : judgement_scope.
 Notation "'[Ty!' Γ |- A !]" := (give_Ty_ji Γ A) : judgement_scope.
 Notation "'[TyEq!' Γ |- A ≡ A' !]" := (give_TyEq_ji Γ A A') : judgement_scope.
 Notation "'[Tm!' Γ |- a ; A !]" := (give_Tm_ji Γ a A) : judgement_scope.

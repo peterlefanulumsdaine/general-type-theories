@@ -17,11 +17,28 @@ Context (Σ : Signature).
 
 Section Context_Formation.
 
-(* TODO: the context formation rules.  A special case — need to be defined directly as closure conditions, since our raw rules only allow derivation of hypothetical judgements.  *)
+(* These need to be defined directly as closure conditions, since our raw rules only allow derivations of hypothetical judgements.  *)
 
+Definition empty_context_cc : Closure_Condition (Judgt_Instance Σ).
+Proof.
+  split. 
+  (* No premises: *)
+  - exact [< >].
+  (* Conclusion: *)
+  - exact [Cxt! |- [::] !].
+Defined.
 
-(* TODO: empty context rule *)
-(* TODO: context extension rule *)
+Definition context_extension_cc : Family (Closure_Condition (Judgt_Instance Σ)).
+Proof.
+  exists { Γ : Raw_Context Σ & Raw_Syntax Σ Ty Γ }.
+  intros [ Γ A ]; split.
+  (* Premises: |- Γ cxt; Γ |- A type *)
+  - refine [< _ ; _ >].
+    + exact [Cxt! |- Γ !].
+    + exact [Ty! Γ |- A !].
+  (* Conclusion: *)
+  - exact [Cxt! |- (snoc_Raw_Context Γ A) !].
+Defined.
 
 (* An issue arising from the present approach to shapes/proto-contexts: if the context extension rule is formulated just with [shape_extend], then it will give no way to ever prove well-typedness of contexts with other shapes; in particular, of contexts using [shape_coprod], which will arise in the premises of logical rules.
 
@@ -29,6 +46,7 @@ Section Context_Formation.
 
   - a closure condition for the context judgements under “renaming variables” along isomorphisms of proto-contexts?
   - formulate the context-extension rule in more general way: for *any* coproduct… (though still, is that enough?)
+  - for now, just aim to work over the de Bruijn shape-system, in which case the standard rules actually are enough.
  *)
 
 (* TODO: renaming-of-variables rule (?)*)
