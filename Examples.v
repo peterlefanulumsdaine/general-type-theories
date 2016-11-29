@@ -108,26 +108,121 @@ Section DeBruijn.
     - exact x.
     - apply succ_db, DB_inr; exact x. (* XXX Here "now" fails with f_equal. *)
   Defined.
-  
-  Lemma plus_is_coprod (n m : nat) :
-    is_coprod (DB_positions (n + m))
-              (DB_positions n)
-              (DB_positions m).
-  Proof.
-    simple refine
-      {| 
-        coprod_inj1 := DB_inl n m;
-        coprod_inj2 := DB_inr n m
-      |}.
-    (* coprod_rect *)
-    - intros P L R x.
-      pose (Q := fun k x => forall (p : k = (n + m)%nat),
-                     P (transport DB_positions p x)).
-      (* use Q instead of P *)
-      admit.
-  Admitted.
 
-  (* Defined. *)
+
+  Definition DB_ext {n k : nat}
+             (P : DB_positions (n.+1) -> Type)
+             (i : DB_positions k)
+    := forall (p : k = n.+1), P (transport DB_positions p i).
+
+  Lemma S_injective {n m : nat} : S n = S m -> n = m.
+  Proof.
+    intro p. exact (ap pred p).
+  Defined.
+
+  Lemma ap_S_S_injective {n m : nat} (p : S n = S m) :
+    ap S (S_injective p) = p.
+  Proof.
+    apply hset_nat.
+  Defined.
+
+  Lemma ap_S_S_injective_idpath (n: nat) :
+    ap_S_S_injective (idpath : n.+1 = n.+1) = idpath.
+  Proof.
+    apply path_ishprop.
+  Defined.
+  
+
+  Lemma DB_isplusone (n : nat) : is_plusone (DB_positions (n.+1)) (DB_positions n).
+  Proof.
+    simple refine {|
+             plusone_top := zero_db ;
+             plusone_next := succ_db |}.
+    - intros P x f.
+      transparent assert (H : (forall k (i : DB_positions k), DB_ext P i)).
+      + intros k i.
+        { destruct i as [l|l].
+          - intro p.
+            pose (q := S_injective p).
+            refine (transport 
+              (fun e => P (transport DB_positions e _))
+              (ap_S_S_injective p : ap S q = p) _).
+            clearbody q ; clear p.
+            destruct q.
+            exact x.            
+          - intro p.
+            pose (q := S_injective p).
+            refine (transport 
+              (fun e => P (transport DB_positions e _))
+              (ap_S_S_injective p : ap S q = p) _).
+            clearbody q ; clear p.
+            destruct q.
+            apply f. }
+      + intro y. apply (H (n .+1) y idpath).
+    - intros P x f. simpl.
+      rewrite ap_S_S_injective_idpath. apply idpath.
+    - intros P x f k. simpl.
+      rewrite ap_S_S_injective_idpath. apply idpath.
+  Defined.
+
+  Lemma DB_positions_sum (n m : nat) :
+    DB_positions n + DB_positions m <~> DB_positions (n + m).
+  Proof.
+    exists (fun x => match x with
+                     | inl y => DB_inl n m y
+                     | inr z => DB_inr n m z
+                     end).
+    simple refine (isequiv_adjointify _ _ _ _).
+    - induction n as [|n' IH].
+      + apply inr.
+      + { refine (plusone_rect _ _ (DB_isplusone _) _ _ _).
+          - left.
+            apply zero_db.
+          - intro i.
+            destruct (IH i) as [j|j].
+            + left.
+              exact (succ_db j).
+            + right.
+              exact j. }
+    - induction n as [|n' IH].
+      + intro ; apply idpath.
+      + refine (plusone_rect _ _ (DB_isplusone _) _ _ _).
+        * lazy [nat_rect].
+          rewrite plusone_comp_top.
+          apply idpath.
+        * intro i.
+          unfold Sect in IH.
+          lazy [nat_rect].
+          rewrite plusone_comp_next.
+          (* got stuck here. *)
+          (* pose (E := IH i). *)
+          (* lazy [nat_rect] in E. *)
+
+          (* refine (_ @ _). *)
+          (* refine (ap (fun c => match c with  *)
+          (*     | inl y => _ *)
+          (*     | inr z => _ *)
+          (*     end) _). *)
+          (* refine (ap (fun c => match c with  *)
+          (*     | inl y => _ *)
+          (*     | inr z => _ *)
+          (*     end) _). *)
+          
+          (* exact E. *)
+
+          (*   refine (_ @ _). *)
+ 
+          (*     refine (plusone_comp_next _ _ (DB_isplusone _) _ _ _ _). *)
+          (*     . *)
+          (* rewrite IH. *)
+          
+
+          (* simpl. *)
+          (* rewrite ap_S_S_injective_idpath. *)
+          (* rewrite IH. *)
+          (* simpl. *)
+          (* apply idpath. *)
+  Admitted.
 
   Definition DeBruijn : Shape_System.
   Proof.
@@ -142,7 +237,7 @@ Section DeBruijn.
       intros P x.
       admit. (* P zero_db is empty *)
     (* shape_is_coprod *)
-    - apply plus_is_coprod.
+    - admit.
     (* shape_is_plusone *)
     - intro c.
       admit.
