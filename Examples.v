@@ -109,6 +109,17 @@ Section DeBruijn.
     - apply succ_db, DB_inr; exact x. (* XXX Here "now" fails with f_equal. *)
   Defined.
 
+  Lemma DB_is_empty : is_empty (DB_positions 0).
+  Proof.
+    constructor; intros P.
+    assert (H : forall k i (p : k = 0), P (transport _ p i)).
+    {
+      intros n i.
+      destruct i as [ k | k ? ];
+      intros p; destruct (equiv_inverse equiv_path_nat p).
+    }
+    intros x; exact (H _ x (idpath _)).
+  Defined.
 
   Definition DB_ext {n k : nat}
              (P : DB_positions (n.+1) -> Type)
@@ -120,6 +131,7 @@ Section DeBruijn.
     intro p. exact (ap pred p).
   Defined.
 
+  (* NOTE: this is the only sticking point for computation of [DB_is_plusone], [DB_is_coprod].  If we could find an alternative proof of [ap_S_S_injective] which makes [ap_S_S_injective_idpath] a judgemental equality, then those would all compute. *)
   Lemma ap_S_S_injective {n m : nat} (p : S n = S m) :
     ap S (S_injective p) = p.
   Proof.
@@ -133,7 +145,7 @@ Section DeBruijn.
   Defined.
   
 
-  Lemma DB_isplusone (n : nat) : is_plusone (DB_positions (n.+1)) (DB_positions n).
+  Lemma DB_is_plusone (n : nat) : is_plusone (DB_positions (n.+1)) (DB_positions n).
   Proof.
     simple refine {|
              plusone_top := zero_db ;
@@ -165,64 +177,38 @@ Section DeBruijn.
       rewrite ap_S_S_injective_idpath. apply idpath.
   Defined.
 
-  Lemma DB_positions_sum (n m : nat) :
-    DB_positions n + DB_positions m <~> DB_positions (n + m).
+  Lemma DB_is_coprod (n m : nat) :
+    is_coprod (DB_positions (n + m)) (DB_positions n) (DB_positions m).
   Proof.
-    exists (fun x => match x with
-                     | inl y => DB_inl n m y
-                     | inr z => DB_inr n m z
-                     end).
-    simple refine (isequiv_adjointify _ _ _ _).
-    - induction n as [|n' IH].
-      + apply inr.
-      + { refine (plusone_rect _ _ (DB_isplusone _) _ _ _).
-          - left.
-            apply zero_db.
-          - intro i.
-            destruct (IH i) as [j|j].
-            + left.
-              exact (succ_db j).
-            + right.
-              exact j. }
-    - induction n as [|n' IH].
-      + intro ; apply idpath.
-      + refine (plusone_rect _ _ (DB_isplusone _) _ _ _).
-        * lazy [nat_rect].
-          rewrite plusone_comp_top.
-          apply idpath.
-        * intro i.
-          unfold Sect in IH.
-          lazy [nat_rect].
-          rewrite plusone_comp_next.
-          (* got stuck here. *)
-          (* pose (E := IH i). *)
-          (* lazy [nat_rect] in E. *)
-
-          (* refine (_ @ _). *)
-          (* refine (ap (fun c => match c with  *)
-          (*     | inl y => _ *)
-          (*     | inr z => _ *)
-          (*     end) _). *)
-          (* refine (ap (fun c => match c with  *)
-          (*     | inl y => _ *)
-          (*     | inr z => _ *)
-          (*     end) _). *)
-          
-          (* exact E. *)
-
-          (*   refine (_ @ _). *)
- 
-          (*     refine (plusone_comp_next _ _ (DB_isplusone _) _ _ _ _). *)
-          (*     . *)
-          (* rewrite IH. *)
-          
-
-          (* simpl. *)
-          (* rewrite ap_S_S_injective_idpath. *)
-          (* rewrite IH. *)
-          (* simpl. *)
-          (* apply idpath. *)
-  Admitted.
+    simple refine
+      {| coprod_inj1 := DB_inl _ _
+      ;  coprod_inj2 := DB_inr _ _
+      |}.
+    (* coprod_rect *)
+    - induction n as [ | n' IH]; intros P f1 f2.
+      + exact f2.
+      + apply (plusone_rect _ _ (DB_is_plusone _)); simpl.
+        * exact (f1 (zero_db)).
+        * apply IH.
+          -- intros i1. exact (f1 (succ_db i1)).
+          -- exact f2.
+    (* coprod_comp1 *)
+    - induction n as [ | n' IH]; intros P f1 f2.
+      + apply (empty_rect _ DB_is_empty).
+      + apply (plusone_rect _ _ (DB_is_plusone _)).
+        * apply (plusone_comp_top _ _ (DB_is_plusone _)).
+        * intros i1. 
+          refine (_ @ _).
+            apply (plusone_comp_next _ _ (DB_is_plusone _)).
+          refine (IH _ _ _ i1).
+    (* coprod_comp2 *)
+    - induction n as [ | n' IH]; intros P f1 f2.
+      + intros i2; apply idpath.
+      + intros i2.
+        refine (_ @ _).
+          apply (plusone_comp_next _ _ (DB_is_plusone _)).
+        refine (IH _ _ _ i2).
+  Defined.
 
   Definition DeBruijn : Shape_System.
   Proof.
@@ -233,15 +219,12 @@ Section DeBruijn.
               shape_extend := S
            |}.
     (* shape_is_empty *)
-    - constructor.
-      intros P x.
-      admit. (* P zero_db is empty *)
+    - apply DB_is_empty.
     (* shape_is_coprod *)
-    - admit.
+    - apply DB_is_coprod.
     (* shape_is_plusone *)
-    - intro c.
-      admit.
-  Admitted.
+    - apply DB_is_plusone.
+  Defined.
 
 End DeBruijn.
 
