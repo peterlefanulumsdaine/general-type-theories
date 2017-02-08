@@ -1,8 +1,9 @@
 -R . ""
 COQC = hoqc
 
+ShapeSystems.v
+ShapeSystemsExamples.v
 Auxiliary.v
 RawSyntax.v
 RawRules.v
-Examples.v
 
