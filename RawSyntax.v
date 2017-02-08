@@ -1,36 +1,13 @@
-
+Require Import HoTT.
 Require Import Auxiliary.
+Require Import ShapeSystems.
 
-(* Background: abstracting proto-contexts *)
+(* Throughout, we fix a shape system.  It can be implicit in almost everything that depends on it.
 
-Section Shape_Systems.
+TODO: modules would probably be a better way to treat this. *)
+Section Fix_Shape_System.
 
-(* TODO: possibly rename as “context shapes”, “shape systems”, …?  *)
-Record Shape_System :=
-  { Shape :> Type
-  ; positions : Shape -> Type (* maybe should be to sets?? *)
-  ; shape_empty : Shape
-  ; shape_is_empty : is_empty (positions shape_empty)
-  ; shape_coprod : Shape -> Shape -> Shape
-  ; shape_is_coprod
-     : forall γ δ : Shape,
-       is_coprod (positions (shape_coprod γ δ)) (positions γ) (positions δ)
-  ; shape_extend : Shape -> Shape
-  ; shape_is_plusone         (* TODO: change to is_extend (Andrej?) *)
-     : forall γ : Shape,
-       is_plusone (positions (shape_extend γ)) (positions γ)
-  }.
-
-Global Arguments shape_coprod {_} _ _.
-Global Arguments shape_is_coprod {_} [_ _].
-Global Arguments shape_is_empty {_}.
-
-Coercion positions : Shape >-> Sortclass.
-
-End Shape_Systems.
-
-Parameter Proto_Cxt : Shape_System.
-(* TODO: improve naming *)
+Context {Proto_Cxt : Shape_System}.
 
 Section Signatures.
 
@@ -43,7 +20,7 @@ Section Signatures.
 
   For instance, the [Π-intro] rule (i.e. fully annotated λ-abstraction) would have arity [ Family_from_List [(Ty,0), (Ty,1), (Tm,1)] ]; application would have arity [ Family_from_List [(Ty,0), (Ty,1), (Tm,0), (Tm,0)]].
 
-  The use of [Family] instead of just [list] serves two purposes.  Firstly, it abstracts the aspects of the [list] version that we really need, and so makes the code significantly cleaner/more robust.  Secondly, it allows this definition to be re-used for non-finitary syntax, although we do not intend to explore that for now. *)
+  The use of [Family] instead of e.g. [list] serves two purposes.  Firstly, it abstracts the aspects of the [list] version that we really need, and so makes the code significantly cleaner/more robust.  Secondly, it allows this definition to be later re-used for non-finitary syntax, although we do not intend to explore that for now. *)
 
   (* Access functions for arity *)
   Definition arg_class {a : Arity} (i : a) : Syn_Class := fst (a i).
@@ -185,6 +162,18 @@ Section Judgements.
   Inductive Hyp_Judgt_Form
     := obj_HJF (cl : Syn_Class) | eq_HJF (cl : Syn_Class).
 
+  Definition is_obj_HJF : Hyp_Judgt_Form -> Type
+    := fun hjf => match hjf with
+                     | obj_HJF _ => Unit
+                     | eq_HJF _ => Empty
+                  end.
+
+  Definition class_of_HJF : Hyp_Judgt_Form -> Syn_Class
+    := fun hjf => match hjf with
+                     | obj_HJF cl => cl
+                     | eq_HJF cl => cl
+                  end.
+
   (* Contexts are also a judgement form. *)
   Inductive Judgt_Form
     := Cxt_JF | HJF (hjf : Hyp_Judgt_Form).
@@ -192,26 +181,49 @@ Section Judgements.
   (* Indices for each kind of judgement form. *)
   (* TODO if we need to access the head and boundaries. *)
 
+  Definition Hyp_Judgt_Bdry_Slots (hjf : Hyp_Judgt_Form)
+    : Family Syn_Class
+    := match hjf with
+        (* No hypothetical part in boundary the type judgement *)
+        | obj_HJF Ty => [< >]
+        (* Both types involved in the equality *)
+        | eq_HJF Ty  => [< Ty ; Ty >]
+        (* Boundary: type of the term *)
+        | obj_HJF Tm => [< Ty >]
+        (* Boundary: the type ; both terms involved *)
+        | eq_HJF Tm  => [< Ty ; Tm ; Tm >]
+      end.
+
   Definition Hyp_Judgt_Form_Slots (hjf : Hyp_Judgt_Form)
     : Family Syn_Class
     := match hjf with
-        (* Head of the type judgement *)
-        | obj_HJF Ty => [< Ty >]
-        (* Both types involved in the equality *)
-        | eq_HJF Ty  => [< Ty ; Ty >]
-        (* Head: term ; Boundary: its type *)
-        | obj_HJF Tm => [< Ty ; Tm >]
-        (* Boundary : the type ; both terms involved *)
-        | eq_HJF Tm  => [< Ty ; Tm ; Tm >]
-      end.
+        (* Equality case: boundary is everything *)
+        | eq_HJF cl =>
+            Hyp_Judgt_Bdry_Slots (eq_HJF cl)
+        (* Object case: add the head slot *)
+        | obj_HJF cl =>
+            Snoc_Family (Hyp_Judgt_Bdry_Slots (obj_HJF cl)) cl
+       end.
   (* NOTE: the order of slots for term judgements follows “dependency order” — later slots are (morally) dependent on earlier ones, so the type comes before the term.  However, the functions in section [Judgement_Notations] below follow standard written order, so the term comes before the type. *)
+
+  Definition Hyp_Judgt_Bdry_Instance Σ (hjf : Hyp_Judgt_Form) γ : Type
+  := forall i : Hyp_Judgt_Bdry_Slots hjf, Raw_Syntax Σ (val _ i) γ.
+
+  Definition Hyp_Judgt_Form_Instance Σ (hjf : Hyp_Judgt_Form) γ : Type
+  := forall i : Hyp_Judgt_Form_Slots hjf, Raw_Syntax Σ (val _ i) γ.
+
+  Definition Judgt_Bdry_Instance Σ (jf : Judgt_Form) : Type
+  := match jf with
+       | Cxt_JF => Raw_Context Σ
+       | HJF hjf => { Γ : Raw_Context Σ
+                   & Hyp_Judgt_Bdry_Instance Σ hjf Γ }
+     end.
 
   Definition Judgt_Form_Instance Σ (jf : Judgt_Form) : Type
   := match jf with
        | Cxt_JF => Raw_Context Σ
        | HJF hjf => { Γ : Raw_Context Σ
-                   & forall i : Hyp_Judgt_Form_Slots hjf,
-                         Raw_Syntax Σ (val _ i) Γ }
+                   & Hyp_Judgt_Form_Instance Σ hjf Γ }
      end.
 
   Definition Judgt_Instance Σ
@@ -474,5 +486,82 @@ Section Raw_Type_Theories.
     : Judgt_Instance Σ -> Type.
 *)
 
-
 End Raw_Type_Theories.
+
+
+
+(** Specification of “well-shaped” rules *)
+Section RuleSpecs.
+
+(* TODO: upstream *)
+Definition reindex {A} (K : Family A) {X} (f : X -> K) : Family A
+  := {|
+       Inds := X ;
+       val := K o f
+     |}.
+
+(* TODO: upstream *)
+Definition subfamily {A} (K : Family A) (P : K -> Type) : Family A
+  := reindex K (pr1 : { i:K & P i } -> K).
+
+Record RuleSpec {Σ}
+:=
+  {
+  (* family indexing the premises of the rule, and giving for each: *)
+    RS_Premise : Family (Hyp_Judgt_Form * Proto_Cxt)
+  (* - the judgement form of each premise, e.g. “term” or “type equality” *)
+  ; RS_hjf_of_premise : RS_Premise -> Hyp_Judgt_Form
+    := fun i => fst (RS_Premise i)
+  (* - the proto-context of each premise *)
+  ; RS_proto_cxt_of_premise : RS_Premise -> Proto_Cxt
+    := fun i => snd (RS_Premise i)
+  (* the ordering relation on the premises *)
+  ; RS_lt : RS_Premise -> RS_Premise -> hProp
+  (* for each premise, the arity specifying what metavariables are available in the syntax for this premise; i.e., the family of type/term arguments already introduced by earlier premises *)
+  ; RS_arity_of_premise : RS_Premise -> Arity
+    := fun i => Fmap_Family
+        (fun jγ => (class_of_HJF (fst jγ), snd jγ))
+        (subfamily RS_Premise
+          (fun j => is_obj_HJF (fst (RS_Premise j)) * RS_lt j i))
+  (* syntactic part of context of premise; this should never be used directly, always through [RS_raw_context_of_premise] *)
+  ; RS_context_expr_of_premise 
+    : forall (i : RS_Premise) (v : RS_proto_cxt_of_premise i),
+        Raw_Syntax
+          (Metavariable_Extension Σ (RS_arity_of_premise i))
+          Ty
+          (RS_proto_cxt_of_premise i)
+  (* raw context of each premise *)
+  ; RS_raw_context_of_premise
+    : forall i : RS_Premise,
+        Raw_Context (Metavariable_Extension Σ (RS_arity_of_premise i))
+    := fun i => Build_Raw_Context _ (RS_context_expr_of_premise i)
+  (* hypothetical judgement boundary instance for each premise *)
+  ; RS_hyp_bdry_instance_of_premise
+    : forall i : RS_Premise,
+        Hyp_Judgt_Bdry_Instance
+          (Metavariable_Extension Σ (RS_arity_of_premise i))
+          (RS_hjf_of_premise i)
+          (RS_proto_cxt_of_premise i)
+  (* arity of the rule as a whole *)
+  ; RS_arity : Arity
+    := Fmap_Family
+        (fun jγ => (class_of_HJF (fst jγ), snd jγ))
+        (subfamily RS_Premise
+          (fun j => is_obj_HJF (fst (RS_Premise j))))
+  (* judgement form of conclusion *)
+  ; RS_hjf_of_conclusion : Hyp_Judgt_Form
+  (* judgement boundary instance of conclusion *)
+  ; RS_judgt_bdry_instance_of_conclusion
+      : Judgt_Form_Instance
+          (Metavariable_Extension Σ RS_arity)
+          (HJF RS_hjf_of_conclusion)
+  }.
+
+End RuleSpecs.
+
+
+
+End Fix_Shape_System.
+
+
+
