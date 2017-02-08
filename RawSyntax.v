@@ -1,36 +1,13 @@
 
 Require Import Auxiliary.
+Require Import ShapeSystems.
 
-(* Background: abstracting proto-contexts *)
+(* Throughout, we fix a shape system.  It can be implicit in almost everything that depends on it.
 
-Section Shape_Systems.
+TODO: modules would probably be a better way to treat this. *)
+Section Fix_Shape_System.
 
-(* TODO: possibly rename as “context shapes”, “shape systems”, …?  *)
-Record Shape_System :=
-  { Shape :> Type
-  ; positions : Shape -> Type (* maybe should be to sets?? *)
-  ; shape_empty : Shape
-  ; shape_is_empty : is_empty (positions shape_empty)
-  ; shape_coprod : Shape -> Shape -> Shape
-  ; shape_is_coprod
-     : forall γ δ : Shape,
-       is_coprod (positions (shape_coprod γ δ)) (positions γ) (positions δ)
-  ; shape_extend : Shape -> Shape
-  ; shape_is_plusone         (* TODO: change to is_extend (Andrej?) *)
-     : forall γ : Shape,
-       is_plusone (positions (shape_extend γ)) (positions γ)
-  }.
-
-Global Arguments shape_coprod {_} _ _.
-Global Arguments shape_is_coprod {_} [_ _].
-Global Arguments shape_is_empty {_}.
-
-Coercion positions : Shape >-> Sortclass.
-
-End Shape_Systems.
-
-Parameter Proto_Cxt : Shape_System.
-(* TODO: improve naming *)
+Context {Proto_Cxt : Shape_System}.
 
 Section Signatures.
 
@@ -43,7 +20,7 @@ Section Signatures.
 
   For instance, the [Π-intro] rule (i.e. fully annotated λ-abstraction) would have arity [ Family_from_List [(Ty,0), (Ty,1), (Tm,1)] ]; application would have arity [ Family_from_List [(Ty,0), (Ty,1), (Tm,0), (Tm,0)]].
 
-  The use of [Family] instead of just [list] serves two purposes.  Firstly, it abstracts the aspects of the [list] version that we really need, and so makes the code significantly cleaner/more robust.  Secondly, it allows this definition to be re-used for non-finitary syntax, although we do not intend to explore that for now. *)
+  The use of [Family] instead of e.g. [list] serves two purposes.  Firstly, it abstracts the aspects of the [list] version that we really need, and so makes the code significantly cleaner/more robust.  Secondly, it allows this definition to be later re-used for non-finitary syntax, although we do not intend to explore that for now. *)
 
   (* Access functions for arity *)
   Definition arg_class {a : Arity} (i : a) : Syn_Class := fst (a i).
@@ -474,5 +451,51 @@ Section Raw_Type_Theories.
     : Judgt_Instance Σ -> Type.
 *)
 
-
 End Raw_Type_Theories.
+
+
+
+(** Specification of “well-shaped” rules *)
+
+Section RuleSpecs.
+
+Record RuleSpec
+:= {
+  Premise : Type ;
+  JF_of_premise : Premise -> Hyp_Judgt_Form ;
+  Shape_of_premise : Premise -> Shape V ;
+  lt_Premise : Premise -> Premise -> HProp ;
+  arity_for_premise
+    : Premise -> Arity
+    := fun i => 
+       {| Symbols := { j : Premise & lt_Premise j i }
+          f;lk;kl ;ldkf
+       |} 
+  boundary_of_premise : forall i : Premise,
+    Judgt_Bdry_Instance
+      (Metavariable_Extension Σ (arity_for_premise i))
+      (JF_of_premise i)
+      (Shape_of_premise i)
+  JF_of_conclusion : Hyp_Judgt_Form
+  
+  arity_for_conclusion
+    : Arity
+    := fun i => 
+       {| Symbols := Premise
+          f;lk;kl ;ldkf
+       |} 
+  boundary_of_conclusion
+    : Jugt_Bdry_Instance
+      (Metavariable_Extension Σ (arity_for_premise i))
+      (JF_of_premise i)
+      (Shape_of_premise i)      
+}.
+
+End RuleSpecs.
+
+
+
+End Fix_Shape_System.
+
+
+
