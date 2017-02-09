@@ -74,7 +74,7 @@ Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
       (Ty , shape_empty Proto_Cxt )    (* [ A ] *)
-    >] : Arity).
+    >] : Arity _).
   (* Name the symbols. *)
   pose (A := None : Metas).
   exists Metas.
@@ -139,7 +139,7 @@ Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
       (Ty , shape_empty Proto_Cxt )    (* [ A ] *)
-    >] : Arity).
+    >] : Arity _).
   (* Name the symbols. *)
   pose (A := None : Metas).
   exists Metas.
@@ -168,7 +168,7 @@ Proof.
   pose (Metas := [<
       (Ty , shape_empty Proto_Cxt )    (* [ A ] *)
     ; (Ty , shape_empty Proto_Cxt )    (* [ B ] *)
-    >] : Arity).
+    >] : Arity _).
   (* Name the symbols. *)
   pose (B := None : Metas).
   pose (A := Some None : Metas).
@@ -200,7 +200,7 @@ Proof.
       (Ty , shape_empty Proto_Cxt )    (* [ A ] *)
     ; (Ty , shape_empty Proto_Cxt )    (* [ B ] *)
     ; (Ty , shape_empty Proto_Cxt )    (* [ C ] *)
-    >] : Arity).
+    >] : Arity _).
   (* Name the symbols. *)
   pose (C := None : Metas).
   pose (B := Some None : Metas).
@@ -237,7 +237,7 @@ Proof.
   pose (Metas := [<
       (Ty , shape_empty Proto_Cxt)    (* [ A ] *)
     ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
-    >] : Arity).
+    >] : Arity _).
   (* Name the symbols. *)
   pose (u := None : Metas).
   pose (A := Some None : Metas).
@@ -270,7 +270,7 @@ Proof.
       (Ty , shape_empty Proto_Cxt)    (* [ A ] *)
     ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
     ; (Tm , shape_empty Proto_Cxt)    (* [ v ] *)
-    >] : Arity).
+    >] : Arity _).
   (* Name the symbols. *)
   pose (v := None : Metas).
   pose (u := Some None : Metas).
@@ -306,7 +306,7 @@ Proof.
     ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
     ; (Tm , shape_empty Proto_Cxt)    (* [ v ] *)
     ; (Tm , shape_empty Proto_Cxt)    (* [ w ] *)
-    >] : Arity).
+    >] : Arity _).
   (* Name the symbols. *)
   pose (w := None : Metas).
   pose (v := Some None : Metas).
@@ -351,7 +351,7 @@ Proof.
       (Ty , shape_empty Proto_Cxt)    (* [ A ] *)
     ; (Ty , shape_empty Proto_Cxt)    (* [ B ] *)
     ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
-    >] : Arity).
+    >] : Arity _).
   (* Name the symbols. *)
   pose (u := None : Metas).
   pose (B := Some None : Metas).
@@ -402,7 +402,7 @@ Proof.
     ; (Ty , shape_empty Proto_Cxt)    (* [ B ] *)
     ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
     ; (Tm , shape_empty Proto_Cxt)    (* [ u' ] *)
-    >] : Arity).
+    >] : Arity _).
   (* Name the symbols. *)
   pose (A := Some (Some (Some None)) : Metas).
   pose (B := Some (Some None) : Metas).

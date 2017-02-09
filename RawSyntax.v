@@ -39,6 +39,7 @@ Section Signatures.
 End Signatures.
 
 Arguments Signature _ : clear implicits.
+Arguments Arity _ : clear implicits.
 
 Section Raw_Syntax.
 
@@ -65,7 +66,7 @@ Section Raw_Syntax.
   Global Arguments symb_raw [_] _ _.
 
   (* A useful abbreviation for giving functions constructing raw syntax. *)
-  Definition Args (a : Arity) γ : Type
+  Definition Args (a : Arity _) γ : Type
   := forall (i : a),
     Raw_Syntax (arg_class i) (shape_coproduct γ (arg_pcxt i)).
 
@@ -474,7 +475,7 @@ Section Raw_Rules.
 
   Record Raw_Rule
   :=
-    { RR_metas : Arity
+    { RR_metas : Arity _
     ; RR_prem : Family (Judgt_Instance (Metavariable_Extension Σ RR_metas))
     ; RR_concln : (Judgt_Instance (Metavariable_Extension Σ RR_metas))
     }.
@@ -494,21 +495,6 @@ Section Raw_Rules.
 
 End Raw_Rules.
 
-
-Section Raw_Type_Theories.
-
-  Definition Raw_Type_Theory {σ : Shape_System}
-  := { Σ : Signature σ & Family (Raw_Rule Σ) }.
-
-(*
-  Definition Derivation_TT (Rs : Family (Raw_Rule Σ))
-    : Judgt_Instance Σ -> Type.
-*)
-
-End Raw_Type_Theories.
-
-
-
 (** Specification of “well-shaped” rules *)
 Section RuleSpecs.
 
@@ -523,24 +509,33 @@ Definition reindex {A} (K : Family A) {X} (f : X -> K) : Family A
 Definition subfamily {A} (K : Family A) (P : K -> Type) : Family A
   := reindex K (pr1 : { i:K & P i } -> K).
 
-Context {σ : Shape_System}.
-Context {Σ : Signature σ}.
+Context {Proto_Cxt : Shape_System}.
 
-Record RuleSpec
+Record Rule_Spec
+  (Σ : Signature Proto_Cxt)
+  (a : Arity Proto_Cxt)
+  (hjf_conclusion : Hyp_Judgt_Form)
 :=
   {
+  (* The arity [a] supplies the family of object-judgment premises. *)
+  (* The family of equality-judgment premises. *)
+    RS_equality_premise : Arity Proto_Cxt
   (* family indexing the premises of the rule, and giving for each: *)
-    RS_Premise : Family (Hyp_Judgt_Form * σ)
+  ; RS_Premise : Family (Hyp_Judgt_Form * Proto_Cxt)
+    := Family.Sum
+         (Family.Fmap (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) a)
+         (Family.Fmap (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) RS_equality_premise)
   (* - the judgement form of each premise, e.g. “term” or “type equality” *)
   ; RS_hjf_of_premise : RS_Premise -> Hyp_Judgt_Form
     := fun i => fst (RS_Premise i)
   (* - the proto-context of each premise *)
-  ; RS_proto_cxt_of_premise : RS_Premise -> σ
+  ; RS_proto_cxt_of_premise : RS_Premise -> Proto_Cxt
     := fun i => snd (RS_Premise i)
   (* the ordering relation on the premises *)
+  (* TODO: somewhere we will want to add that this is well-founded; maybe more *)
   ; RS_lt : RS_Premise -> RS_Premise -> hProp
   (* for each premise, the arity specifying what metavariables are available in the syntax for this premise; i.e., the family of type/term arguments already introduced by earlier premises *)
-  ; RS_arity_of_premise : RS_Premise -> Arity
+  ; RS_arity_of_premise : RS_Premise -> Arity _
     := fun i => Fmap
         (fun jγ => (class_of_HJF (fst jγ), snd jγ))
         (subfamily RS_Premise
@@ -565,13 +560,14 @@ Record RuleSpec
           (RS_hjf_of_premise i)
           (RS_proto_cxt_of_premise i)
   (* arity of the rule as a whole *)
-  ; RS_arity : Arity
+  ; RS_arity : Arity _
     := Fmap
         (fun jγ => (class_of_HJF (fst jγ), snd jγ))
         (subfamily RS_Premise
           (fun j => is_obj_HJF (fst (RS_Premise j))))
   (* judgement form of conclusion *)
   ; RS_hjf_of_conclusion : Hyp_Judgt_Form
+    := hjf_conclusion
   (* judgement boundary instance of conclusion *)
   ; RS_judgt_bdry_instance_of_conclusion
       : Judgt_Form_Instance
@@ -581,5 +577,41 @@ Record RuleSpec
 
 End RuleSpecs.
 
+(** Specification of a type theory (but before checking that syntax in rules is well-typed. *)
+
+Section TTSpecs.
+
+  Context {Proto_Cxt : Shape_System}.
+
+  Record Raw_Type_Theory
+  := {
+  (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
+    RTT_Rule : Family (Hyp_Judgt_Form * Arity Proto_Cxt)
+  (* the ordering relation on the rules *)
+  (* TODO: somewhere we will want to add that this is well-founded; maybe more *)
+  (* the judgement form of the conclusion of each rule *)
+  ; RTT_hjf_of_rule : RTT_Rule -> Hyp_Judgt_Form
+    := fun i => fst (RTT_Rule i)
+  (* the arity (of the *object* premises only) of each rule *)
+  ; RTT_arity_of_rule : RTT_Rule -> Arity _
+    := fun i => snd (RTT_Rule i)
+  (* the ordering on rules.  TODO: will probably need to add well-foundedness *)
+  ; RTT_lt : RTT_Rule -> RTT_Rule -> hProp
+  (* the signature over which each rule can be written *)
+  ; RTT_signature_of_rule : RTT_Rule -> Signature Proto_Cxt
+    := fun i => Fmap
+        (fun jγ => (class_of_HJF (fst jγ), snd jγ))
+        (subfamily RTT_Rule
+          (fun j => is_obj_HJF (RTT_hjf_of_rule j) * RTT_lt j i))
+  (* the actual rule specification of each rule *)
+  ; RTT_rule_spec
+    : forall i : RTT_Rule,
+        Rule_Spec
+          (RTT_signature_of_rule i)
+          (RTT_arity_of_rule i)
+          (RTT_hjf_of_rule i)
+  }.
+ 
+End TTSpecs.
 
 
