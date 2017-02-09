@@ -299,6 +299,6 @@ Section DeBruijn_Fixpoint.
 
 End DeBruijn_Fixpoint.
 
-(* TODO: variables as strings, or as natural numbers *)
+(* TODO: (finite sets of) strings, or as natural numbers, or any constructively infinite type (maybe with decidable equality) *)
 
-(* TODO: Should also generalise to any constructively infinite type. *)
+(* TODO: variables as “natural numbers <n” *)
