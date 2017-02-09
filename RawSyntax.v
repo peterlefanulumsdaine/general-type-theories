@@ -1,22 +1,23 @@
 Require Import HoTT.
-Require Import Auxiliary.
+Require Import Family.
 Require Import ShapeSystems.
+Require Import Coproduct.
+Require Import DeductiveClosure.
 
 (* Throughout, we fix a shape system.  It can be implicit in almost everything that depends on it.
 
 TODO: modules would probably be a better way to treat this. *)
-Section Fix_Shape_System.
-
-Context {Proto_Cxt : Shape_System}.
 
 Section Signatures.
+
+  Context {σ : Shape_System}.
 
   Inductive Syn_Class : Type := Ty | Tm.
 
   Definition Arity : Type
-    := Family (Syn_Class * Proto_Cxt).
+    := Family (Syn_Class * σ).
 
-  (* Entries in the family represent arguments of a constructor; the [Proto_Cxt] component represents the variables bound in each argument.
+  (* Entries in the family represent arguments of a constructor; the [σ] component represents the variables bound in each argument.
 
   For instance, the [Π-intro] rule (i.e. fully annotated λ-abstraction) would have arity [ Family_from_List [(Ty,0), (Ty,1), (Tm,1)] ]; application would have arity [ Family_from_List [(Ty,0), (Ty,1), (Tm,0), (Tm,0)]].
 
@@ -24,7 +25,7 @@ Section Signatures.
 
   (* Access functions for arity *)
   Definition arg_class {a : Arity} (i : a) : Syn_Class := fst (a i).
-  Definition arg_pcxt {a : Arity} (i : a) : Proto_Cxt := snd (a i).
+  Definition arg_pcxt {a : Arity} (i : a) : σ := snd (a i).
 
   Definition Signature : Type
     := Family (Syn_Class * Arity).
@@ -37,24 +38,27 @@ Section Signatures.
 
 End Signatures.
 
+Arguments Signature _ : clear implicits.
+
 Section Raw_Syntax.
 
-  Context {Σ : Signature}.
+  Context {σ : Shape_System}.
+  Context {Σ : Signature σ}.
 
   (* A raw syntactic expression of a syntactic class, relative to a context *)
   Inductive Raw_Syntax
-    : Syn_Class -> Proto_Cxt -> Type
+    : Syn_Class -> σ -> Type
   :=
   (* a variable in a context is a term in that context *)
-    | var_raw (γ : Proto_Cxt) (i : γ)
+    | var_raw (γ : σ) (i : γ)
         : Raw_Syntax Tm γ
     (* relative to a context [γ], given a symbol [S], if for each of its
        arguments we have a raw syntactic expression relative to [γ] extended by
        the argument's arity, [S args] is a raw syntactic expression over [γ] *)
-    | symb_raw (γ : Proto_Cxt) (S : Σ)
+    | symb_raw (γ : σ) (S : Σ)
                (args : forall (i : arity S),
                    Raw_Syntax (arg_class i)
-                              (shape_coprod γ (arg_pcxt i)))
+                              (shape_coproduct γ (arg_pcxt i)))
       : Raw_Syntax (class S) γ.
 
   Global Arguments var_raw [_] _.
@@ -63,36 +67,37 @@ Section Raw_Syntax.
   (* A useful abbreviation for giving functions constructing raw syntax. *)
   Definition Args (a : Arity) γ : Type
   := forall (i : a),
-    Raw_Syntax (arg_class i) (shape_coprod γ (arg_pcxt i)).
+    Raw_Syntax (arg_class i) (shape_coproduct γ (arg_pcxt i)).
 
   (* A raw context is a proto-ctx ("collection of identifiers") and a raw syntactic type expression
      for each identifier in the proto-ctx. *)
   Record Raw_Context
-  := { Proto_Cxt_of_Raw_Context :> Proto_Cxt
+  := { σ_of_Raw_Context :> σ
      ; var_type_of_Raw_Context
-         :> forall i : Proto_Cxt_of_Raw_Context,
-            Raw_Syntax Ty Proto_Cxt_of_Raw_Context
+         :> forall i : σ_of_Raw_Context,
+            Raw_Syntax Ty σ_of_Raw_Context
      }.
 
-  Definition Raw_Context_Map (γ δ : Proto_Cxt)
+  Definition Raw_Context_Map (γ δ : σ)
     := δ -> Raw_Syntax Tm γ.
 
 End Raw_Syntax.
 
-Global Arguments Raw_Syntax _ _ _ : clear implicits.
-Global Arguments Raw_Context _ : clear implicits.
-Global Arguments Raw_Context_Map _ _ _ : clear implicits.
-Global Arguments Args _ _ _ : clear implicits.
+Global Arguments Raw_Syntax {_} _ _ _ : clear implicits.
+Global Arguments Raw_Context {_} _ : clear implicits.
+Global Arguments Raw_Context_Map {_} _ _ _ : clear implicits.
+Global Arguments Args {_} _ _ _ : clear implicits.
 
 Section Raw_Subst.
 
-  Context {Σ : Signature}.
+  Context {σ : Shape_System}.
+  Context {Σ : Signature σ}.
 
   (* First define weakening, as an auxiliary function for substition. *)
 
   (* Actually easier to define not just weakening, but “weakening + contraction
      + exchange”, i.e. substitution of variables for variables. *)
-  Fixpoint Raw_Weaken {γ γ' : Proto_Cxt} (f : γ -> γ')
+  Fixpoint Raw_Weaken {γ γ' : σ} (f : γ -> γ')
       {cl : Syn_Class} (e : Raw_Syntax Σ cl γ)
     : Raw_Syntax Σ cl γ'.
   Proof.
@@ -100,25 +105,25 @@ Section Raw_Subst.
   - exact (var_raw (f i)).
   - refine (symb_raw S _). intros i.
     refine (Raw_Weaken _ _ _ _ (args i)).
-    simple refine (coprod_rect (shape_is_coprod) _ _ _); cbn.
-    + intros x. apply (coprod_inj1 (shape_is_coprod)). exact (f x).
-    + intros x. apply (coprod_inj2 (shape_is_coprod)). exact x.
+    simple refine (coproduct_rect (shape_is_coproduct) _ _ _); cbn.
+    + intros x. apply (coproduct_inj1 (shape_is_coproduct)). exact (f x).
+    + intros x. apply (coproduct_inj2 (shape_is_coproduct)). exact x.
   Defined.
 
-  Definition Raw_Context_Map_Extending (γ γ' δ : Proto_Cxt)
+  Definition Raw_Context_Map_Extending (γ γ' δ : σ)
     : Raw_Context_Map Σ γ' γ
-   -> Raw_Context_Map Σ (shape_coprod γ' δ) (shape_coprod γ δ).
+   -> Raw_Context_Map Σ (shape_coproduct γ' δ) (shape_coproduct γ δ).
   Proof.
     intros f.
-    simple refine (coprod_rect (shape_is_coprod) _ _ _); cbn.
+    simple refine (coproduct_rect (shape_is_coproduct) _ _ _); cbn.
     - intros i. refine (Raw_Weaken _ (f i)).
-      apply (coprod_inj1 (shape_is_coprod)).
+      apply (coproduct_inj1 (shape_is_coproduct)).
     - intros i. apply var_raw.
-      apply (coprod_inj2 (shape_is_coprod)), i.
+      apply (coproduct_inj2 (shape_is_coproduct)), i.
   Defined.
 
   Fixpoint Raw_Subst
-      {γ γ' : Proto_Cxt} (f : Raw_Context_Map Σ γ' γ)
+      {γ γ' : σ} (f : Raw_Context_Map Σ γ' γ)
       {cl : Syn_Class} (e : Raw_Syntax Σ cl γ)
     : Raw_Syntax Σ cl γ'.
   Proof.
@@ -133,21 +138,24 @@ End Raw_Subst.
 
 Section Raw_Context_Construction.
 
-Definition empty_Raw_Context {Σ} : Raw_Context Σ.
+Context {σ : Shape_System}.
+Context {Σ : Signature σ}.
+
+Definition empty_Raw_Context : Raw_Context Σ.
 Proof.
   exists (shape_empty _). apply (empty_rect _ shape_is_empty).
 Defined.
 
-Definition snoc_Raw_Context {Σ} (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ)
+Definition snoc_Raw_Context (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ)
   : Raw_Context Σ.
 Proof.
   exists (shape_extend _ Γ).
   apply (plusone_rect _ _ (shape_is_plusone _ _)).
   - refine (Raw_Weaken _ A).
     (* As we put the type into the context, we weaken it to live over the extended context. *)
-    apply (plusone_next _ _ (shape_is_plusone _ _)).
+    apply (plusone_inj _ _ (shape_is_plusone _ _)).
   - intros i. refine (Raw_Weaken _ (Γ i)).
-    apply (plusone_next _ _ (shape_is_plusone _ _)).
+    apply (plusone_inj _ _ (shape_is_plusone _ _)).
 Defined.
 
 End Raw_Context_Construction.
@@ -158,6 +166,9 @@ Open Scope cxt_scope.
 
 
 Section Judgements.
+  Context {σ : Shape_System}.
+  Context (Σ : Signature σ).
+
   (* The four basic forms are “hypothetical”, i.e. over a context. *)
   Inductive Hyp_Judgt_Form
     := obj_HJF (cl : Syn_Class) | eq_HJF (cl : Syn_Class).
@@ -202,38 +213,41 @@ Section Judgements.
             Hyp_Judgt_Bdry_Slots (eq_HJF cl)
         (* Object case: add the head slot *)
         | obj_HJF cl =>
-            Snoc_Family (Hyp_Judgt_Bdry_Slots (obj_HJF cl)) cl
+            Snoc (Hyp_Judgt_Bdry_Slots (obj_HJF cl)) cl
        end.
   (* NOTE: the order of slots for term judgements follows “dependency order” — later slots are (morally) dependent on earlier ones, so the type comes before the term.  However, the functions in section [Judgement_Notations] below follow standard written order, so the term comes before the type. *)
 
-  Definition Hyp_Judgt_Bdry_Instance Σ (hjf : Hyp_Judgt_Form) γ : Type
-  := forall i : Hyp_Judgt_Bdry_Slots hjf, Raw_Syntax Σ (val _ i) γ.
+  Definition Hyp_Judgt_Bdry_Instance (hjf : Hyp_Judgt_Form) γ : Type
+  := forall i : Hyp_Judgt_Bdry_Slots hjf, Raw_Syntax Σ (fam_element _ i) γ.
 
-  Definition Hyp_Judgt_Form_Instance Σ (hjf : Hyp_Judgt_Form) γ : Type
-  := forall i : Hyp_Judgt_Form_Slots hjf, Raw_Syntax Σ (val _ i) γ.
+  Definition Hyp_Judgt_Form_Instance (hjf : Hyp_Judgt_Form) γ : Type
+  := forall i : Hyp_Judgt_Form_Slots hjf, Raw_Syntax Σ (fam_element _ i) γ.
 
-  Definition Judgt_Bdry_Instance Σ (jf : Judgt_Form) : Type
+  Definition Judgt_Bdry_Instance (jf : Judgt_Form) : Type
   := match jf with
        | Cxt_JF => Raw_Context Σ
        | HJF hjf => { Γ : Raw_Context Σ
-                   & Hyp_Judgt_Bdry_Instance Σ hjf Γ }
+                   & Hyp_Judgt_Bdry_Instance hjf Γ }
      end.
 
-  Definition Judgt_Form_Instance Σ (jf : Judgt_Form) : Type
+  Definition Judgt_Form_Instance (jf : Judgt_Form) : Type
   := match jf with
        | Cxt_JF => Raw_Context Σ
        | HJF hjf => { Γ : Raw_Context Σ
-                   & Hyp_Judgt_Form_Instance Σ hjf Γ }
+                   & Hyp_Judgt_Form_Instance hjf Γ }
      end.
 
-  Definition Judgt_Instance Σ
-    := { jf : Judgt_Form & Judgt_Form_Instance Σ jf }.
+  Definition Judgt_Instance
+    := { jf : Judgt_Form & Judgt_Form_Instance jf }.
 
 End Judgements.
 
 Section Judgement_Notations.
 
-Definition give_Cxt_ji {Σ}
+  Context {σ : Shape_System}.
+  Context {Σ : Signature σ}.
+
+Definition give_Cxt_ji
   (Γ : Raw_Context Σ)
   : Judgt_Instance Σ.
 Proof.
@@ -241,7 +255,7 @@ Proof.
   exact Γ.
 Defined.
 
-Definition give_Ty_ji {Σ}
+Definition give_Ty_ji
   (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ)
   : Judgt_Instance Σ.
 Proof.
@@ -250,7 +264,7 @@ Proof.
   intros [ [] | ]; exact A.
 Defined.
 
-Definition give_TyEq_ji {Σ}
+Definition give_TyEq_ji
   (Γ : Raw_Context Σ) (A A' : Raw_Syntax Σ Ty Γ)
   : Judgt_Instance Σ.
 Proof.
@@ -261,7 +275,7 @@ Proof.
   exact A'.
 Defined.
 
-Definition give_Tm_ji {Σ}
+Definition give_Tm_ji
   (Γ : Raw_Context Σ) (a : Raw_Syntax Σ Tm Γ) (A : Raw_Syntax Σ Ty Γ)
   : Judgt_Instance Σ.
 Proof.
@@ -273,7 +287,7 @@ Proof.
 Defined.
 
 (* TODO: consistentise order with [give_Term_ji]. *)
-Definition give_TmEq_ji {Σ}
+Definition give_TmEq_ji
   (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ) (a a': Raw_Syntax Σ Tm Γ)
   : Judgt_Instance Σ.
 Proof.
@@ -311,78 +325,80 @@ Section Algebraic_Extensions.
   allowing us to write expressions like x:A |– b(x) : B(x).
   *)
 
-  Definition metavariable_arity (γ : Proto_Cxt) : Arity
-  := {| Inds := γ ; val i := (Tm, shape_empty _) |}.
+  Context {σ : Shape_System}.
 
-  Definition Metavariable_Extension (Σ : Signature) (a : Arity) : Signature.
+  Definition metavariable_arity (γ : σ) : @Arity σ
+  := {| fam_index := γ ; fam_element i := (Tm, shape_empty _) |}.
+
+  Definition Metavariable_Extension (Σ : Signature σ) (a : @Arity σ) : Signature σ.
   Proof.
-    refine (Sum_Family Σ _).
-    refine (Fmap_Family _ a).
+    refine (Sum Σ _).
+    refine (Fmap _ a).
     intros cl_γ. exact (fst cl_γ, metavariable_arity (snd cl_γ)).
   Defined.
 
-  Definition inr_Metavariable {Σ} {a : Arity}
+  Definition inr_Metavariable {Σ : Signature σ} {a : @Arity σ}
     : a -> Metavariable_Extension Σ a
   := inr.
 
-  Definition inl_Symbol {Σ : Signature} {a : Arity}
+  Definition inl_Symbol {Σ : Signature σ} {a : @Arity σ}
     : Σ -> Metavariable_Extension Σ a
   := inl.
 
   (* TODO: not sure if this coercion is a good idea.  See how/if it works for a bit, then reconsider? *)
-  Coercion inl_Symbol : Inds >-> Inds.
+  (* Coercion inl_Symbol : Inds >-> Inds. *)
 
   (* To use rules, one *instantiates* their metavariables, as raw syntax of the ambient signature, over some context. *)
-  Definition Instantiation (a : Arity) (Σ : Signature) (γ : Proto_Cxt)
+  Definition Instantiation (a : @Arity σ) (Σ : Signature σ) (γ : σ)
     : Type
   := forall i : a,
-       Raw_Syntax Σ (arg_class i) (shape_coprod γ (arg_pcxt i)).
+       Raw_Syntax Σ (arg_class i) (shape_coproduct γ (arg_pcxt i)).
 
   (* Given such an instantiation, one can translate syntax over the extended signature into syntax over the base signature. *)
   Definition instantiate
-      {a : Arity} {Σ : Signature} {γ : Proto_Cxt}
+      {a : @Arity σ} {Σ : Signature σ} {γ : σ}
       (I : Instantiation a Σ γ)
       {cl} {δ} (e : Raw_Syntax (Metavariable_Extension Σ a) cl δ)
-    : Raw_Syntax Σ cl (shape_coprod γ δ).
+    : Raw_Syntax Σ cl (shape_coproduct γ δ).
   Proof.
     induction e as [ δ i | δ [S | M] args Inst_arg ].
   - refine (var_raw _).
-    exact (coprod_inj2 (shape_is_coprod) i).
+    exact (coproduct_inj2 (shape_is_coproduct) i).
   - refine (symb_raw S _). intros i.
     refine (Raw_Weaken _ (Inst_arg i)).
-    apply (coprod_assoc
-             shape_is_coprod shape_is_coprod
-             shape_is_coprod shape_is_coprod).
+    apply (coproduct_assoc
+             shape_is_coproduct shape_is_coproduct
+             shape_is_coproduct shape_is_coproduct).
   - simpl in M. (* Substitute [args] into the expression [I M]. *)
     refine (Raw_Subst _ (I M)).
-    refine (coprod_rect shape_is_coprod _ _ _).
-    + intros i. apply var_raw, (coprod_inj1 shape_is_coprod), i.
+    refine (coproduct_rect shape_is_coproduct _ _ _).
+    + intros i. apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
     + intros i.
       refine (Raw_Weaken _ (Inst_arg i)). cbn.
-      refine (fmap_coprod shape_is_coprod shape_is_coprod _ _).
+      refine (Coproduct.fmap shape_is_coproduct shape_is_coproduct _ _).
       exact (fun j => j).
-      exact (coprod_empty_r shape_is_coprod shape_is_empty).
+      exact (coproduct_empty_r shape_is_coproduct shape_is_empty).
   Defined.
 
   Global Arguments instantiate {_ _ _} _ [_ _] _.
 
   Definition instantiate_context
-      {a : Arity} {Σ : Signature} {Γ : Raw_Context Σ}
+      {a : @Arity σ} {Σ : @Signature σ} {Γ : Raw_Context Σ}
       (I : Instantiation a Σ Γ)
       (Δ : Raw_Context (Metavariable_Extension Σ a))
     : Raw_Context Σ.
   Proof.
-     exists (shape_coprod Γ Δ).
-        apply (coprod_rect shape_is_coprod).
+     exists (shape_coproduct Γ Δ).
+        apply (coproduct_rect shape_is_coproduct).
         + intros i.
           refine (Raw_Weaken _ (Γ i)).
-          exact (coprod_inj1 shape_is_coprod).
+          exact (coproduct_inj1 shape_is_coproduct).
         + intros i.
           exact (instantiate I (Δ i)).
   Defined.
 
   Definition instantiate_ji
-      {a : Arity} {Σ : Signature} {Γ : Raw_Context Σ}
+      {a : @Arity σ} {Σ : Signature σ} {Γ : Raw_Context Σ}
       (I : Instantiation a Σ Γ)
       (e : Judgt_Instance (Metavariable_Extension Σ a))
     : Judgt_Instance Σ.
@@ -422,11 +438,14 @@ Section Metavariable_Notations.
   For now we provide the [M/ … /] version, but not yet the general [S/ … /] version.
 *)
 
-Definition empty_metavariable_args {Σ} {γ}
+Context {σ : Shape_System}.
+Context {Σ : Signature σ}.
+
+Definition empty_metavariable_args {γ}
   : Args Σ (metavariable_arity (shape_empty _)) γ
 := empty_rect _ shape_is_empty _.
 
-Definition snoc_metavariable_args {Σ} {γ δ : Proto_Cxt}
+Definition snoc_metavariable_args {γ δ : σ}
   : Args Σ (metavariable_arity δ) γ
   -> Raw_Syntax Σ Tm γ
   -> Args Σ (metavariable_arity (shape_extend _ δ)) γ.
@@ -434,7 +453,7 @@ Proof.
   intros ts t.
   simple refine (plusone_rect _ _ (shape_is_plusone _ δ) _ _ _); cbn.
   - refine (Raw_Weaken _ t).
-    exact (coprod_inj1 shape_is_coprod).
+    exact (coproduct_inj1 shape_is_coproduct).
   - exact ts.
 Defined.
 
@@ -450,7 +469,8 @@ Open Scope raw_syntax_scope.
 
 Section Raw_Rules.
 
-  Context {Σ : Signature}.
+  Context {σ : Shape_System}.
+  Context (Σ : Signature σ).
 
   Record Raw_Rule
   :=
@@ -460,13 +480,13 @@ Section Raw_Rules.
     }.
 
   Definition CCs_of_RR (R : Raw_Rule)
-    : Family (Closure_Condition (Judgt_Instance Σ)).
+    : Family (closure_condition (Judgt_Instance Σ)).
   Proof.
     exists { Γ : Raw_Context Σ & Instantiation (RR_metas R) Σ Γ }.
     intros [Γ I].
     split.
     - (* premises *)
-      refine (Fmap_Family _ (RR_prem R)).
+      refine (Fmap _ (RR_prem R)).
       apply (instantiate_ji I).
     - apply (instantiate_ji I).
       apply (RR_concln R).
@@ -474,15 +494,14 @@ Section Raw_Rules.
 
 End Raw_Rules.
 
-Global Arguments Raw_Rule _ : clear implicits.
 
 Section Raw_Type_Theories.
 
-  Definition Raw_Type_Theory
-  := { Σ : Signature & Family (Raw_Rule Σ) }.
+  Definition Raw_Type_Theory {σ : Shape_System}
+  := { Σ : Signature σ & Family (Raw_Rule Σ) }.
 
 (*
-  Definition Derivation_TT {Σ} (Rs : Family (Raw_Rule Σ))
+  Definition Derivation_TT (Rs : Family (Raw_Rule Σ))
     : Judgt_Instance Σ -> Type.
 *)
 
@@ -496,30 +515,33 @@ Section RuleSpecs.
 (* TODO: upstream *)
 Definition reindex {A} (K : Family A) {X} (f : X -> K) : Family A
   := {|
-       Inds := X ;
-       val := K o f
+       fam_index := X ;
+       fam_element := K o f
      |}.
 
 (* TODO: upstream *)
 Definition subfamily {A} (K : Family A) (P : K -> Type) : Family A
   := reindex K (pr1 : { i:K & P i } -> K).
 
-Record RuleSpec {Σ}
+Context {σ : Shape_System}.
+Context {Σ : Signature σ}.
+
+Record RuleSpec
 :=
   {
   (* family indexing the premises of the rule, and giving for each: *)
-    RS_Premise : Family (Hyp_Judgt_Form * Proto_Cxt)
+    RS_Premise : Family (Hyp_Judgt_Form * σ)
   (* - the judgement form of each premise, e.g. “term” or “type equality” *)
   ; RS_hjf_of_premise : RS_Premise -> Hyp_Judgt_Form
     := fun i => fst (RS_Premise i)
   (* - the proto-context of each premise *)
-  ; RS_proto_cxt_of_premise : RS_Premise -> Proto_Cxt
+  ; RS_proto_cxt_of_premise : RS_Premise -> σ
     := fun i => snd (RS_Premise i)
   (* the ordering relation on the premises *)
   ; RS_lt : RS_Premise -> RS_Premise -> hProp
   (* for each premise, the arity specifying what metavariables are available in the syntax for this premise; i.e., the family of type/term arguments already introduced by earlier premises *)
   ; RS_arity_of_premise : RS_Premise -> Arity
-    := fun i => Fmap_Family
+    := fun i => Fmap
         (fun jγ => (class_of_HJF (fst jγ), snd jγ))
         (subfamily RS_Premise
           (fun j => is_obj_HJF (fst (RS_Premise j)) * RS_lt j i))
@@ -544,7 +566,7 @@ Record RuleSpec {Σ}
           (RS_proto_cxt_of_premise i)
   (* arity of the rule as a whole *)
   ; RS_arity : Arity
-    := Fmap_Family
+    := Fmap
         (fun jγ => (class_of_HJF (fst jγ), snd jγ))
         (subfamily RS_Premise
           (fun j => is_obj_HJF (fst (RS_Premise j))))
@@ -558,10 +580,6 @@ Record RuleSpec {Σ}
   }.
 
 End RuleSpecs.
-
-
-
-End Fix_Shape_System.
 
 
 

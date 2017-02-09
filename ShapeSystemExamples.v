@@ -1,6 +1,7 @@
 Require Import HoTT.
-Require Import Auxiliary.
 Require Import RawSyntax.
+Require Import Coproduct.
+Require Import ShapeSystems.
 
 Section Types_as_shapes.
 
@@ -10,12 +11,12 @@ Section Types_as_shapes.
     intros P x; elim x.
   Defined.
 
-  Definition is_coprod_sum (A B : Type)
-    : is_coprod (sum A B) A B.
+  Definition is_coproduct_sum (A B : Type)
+    : is_coproduct (sum A B) A B.
   Proof.
     simple refine {|
-        coprod_inj1 := @inl A B ;
-        coprod_inj2 := @inr A B ;
+        coproduct_inj1 := @inl A B ;
+        coproduct_inj2 := @inr A B ;
       |}.
     - intros P f g x.
       destruct x as [a|b].
@@ -29,8 +30,8 @@ Section Types_as_shapes.
     : is_plusone (option A) A.
   Proof.
     simple refine {|
-        plusone_top := None ;
-        plusone_next := @Some A
+        plusone_one := None ;
+        plusone_inj := @Some A
         |}.
     - intros P e f [x|].
       + now apply f.
@@ -45,11 +46,11 @@ Section Types_as_shapes.
         Shape := Type ;
         positions := (fun A => A) ;
         shape_empty := Empty ;
-        shape_coprod := sum ;
+        shape_coproduct := sum ;
         shape_extend := option
       |}.
     - apply is_empty_Empty.
-    - apply is_coprod_sum.
+    - apply is_coproduct_sum.
     - apply is_plusone_option.
   Defined.
 
@@ -59,13 +60,13 @@ Section Free_shapes.
 
   Inductive f_cxt : Type :=
   | f_empty : f_cxt
-  | f_coprod : f_cxt -> f_cxt -> f_cxt
+  | f_coproduct : f_cxt -> f_cxt -> f_cxt
   | f_extend : f_cxt -> f_cxt.
   
   Fixpoint f_positions (c : f_cxt) : Type :=
     match c with
     | f_empty => Empty
-    | f_coprod c d => sum (f_positions c) (f_positions d)
+    | f_coproduct c d => sum (f_positions c) (f_positions d)
     | f_extend c => option (f_positions c)
     end.
 
@@ -75,11 +76,11 @@ Section Free_shapes.
         Shape := f_cxt ;
         positions := f_positions ;
         shape_empty := f_empty ;
-        shape_coprod := f_coprod ;
+        shape_coproduct := f_coproduct ;
         shape_extend := f_extend
       |}.
     - apply is_empty_Empty.
-    - intros. apply is_coprod_sum.
+    - intros. apply is_coproduct_sum.
     - intros. apply is_plusone_option.
   Defined.
 
@@ -127,7 +128,7 @@ Section DeBruijn.
     intro p. exact (ap pred p).
   Defined.
 
-  (* NOTE: this is the only sticking point for computation of [DB_is_plusone], [DB_is_coprod].  If we could find an alternative proof of [ap_S_S_injective] which makes [ap_S_S_injective_idpath] a judgemental equality, then those would all compute.
+  (* NOTE: this is the only sticking point for computation of [DB_is_plusone], [DB_is_coproduct].  If we could find an alternative proof of [ap_S_S_injective] which makes [ap_S_S_injective_idpath] a judgemental equality, then those would all compute.
 
   As it is, they will compute just when applied to actual numerals, but not for general numbers. *)
   Lemma ap_S_S_injective {n m : nat} (p : S n = S m) :
@@ -145,8 +146,8 @@ Section DeBruijn.
   Lemma DB_is_plusone (n : nat) : is_plusone (DB_positions (n.+1)) (DB_positions n).
   Proof.
     simple refine {|
-             plusone_top := zero_db ;
-             plusone_next := succ_db |}.
+             plusone_one := zero_db ;
+             plusone_inj := succ_db |}.
     - intros P x f.
       transparent assert (H : (forall k (i : DB_positions k), DB_ext P i)).
       { intros k i.
@@ -174,14 +175,14 @@ Section DeBruijn.
       rewrite ap_S_S_injective_idpath. apply idpath.
   Defined.
 
-  Lemma DB_is_coprod (n m : nat) :
-    is_coprod (DB_positions (n + m)) (DB_positions n) (DB_positions m).
+  Lemma DB_is_coproduct (n m : nat) :
+    is_coproduct (DB_positions (n + m)) (DB_positions n) (DB_positions m).
   Proof.
     simple refine
-      {| coprod_inj1 := DB_inl _ _
-      ;  coprod_inj2 := DB_inr _ _
+      {| coproduct_inj1 := DB_inl _ _
+      ;  coproduct_inj2 := DB_inr _ _
       |}.
-    (* coprod_rect *)
+    (* coproduct_rect *)
     - induction n as [ | n' IH]; intros P f1 f2.
       + exact f2.
       + apply (plusone_rect _ _ (DB_is_plusone _)); simpl.
@@ -189,21 +190,21 @@ Section DeBruijn.
         * apply IH.
           -- intros i1. exact (f1 (succ_db i1)).
           -- exact f2.
-    (* coprod_comp1 *)
+    (* coproduct_comp1 *)
     - induction n as [ | n' IH]; intros P f1 f2.
       + apply (empty_rect _ DB_is_empty).
       + apply (plusone_rect _ _ (DB_is_plusone _)).
-        * apply (plusone_comp_top _ _ (DB_is_plusone _)).
+        * apply (plusone_comp_one _ _ (DB_is_plusone _)).
         * intros i1. 
           refine (_ @ _).
-            apply (plusone_comp_next _ _ (DB_is_plusone _)).
+            apply (plusone_comp_inj _ _ (DB_is_plusone _)).
           refine (IH _ _ _ i1).
-    (* coprod_comp2 *)
+    (* coproduct_comp2 *)
     - induction n as [ | n' IH]; intros P f1 f2.
       + intros i2; apply idpath.
       + intros i2.
         refine (_ @ _).
-          apply (plusone_comp_next _ _ (DB_is_plusone _)).
+          apply (plusone_comp_inj _ _ (DB_is_plusone _)).
         refine (IH _ _ _ i2).
   Defined.
 
@@ -212,11 +213,11 @@ Section DeBruijn.
     refine {| Shape := nat ;
               positions := DB_positions ;
               shape_empty := 0 ;
-              shape_coprod := (fun n m => (n + m)%nat) ;
+              shape_coproduct := (fun n m => (n + m)%nat) ;
               shape_extend := S
            |}.
     - apply DB_is_empty.
-    - apply DB_is_coprod.
+    - apply DB_is_coproduct.
     - apply DB_is_plusone.
   Defined.
 
@@ -256,14 +257,14 @@ Section DeBruijn_Fixpoint.
     - apply succ_dbf, DBF_inr, i.
   Defined.
 
-  Lemma DBF_is_coprod (n m : nat) :
-    is_coprod (DBF_positions (n + m)) (DBF_positions n) (DBF_positions m).
+  Lemma DBF_is_coproduct (n m : nat) :
+    is_coproduct (DBF_positions (n + m)) (DBF_positions n) (DBF_positions m).
   Proof.
     simple refine
-      {| coprod_inj1 := DBF_inl _ _
-      ;  coprod_inj2 := DBF_inr _ _
+      {| coproduct_inj1 := DBF_inl _ _
+      ;  coproduct_inj2 := DBF_inr _ _
       |}.
-    (* coprod_rect *)
+    (* coproduct_rect *)
     - induction n as [ | n' IH]; intros P f1 f2.
       + exact f2.
       + apply (plusone_rect _ _ (is_plusone_option _)); simpl.
@@ -271,13 +272,13 @@ Section DeBruijn_Fixpoint.
         * apply IH.
           -- intros i1. exact (f1 (succ_dbf i1)).
           -- exact f2.
-    (* coprod_comp1 *)
+    (* coproduct_comp1 *)
     - induction n as [ | n' IH]; intros P f1 f2.
       + intros [].
       + apply (plusone_rect _ _ (is_plusone_option _)).
         * apply idpath.
         * intros i1. exact (IH _ _ _ i1). 
-    (* coprod_comp2 *)
+    (* coproduct_comp2 *)
     - induction n as [ | n' IH]; intros P f1 f2.
       + intros i2; apply idpath.
       + intros i2. exact (IH _ _ _ i2).
@@ -288,11 +289,11 @@ Section DeBruijn_Fixpoint.
     refine {| Shape := nat ;
               positions := DBF_positions ;
               shape_empty := 0 ;
-              shape_coprod := (fun n m => (n + m)%nat) ;
+              shape_coproduct := (fun n m => (n + m)%nat) ;
               shape_extend := S
            |}.
     - apply is_empty_Empty.
-    - apply DBF_is_coprod.
+    - apply DBF_is_coproduct.
     - intros; apply is_plusone_option.
   Defined.
 

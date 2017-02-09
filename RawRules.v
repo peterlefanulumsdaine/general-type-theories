@@ -1,9 +1,15 @@
 Require Import HoTT.
-Require Import Auxiliary RawSyntax.
+Require Import ShapeSystems.
+Require Import RawSyntax.
+Require Import DeductiveClosure.
+Require Import Family.
+Require Import Coproduct.
 
 Section Structural_Rules.
 
-Context (Σ : Signature).
+Context {Proto_Cxt : Shape_System}.
+
+Context (Σ : @Signature Proto_Cxt).
 
 (* Structural rules:
 
@@ -19,16 +25,16 @@ Section Context_Formation.
 
 (* These need to be defined directly as closure conditions, since our raw rules only allow derivations of hypothetical judgements.  *)
 
-Definition empty_context_cc : Closure_Condition (Judgt_Instance Σ).
+Definition empty_context_cc : closure_condition (Judgt_Instance Σ).
 Proof.
-  split. 
+  split.
   (* No premises: *)
   - exact [< >].
   (* Conclusion: *)
   - exact [Cxt! |- [::] !].
 Defined.
 
-Definition context_extension_cc : Family (Closure_Condition (Judgt_Instance Σ)).
+Definition context_extension_cc : Family (closure_condition (Judgt_Instance Σ)).
 Proof.
   exists { Γ : Raw_Context Σ & Raw_Syntax Σ Ty Γ }.
   intros [ Γ A ]; split.
@@ -40,7 +46,7 @@ Proof.
   - exact [Cxt! |- (snoc_Raw_Context Γ A) !].
 Defined.
 
-(* An issue arising from the present approach to shapes/proto-contexts: if the context extension rule is formulated just with [shape_extend], then it will give no way to ever prove well-typedness of contexts with other shapes; in particular, of contexts using [shape_coprod], which will arise in the premises of logical rules.
+(* An issue arising from the present approach to shapes/proto-contexts: if the context extension rule is formulated just with [shape_extend], then it will give no way to ever prove well-typedness of contexts with other shapes; in particular, of contexts using [shape_coproduct], which will arise in the premises of logical rules.
 
   Possible solutions (without entirely changing the proto-context approach):
 
@@ -67,7 +73,7 @@ Definition var_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty _ )    (* [ A ] *)
+      (Ty , shape_empty Proto_Cxt )    (* [ A ] *)
     >] : Arity).
   (* Name the symbols. *)
   pose (A := None : Metas).
@@ -80,7 +86,7 @@ Proof.
   - simple refine [Tm! _ |- _ ; _ !].
     + exact [: [M/ A /] :].
     + refine (var_raw _).
-      apply (plusone_top _ _ (shape_is_plusone _ _)).
+      apply (plusone_one _ _ (shape_is_plusone _ _)).
     + exact [M/ A /].
 Defined.
 
@@ -94,16 +100,16 @@ Record Substitution_Data
   ; map : Raw_Context_Map Σ src tgt
   }.
 
-Definition subst_cc : Family (Closure_Condition (Judgt_Instance Σ)).
+Definition subst_cc : Family (closure_condition (Judgt_Instance Σ)).
 Proof.
   exists {f : Substitution_Data
        & { hjf : Hyp_Judgt_Form
        & forall i : Hyp_Judgt_Form_Slots hjf,
-                         Raw_Syntax Σ (val _ i) (tgt f) }}.
+                         Raw_Syntax Σ (fam_element _ i) (tgt f) }}.
   intros [[Γ' Γ f] [hjf hjfi]].
   split.
   (* premises: *)
-  - apply Snoc_Family.
+  - apply Snoc.
     (* f is a context morphism *)
     + exists Γ.
       intros i. refine [Tm! Γ' |- _ ; _ !].
@@ -132,7 +138,7 @@ Definition refl_ty_eq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty _ )    (* [ A ] *)
+      (Ty , shape_empty Proto_Cxt )    (* [ A ] *)
     >] : Arity).
   (* Name the symbols. *)
   pose (A := None : Metas).
@@ -160,8 +166,8 @@ Definition symm_ty_eq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty _ )    (* [ A ] *)
-    ; (Ty , shape_empty _ )    (* [ B ] *)
+      (Ty , shape_empty Proto_Cxt )    (* [ A ] *)
+    ; (Ty , shape_empty Proto_Cxt )    (* [ B ] *)
     >] : Arity).
   (* Name the symbols. *)
   pose (B := None : Metas).
@@ -191,9 +197,9 @@ Definition trans_ty_eq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty _ )    (* [ A ] *)
-    ; (Ty , shape_empty _ )    (* [ B ] *)
-    ; (Ty , shape_empty _ )    (* [ C ] *)
+      (Ty , shape_empty Proto_Cxt )    (* [ A ] *)
+    ; (Ty , shape_empty Proto_Cxt )    (* [ B ] *)
+    ; (Ty , shape_empty Proto_Cxt )    (* [ C ] *)
     >] : Arity).
   (* Name the symbols. *)
   pose (C := None : Metas).
@@ -229,8 +235,8 @@ Definition refl_tm_eq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty _)    (* [ A ] *)
-    ; (Tm , shape_empty _)    (* [ u ] *)
+      (Ty , shape_empty Proto_Cxt)    (* [ A ] *)
+    ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
     >] : Arity).
   (* Name the symbols. *)
   pose (u := None : Metas).
@@ -261,9 +267,9 @@ Definition symm_tm_eq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty _)    (* [ A ] *)
-    ; (Tm , shape_empty _)    (* [ u ] *)
-    ; (Tm , shape_empty _)    (* [ v ] *)
+      (Ty , shape_empty Proto_Cxt)    (* [ A ] *)
+    ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
+    ; (Tm , shape_empty Proto_Cxt)    (* [ v ] *)
     >] : Arity).
   (* Name the symbols. *)
   pose (v := None : Metas).
@@ -296,10 +302,10 @@ Definition trans_tm_eq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty _)    (* [ A ] *)
-    ; (Tm , shape_empty _)    (* [ u ] *)
-    ; (Tm , shape_empty _)    (* [ v ] *)
-    ; (Tm , shape_empty _)    (* [ w ] *)
+      (Ty , shape_empty Proto_Cxt)    (* [ A ] *)
+    ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
+    ; (Tm , shape_empty Proto_Cxt)    (* [ v ] *)
+    ; (Tm , shape_empty Proto_Cxt)    (* [ w ] *)
     >] : Arity).
   (* Name the symbols. *)
   pose (w := None : Metas).
@@ -342,9 +348,9 @@ Definition coerce_tm_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty _)    (* [ A ] *)
-    ; (Ty , shape_empty _)    (* [ B ] *)
-    ; (Tm , shape_empty _)    (* [ u ] *)
+      (Ty , shape_empty Proto_Cxt)    (* [ A ] *)
+    ; (Ty , shape_empty Proto_Cxt)    (* [ B ] *)
+    ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
     >] : Arity).
   (* Name the symbols. *)
   pose (u := None : Metas).
@@ -392,10 +398,10 @@ Definition coerce_tmeq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty _)    (* [ A ] *)
-    ; (Ty , shape_empty _)    (* [ B ] *)
-    ; (Tm , shape_empty _)    (* [ u ] *)
-    ; (Tm , shape_empty _)    (* [ u' ] *)
+      (Ty , shape_empty Proto_Cxt)    (* [ A ] *)
+    ; (Ty , shape_empty Proto_Cxt)    (* [ B ] *)
+    ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
+    ; (Tm , shape_empty Proto_Cxt)    (* [ u' ] *)
     >] : Arity).
   (* Name the symbols. *)
   pose (A := Some (Some (Some None)) : Metas).
