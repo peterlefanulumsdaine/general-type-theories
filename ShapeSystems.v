@@ -1,5 +1,4 @@
-
-Require Import Auxiliary.
+Require Import Coproduct.
 
 (* _Shape Systems_ abstract the kind of shapes that contexts can have.
 
@@ -18,18 +17,18 @@ Record Shape_System :=
   ; positions : Shape -> Type (* maybe should be to sets?? *)
   ; shape_empty : Shape
   ; shape_is_empty : is_empty (positions shape_empty)
-  ; shape_coprod : Shape -> Shape -> Shape
-  ; shape_is_coprod
+  ; shape_coproduct : Shape -> Shape -> Shape
+  ; shape_is_coproduct
      : forall γ δ : Shape,
-       is_coprod (positions (shape_coprod γ δ)) (positions γ) (positions δ)
+       is_coproduct (positions (shape_coproduct γ δ)) (positions γ) (positions δ)
   ; shape_extend : Shape -> Shape
   ; shape_is_plusone         (* TODO: change to is_extend (Andrej?) *)
      : forall γ : Shape,
        is_plusone (positions (shape_extend γ)) (positions γ)
   }.
 
-Global Arguments shape_coprod {_} _ _.
-Global Arguments shape_is_coprod {_} [_ _].
+Global Arguments shape_coproduct {_} _ _.
+Global Arguments shape_is_coproduct {_} [_ _].
 Global Arguments shape_is_empty {_}.
 
 Coercion positions : Shape >-> Sortclass.

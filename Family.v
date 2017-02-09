@@ -10,7 +10,7 @@ Global Arguments fam_index [_] F : rename.
 Global Arguments fam_element [_] F _ : rename.
 
 (** The empty family. *)
-Definition Empty (X : Type) : Family X.
+Definition Empty_family (X : Type) : Family X.
 Proof.
   exists Overture.Empty.
   intros [].
@@ -42,9 +42,9 @@ Defined.
 
 Notation "Y1 + Y2" := (Sum Y1 Y2) : fam_scope.
 Open Scope fam_scope.
-Notation " [< >] " := (Empty _) (format "[< >]") : fam_scope.
+Notation " [< >] " := (Empty_family _) (format "[< >]") : fam_scope.
 Notation " [< x >] " := (Singleton x) : fam_scope.
-Notation " [< x ; .. ; z >] " := (Snoc .. (Snoc (Empty _) x) .. z) : fam_scope.
+Notation " [< x ; .. ; z >] " := (Snoc .. (Snoc (Empty_family _) x) .. z) : fam_scope.
 
 (*Alternative: start with [Singleton] instead of [Empty], i.e.
 
