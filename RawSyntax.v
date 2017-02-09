@@ -5,11 +5,10 @@ Require Import ShapeSystems.
 (* Throughout, we fix a shape system.  It can be implicit in almost everything that depends on it.
 
 TODO: modules would probably be a better way to treat this. *)
-Section Fix_Shape_System.
-
-Context {Proto_Cxt : Shape_System}.
 
 Section Signatures.
+
+  Context {Proto_Cxt : Shape_System}.
 
   Inductive Syn_Class : Type := Ty | Tm.
 
@@ -37,9 +36,12 @@ Section Signatures.
 
 End Signatures.
 
+Arguments Signature _ : clear implicits.
+
 Section Raw_Syntax.
 
-  Context {Σ : Signature}.
+  Context {Proto_Cxt : Shape_System}.
+  Context {Σ : Signature Proto_Cxt}.
 
   (* A raw syntactic expression of a syntactic class, relative to a context *)
   Inductive Raw_Syntax
@@ -79,14 +81,15 @@ Section Raw_Syntax.
 
 End Raw_Syntax.
 
-Global Arguments Raw_Syntax _ _ _ : clear implicits.
-Global Arguments Raw_Context _ : clear implicits.
-Global Arguments Raw_Context_Map _ _ _ : clear implicits.
-Global Arguments Args _ _ _ : clear implicits.
+Global Arguments Raw_Syntax {_} _ _ _ : clear implicits.
+Global Arguments Raw_Context {_} _ : clear implicits.
+Global Arguments Raw_Context_Map {_} _ _ _ : clear implicits.
+Global Arguments Args {_} _ _ _ : clear implicits.
 
 Section Raw_Subst.
 
-  Context {Σ : Signature}.
+  Context {Proto_Cxt : Shape_System}.
+  Context {Σ : Signature Proto_Cxt}.
 
   (* First define weakening, as an auxiliary function for substition. *)
 
@@ -133,12 +136,15 @@ End Raw_Subst.
 
 Section Raw_Context_Construction.
 
-Definition empty_Raw_Context {Σ} : Raw_Context Σ.
+Context {Proto_Cxt : Shape_System}.
+Context {Σ : Signature Proto_Cxt}.
+
+Definition empty_Raw_Context : Raw_Context Σ.
 Proof.
   exists (shape_empty _). apply (empty_rect _ shape_is_empty).
 Defined.
 
-Definition snoc_Raw_Context {Σ} (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ)
+Definition snoc_Raw_Context (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ)
   : Raw_Context Σ.
 Proof.
   exists (shape_extend _ Γ).
@@ -158,6 +164,9 @@ Open Scope cxt_scope.
 
 
 Section Judgements.
+  Context {Proto_Cxt : Shape_System}.
+  Context (Σ : Signature Proto_Cxt).
+
   (* The four basic forms are “hypothetical”, i.e. over a context. *)
   Inductive Hyp_Judgt_Form
     := obj_HJF (cl : Syn_Class) | eq_HJF (cl : Syn_Class).
@@ -206,34 +215,37 @@ Section Judgements.
        end.
   (* NOTE: the order of slots for term judgements follows “dependency order” — later slots are (morally) dependent on earlier ones, so the type comes before the term.  However, the functions in section [Judgement_Notations] below follow standard written order, so the term comes before the type. *)
 
-  Definition Hyp_Judgt_Bdry_Instance Σ (hjf : Hyp_Judgt_Form) γ : Type
+  Definition Hyp_Judgt_Bdry_Instance (hjf : Hyp_Judgt_Form) γ : Type
   := forall i : Hyp_Judgt_Bdry_Slots hjf, Raw_Syntax Σ (val _ i) γ.
 
-  Definition Hyp_Judgt_Form_Instance Σ (hjf : Hyp_Judgt_Form) γ : Type
+  Definition Hyp_Judgt_Form_Instance (hjf : Hyp_Judgt_Form) γ : Type
   := forall i : Hyp_Judgt_Form_Slots hjf, Raw_Syntax Σ (val _ i) γ.
 
-  Definition Judgt_Bdry_Instance Σ (jf : Judgt_Form) : Type
+  Definition Judgt_Bdry_Instance (jf : Judgt_Form) : Type
   := match jf with
        | Cxt_JF => Raw_Context Σ
        | HJF hjf => { Γ : Raw_Context Σ
-                   & Hyp_Judgt_Bdry_Instance Σ hjf Γ }
+                   & Hyp_Judgt_Bdry_Instance hjf Γ }
      end.
 
-  Definition Judgt_Form_Instance Σ (jf : Judgt_Form) : Type
+  Definition Judgt_Form_Instance (jf : Judgt_Form) : Type
   := match jf with
        | Cxt_JF => Raw_Context Σ
        | HJF hjf => { Γ : Raw_Context Σ
-                   & Hyp_Judgt_Form_Instance Σ hjf Γ }
+                   & Hyp_Judgt_Form_Instance hjf Γ }
      end.
 
-  Definition Judgt_Instance Σ
-    := { jf : Judgt_Form & Judgt_Form_Instance Σ jf }.
+  Definition Judgt_Instance
+    := { jf : Judgt_Form & Judgt_Form_Instance jf }.
 
 End Judgements.
 
 Section Judgement_Notations.
 
-Definition give_Cxt_ji {Σ}
+  Context {Proto_Cxt : Shape_System}.
+  Context {Σ : Signature Proto_Cxt}.
+
+Definition give_Cxt_ji
   (Γ : Raw_Context Σ)
   : Judgt_Instance Σ.
 Proof.
@@ -241,7 +253,7 @@ Proof.
   exact Γ.
 Defined.
 
-Definition give_Ty_ji {Σ}
+Definition give_Ty_ji
   (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ)
   : Judgt_Instance Σ.
 Proof.
@@ -250,7 +262,7 @@ Proof.
   intros [ [] | ]; exact A.
 Defined.
 
-Definition give_TyEq_ji {Σ}
+Definition give_TyEq_ji
   (Γ : Raw_Context Σ) (A A' : Raw_Syntax Σ Ty Γ)
   : Judgt_Instance Σ.
 Proof.
@@ -261,7 +273,7 @@ Proof.
   exact A'.
 Defined.
 
-Definition give_Tm_ji {Σ}
+Definition give_Tm_ji
   (Γ : Raw_Context Σ) (a : Raw_Syntax Σ Tm Γ) (A : Raw_Syntax Σ Ty Γ)
   : Judgt_Instance Σ.
 Proof.
@@ -273,7 +285,7 @@ Proof.
 Defined.
 
 (* TODO: consistentise order with [give_Term_ji]. *)
-Definition give_TmEq_ji {Σ}
+Definition give_TmEq_ji
   (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ) (a a': Raw_Syntax Σ Tm Γ)
   : Judgt_Instance Σ.
 Proof.
@@ -311,17 +323,19 @@ Section Algebraic_Extensions.
   allowing us to write expressions like x:A |– b(x) : B(x).
   *)
 
-  Definition metavariable_arity (γ : Proto_Cxt) : Arity
+  Context {Proto_Cxt : Shape_System}.
+
+  Definition metavariable_arity (γ : Proto_Cxt) : @Arity Proto_Cxt
   := {| Inds := γ ; val i := (Tm, shape_empty _) |}.
 
-  Definition Metavariable_Extension (Σ : Signature) (a : Arity) : Signature.
+  Definition Metavariable_Extension (Σ : Signature Proto_Cxt) (a : Arity) : Signature.
   Proof.
     refine (Sum_Family Σ _).
     refine (Fmap_Family _ a).
     intros cl_γ. exact (fst cl_γ, metavariable_arity (snd cl_γ)).
   Defined.
 
-  Definition inr_Metavariable {Σ} {a : Arity}
+  Definition inr_Metavariable {a : Arity}
     : a -> Metavariable_Extension Σ a
   := inr.
 
@@ -422,11 +436,11 @@ Section Metavariable_Notations.
   For now we provide the [M/ … /] version, but not yet the general [S/ … /] version.
 *)
 
-Definition empty_metavariable_args {Σ} {γ}
+Definition empty_metavariable_args {γ}
   : Args Σ (metavariable_arity (shape_empty _)) γ
 := empty_rect _ shape_is_empty _.
 
-Definition snoc_metavariable_args {Σ} {γ δ : Proto_Cxt}
+Definition snoc_metavariable_args {γ δ : Proto_Cxt}
   : Args Σ (metavariable_arity δ) γ
   -> Raw_Syntax Σ Tm γ
   -> Args Σ (metavariable_arity (shape_extend _ δ)) γ.
@@ -482,7 +496,7 @@ Section Raw_Type_Theories.
   := { Σ : Signature & Family (Raw_Rule Σ) }.
 
 (*
-  Definition Derivation_TT {Σ} (Rs : Family (Raw_Rule Σ))
+  Definition Derivation_TT (Rs : Family (Raw_Rule Σ))
     : Judgt_Instance Σ -> Type.
 *)
 
@@ -504,7 +518,7 @@ Definition reindex {A} (K : Family A) {X} (f : X -> K) : Family A
 Definition subfamily {A} (K : Family A) (P : K -> Type) : Family A
   := reindex K (pr1 : { i:K & P i } -> K).
 
-Record RuleSpec {Σ}
+Record RuleSpec
 :=
   {
   (* family indexing the premises of the rule, and giving for each: *)
@@ -558,10 +572,6 @@ Record RuleSpec {Σ}
   }.
 
 End RuleSpecs.
-
-
-
-End Fix_Shape_System.
 
 
 

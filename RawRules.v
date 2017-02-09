@@ -1,9 +1,11 @@
 Require Import HoTT.
-Require Import Auxiliary RawSyntax.
+Require Import ShapeSystems RawSyntax.
 
 Section Structural_Rules.
 
-Context (Σ : Signature).
+Context {Proto_Cxt : Shape_System}.
+
+Context (Σ : @Signature Proto_Cxt).
 
 (* Structural rules:
 

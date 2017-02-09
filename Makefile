@@ -10,7 +10,9 @@
 
 # Modules to be included in the main build:
 MODULES := \
-	Auxiliary \
+	Family \
+	Coproduct \
+	DeductiveClosure \
 	RawSyntax \
 	RawRules \
 	ShapeSystems \
