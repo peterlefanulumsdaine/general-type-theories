@@ -22,7 +22,7 @@ Record Shape_System :=
      : forall γ δ : Shape,
        is_coproduct (positions (shape_coproduct γ δ)) (positions γ) (positions δ)
   ; shape_extend : Shape -> Shape
-  ; shape_is_plusone         (* TODO: change to is_extend (Andrej?) *)
+  ; shape_is_extend
      : forall γ : Shape,
        is_plusone (positions (shape_extend γ)) (positions γ)
   }.

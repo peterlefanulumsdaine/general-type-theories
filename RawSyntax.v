@@ -151,12 +151,12 @@ Definition snoc_Raw_Context (Γ : Raw_Context Σ) (A : Raw_Syntax Σ Ty Γ)
   : Raw_Context Σ.
 Proof.
   exists (shape_extend _ Γ).
-  apply (plusone_rect _ _ (shape_is_plusone _ _)).
+  apply (plusone_rect _ _ (shape_is_extend _ _)).
   - refine (Raw_Weaken _ A).
     (* As we put the type into the context, we weaken it to live over the extended context. *)
-    apply (plusone_inj _ _ (shape_is_plusone _ _)).
+    apply (plusone_inj _ _ (shape_is_extend _ _)).
   - intros i. refine (Raw_Weaken _ (Γ i)).
-    apply (plusone_inj _ _ (shape_is_plusone _ _)).
+    apply (plusone_inj _ _ (shape_is_extend _ _)).
 Defined.
 
 End Raw_Context_Construction.
@@ -452,7 +452,7 @@ Definition snoc_metavariable_args {γ δ : σ}
   -> Args Σ (metavariable_arity (shape_extend _ δ)) γ.
 Proof.
   intros ts t.
-  simple refine (plusone_rect _ _ (shape_is_plusone _ δ) _ _ _); cbn.
+  simple refine (plusone_rect _ _ (shape_is_extend _ δ) _ _ _); cbn.
   - refine (Raw_Weaken _ t).
     exact (coproduct_inj1 shape_is_coproduct).
   - exact ts.

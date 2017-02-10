@@ -86,7 +86,7 @@ Proof.
   - simple refine [Tm! _ |- _ ; _ !].
     + exact [: [M/ A /] :].
     + refine (var_raw _).
-      apply (plusone_one _ _ (shape_is_plusone _ _)).
+      apply (plusone_one _ _ (shape_is_extend _ _)).
     + exact [M/ A /].
 Defined.
 
