@@ -498,17 +498,6 @@ End Raw_Rules.
 (** Specification of “well-shaped” rules *)
 Section RuleSpecs.
 
-(* TODO: upstream *)
-Definition reindex {A} (K : Family A) {X} (f : X -> K) : Family A
-  := {|
-       fam_index := X ;
-       fam_element := K o f
-     |}.
-
-(* TODO: upstream *)
-Definition subfamily {A} (K : Family A) (P : K -> Type) : Family A
-  := reindex K (pr1 : { i:K & P i } -> K).
-
 Context {Proto_Cxt : Shape_System}.
 
 Record Rule_Spec
