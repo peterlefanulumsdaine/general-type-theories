@@ -14,9 +14,10 @@ MODULES := \
 	Coproduct \
 	DeductiveClosure \
 	RawSyntax \
-	RawRules \
+	StandardRawRules \
 	ShapeSystems \
 	ShapeSystemExamples \
+	WellFoundedRelations \
 
 VS      := $(MODULES:%=%.v)
 
