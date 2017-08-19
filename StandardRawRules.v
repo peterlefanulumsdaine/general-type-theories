@@ -1,9 +1,10 @@
 Require Import HoTT.
 Require Import ShapeSystems.
-Require Import RawSyntax.
 Require Import DeductiveClosure.
 Require Import Family.
 Require Import Coproduct.
+Require Import RawSyntax.
+Require Import RawTypeTheories.
 
 Section Structural_Rules.
 

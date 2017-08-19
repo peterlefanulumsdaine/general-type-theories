@@ -10,14 +10,15 @@
 
 # Modules to be included in the main build:
 MODULES := \
+	WellFoundedRelations \
 	Family \
 	Coproduct \
 	DeductiveClosure \
-	RawSyntax \
-	StandardRawRules \
 	ShapeSystems \
 	ShapeSystemExamples \
-	WellFoundedRelations \
+	RawSyntax \
+	StandardRawRules \
+	RawTypeTheories \
 
 VS      := $(MODULES:%=%.v)
 
