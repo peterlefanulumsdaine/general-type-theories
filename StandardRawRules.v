@@ -6,23 +6,17 @@ Require Import Coproduct.
 Require Import RawSyntax.
 Require Import RawTypeTheories.
 
-Section Structural_Rules.
+(** This module defines the “standard rules” — the rules which are not explicitly specified in a type theory, but are always assumed to be present.  These fall into several groups:
 
-Context {Proto_Cxt : Shape_System}.
-
-Context (Σ : @Signature Proto_Cxt).
-
-(* Structural rules:
-
-  - context formation rules
-  - var rule
-  - subst, wkg rules, for each type of judgement.
-  - equality rules
-
+- context formation rules (in fact closure conditions in our terminology, not rules, since the latter involve only hypothetical judgements)
+- structural rules
+- congruence rules: any logical rule-specification determines a corresponding cogruence rule specification
 *)
 
-
 Section Context_Formation.
+
+Context {Proto_Cxt : Shape_System}.
+Context (Σ : @Signature Proto_Cxt).
 
 (* These need to be defined directly as closure conditions, since our raw rules only allow derivations of hypothetical judgements.  *)
 
@@ -47,7 +41,7 @@ Proof.
   - exact [Cxt! |- (snoc_Raw_Context Γ A) !].
 Defined.
 
-(* An issue arising from the present approach to shapes/proto-contexts: if the context extension rule is formulated just with [shape_extend], then it will give no way to ever prove well-typedness of contexts with other shapes; in particular, of contexts using [shape_coproduct], which will arise in the premises of logical rules.
+(* An issue arising from the present approach to shapes/proto-contexts: if the context extension rule is formulated just with [shape_extend] as above, then it will give no way to ever prove well-typedness of contexts with other shapes; in particular, of contexts using [shape_coproduct], which will arise in the premises of logical rules.
 
   Possible solutions (without entirely changing the proto-context approach):
 
@@ -59,6 +53,20 @@ Defined.
 (* TODO: renaming-of-variables rule (?)*)
 
 End Context_Formation.
+
+Section Structural_Rules.
+
+(* Structural rules:
+
+  - var rule
+  - subst, wkg rules, for each type of judgement.
+  - equality rules
+
+*)
+
+Context {Proto_Cxt : Shape_System}.
+Context (Σ : @Signature Proto_Cxt).
+
 
 Section Var_Subst_Wkg.
 
@@ -431,3 +439,17 @@ Defined.
 End Equality_Rules.
 
 End Structural_Rules.
+
+Section Congruence_Rules.
+
+Context {Proto_Cxt : Shape_System}.
+Context (Σ : @Signature Proto_Cxt).
+
+Definition associated_congruence_rule_spec
+  {a} {cl} (R : Rule_Spec Σ a (obj_HJF cl))
+  : (Rule_Spec Σ (Family.Sum a a) (eq_HJF cl)).
+Admitted.
+(* A good test proposition will be the following: whenever a rule-spec is well-typed, then so is its associated congruence rule-spec. *)
+
+End Congruence_Rules.
+

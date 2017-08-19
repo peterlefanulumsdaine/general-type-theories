@@ -53,16 +53,16 @@ Notation " [< x ; .. ; z >] " := (Snoc .. (Snoc (Empty_family _) x) .. z) : fam_
 For by-hand case-by-case proofs on finite families, that might be a little nicer, avoiding a vacuous step.  TODO: see how these are used in practice; consider this choice. *)
 
 (* Reindexing of a family along a map into the index type *)
-Definition reindex {A} (K : Family A) {X} (f : X -> K) : Family A
+Definition Reindex {A} (K : Family A) {X} (f : X -> K) : Family A
   := {|
        fam_index := X ;
        fam_element := K o f
      |}.
 
 (* The subfamily of a family determined by a predicate on the index type *)
-Definition subfamily {A} (K : Family A) (P : K -> Type) : Family A
-  := reindex K (pr1 : { i:K & P i } -> K).
+Definition Subfamily {A} (K : Family A) (P : K -> Type) : Family A
+  := Reindex K (pr1 : { i:K & P i } -> K).
 
 (* The subfamily of a family determined by a predicate on the value type *)
-Definition filter {A} (K : Family A) (P : A -> Type) : Family A
-  := subfamily K (P o K).
+Definition Filter {A} (K : Family A) (P : A -> Type) : Family A
+  := Subfamily K (P o K).

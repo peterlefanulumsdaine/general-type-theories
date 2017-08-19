@@ -47,7 +47,7 @@ Record Rule_Spec
 :=
   {
   (* The arity [a] supplies the family of object-judgment premises. *)
-  (* The family of equality-judgment premises. *)
+  (* The family of equality-judgment premises: *)
     RS_equality_premise : Arity Proto_Cxt
   (* family indexing the premises of the rule, and giving for each: *)
   ; RS_Premise : Family (Hyp_Judgt_Form * Proto_Cxt)
@@ -67,7 +67,7 @@ Record Rule_Spec
   ; RS_arity_of_premise : RS_Premise -> Arity _
     := fun i => Fmap
         (fun jγ => (class_of_HJF (fst jγ), snd jγ))
-        (subfamily RS_Premise
+        (Subfamily RS_Premise
           (fun j => is_obj_HJF (fst (RS_Premise j)) * RS_lt j i))
   (* syntactic part of context of premise; this should never be used directly, always through [RS_raw_context_of_premise] *)
   ; RS_context_expr_of_premise 
@@ -92,7 +92,7 @@ Record Rule_Spec
   ; RS_arity : Arity _
     := Fmap
         (fun jγ => (class_of_HJF (fst jγ), snd jγ))
-        (subfamily RS_Premise
+        (Subfamily RS_Premise
           (fun j => is_obj_HJF (fst (RS_Premise j))))
   (* judgement form of conclusion *)
   ; RS_hjf_of_conclusion : Hyp_Judgt_Form
@@ -115,31 +115,59 @@ Section TTSpecs.
   Record Type_Theory_Spec
   := {
   (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
-    RTT_Rule : Family (Hyp_Judgt_Form * Arity Proto_Cxt)
+    TTS_Rule : Family (Hyp_Judgt_Form * Arity Proto_Cxt)
   (* the ordering relation on the rules *)
   (* TODO: somewhere we will want to add that this is well-founded; maybe more *)
   (* the judgement form of the conclusion of each rule *)
-  ; RTT_hjf_of_rule : RTT_Rule -> Hyp_Judgt_Form
-    := fun i => fst (RTT_Rule i)
+  ; TTS_hjf_of_rule : TTS_Rule -> Hyp_Judgt_Form
+    := fun i => fst (TTS_Rule i)
   (* the arity (of the *object* premises only) of each rule *)
-  ; RTT_arity_of_rule : RTT_Rule -> Arity _
-    := fun i => snd (RTT_Rule i)
+  ; TTS_arity_of_rule : TTS_Rule -> Arity _
+    := fun i => snd (TTS_Rule i)
   (* the ordering on rules.  TODO: will probably need to add well-foundedness *)
-  ; RTT_lt : RTT_Rule -> RTT_Rule -> hProp
+  ; TTS_lt : TTS_Rule -> TTS_Rule -> hProp
   (* the signature over which each rule can be written *)
-  ; RTT_signature_of_rule : RTT_Rule -> Signature Proto_Cxt
+  ; TTS_signature_of_rule : TTS_Rule -> Signature Proto_Cxt
     := fun i => Fmap
         (fun jγ => (class_of_HJF (fst jγ), snd jγ))
-        (subfamily RTT_Rule
-          (fun j => is_obj_HJF (RTT_hjf_of_rule j) * RTT_lt j i))
+        (Subfamily TTS_Rule
+          (fun j => is_obj_HJF (TTS_hjf_of_rule j) * TTS_lt j i))
   (* the actual rule specification of each rule *)
-  ; RTT_rule_spec
-    : forall i : RTT_Rule,
+  ; TTS_rule_spec
+    : forall i : TTS_Rule,
         Rule_Spec
-          (RTT_signature_of_rule i)
-          (RTT_arity_of_rule i)
-          (RTT_hjf_of_rule i)
+          (TTS_signature_of_rule i)
+          (TTS_arity_of_rule i)
+          (TTS_hjf_of_rule i)
   }.
- 
+
+  (* TODO: add implicit arguments to the access functions *)
+
+  (* TODO: upstream; possibly factor through Bool, is_true? *)
+  Definition is_obj_HJF : Hyp_Judgt_Form -> Type.
+  Proof.
+    intros [ _ | _ ].
+    - exact Unit.
+    - exact Empty.
+  Defined. 
+
+  Definition Signature_of_TT_Spec (T : Type_Theory_Spec)
+    : Signature Proto_Cxt.
+  Proof.
+    (* symbols are given by the object-judgement rules of T *)
+    exists {r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule _ r)}.
+    intros [r Hr].
+    set (hjf := TTS_hjf_of_rule _ r) in *; clearbody hjf.
+    destruct hjf as [ cl | cl ].
+    - (* when r is an object rule, the class and arity of its symbol are those of r itself: *)
+      exact (cl, TTS_arity_of_rule _ r).
+    - destruct Hr. (* by assumption, r cannot be an equality rule *)
+  Defined.
+
+  Definition Raw_TT_of_TT_Spec (T : Type_Theory_Spec)
+    : Raw_Type_Theory (Signature_of_TT_Spec T).
+  (* TODO: downstream, since this needs to add in the standard raw rules.  Possibly also downstream [Signature_of_TT_Spec]. *)
+  Admitted.
+
 End TTSpecs.
 
