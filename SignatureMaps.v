@@ -8,13 +8,29 @@ Section Signature_Maps.
 
   Context {σ : Shape_System}.
  
-  Definition Signature_Map (Σ Σ' : Signature σ) : Type.
-  Admitted.
+  Definition Signature_Map (Σ Σ' : Signature σ) : Type
+    := Family_Map Σ Σ'.
+
+  Definition Family_Map_of_Signature_Map {Σ Σ'}
+    : Signature_Map Σ Σ' -> Family_Map Σ Σ'
+  := idmap.
+  Coercion Family_Map_of_Signature_Map : Signature_Map >-> Family_Map.
 
   Definition Fmap_Raw_Syntax {Σ Σ'} (f : Signature_Map Σ Σ')
       {cl} {γ}
     : Raw_Syntax Σ cl γ -> Raw_Syntax Σ' cl γ.
-  Admitted.
+  Proof.
+    intros t. induction t as [ γ i | γ S ts fts].
+    - exact (var_raw i).
+    - refine (transport (fun cl => Raw_Syntax _ cl _) _ (symb_raw (f S) _)).
+      + exact (ap fst (commutes_Family_Map _ _)).
+      + refine (transport
+          (fun a : Arity σ => forall i : a,
+               Raw_Syntax Σ' (arg_class i) (shape_coproduct γ (arg_pcxt i)))
+          _
+          fts).
+        exact ((ap snd (commutes_Family_Map _ _))^).
+  Defined.
 
   Definition Fmap_Raw_Context {Σ Σ'} (f : Signature_Map Σ Σ')
     : Raw_Context Σ -> Raw_Context Σ'.

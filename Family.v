@@ -75,3 +75,21 @@ Proof.
   intros [i j].
   exact (f (K i) j).
 Defined.
+
+
+Section Family_Maps.
+
+  Definition Family_Map {A} (K L : Family A)
+    := { f : K -> L & forall i : K, L (f i) = K i }.
+
+  Definition pr1_Family_Map {A} {K L : Family A}
+    : Family_Map K L -> (K -> L)
+  := pr1.
+  Coercion pr1_Family_Map : Family_Map >-> Funclass.
+
+  Definition commutes_Family_Map {A} {K L : Family A}
+    : forall f : Family_Map K L,
+      forall i : K, L (f i) = K i
+  := pr2.
+
+End Family_Maps.
