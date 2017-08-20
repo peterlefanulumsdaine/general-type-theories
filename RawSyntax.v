@@ -342,14 +342,14 @@ Section Algebraic_Extensions.
 
   Context {σ : Shape_System}.
 
-  Definition metavariable_arity (γ : σ) : @Arity σ
+  Definition simple_arity (γ : σ) : @Arity σ
   := {| fam_index := γ ; fam_element i := (Tm, shape_empty _) |}.
 
   Definition Metavariable_Extension (Σ : Signature σ) (a : @Arity σ) : Signature σ.
   Proof.
     refine (Sum Σ _).
     refine (Fmap _ a).
-    intros cl_γ. exact (fst cl_γ, metavariable_arity (snd cl_γ)).
+    intros cl_γ. exact (fst cl_γ, simple_arity (snd cl_γ)).
   Defined.
 
   Definition inr_Metavariable {Σ : Signature σ} {a : @Arity σ}
@@ -457,13 +457,13 @@ Context {σ : Shape_System}.
 Context {Σ : Signature σ}.
 
 Definition empty_metavariable_args {γ}
-  : Args Σ (metavariable_arity (shape_empty _)) γ
+  : Args Σ (simple_arity (shape_empty _)) γ
 := empty_rect _ shape_is_empty _.
 
 Definition snoc_metavariable_args {γ δ : σ}
-  : Args Σ (metavariable_arity δ) γ
+  : Args Σ (simple_arity δ) γ
   -> Raw_Syntax Σ Tm γ
-  -> Args Σ (metavariable_arity (shape_extend _ δ)) γ.
+  -> Args Σ (simple_arity (shape_extend _ δ)) γ.
 Proof.
   intros ts t.
   simple refine (plusone_rect _ _ (shape_is_plusone _ δ) _ _ _); cbn.

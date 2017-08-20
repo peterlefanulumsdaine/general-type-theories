@@ -119,6 +119,11 @@ Record Rule_Spec
                             (HJF RS_hjf_of_conclusion)
     := (RS_raw_context_of_conclusion; RS_hyp_judgt_bdry_instance_of_conclusion)
   }.
+  (* NOTE 1. One could restrict this by only allowing the case where the context of the conclusion is empty.  This would simplify this definition, and several things below, and would (one expects) not lose any generality, since one can always move variables from that context to become extra premises, giving an equivalent rule with empty conclusion context.
+
+  However, we retain (for now) the current general version, (a) since rules are sometimes written this way in practice, and (b) to allow a precise theorem stating the claim above about equivalent forms of a rule . *)
+
+  (* NOTE 2. The current parameters of the definition could perhaps be profitably abstracted into a “proto-rule-spec” (probably including also the arity [RS_equality_Premise]), fitting the pattern of the stratificaiton of objects into proto -> raw -> typed. *)
 
   Arguments Rule_Spec _ _ _ _ : clear implicits.
 
@@ -160,7 +165,8 @@ Record Rule_Spec
     {Σ} {a} {γ_concl} {hjf_concl}
     (R : Rule_Spec Σ a γ_concl hjf_concl)
     (Sr : is_obj_HJF hjf_concl
-        -> { S : Σ & (arity S = a) * (class S = class_of_HJF hjf_concl) })
+        -> { S : Σ & (arity S = Family.Sum a (simple_arity γ_concl))
+                     * (class S = class_of_HJF hjf_concl) })
   : Raw_Rule Σ.
   (* This construction involves essentially two aspects:
   - translate the syntax given in R from its “local” signatures to the overall signature;
@@ -199,18 +205,23 @@ Record Rule_Spec
         destruct hjf_concl as [ ocl | ecl ]; simpl in *.
         * (* case: R an object rule *)
           destruct (Sr tt) as [S_R [e_a e_cl]]. clear Sr H_obj.
-          destruct e_a, e_cl.
+          destruct e_cl.
           refine (symb_raw (inl S_R : Metavariable_Extension _ _) _).
-          intros P; cbn in P.
-          refine (symb_raw (inr P : Metavariable_Extension _ _) _).
-          intros i.
-          apply var_raw.
-          apply (coproduct_inj1 shape_is_coproduct).
-          exact (coproduct_inj2 shape_is_coproduct i).
+          change (arity (inl S_R : Metavariable_Extension _ _))
+            with (arity S_R). 
+          set (aR := arity S_R) in *. destruct (e_a^); clear e_a.
+          intros [P | i].
+          -- cbn in P.
+            refine (symb_raw (inr P : Metavariable_Extension _ _) _).
+            intros i.
+            apply var_raw.
+            apply (coproduct_inj1 shape_is_coproduct).
+            exact (coproduct_inj2 shape_is_coproduct i).
+          -- apply var_raw.
+            exact (coproduct_inj1 shape_is_coproduct i).
         * (* case: R an equality rule *)
           destruct H_obj. (* ruled out by assumption *)
   Admitted.
-  (* TODO: note there is an error in construction above, and also in def of signature of a TT_spec!  If the conclusion of R has a non-empty context, then the variables of this context also need to appear as arguments of the symbol that the rule introduces.  So the arity of the symbol should NOT be exactly the arity of the rule itself, but the coproduct of that and the context. *)
 
 End RuleSpecs.
 
@@ -242,7 +253,8 @@ Section TTSpecs.
   (* the signature over which each rule can be written *)
   ; TTS_signature_of_rule : TTS_Rule -> Signature σ
     := fun i => Fmap
-        (fun jγ => (class_of_HJF (fst (fst jγ)), snd (fst jγ)))
+        (fun jaγ => ( class_of_HJF (fst (fst jaγ))
+                   , Family.Sum (snd (fst jaγ)) (simple_arity (snd jaγ))))
         (Subfamily TTS_Rule
           (fun j => is_obj_HJF (TTS_hjf_of_rule j) * TTS_lt j i))
   (* the actual rule specification of each rule *)
