@@ -111,12 +111,12 @@ End RuleSpecs.
 
 Section TTSpecs.
 
-  Context (Proto_Cxt : Shape_System).
+  Context (σ : Shape_System).
 
   Record Type_Theory_Spec
   := {
   (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
-    TTS_Rule : Family (Hyp_Judgt_Form * Arity Proto_Cxt)
+    TTS_Rule : Family (Hyp_Judgt_Form * Arity σ)
   (* the ordering relation on the rules *)
   (* TODO: somewhere we will want to add that this is well-founded; maybe more *)
   (* the judgement form of the conclusion of each rule *)
@@ -128,7 +128,7 @@ Section TTSpecs.
   (* the ordering on rules.  TODO: will probably need to add well-foundedness *)
   ; TTS_lt : TTS_Rule -> TTS_Rule -> hProp
   (* the signature over which each rule can be written *)
-  ; TTS_signature_of_rule : TTS_Rule -> Signature Proto_Cxt
+  ; TTS_signature_of_rule : TTS_Rule -> Signature σ
     := fun i => Fmap
         (fun jγ => (class_of_HJF (fst jγ), snd jγ))
         (Subfamily TTS_Rule
@@ -142,7 +142,12 @@ Section TTSpecs.
           (TTS_hjf_of_rule i)
   }.
 
-  (* TODO: add implicit arguments to the access functions *)
-
 End TTSpecs.
+
+Arguments TTS_Rule {_} _.
+Arguments TTS_hjf_of_rule {_ _} _.
+Arguments TTS_arity_of_rule {_ _} _.
+Arguments TTS_lt {_ _} _ _.
+Arguments TTS_signature_of_rule {_ _} _.
+Arguments TTS_rule_spec {_ _} _.
 

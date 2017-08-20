@@ -442,6 +442,10 @@ Defined.
 
 End Equality_Rules.
 
+Definition Structural_Rules : Family (Raw_Rule Σ).
+  (* TODO: collect all the rules above into a family. *)
+Admitted.
+
 End Structural_Rules.
 
 Section Congruence_Rules.

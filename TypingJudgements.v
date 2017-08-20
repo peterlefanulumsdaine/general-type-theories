@@ -33,29 +33,30 @@ Section Derivability_from_TT_Spec.
     : Signature σ.
   Proof.
     (* symbols are given by the object-judgement rules of T *)
-    exists {r : TTS_Rule _ T & is_obj_HJF (TTS_hjf_of_rule _ _ r)}.
+    exists {r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule r)}.
     intros [r Hr].
-    set (hjf := TTS_hjf_of_rule _ _ r) in *; clearbody hjf.
+    set (hjf := TTS_hjf_of_rule r) in *; clearbody hjf.
     destruct hjf as [ cl | cl ].
     - (* when r is an object rule, the class and arity of its symbol are those of r itself: *)
-      exact (cl, TTS_arity_of_rule _ _ r).
+      exact (cl, TTS_arity_of_rule r).
     - destruct Hr. (* by assumption, r cannot be an equality rule *)
   Defined.
 
   Definition Raw_TT_of_TT_Spec (T : Type_Theory_Spec σ)
     : Raw_Type_Theory (Signature_of_TT_Spec T).
   (* TODO: downstream, since this needs to add in the standard raw rules.  Possibly also downstream [Signature_of_TT_Spec]. *)
+  Proof.
+    (* First group: the structural rules *)
+    refine (Family.Sum (Structural_Rules _) _).
+    refine (Family.Sum _ _).
+    (* Second group: the explicitly-given logical rules *)
+    - exists (TTS_Rule T).
+      intros r.
+      admit. (* TODO: Raw_Rule_of_Rule_Spec *)
+    (* Third group: the congruence rules for the type-/term- operations *)
+    - exists { r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule r) }.
+      intros [r Hr].
+      admit. (* TODO: Raw_Rule_of_Rule_Spec, associated congruence rule *)
   Admitted.
 
 End Derivability_from_TT_Spec.
-
-(*
-a judgement is well-typed: relative to a collection of raw rules in its signature [add context extension, & translate raw rules into cc’s]  
-a rule is well-typed: relative to a collection of raw rules in its signature
-
-
-tt_spec
--> raw_tt
--> derivability relations
-*)
-
