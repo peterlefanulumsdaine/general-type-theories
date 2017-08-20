@@ -42,15 +42,15 @@ Section RuleSpecs.
 Context {Proto_Cxt : Shape_System}.
 
 Record Rule_Spec
-  (Σ : Signature Proto_Cxt)
-  (a : Arity Proto_Cxt)
-  (hjf_conclusion : Hyp_Judgt_Form)
+  {Σ : Signature Proto_Cxt}
+  {a : Arity Proto_Cxt}
+  {hjf_conclusion : Hyp_Judgt_Form}
 :=
   {
   (* The arity [a] supplies the family of object-judgment premises. *)
   (* The family of equality-judgment premises: *)
     RS_equality_premise : Arity Proto_Cxt
-  (* family indexing the premises of the rule, and giving for each: *)
+  (* family indexing the premises of the rule, and giving for each… *)
   ; RS_Premise : Family (Hyp_Judgt_Form * Proto_Cxt)
     := Family.Sum
          (Family.Fmap (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) a)
@@ -105,7 +105,56 @@ Record Rule_Spec
           (HJF RS_hjf_of_conclusion)
   }.
 
+  Arguments Rule_Spec _ _ _ : clear implicits.
+
+  (* TODO: upstream *)
+  Definition Signature_Map (Σ Σ' : Signature Proto_Cxt) : Type.
+  Admitted.
+
+  (* TODO: upstream *)
+  Definition Fmap_Raw_Syntax {Σ Σ'} (f : Signature_Map Σ Σ')
+      {cl} {γ}
+    : Raw_Syntax Σ cl γ -> Raw_Syntax Σ' cl γ.
+  Admitted.
+
+  (* TODO: upstream *)
+  Definition Fmap_Raw_Context {Σ Σ'} (f : Signature_Map Σ Σ')
+    : Raw_Context Σ -> Raw_Context Σ'.
+  Proof.
+    intros Γ.
+    exists (Proto_Context_of_Raw_Context Γ).
+    intros i. refine (_ (var_type_of_Raw_Context Γ i)).
+    apply (Fmap_Raw_Syntax f).
+  Defined.
+
+  (* TODO: upstream *)
+  Definition Fmap_Hyp_Judgt_Form_Instance {Σ Σ'} (f : Signature_Map Σ Σ')
+      {hjf} {γ}
+    : Hyp_Judgt_Form_Instance Σ hjf γ -> Hyp_Judgt_Form_Instance Σ' hjf γ.
+  Proof.
+  Admitted.
+
+  Definition Raw_Rule_of_Rule_Spec
+    {Σ} {a} {hjf_concl}
+    (R : Rule_Spec Σ a hjf_concl)
+    (Sr : is_obj_HJF hjf_concl
+        -> { S : Σ & (arity S = a) * (class S = class_of_HJF hjf_concl) })
+  : Raw_Rule Σ.
+  Proof.
+    refine (Build_Raw_Rule _ a _ _).
+    - (* premises *)
+      exists (RS_Premise R).
+      intros P. exists (HJF (RS_hjf_of_premise _ P)).
+      simple refine (Fmap_Raw_Context _ (RS_raw_context_of_premise _ P) ; _).
+      + admit. (* signature map from extension by sub-arity *)
+      + simpl. admit.
+    - (* conclusion *)
+      admit.
+  Admitted.
+
 End RuleSpecs.
+
+Arguments Rule_Spec {_} _ _ _.
 
 (** Specification of a type theory (but before checking that syntax in rules is well-typed. *)
 

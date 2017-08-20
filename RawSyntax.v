@@ -73,10 +73,10 @@ Section Raw_Syntax.
   (* A raw context is a proto-ctx ("collection of identifiers") and a raw syntactic type expression
      for each identifier in the proto-ctx. *)
   Record Raw_Context
-  := { σ_of_Raw_Context :> σ
+  := { Proto_Context_of_Raw_Context :> σ
      ; var_type_of_Raw_Context
-         :> forall i : σ_of_Raw_Context,
-            Raw_Syntax Ty σ_of_Raw_Context
+         :> forall i : Proto_Context_of_Raw_Context,
+            Raw_Syntax Ty Proto_Context_of_Raw_Context
      }.
 
   Definition Raw_Context_Map (γ δ : σ)
