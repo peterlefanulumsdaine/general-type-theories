@@ -17,8 +17,9 @@ MODULES := \
 	ShapeSystems \
 	ShapeSystemExamples \
 	RawSyntax \
-	StandardRawRules \
+	SignatureMaps \
 	RawTypeTheories \
+	StandardRawRules \
 	TypingJudgements \
 
 VS      := $(MODULES:%=%.v)

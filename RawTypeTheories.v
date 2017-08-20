@@ -4,6 +4,7 @@ Require Import ShapeSystems.
 Require Import Coproduct.
 Require Import DeductiveClosure.
 Require Import RawSyntax.
+Require Import SignatureMaps.
 
 Section Raw_Rules.
 
@@ -126,40 +127,6 @@ Record Rule_Spec
   (* NOTE 2. The current parameters of the definition could perhaps be profitably abstracted into a “proto-rule-spec” (probably including also the arity [RS_equality_Premise]), fitting the pattern of the stratificaiton of objects into proto -> raw -> typed. *)
 
   Arguments Rule_Spec _ _ _ _ : clear implicits.
-
-  (* TODO: upstream *)
-  Definition Signature_Map (Σ Σ' : Signature Proto_Cxt) : Type.
-  Admitted.
-
-  (* TODO: upstream *)
-  Definition Fmap_Raw_Syntax {Σ Σ'} (f : Signature_Map Σ Σ')
-      {cl} {γ}
-    : Raw_Syntax Σ cl γ -> Raw_Syntax Σ' cl γ.
-  Admitted.
-
-  (* TODO: upstream *)
-  Definition Fmap_Raw_Context {Σ Σ'} (f : Signature_Map Σ Σ')
-    : Raw_Context Σ -> Raw_Context Σ'.
-  Proof.
-    intros Γ.
-    exists (Proto_Context_of_Raw_Context Γ).
-    intros i. refine (_ (var_type_of_Raw_Context Γ i)).
-    apply (Fmap_Raw_Syntax f).
-  Defined.
-
-  (* TODO: upstream *)
-  Definition Fmap_Hyp_Judgt_Bdry_Instance {Σ Σ'} (f : Signature_Map Σ Σ')
-      {hjf} {γ}
-    : Hyp_Judgt_Bdry_Instance Σ hjf γ -> Hyp_Judgt_Bdry_Instance Σ' hjf γ.
-  Proof.
-  Admitted.
-
-  (* TODO: upstream *)
-  Definition Fmap_Hyp_Judgt_Form_Instance {Σ Σ'} (f : Signature_Map Σ Σ')
-      {hjf} {γ}
-    : Hyp_Judgt_Form_Instance Σ hjf γ -> Hyp_Judgt_Form_Instance Σ' hjf γ.
-  Proof.
-  Admitted.
 
   Definition Raw_Rule_of_Rule_Spec
     {Σ} {a} {γ_concl} {hjf_concl}
