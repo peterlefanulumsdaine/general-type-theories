@@ -19,6 +19,7 @@ MODULES := \
 	RawSyntax \
 	StandardRawRules \
 	RawTypeTheories \
+	TypingJudgements \
 
 VS      := $(MODULES:%=%.v)
 

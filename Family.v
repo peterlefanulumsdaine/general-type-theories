@@ -66,3 +66,12 @@ Definition Subfamily {A} (K : Family A) (P : K -> Type) : Family A
 (* The subfamily of a family determined by a predicate on the value type *)
 Definition Filter {A} (K : Family A) (P : A -> Type) : Family A
   := Subfamily K (P o K).
+
+(* The monadic *bind* operation for families. *)
+Definition Bind {A B}
+  (K : Family A) (f : A -> Family B) : Family B.
+Proof.
+  exists { i : K & f (K i) }.
+  intros [i j].
+  exact (f (K i) j).
+Defined.

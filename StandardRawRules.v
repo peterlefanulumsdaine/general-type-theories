@@ -41,6 +41,10 @@ Proof.
   - exact [Cxt! |- (snoc_Raw_Context Γ A) !].
 Defined.
 
+Definition context_ccs
+  : Family (closure_condition (Judgt_Instance Σ))
+:= Family.Snoc context_extension_cc empty_context_cc.
+
 (* An issue arising from the present approach to shapes/proto-contexts: if the context extension rule is formulated just with [shape_extend] as above, then it will give no way to ever prove well-typedness of contexts with other shapes; in particular, of contexts using [shape_coproduct], which will arise in the premises of logical rules.
 
   Possible solutions (without entirely changing the proto-context approach):

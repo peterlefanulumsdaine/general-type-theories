@@ -34,6 +34,7 @@ Section Raw_Rules.
 
 End Raw_Rules.
 
+Arguments CCs_of_RR {_ _} _.
 
 (** Specification of “well-shaped” rules *)
 Section RuleSpecs.
@@ -110,7 +111,7 @@ End RuleSpecs.
 
 Section TTSpecs.
 
-  Context {Proto_Cxt : Shape_System}.
+  Context (Proto_Cxt : Shape_System).
 
   Record Type_Theory_Spec
   := {
@@ -142,32 +143,6 @@ Section TTSpecs.
   }.
 
   (* TODO: add implicit arguments to the access functions *)
-
-  (* TODO: upstream; possibly factor through Bool, is_true? *)
-  Definition is_obj_HJF : Hyp_Judgt_Form -> Type.
-  Proof.
-    intros [ _ | _ ].
-    - exact Unit.
-    - exact Empty.
-  Defined. 
-
-  Definition Signature_of_TT_Spec (T : Type_Theory_Spec)
-    : Signature Proto_Cxt.
-  Proof.
-    (* symbols are given by the object-judgement rules of T *)
-    exists {r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule _ r)}.
-    intros [r Hr].
-    set (hjf := TTS_hjf_of_rule _ r) in *; clearbody hjf.
-    destruct hjf as [ cl | cl ].
-    - (* when r is an object rule, the class and arity of its symbol are those of r itself: *)
-      exact (cl, TTS_arity_of_rule _ r).
-    - destruct Hr. (* by assumption, r cannot be an equality rule *)
-  Defined.
-
-  Definition Raw_TT_of_TT_Spec (T : Type_Theory_Spec)
-    : Raw_Type_Theory (Signature_of_TT_Spec T).
-  (* TODO: downstream, since this needs to add in the standard raw rules.  Possibly also downstream [Signature_of_TT_Spec]. *)
-  Admitted.
 
 End TTSpecs.
 
