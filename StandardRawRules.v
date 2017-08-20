@@ -454,8 +454,8 @@ Context {Proto_Cxt : Shape_System}.
 Context (Σ : @Signature Proto_Cxt).
 
 Definition associated_congruence_rule_spec
-  {a} {cl} (R : Rule_Spec Σ a (obj_HJF cl))
-  : (Rule_Spec Σ (Family.Sum a a) (eq_HJF cl)).
+  {a} {γ} {cl} (R : Rule_Spec Σ a γ (obj_HJF cl))
+  : (Rule_Spec Σ (Family.Sum a a) γ (eq_HJF cl)).
 Admitted.
 (* A good test proposition will be the following: whenever a rule-spec is well-typed, then so is its associated congruence rule-spec. *)
 

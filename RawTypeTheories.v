@@ -44,6 +44,7 @@ Context {Proto_Cxt : Shape_System}.
 Record Rule_Spec
   {Σ : Signature Proto_Cxt}
   {a : Arity Proto_Cxt}
+  {γ_conclusion : Shape Proto_Cxt}
   {hjf_conclusion : Hyp_Judgt_Form}
 :=
   {
@@ -70,7 +71,8 @@ Record Rule_Spec
         (fun jγ => (class_of_HJF (fst jγ), snd jγ))
         (Subfamily RS_Premise
           (fun j => is_obj_HJF (fst (RS_Premise j)) * RS_lt j i))
-  (* syntactic part of context of premise; this should never be used directly, always through [RS_raw_context_of_premise] *)
+  (* syntactic part of context of premise *)
+  (* NOTE: this should never be used directly, always through [RS_raw_context_of_premise] *)
   ; RS_context_expr_of_premise 
     : forall (i : RS_Premise) (v : RS_proto_cxt_of_premise i),
         Raw_Syntax
@@ -98,14 +100,27 @@ Record Rule_Spec
   (* judgement form of conclusion *)
   ; RS_hjf_of_conclusion : Hyp_Judgt_Form
     := hjf_conclusion
-  (* judgement boundary instance of conclusion *)
-  ; RS_judgt_bdry_instance_of_conclusion
-      : Judgt_Bdry_Instance
+  (* context expressions of conclusion *)
+  (* NOTE: this should never be used directly, always through [RS_raw_context_of_conclusion] *)
+  ; RS_context_expr_of_conclusion
+    : γ_conclusion -> Raw_Syntax (Metavariable_Extension Σ a) Ty γ_conclusion
+  (* raw context of conclusion *)
+  ; RS_raw_context_of_conclusion : Raw_Context (Metavariable_Extension Σ a)
+    := Build_Raw_Context _ RS_context_expr_of_conclusion
+  (* hyp judgement boundary instance of conclusion *)
+  ; RS_hyp_judgt_bdry_instance_of_conclusion
+      : Hyp_Judgt_Bdry_Instance
           (Metavariable_Extension Σ a)
-          (HJF RS_hjf_of_conclusion)
+          RS_hjf_of_conclusion
+          γ_conclusion
+  (* full judgement boundary instance of conclusion *)
+  ; RS_judgt_bdry_instance_of_conclusion
+      : Judgt_Bdry_Instance (Metavariable_Extension Σ a)
+                            (HJF RS_hjf_of_conclusion)
+    := (RS_raw_context_of_conclusion; RS_hyp_judgt_bdry_instance_of_conclusion)
   }.
 
-  Arguments Rule_Spec _ _ _ : clear implicits.
+  Arguments Rule_Spec _ _ _ _ : clear implicits.
 
   (* TODO: upstream *)
   Definition Signature_Map (Σ Σ' : Signature Proto_Cxt) : Type.
@@ -142,8 +157,8 @@ Record Rule_Spec
   Admitted.
 
   Definition Raw_Rule_of_Rule_Spec
-    {Σ} {a} {hjf_concl}
-    (R : Rule_Spec Σ a hjf_concl)
+    {Σ} {a} {γ_concl} {hjf_concl}
+    (R : Rule_Spec Σ a γ_concl hjf_concl)
     (Sr : is_obj_HJF hjf_concl
         -> { S : Σ & (arity S = a) * (class S = class_of_HJF hjf_concl) })
   : Raw_Rule Σ.
@@ -195,11 +210,11 @@ Record Rule_Spec
         * (* case: R an equality rule *)
           destruct H_obj. (* ruled out by assumption *)
   Admitted.
-  (* TODO: note there is an error in construction above, and also in def of signature of a TT_spec!  If the conclusion of R has a non-empty context, then the variables of this context also need to appear as arguments of the symbol that the rule introduces.  So the arity of the symbol should NOT be exactly the arity of the rule itself, but the coproduct of that and the context.  Fixing this will involve adding the proto-context of the conclusion into the parameters of Rule_Spec, since it’s needed in TT_Spec to deduce the signatures of later rules. *)
+  (* TODO: note there is an error in construction above, and also in def of signature of a TT_spec!  If the conclusion of R has a non-empty context, then the variables of this context also need to appear as arguments of the symbol that the rule introduces.  So the arity of the symbol should NOT be exactly the arity of the rule itself, but the coproduct of that and the context. *)
 
 End RuleSpecs.
 
-Arguments Rule_Spec {_} _ _ _.
+Arguments Rule_Spec {_} _ _ _ _.
 
 (** Specification of a type theory (but before checking that syntax in rules is well-typed. *)
 
@@ -210,21 +225,24 @@ Section TTSpecs.
   Record Type_Theory_Spec
   := {
   (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
-    TTS_Rule : Family (Hyp_Judgt_Form * Arity σ)
+    TTS_Rule : Family (Hyp_Judgt_Form * Arity σ * Shape σ)
   (* the ordering relation on the rules *)
   (* TODO: somewhere we will want to add that this is well-founded; maybe more *)
   (* the judgement form of the conclusion of each rule *)
   ; TTS_hjf_of_rule : TTS_Rule -> Hyp_Judgt_Form
-    := fun i => fst (TTS_Rule i)
-  (* the arity (of the *object* premises only) of each rule *)
+    := fun i => fst (fst (TTS_Rule i))
+  (* the arity of the arguments (i.e. the *object* premises only) of each rule *)
   ; TTS_arity_of_rule : TTS_Rule -> Arity _
+    := fun i => snd (fst (TTS_Rule i))
+  (* the shape of the conclusion of each rule *)
+  ; TTS_concl_shape_of_rule : TTS_Rule -> Shape σ
     := fun i => snd (TTS_Rule i)
   (* the ordering on rules.  TODO: will probably need to add well-foundedness *)
   ; TTS_lt : TTS_Rule -> TTS_Rule -> hProp
   (* the signature over which each rule can be written *)
   ; TTS_signature_of_rule : TTS_Rule -> Signature σ
     := fun i => Fmap
-        (fun jγ => (class_of_HJF (fst jγ), snd jγ))
+        (fun jγ => (class_of_HJF (fst (fst jγ)), snd (fst jγ)))
         (Subfamily TTS_Rule
           (fun j => is_obj_HJF (TTS_hjf_of_rule j) * TTS_lt j i))
   (* the actual rule specification of each rule *)
@@ -233,6 +251,7 @@ Section TTSpecs.
         Rule_Spec
           (TTS_signature_of_rule i)
           (TTS_arity_of_rule i)
+          (TTS_concl_shape_of_rule i)
           (TTS_hjf_of_rule i)
   }.
 
@@ -241,6 +260,7 @@ End TTSpecs.
 Arguments TTS_Rule {_} _.
 Arguments TTS_hjf_of_rule {_ _} _.
 Arguments TTS_arity_of_rule {_ _} _.
+Arguments TTS_concl_shape_of_rule {_ _} _.
 Arguments TTS_lt {_ _} _ _.
 Arguments TTS_signature_of_rule {_ _} _.
 Arguments TTS_rule_spec {_ _} _.
