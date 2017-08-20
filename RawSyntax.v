@@ -226,7 +226,7 @@ Section Judgements.
 
   Definition Judgt_Bdry_Instance (jf : Judgt_Form) : Type
   := match jf with
-       | Cxt_JF => Raw_Context Σ
+       | Cxt_JF => Unit
        | HJF hjf => { Γ : Raw_Context Σ
                    & Hyp_Judgt_Bdry_Instance hjf Γ }
      end.
@@ -240,6 +240,20 @@ Section Judgements.
 
   Definition Judgt_Instance
     := { jf : Judgt_Form & Judgt_Form_Instance jf }.
+
+  Definition Hyp_Judgt_Instance_from_bdry_plus_head {hjf : Hyp_Judgt_Form} {γ}
+      (bdry : Hyp_Judgt_Bdry_Instance hjf γ)
+      (head : is_obj_HJF hjf -> Raw_Syntax Σ (class_of_HJF hjf) γ)
+    : Hyp_Judgt_Form_Instance hjf γ.
+  Proof.
+    destruct hjf as [ ocl | ecl ].
+    - (* case: object judgement *)
+      intros [ i | ].
+      + apply bdry.
+      + apply head. constructor.
+    - (* case: equality judgement *)
+      apply bdry.
+  Defined.
 
 End Judgements.
 

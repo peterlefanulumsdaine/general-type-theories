@@ -54,7 +54,7 @@ Record Rule_Spec
   ; RS_Premise : Family (Hyp_Judgt_Form * Proto_Cxt)
     := Family.Sum
          (Family.Fmap (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) a)
-         (Family.Fmap (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) RS_equality_premise)
+         (Family.Fmap (fun cl_γ => (eq_HJF (fst cl_γ), snd cl_γ)) RS_equality_premise)
   (* - the judgement form of each premise, e.g. “term” or “type equality” *)
   ; RS_hjf_of_premise : RS_Premise -> Hyp_Judgt_Form
     := fun i => fst (RS_Premise i)
@@ -100,8 +100,8 @@ Record Rule_Spec
     := hjf_conclusion
   (* judgement boundary instance of conclusion *)
   ; RS_judgt_bdry_instance_of_conclusion
-      : Judgt_Form_Instance
-          (Metavariable_Extension Σ RS_arity)
+      : Judgt_Bdry_Instance
+          (Metavariable_Extension Σ a)
           (HJF RS_hjf_of_conclusion)
   }.
 
@@ -128,6 +128,13 @@ Record Rule_Spec
   Defined.
 
   (* TODO: upstream *)
+  Definition Fmap_Hyp_Judgt_Bdry_Instance {Σ Σ'} (f : Signature_Map Σ Σ')
+      {hjf} {γ}
+    : Hyp_Judgt_Bdry_Instance Σ hjf γ -> Hyp_Judgt_Bdry_Instance Σ' hjf γ.
+  Proof.
+  Admitted.
+
+  (* TODO: upstream *)
   Definition Fmap_Hyp_Judgt_Form_Instance {Σ Σ'} (f : Signature_Map Σ Σ')
       {hjf} {γ}
     : Hyp_Judgt_Form_Instance Σ hjf γ -> Hyp_Judgt_Form_Instance Σ' hjf γ.
@@ -140,17 +147,55 @@ Record Rule_Spec
     (Sr : is_obj_HJF hjf_concl
         -> { S : Σ & (arity S = a) * (class S = class_of_HJF hjf_concl) })
   : Raw_Rule Σ.
+  (* This construction involves essentially two aspects:
+  - translate the syntax given in R from its “local” signatures to the overall signature;
+  - construct the head terms of object premises and conclusion
+  *)
   Proof.
     refine (Build_Raw_Rule _ a _ _).
     - (* premises *)
       exists (RS_Premise R).
-      intros P. exists (HJF (RS_hjf_of_premise _ P)).
-      simple refine (Fmap_Raw_Context _ (RS_raw_context_of_premise _ P) ; _).
-      + admit. (* signature map from extension by sub-arity *)
-      + simpl. admit.
+      intros P. 
+      assert (f_P : Signature_Map
+              (Metavariable_Extension Σ (RS_arity_of_premise R P))
+              (Metavariable_Extension Σ a)).
+        admit. (* signature map from sub-arity *)
+      exists (HJF (RS_hjf_of_premise _ P)).
+      exists (Fmap_Raw_Context f_P (RS_raw_context_of_premise _ P)).
+      simpl.
+      apply Hyp_Judgt_Instance_from_bdry_plus_head.
+      + refine (Fmap_Hyp_Judgt_Bdry_Instance f_P _).
+        apply RS_hyp_bdry_instance_of_premise.
+      + intro H_obj.
+        destruct P as [ P | P ]; simpl in P.
+        * (* case: P an object premise *)
+          refine (symb_raw (inr P : Metavariable_Extension Σ a) _).
+          intro i. apply var_raw.
+          exact (coproduct_inj1 shape_is_coproduct i).
+        * (* case: P an equality premise *)
+          destruct H_obj. (* ruled out by assumption *)
     - (* conclusion *)
-      admit.
+      exists (HJF hjf_concl).
+      simpl.
+      exists (pr1 (RS_judgt_bdry_instance_of_conclusion R)).
+      apply Hyp_Judgt_Instance_from_bdry_plus_head.
+      + exact (pr2 (RS_judgt_bdry_instance_of_conclusion R)).
+      + intros H_obj.
+        destruct hjf_concl as [ ocl | ecl ]; simpl in *.
+        * (* case: R an object rule *)
+          destruct (Sr tt) as [S_R [e_a e_cl]]. clear Sr H_obj.
+          destruct e_a, e_cl.
+          refine (symb_raw (inl S_R : Metavariable_Extension _ _) _).
+          intros P; cbn in P.
+          refine (symb_raw (inr P : Metavariable_Extension _ _) _).
+          intros i.
+          apply var_raw.
+          apply (coproduct_inj1 shape_is_coproduct).
+          exact (coproduct_inj2 shape_is_coproduct i).
+        * (* case: R an equality rule *)
+          destruct H_obj. (* ruled out by assumption *)
   Admitted.
+  (* TODO: note there is an error in construction above, and also in def of signature of a TT_spec!  If the conclusion of R has a non-empty context, then the variables of this context also need to appear as arguments of the symbol that the rule introduces.  So the arity of the symbol should NOT be exactly the arity of the rule itself, but the coproduct of that and the context.  Fixing this will involve adding the proto-context of the conclusion into the parameters of Rule_Spec, since it’s needed in TT_Spec to deduce the signatures of later rules. *)
 
 End RuleSpecs.
 
