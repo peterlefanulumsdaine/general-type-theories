@@ -45,12 +45,16 @@ Section Signature_Maps.
       {hjf} {γ}
     : Hyp_Judgt_Bdry_Instance Σ hjf γ -> Hyp_Judgt_Bdry_Instance Σ' hjf γ.
   Proof.
-  Admitted.
+    intros hjbi i.
+    apply (Fmap_Raw_Syntax f), hjbi.
+  Defined.
 
   Definition Fmap_Hyp_Judgt_Form_Instance {Σ Σ'} (f : Signature_Map Σ Σ')
       {hjf} {γ}
     : Hyp_Judgt_Form_Instance Σ hjf γ -> Hyp_Judgt_Form_Instance Σ' hjf γ.
   Proof.
-  Admitted.
+    intros hjbi i.
+    apply (Fmap_Raw_Syntax f), hjbi.    
+  Defined.
 
 End Signature_Maps.
