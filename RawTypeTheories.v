@@ -122,12 +122,76 @@ Record Rule_Spec
   }.
   (* NOTE 1. One could restrict this by only allowing the case where the context of the conclusion is empty.  This would simplify this definition, and several things below, and would (one expects) not lose any generality, since one can always move variables from that context to become extra premises, giving an equivalent rule with empty conclusion context.
 
-  However, we retain (for now) the current general version, (a) since rules are sometimes written this way in practice, and (b) to allow a precise theorem stating the claim above about equivalent forms of a rule . *)
+  However, we retain (for now) the current general version, (a) since rules are sometimes written this way in practice, and (b) to allow a precise theorem stating the claim above about equivalent  forms of a rule . *)
 
   (* NOTE 2. The current parameters of the definition could perhaps be profitably abstracted into a “proto-rule-spec” (probably including also the arity [RS_equality_Premise]), fitting the pattern of the stratificaiton of objects into proto -> raw -> typed. *)
 
   Arguments Rule_Spec _ _ _ _ : clear implicits.
 
+  (* TODO: upstream *)
+  Definition Fmap_Family_Sum {X}
+      {K K' : Family X} (f : Family_Map K K')
+      {L L' : Family X} (g : Family_Map L L')
+  : Family_Map (Sum K L) (Sum K' L').
+  Proof.
+    simple refine (_;_).
+    - intros [ i | j ].
+      + apply inl, f, i.
+      + apply inr, g, j.
+    - intros [ i | j ];
+      simpl; apply commutes_Family_Map.
+  Defined.
+
+  (* TODO: upstream *)
+  Definition idmap_Family {X} (K : Family X)
+    : Family_Map K K.
+  Proof.
+    econstructor.
+    intro; constructor.
+  Defined.
+
+  (* TODO: upstream *)
+  Definition Fmap_Metavariable_Extension
+      {Σ} {Σ'} (f : Signature_Map Σ Σ')
+      (a : Arity Proto_Cxt)
+    : Signature_Map (Metavariable_Extension Σ a)
+                    (Metavariable_Extension Σ' a).
+  Proof.
+    refine (Fmap_Family_Sum _ _).
+    - apply f.
+    - apply idmap_Family.
+  Defined.
+
+  Definition Fmap_Rule_Spec
+      {Σ} {Σ'} (f : Signature_Map Σ Σ')
+      {a} {γ_concl} {hjf_concl}
+      (R : Rule_Spec Σ a γ_concl hjf_concl)
+    : Rule_Spec Σ' a γ_concl hjf_concl.
+  Proof.
+    simple refine (Build_Rule_Spec Σ' a γ_concl hjf_concl _ _ _ _ _ _).
+    - exact (RS_equality_premise R).
+    - exact (RS_lt R).
+    - (* RS_context_expr_of_premise *)
+      intros i v.
+      refine (_ (RS_context_expr_of_premise R i v)).
+      apply Fmap_Raw_Syntax, Fmap_Metavariable_Extension, f.
+    - (* RS_hyp_bdry_instance_of_premise *)
+      intros i.
+      simple refine 
+        (Fmap_Hyp_Judgt_Bdry_Instance
+          _ (RS_hyp_bdry_instance_of_premise R i)).
+      apply Fmap_Metavariable_Extension, f.
+    - (* RS_context_expr_of_conclusion *)
+      intros v.
+      refine (_ (RS_context_expr_of_conclusion R v)).
+      apply Fmap_Raw_Syntax, Fmap_Metavariable_Extension, f.
+    - (* RS_hyp_judgt_bdry_instance_of_conclusion *)
+      simple refine 
+        (Fmap_Hyp_Judgt_Bdry_Instance
+          _ (RS_hyp_judgt_bdry_instance_of_conclusion R)).
+      apply Fmap_Metavariable_Extension, f.     
+  Defined.
+  
   Definition Raw_Rule_of_Rule_Spec
     {Σ} {a} {γ_concl} {hjf_concl}
     (R : Rule_Spec Σ a γ_concl hjf_concl)

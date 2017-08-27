@@ -52,7 +52,15 @@ Section Derivability_from_TT_Spec.
     (* Second group: the explicitly-given logical rules *)
     - exists (TTS_Rule T).
       intros r.
-      admit. (* TODO: Raw_Rule_of_Rule_Spec *)
+      set (R_spec := TTS_rule_spec r). 
+      cbn in R_spec.
+      fold (TTS_arity_of_rule r) in R_spec.
+      fold (TTS_concl_shape_of_rule r) in R_spec.
+      fold (TTS_hjf_of_rule r) in R_spec.
+      refine (Raw_Rule_of_Rule_Spec _ _).
+      (* TODO: translate [R_spec] up to full signature *) 
+      admit.
+      admit.
     (* Third group: the congruence rules for the type-/term- operations *)
     - exists { r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule r) }.
       intros [r Hr].
