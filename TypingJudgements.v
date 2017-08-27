@@ -43,7 +43,7 @@ Section Derivability_from_TT_Spec.
     (* NOTE: it is tempting to case-analyse here and say 
       “when r is an object rule, use [(class_of_HJF hjf, TTS_arity_of_rule r)];
        in case r is an equality rule, use reductio ad absurdum with Hr.” 
-     But we get stronger reduction behaviour by just taking [(class_of_HJF hjf, TTS_arity_of_rule r)] without case-analysing first, and up to equality, it is the same definition.  *)
+     But we get stronger reduction behaviour by just taking [(class_of_HJF hjf, TTS_arity_of_rule r)] without case-analysing first.  (And up to equality, we get the same result.)  *)
 
   Definition Raw_TT_of_TT_Spec (T : Type_Theory_Spec σ)
     : Raw_Type_Theory (Signature_of_TT_Spec T).
@@ -66,34 +66,16 @@ Section Derivability_from_TT_Spec.
     (* Third group: the congruence rules for the type-/term- operations *)
     - exists { r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule r) }.
       intros [r Hr].
-      assert (R := TTS_rule_spec r
-          : Rule_Spec
-              (TTS_signature_of_rule r)
-              (TTS_arity_of_rule r)
-              (TTS_concl_shape_of_rule r)
-              (TTS_hjf_of_rule r)); simpl in R.
-      (*
-      set (hjf := TTS_hjf_of_rule r) in *.
-      set (e_hjf := idpath _ : hjf = TTS_hjf_of_rule r); clearbody e_hjf.
-      destruct hjf as [ cl | cl ].
-      Focus 2. destruct Hr. (* r cannot be equality judgement. *)
-       *) 
       refine (Raw_Rule_of_Rule_Spec _ _).
-      simple refine (associated_congruence_rule_spec _ _ _ _ _ _).
-      + shelve.
-      + shelve.
-      + refine (Fmap_Rule_Spec _ _).
-        * admit.
-        * exact R.
+      simple refine
+        (associated_congruence_rule_spec
+           _ (Fmap_Rule_Spec _ (TTS_rule_spec r)) _ _ _ _).
+      + admit.
       + exact Hr.
       + exact (r;Hr).
       + apply idpath.
       + apply idpath.
-      + intros _. exists (r; Hr). cbn. split.
-        * admit. (* error somewhere abov! where?? *)
-        * apply idpath.
-        
-(* TODO: Raw_Rule_of_Rule_Spec, associated congruence rule *)
+      + intros [].
   Admitted.
 
 End Derivability_from_TT_Spec.
