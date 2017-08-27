@@ -454,10 +454,21 @@ Context {Proto_Cxt : Shape_System}.
 Context (Σ : @Signature Proto_Cxt).
 
 Definition associated_congruence_rule_spec
-  {a} {γ} {cl} (R : Rule_Spec Σ a γ (obj_HJF cl))
-  : (Rule_Spec Σ (Family.Sum a a) γ (eq_HJF cl)).
+  {a} {γ_concl} {hjf_concl} (R : Rule_Spec Σ a γ_concl hjf_concl)
+  (H : is_obj_HJF hjf_concl)
+  (S : Σ)
+  (e_a : arity S = a + (simple_arity γ_concl))
+  (e_cl : class S = class_of_HJF hjf_concl)
+  : (Rule_Spec Σ (Family.Sum a a) γ_concl
+               (eq_HJF (class_of_HJF hjf_concl))).
 Admitted.
 (* A good test proposition will be the following: whenever a rule-spec is well-typed, then so is its associated congruence rule-spec. *)
 
+(* TODO: what about congruence for rules in arguments coming from their conclusion contexts?  seems like we have options:
+
+- disallow conclusion context
+- add explicit rule that substitution is a congruence
+  (and maybe then prove something like: if we don’t have conclusion contexts?)
+- in [associated_congruence_rule_spec], variables from conclusion into extra premises. *)
 End Congruence_Rules.
 

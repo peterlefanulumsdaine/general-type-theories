@@ -34,13 +34,16 @@ Section Derivability_from_TT_Spec.
   Proof.
     (* symbols are given by the object-judgement rules of T *)
     exists {r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule r)}.
-    intros [r Hr].
-    set (hjf := TTS_hjf_of_rule r) in *; clearbody hjf.
-    destruct hjf as [ cl | cl ].
-    - (* when r is an object rule, the class and arity of its symbol are those of r itself: *)
-      exact (cl, TTS_arity_of_rule r).
-    - destruct Hr. (* by assumption, r cannot be an equality rule *)
+    intros r_H. set (r := pr1 r_H).
+    split.
+    - exact (class_of_HJF (TTS_hjf_of_rule r)).
+    - exact (TTS_arity_of_rule r
+            + simple_arity (TTS_concl_shape_of_rule r)).
   Defined.
+    (* NOTE: it is tempting to case-analyse here and say 
+      “when r is an object rule, use [(class_of_HJF hjf, TTS_arity_of_rule r)];
+       in case r is an equality rule, use reductio ad absurdum with Hr.” 
+     But we get stronger reduction behaviour by just taking [(class_of_HJF hjf, TTS_arity_of_rule r)] without case-analysing first, and up to equality, it is the same definition.  *)
 
   Definition Raw_TT_of_TT_Spec (T : Type_Theory_Spec σ)
     : Raw_Type_Theory (Signature_of_TT_Spec T).
@@ -52,19 +55,45 @@ Section Derivability_from_TT_Spec.
     (* Second group: the explicitly-given logical rules *)
     - exists (TTS_Rule T).
       intros r.
-      set (R_spec := TTS_rule_spec r). 
-      cbn in R_spec.
-      fold (TTS_arity_of_rule r) in R_spec.
-      fold (TTS_concl_shape_of_rule r) in R_spec.
-      fold (TTS_hjf_of_rule r) in R_spec.
       refine (Raw_Rule_of_Rule_Spec _ _).
-      (* TODO: translate [R_spec] up to full signature *) 
-      admit.
-      admit.
+      + (* translate rule_specs up to the full signature *)
+        refine (Fmap_Rule_Spec _ (TTS_rule_spec r)).
+        admit. (* TODO: inclusion map of a subfamily *)
+      + (* pick their symbol in the full signature, if applicable *)
+        intros r_obj.
+        exists (r; r_obj).
+        split; apply idpath.
     (* Third group: the congruence rules for the type-/term- operations *)
     - exists { r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule r) }.
       intros [r Hr].
-      admit. (* TODO: Raw_Rule_of_Rule_Spec, associated congruence rule *)
+      assert (R := TTS_rule_spec r
+          : Rule_Spec
+              (TTS_signature_of_rule r)
+              (TTS_arity_of_rule r)
+              (TTS_concl_shape_of_rule r)
+              (TTS_hjf_of_rule r)); simpl in R.
+      (*
+      set (hjf := TTS_hjf_of_rule r) in *.
+      set (e_hjf := idpath _ : hjf = TTS_hjf_of_rule r); clearbody e_hjf.
+      destruct hjf as [ cl | cl ].
+      Focus 2. destruct Hr. (* r cannot be equality judgement. *)
+       *) 
+      refine (Raw_Rule_of_Rule_Spec _ _).
+      simple refine (associated_congruence_rule_spec _ _ _ _ _ _).
+      + shelve.
+      + shelve.
+      + refine (Fmap_Rule_Spec _ _).
+        * admit.
+        * exact R.
+      + exact Hr.
+      + exact (r;Hr).
+      + apply idpath.
+      + apply idpath.
+      + intros _. exists (r; Hr). cbn. split.
+        * admit. (* error somewhere abov! where?? *)
+        * apply idpath.
+        
+(* TODO: Raw_Rule_of_Rule_Spec, associated congruence rule *)
   Admitted.
 
 End Derivability_from_TT_Spec.
