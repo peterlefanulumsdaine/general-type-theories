@@ -137,6 +137,8 @@ Proof.
     intros i. exact (Raw_Subst f (hjfi i)).
 Defined.
 
+(* TODO: add substitution rule showing substitution respects *equality* of context morphisms *)
+
 End Var_Subst_Wkg.
 
 Section Equality_Rules.
@@ -443,7 +445,9 @@ Defined.
 End Equality_Rules.
 
 Definition Structural_Rules : Family (Raw_Rule Σ).
-  (* TODO: collect all the rules above into a family. *)
+  (* TODO: collect all the rules above into a family. 
+
+   NOTE: make sure not to miss the ones that are closure conditions, not raw rules. *)
 Admitted.
 
 End Structural_Rules.
@@ -466,9 +470,13 @@ Admitted.
 
 (* TODO: what about congruence for rules in arguments coming from their conclusion contexts?  seems like we have options:
 
-- disallow conclusion context
-- add explicit rule that substitution is a congruence
+(A) disallow conclusion context
+(B) add explicit rule that substitution is a congruence
   (and maybe then prove something like: if we don’t have conclusion contexts?)
-- in [associated_congruence_rule_spec], variables from conclusion into extra premises. *)
+(C) in [associated_congruence_rule_spec], variables from conclusion into extra premises. 
+
+(C) seems a bit of an unnatural half-and-half.  (A) seems the cleantes option; (B) adds a little extra arguably-unnecessary noice (since in the end we show that it doesn’t really add any extra generality), but with a payoff of allowing us to give the “well-known” fact of the equivalences between the two forms of rules as a theorem in our generality.
+
+  *)
 End Congruence_Rules.
 

@@ -129,28 +129,6 @@ Record Rule_Spec
   Arguments Rule_Spec _ _ _ _ : clear implicits.
 
   (* TODO: upstream *)
-  Definition Fmap_Family_Sum {X}
-      {K K' : Family X} (f : Family_Map K K')
-      {L L' : Family X} (g : Family_Map L L')
-  : Family_Map (Sum K L) (Sum K' L').
-  Proof.
-    simple refine (_;_).
-    - intros [ i | j ].
-      + apply inl, f, i.
-      + apply inr, g, j.
-    - intros [ i | j ];
-      simpl; apply commutes_Family_Map.
-  Defined.
-
-  (* TODO: upstream *)
-  Definition idmap_Family {X} (K : Family X)
-    : Family_Map K K.
-  Proof.
-    econstructor.
-    intro; constructor.
-  Defined.
-
-  (* TODO: upstream *)
   Definition Fmap_Metavariable_Extension
       {Σ} {Σ'} (f : Signature_Map Σ Σ')
       (a : Arity Proto_Cxt)

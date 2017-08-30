@@ -59,7 +59,7 @@ Definition Reindex {A} (K : Family A) {X} (f : X -> K) : Family A
        fam_element := K o f
      |}.
 
-(* The subfamily of a family determined by a predicate on the index type *)
+(* The subfamily of a family determined by a predicate on the index type (which of course can make use of the values of the family) *)
 Definition Subfamily {A} (K : Family A) (P : K -> Type) : Family A
   := Reindex K (pr1 : { i:K & P i } -> K).
 
@@ -91,5 +91,25 @@ Section Family_Maps.
     : forall f : Family_Map K L,
       forall i : K, L (f i) = K i
   := pr2.
+
+  Definition idmap_Family {X} (K : Family X)
+    : Family_Map K K.
+  Proof.
+    econstructor.
+    intro; constructor.
+  Defined.
+
+  Definition Fmap_Family_Sum {X}
+      {K K' : Family X} (f : Family_Map K K')
+      {L L' : Family X} (g : Family_Map L L')
+  : Family_Map (Sum K L) (Sum K' L').
+  Proof.
+    simple refine (_;_).
+    - intros [ i | j ].
+      + apply inl, f, i.
+      + apply inr, g, j.
+    - intros [ i | j ];
+      simpl; apply commutes_Family_Map.
+  Defined.
 
 End Family_Maps.
