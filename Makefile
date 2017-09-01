@@ -42,13 +42,31 @@ COQDOC ?= coqdoc
 
 export COQC COQDEP COQDOC
 
+# coq_makefile hack:
+# Recent versions of coq_makefile (in coq trunk) don’t play nicely with 
+# the HoTT binaries; but the HoTT library doesn’t (yet) provide an installed
+# hook to its own coq_makefile binary.  So we allow the user to pass this in
+# by an explicit environment variable $HOQBIN or $COQBIN.  The latter takes
+# precedence if both are specified.
+# To avoid passing this by hand every time, add 
+#     export HOQBIN=~/Path/To/HoTT/coq-HoTT/bin/
+# to your shell profile file.
+
+HOQBIN ?= 
+
+COQBIN ?= $(HOQBIN)
+
+COQMAKEFILE = $(COQBIN)coq_makefile
+
+# TODO: clean up treatment of binaries/environment variables
+
 .PHONY: coq all install clean html
 
 coq: Makefile.coq
 	$(MAKE) -f Makefile.coq
 
 Makefile.coq: Makefile $(VS)
-	coq_makefile -R . "" $(VS) -o Makefile.coq
+	$(COQMAKEFILE) -R . "" $(VS) -o Makefile.coq
 
 install: Makefile.coq
 	$(MAKE) -f Makefile.coq install
