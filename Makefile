@@ -5,7 +5,6 @@
 #     make
 #     make all
 #     make html
-#     make all TIMED=yes
 #     make clean
 
 # Modules to be included in the main build:
@@ -30,8 +29,6 @@ VS      := $(MODULES:%=%.v)
 # COQDEP and COQDOC are set automatically based on COQC, but we are not
 # very clever about this, so if it doesn’t work, these can be explicitly
 # specified too.
-#
-# NOTE: currently, the “timed” options are hardwired to use “hoqc” etc.
 
 COQC ?= hoqc
 
