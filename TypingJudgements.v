@@ -47,14 +47,17 @@ Section Derivability_from_TT_Spec.
        in case r is an equality rule, use reductio ad absurdum with Hr.” 
      But we get stronger reduction behaviour by just taking [(class_of_HJF hjf, TTS_arity_of_rule r)] without case-analysing first.  (And up to equality, we get the same result.)  *)
 
-
-  (* TODO: upstream to with TT_Spec *)
+  (* TODO: consider placement *)
   Definition TT_Spec_signature_inclusion_of_rule
       {T : Type_Theory_Spec σ} (r : TTS_Rule T)
     : Signature_Map (TTS_signature_of_rule r) 
                     (Signature_of_TT_Spec T).
   Proof.
     simple refine (_;_).
+    - intros s_isob_lt.
+      exact (pr1 s_isob_lt ; fst (pr2 (s_isob_lt))).
+      (* TODO: introduce access functions for the signature components above? *)
+    - intros s. exact idpath.
   Defined.
 
   Definition Raw_TT_of_TT_Spec (T : Type_Theory_Spec σ)
@@ -70,7 +73,7 @@ Section Derivability_from_TT_Spec.
       refine (Raw_Rule_of_Rule_Spec _ _).
       + (* translate rule_specs up to the full signature *)
         refine (Fmap_Rule_Spec _ (TTS_rule_spec r)).
-        admit. (* TODO: inclusion map of a subfamily *)
+        apply TT_Spec_signature_inclusion_of_rule.
       + (* pick their symbol in the full signature, if applicable *)
         intros r_obj.
         exists (r; r_obj).
@@ -79,15 +82,19 @@ Section Derivability_from_TT_Spec.
     - exists { r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule r) }.
       intros [r Hr].
       refine (Raw_Rule_of_Rule_Spec _ _).
-      simple refine
+      + simple refine
         (associated_congruence_rule_spec
            _ (Fmap_Rule_Spec _ (TTS_rule_spec r)) _ _ _ _).
-      + admit.
-      + exact Hr.
-      + exact (r;Hr).
-      + apply idpath.
-      + apply idpath.
-      + intros [].
-  Admitted.
+        * apply TT_Spec_signature_inclusion_of_rule.
+        * exact Hr.
+        * exact (r;Hr). (* head symbol of original rule *)
+        * apply idpath.
+        * apply idpath.
+      + intros []. (* no overall head symbol, since congruence is an equality rule *)
+  Defined.
+
+  Definition Derivation_from_TT_Spec (T : Type_Theory_Spec σ)
+    : Judgt_Instance (Signature_of_TT_Spec T) -> Type
+  := Derivation_from_Raw_TT (Raw_TT_of_TT_Spec T).
 
 End Derivability_from_TT_Spec.

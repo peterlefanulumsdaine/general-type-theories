@@ -68,10 +68,7 @@ Record Rule_Spec
   ; RS_lt : RS_Premise -> RS_Premise -> hProp
   (* for each premise, the arity specifying what metavariables are available in the syntax for this premise; i.e., the family of type/term arguments already introduced by earlier premises *)
   ; RS_arity_of_premise : RS_Premise -> Arity _
-    := fun i => Fmap
-        (fun jγ => (class_of_HJF (fst jγ), snd jγ))
-        (Subfamily RS_Premise
-          (fun j => is_obj_HJF (fst (RS_Premise j)) * RS_lt j i))
+    := fun i => Subfamily a (fun j => RS_lt (inl j) i)
   (* syntactic part of context of premise *)
   (* NOTE: this should never be used directly, always through [RS_raw_context_of_premise] *)
   ; RS_context_expr_of_premise 
@@ -128,17 +125,44 @@ Record Rule_Spec
 
   Arguments Rule_Spec _ _ _ _ : clear implicits.
 
+  (* TODO: upstream.
+   TODO: oh goodness the naming conventions need improving *)
+  Definition Fmap_Family_Fmap
+      {X Y} (f : X -> Y)
+      {K K' : Family X} (g : Family_Map K K')
+    : Family_Map (Family.Fmap f K) (Family.Fmap f K').
+  Proof.
+    exists g.
+    intros i. cbn. apply ap. apply commutes_Family_Map.
+  Defined.
+
   (* TODO: upstream *)
   Definition Fmap_Metavariable_Extension
       {Σ} {Σ'} (f : Signature_Map Σ Σ')
+      {a a' : Arity Proto_Cxt} (g : Family_Map a a')
+    : Signature_Map (Metavariable_Extension Σ a)
+                    (Metavariable_Extension Σ' a').
+  Proof.
+    apply Fmap_Family_Sum.
+    - apply f.
+    - apply Fmap_Family_Fmap, g.
+  Defined.
+
+  (* TODO: upstream *)
+  Definition Fmap1_Metavariable_Extension
+      {Σ} {Σ'} (f : Signature_Map Σ Σ')
       (a : Arity Proto_Cxt)
     : Signature_Map (Metavariable_Extension Σ a)
-                    (Metavariable_Extension Σ' a).
-  Proof.
-    refine (Fmap_Family_Sum _ _).
-    - apply f.
-    - apply idmap_Family.
-  Defined.
+                    (Metavariable_Extension Σ' a)
+  := Fmap_Metavariable_Extension f (idmap_Family _).
+
+  (* TODO: upstream *)
+  Definition Fmap2_Metavariable_Extension
+      (Σ : Signature Proto_Cxt)
+      {a a' : Arity Proto_Cxt} (f : Family_Map a a')
+    : Signature_Map (Metavariable_Extension Σ a)
+                    (Metavariable_Extension Σ a')
+  := Fmap_Metavariable_Extension (idmap_Family _) f.
 
   Definition Fmap_Rule_Spec
       {Σ} {Σ'} (f : Signature_Map Σ Σ')
@@ -152,24 +176,33 @@ Record Rule_Spec
     - (* RS_context_expr_of_premise *)
       intros i v.
       refine (_ (RS_context_expr_of_premise R i v)).
-      apply Fmap_Raw_Syntax, Fmap_Metavariable_Extension, f.
+      apply Fmap_Raw_Syntax, Fmap1_Metavariable_Extension, f.
     - (* RS_hyp_bdry_instance_of_premise *)
       intros i.
       simple refine 
         (Fmap_Hyp_Judgt_Bdry_Instance
           _ (RS_hyp_bdry_instance_of_premise R i)).
-      apply Fmap_Metavariable_Extension, f.
+      apply Fmap1_Metavariable_Extension, f.
     - (* RS_context_expr_of_conclusion *)
       intros v.
       refine (_ (RS_context_expr_of_conclusion R v)).
-      apply Fmap_Raw_Syntax, Fmap_Metavariable_Extension, f.
+      apply Fmap_Raw_Syntax, Fmap1_Metavariable_Extension, f.
     - (* RS_hyp_judgt_bdry_instance_of_conclusion *)
       simple refine 
         (Fmap_Hyp_Judgt_Bdry_Instance
           _ (RS_hyp_judgt_bdry_instance_of_conclusion R)).
-      apply Fmap_Metavariable_Extension, f.     
+      apply Fmap1_Metavariable_Extension, f.
   Defined.
-  
+
+  (* TODO: upstream *)
+  Definition Subfamily_inclusion
+      {A : Type} (K : Family A) (P : K -> Type)
+    : Family_Map (Subfamily K P) K.
+  Proof.
+    exists pr1.
+    intros; apply idpath.
+  Defined.
+
   Definition Raw_Rule_of_Rule_Spec
     {Σ} {a} {γ_concl} {hjf_concl}
     (R : Rule_Spec Σ a γ_concl hjf_concl)
@@ -189,7 +222,10 @@ Record Rule_Spec
       assert (f_P : Signature_Map
               (Metavariable_Extension Σ (RS_arity_of_premise R P))
               (Metavariable_Extension Σ a)).
-        admit. (* signature map from sub-arity *)
+      {
+        apply Fmap2_Metavariable_Extension.
+        apply Subfamily_inclusion.
+      }
       exists (HJF (RS_hjf_of_premise _ P)).
       exists (Fmap_Raw_Context f_P (RS_raw_context_of_premise _ P)).
       simpl.
@@ -230,7 +266,7 @@ Record Rule_Spec
             exact (coproduct_inj1 shape_is_coproduct i).
         * (* case: R an equality rule *)
           destruct H_obj. (* ruled out by assumption *)
-  Admitted.
+  Defined.
 
 End RuleSpecs.
 
