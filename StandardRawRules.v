@@ -465,7 +465,66 @@ Definition associated_congruence_rule_spec
   (e_cl : class S = class_of_HJF hjf_concl)
   : (Rule_Spec Σ (Family.Sum a a) γ_concl
                (eq_HJF (class_of_HJF hjf_concl))).
+Proof.
+  simple refine (Build_Rule_Spec _ _ _ _ _ _ _ _ _ _).
+  - (* RS_equality_premise: arity of equality premises *)
+    exact (((RS_equality_premise R) + (RS_equality_premise R)) + a). 
+  - (* RS_lt *)
+    cbn.
+    intros [ [ ob_l | ob_r ] | [ [ eq_l | eq_r ] | eq_lr ] ];
+    intros [ [ ob'_l | ob'_r ] | [ [ eq'_l | eq'_r ] | eq'_lr ] ].
+    
+(*
+           ob_l i   ob_r i   eq_l i   eq_r i   eq_lr i
+
+ob_l j     i < j    0        i < j    0        0
+
+ob_r j     0        i < j    0        i < j    0
+ 
+eq_l j     i < j    0        i < j    0        0
+
+eq_r j     0        i < j    0        i < j    0
+
+eq_lr j    i ≤ j    i ≤ j    i </≤ j  i </≤ j  i < j
+
+In the “</≤” cases: morally, one could argue either < or ≤ makes more sense there, but they will be equivalent since in those cases one knows i≠j. *)
+    (* column eq_l *)
+    + exact (RS_lt R (inl ob_l) (inl ob'_l)).
+    + exact False.
+    + exact (RS_lt R (inl ob_l) (inr eq'_l)).
+    + exact False.
+    + exact ((RS_lt R (inl ob_l) (inl eq'_lr)) \/ (ob_l = eq'_lr)).
+    (* column ob_r *)
+    + exact False.
+    + exact (RS_lt R (inl ob_r) (inl ob'_r)).
+    + exact False.
+    + exact (RS_lt R (inl ob_r) (inr eq'_r)).
+    + exact ((RS_lt R (inl ob_r) (inl eq'_lr)) \/ (ob_r = eq'_lr)).
+    (* column eq_l *)
+    + exact (RS_lt R (inr eq_l) (inl ob'_l)).
+    + exact False.
+    + exact (RS_lt R (inr eq_l) (inr eq'_l)).
+    + exact False.
+    + exact (RS_lt R (inr eq_l) (inl eq'_lr)).
+    (* column eq_r *)
+    + exact False.
+    + exact (RS_lt R (inr eq_r) (inl ob'_r)).
+    + exact False.
+    + exact (RS_lt R (inr eq_r) (inr eq'_r)).
+    + exact (RS_lt R (inr eq_r) (inl eq'_lr)).
+    (* column eq_lr *)
+    + exact False.
+    + exact False.
+    + exact False.
+    + exact False.
+    + exact (RS_lt R (inl eq_lr) (inl eq'_lr)).
+  (* TODO: goodness, factor out this relation. *)
+  - admit. (* RS_context_expr_of_premise *)
+  - admit. (* RS_hyp_bdry_instance_of_premise *)
+  - admit. (* RS_context_expr_of_conclusion *)
+  - admit. (* RS_hyp_judgt_bdry_instance_of_conclusion *)
 Admitted.
+
 (* A good test proposition will be the following: whenever a rule-spec is well-typed, then so is its associated congruence rule-spec. *)
 
 (* TODO: what about congruence for rules in arguments coming from their conclusion contexts?  seems like we have options:

@@ -67,8 +67,8 @@ Record Rule_Spec
   ; RS_proto_cxt_of_premise : RS_Premise -> Proto_Cxt
     := fun i => snd (RS_Premise i)
   (* the ordering relation on the premises *)
-  (* TODO: somewhere we will want to add that this is well-founded; maybe more *)
-  ; RS_lt : RS_Premise -> RS_Premise -> hProp
+  (* TODO: somewhere we will want to add that this is well-founded; maybe prop_valued; mayb more *)
+  ; RS_lt : RS_Premise -> RS_Premise -> Type
   (* for each premise, the arity specifying what metavariables are available in the syntax for this premise; i.e., the family of type/term arguments already introduced by earlier premises *)
   ; RS_arity_of_premise : RS_Premise -> Arity _
     := fun i => Subfamily a (fun j => RS_lt (inl j) i)
@@ -92,7 +92,7 @@ Record Rule_Spec
           (Metavariable_Extension Σ (RS_arity_of_premise i))
           (RS_hjf_of_premise i)
           (RS_proto_cxt_of_premise i)
-  (* arity of the rule as a whole *)
+  (* arity of the rule as a whole.  TODO: move out of definition! *)
   ; RS_arity : Arity _
     := Fmap
         (fun jγ => (class_of_HJF (fst jγ), snd jγ))
@@ -127,6 +127,18 @@ Record Rule_Spec
   (* NOTE 2. Perhaps the parameters of the definition could be profitably abstracted into a “proto-rule-spec” (probably including also the arity [RS_equality_Premise]), fitting the pattern of the stratificaiton of objects into proto ≤ raw ≤ typed. *)
 
   Arguments Rule_Spec _ _ _ _ : clear implicits.
+
+(* Template for defining rule-specs:
+
+  simple refine (Build_Rule_Spec _ _ _ _ _ _ _ _ _ _).
+  - admit. (* RS_equality_premise: arity of equality premises *)
+  - admit. (* RS_lt *)
+  - admit. (* RS_context_expr_of_premise *)
+  - admit. (* RS_hyp_bdry_instance_of_premise *)
+  - admit. (* RS_context_expr_of_conclusion *)
+  - admit. (* RS_hyp_judgt_bdry_instance_of_conclusion *)
+
+*)
 
   Definition Fmap_Rule_Spec
       {Σ} {Σ'} (f : Signature_Map Σ Σ')
