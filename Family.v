@@ -112,4 +112,22 @@ Section Family_Maps.
       simpl; apply commutes_Family_Map.
   Defined.
 
+  (* TODO: oh goodness the naming conventions need improving *)
+  Definition Fmap_Family_Fmap
+      {X Y} (f : X -> Y)
+      {K K' : Family X} (g : Family_Map K K')
+    : Family_Map (Fmap f K) (Fmap f K').
+  Proof.
+    exists g.
+    intros i. cbn. apply ap. apply commutes_Family_Map.
+  Defined.
+
+  Definition Subfamily_inclusion
+      {A : Type} (K : Family A) (P : K -> Type)
+    : Family_Map (Subfamily K P) K.
+  Proof.
+    exists pr1.
+    intros; apply idpath.
+  Defined.
+
 End Family_Maps.

@@ -57,4 +57,34 @@ Section Signature_Maps.
     apply (Fmap_Raw_Syntax f), hjbi.    
   Defined.
 
+  (* Metavariable extensions are bifunctorial in their two arguments.
+
+   We give the general bifunctoriality action as [Fmap], and the special cases in each argument individually as [Fmap1], [Fmap2]. *)
+  Definition Fmap_Metavariable_Extension
+      {Σ} {Σ'} (f : Signature_Map Σ Σ')
+      {a a' : Arity σ} (g : Family_Map a a')
+    : Signature_Map (Metavariable_Extension Σ a)
+                    (Metavariable_Extension Σ' a').
+  Proof.
+    apply Fmap_Family_Sum.
+    - apply f.
+    - apply Fmap_Family_Fmap, g.
+  Defined.
+
+  Definition Fmap1_Metavariable_Extension
+      {Σ} {Σ'} (f : Signature_Map Σ Σ')
+      (a : Arity σ)
+    : Signature_Map (Metavariable_Extension Σ a)
+                    (Metavariable_Extension Σ' a)
+  := Fmap_Metavariable_Extension f (idmap_Family _).
+
+  Definition Fmap2_Metavariable_Extension
+      (Σ : Signature σ)
+      {a a' : Arity σ} (f : Family_Map a a')
+    : Signature_Map (Metavariable_Extension Σ a)
+                    (Metavariable_Extension Σ a')
+  := Fmap_Metavariable_Extension (idmap_Family _) f.
+
 End Signature_Maps.
+
+(* TODO: it probably makes more sense to fold these in through [RawSyntax], so that each construction’s functoriality lemmas can be given with the construction itself. *)

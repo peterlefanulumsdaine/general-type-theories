@@ -37,16 +37,19 @@ End Raw_Rules.
 
 Arguments CCs_of_RR {_ _} _.
 
+(* TODO: probably split this file up, to separate the specifications from the truly raw rules/type theories? *)
+
 (** Specification of “well-shaped” rules *)
 Section RuleSpecs.
 
 Context {Proto_Cxt : Shape_System}.
 
+(* The parameters of a rule-spec, beyond its ambient signature, may be a little counter-intuitive.  The point is that they are just what is required to determine the arity of the symbol introduced by the rule, if it’s an object rule. *)
 Record Rule_Spec
   {Σ : Signature Proto_Cxt}
-  {a : Arity Proto_Cxt}
-  {γ_conclusion : Shape Proto_Cxt}
-  {hjf_conclusion : Hyp_Judgt_Form}
+  {a : Arity Proto_Cxt} (* arity listing the _object_ premises of the rule *)
+  {γ_conclusion : Shape Proto_Cxt} (* proto-context of the conclusion *)
+  {hjf_conclusion : Hyp_Judgt_Form} (* judgement form of the conclusion *)
 :=
   {
   (* The arity [a] supplies the family of object-judgment premises. *)
@@ -117,52 +120,13 @@ Record Rule_Spec
                             (HJF RS_hjf_of_conclusion)
     := (RS_raw_context_of_conclusion; RS_hyp_judgt_bdry_instance_of_conclusion)
   }.
-  (* NOTE 1. One could restrict this by only allowing the case where the context of the conclusion is empty.  This would simplify this definition, and several things below, and would (one expects) not lose any generality, since one can always move variables from that context to become extra premises, giving an equivalent rule with empty conclusion context.
+  (* NOTE 1. One could restrict rule-specs by only allowing the case where the context of the conclusion is empty.  This would simplify this definition, and several things below, and would (one expects) not lose any generality, since one can always move variables from that context to become extra premises, giving an equivalent rule with empty conclusion context.
 
-  However, we retain (for now) the current general version, (a) since rules are sometimes written this way in practice, and (b) to allow a precise theorem stating the claim above about equivalent  forms of a rule . *)
+  However, we retain (for now) the current general version, (a) since rules are sometimes written this way in practice, and (b) to allow a precise theorem stating the claim above about it being equivalent to move variables into the premises. *)
 
-  (* NOTE 2. The current parameters of the definition could perhaps be profitably abstracted into a “proto-rule-spec” (probably including also the arity [RS_equality_Premise]), fitting the pattern of the stratificaiton of objects into proto -> raw -> typed. *)
+  (* NOTE 2. Perhaps the parameters of the definition could be profitably abstracted into a “proto-rule-spec” (probably including also the arity [RS_equality_Premise]), fitting the pattern of the stratificaiton of objects into proto ≤ raw ≤ typed. *)
 
   Arguments Rule_Spec _ _ _ _ : clear implicits.
-
-  (* TODO: upstream.
-   TODO: oh goodness the naming conventions need improving *)
-  Definition Fmap_Family_Fmap
-      {X Y} (f : X -> Y)
-      {K K' : Family X} (g : Family_Map K K')
-    : Family_Map (Family.Fmap f K) (Family.Fmap f K').
-  Proof.
-    exists g.
-    intros i. cbn. apply ap. apply commutes_Family_Map.
-  Defined.
-
-  (* TODO: upstream *)
-  Definition Fmap_Metavariable_Extension
-      {Σ} {Σ'} (f : Signature_Map Σ Σ')
-      {a a' : Arity Proto_Cxt} (g : Family_Map a a')
-    : Signature_Map (Metavariable_Extension Σ a)
-                    (Metavariable_Extension Σ' a').
-  Proof.
-    apply Fmap_Family_Sum.
-    - apply f.
-    - apply Fmap_Family_Fmap, g.
-  Defined.
-
-  (* TODO: upstream *)
-  Definition Fmap1_Metavariable_Extension
-      {Σ} {Σ'} (f : Signature_Map Σ Σ')
-      (a : Arity Proto_Cxt)
-    : Signature_Map (Metavariable_Extension Σ a)
-                    (Metavariable_Extension Σ' a)
-  := Fmap_Metavariable_Extension f (idmap_Family _).
-
-  (* TODO: upstream *)
-  Definition Fmap2_Metavariable_Extension
-      (Σ : Signature Proto_Cxt)
-      {a a' : Arity Proto_Cxt} (f : Family_Map a a')
-    : Signature_Map (Metavariable_Extension Σ a)
-                    (Metavariable_Extension Σ a')
-  := Fmap_Metavariable_Extension (idmap_Family _) f.
 
   Definition Fmap_Rule_Spec
       {Σ} {Σ'} (f : Signature_Map Σ Σ')
@@ -194,15 +158,7 @@ Record Rule_Spec
       apply Fmap1_Metavariable_Extension, f.
   Defined.
 
-  (* TODO: upstream *)
-  Definition Subfamily_inclusion
-      {A : Type} (K : Family A) (P : K -> Type)
-    : Family_Map (Subfamily K P) K.
-  Proof.
-    exists pr1.
-    intros; apply idpath.
-  Defined.
-
+  (* Translating a rule-spec into a raw rule requires no extra information in the case of an equality-rule; in the case of an object-rule, it requires a symbol of appropriate arity to give the object introduced. *)
   Definition Raw_Rule_of_Rule_Spec
     {Σ} {a} {γ_concl} {hjf_concl}
     (R : Rule_Spec Σ a γ_concl hjf_concl)
@@ -211,9 +167,8 @@ Record Rule_Spec
                      * (class S = class_of_HJF hjf_concl) })
   : Raw_Rule Σ.
   (* This construction involves essentially two aspects:
-  - translate the syntax given in R from its “local” signatures to the overall signature;
-  - construct the head terms of object premises and conclusion
-  *)
+  - translate the syntax of each expression in the rule-spec from its “local” signatures to the overall signature;
+  - reconstruct the head terms of the object premises and the conclusion *)
   Proof.
     refine (Build_Raw_Rule _ a _ _).
     - (* premises *)
@@ -276,14 +231,12 @@ Arguments Rule_Spec {_} _ _ _ _.
 
 Section TTSpecs.
 
-  Context (σ : Shape_System).
+  Context {σ : Shape_System}.
 
   Record Type_Theory_Spec
   := {
   (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
     TTS_Rule : Family (Hyp_Judgt_Form * Arity σ * Shape σ)
-  (* the ordering relation on the rules *)
-  (* TODO: somewhere we will want to add that this is well-founded; maybe more *)
   (* the judgement form of the conclusion of each rule *)
   ; TTS_hjf_of_rule : TTS_Rule -> Hyp_Judgt_Form
     := fun i => fst (fst (TTS_Rule i))
@@ -293,7 +246,7 @@ Section TTSpecs.
   (* the shape of the conclusion of each rule *)
   ; TTS_concl_shape_of_rule : TTS_Rule -> Shape σ
     := fun i => snd (TTS_Rule i)
-  (* the ordering on rules.  TODO: will probably need to add well-foundedness *)
+  (* the ordering on rules.  TODO: will probably need to add well-foundedness. QUESTION: any reason for it to be Prop-valued, or could we just let it be type-valued? *)
   ; TTS_lt : TTS_Rule -> TTS_Rule -> hProp
   (* the signature over which each rule can be written *)
   ; TTS_signature_of_rule : TTS_Rule -> Signature σ
@@ -312,8 +265,37 @@ Section TTSpecs.
           (TTS_hjf_of_rule i)
   }.
 
+  Definition Signature_of_TT_Spec (T : Type_Theory_Spec)
+    : Signature σ.
+  Proof.
+    (* symbols are given by the object-judgement rules of T *)
+    exists {r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule _ r)}.
+    intros r_H. set (r := pr1 r_H).
+    split.
+    - exact (class_of_HJF (TTS_hjf_of_rule _ r)).
+    - exact (TTS_arity_of_rule _ r
+            + simple_arity (TTS_concl_shape_of_rule _ r)).
+  Defined.
+    (* NOTE: it is tempting to case-analyse here and say 
+      “when r is an object rule, use [(class_of_HJF …, TTS_arity_of_rule …)];
+       in case r is an equality rule, use reductio ad absurdum with Hr.” 
+     But we get stronger reduction behaviour by just taking [(class_of_HJF …, TTS_arity_of_rule …)] without case-analysing first.  (And up to equality, we get the same result.)  *)
+
+  Definition TT_Spec_signature_inclusion_of_rule
+      {T : Type_Theory_Spec} (r : TTS_Rule T)
+    : Signature_Map (TTS_signature_of_rule _ r) 
+                    (Signature_of_TT_Spec T).
+  Proof.
+    simple refine (_;_).
+    - intros s_isob_lt.
+      exact (pr1 s_isob_lt ; fst (pr2 (s_isob_lt))).
+      (* TODO: introduce access functions for the signature components above? *)
+    - intros s. exact idpath.
+  Defined.
+
 End TTSpecs.
 
+Arguments Type_Theory_Spec _ : clear implicits.
 Arguments TTS_Rule {_} _.
 Arguments TTS_hjf_of_rule {_ _} _.
 Arguments TTS_arity_of_rule {_ _} _.
