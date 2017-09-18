@@ -193,29 +193,33 @@ Section Judgements.
   (* Indices for each kind of judgement form. *)
   (* TODO if we need to access the head and boundaries. *)
 
+  Definition Hyp_Obj_Judgt_Bdry_Slots (cl : Syn_Class)
+  := match cl with
+       (* No hypothetical part in boundary of a type judgement *)
+       | Ty => [< >]
+       (* Boundary of a term judgement: the type of the term *)
+       | Tm => [< Ty >]
+     end.
+
   Definition Hyp_Judgt_Bdry_Slots (hjf : Hyp_Judgt_Form)
     : Family Syn_Class
-    := match hjf with
-        (* No hypothetical part in boundary the type judgement *)
-        | obj_HJF Ty => [< >]
-        (* Both types involved in the equality *)
-        | eq_HJF Ty  => [< Ty ; Ty >]
-        (* Boundary: type of the term *)
-        | obj_HJF Tm => [< Ty >]
-        (* Boundary: the type ; both terms involved *)
-        | eq_HJF Tm  => [< Ty ; Tm ; Tm >]
-      end.
+  := match hjf with
+       (* object judgement boundary: as defined in [Hyp_Obj_Judgt_Bdry_Slots] *)
+       | obj_HJF cl => Hyp_Obj_Judgt_Bdry_Slots cl
+       (* equality judgement boundary: a boundary of the corresponding object-judgement, together with two objects of the given class *)
+       | eq_HJF cl  => Snoc (Snoc (Hyp_Obj_Judgt_Bdry_Slots cl) cl) cl
+     end.
 
   Definition Hyp_Judgt_Form_Slots (hjf : Hyp_Judgt_Form)
     : Family Syn_Class
-    := match hjf with
-        (* Equality case: boundary is everything *)
-        | eq_HJF cl =>
-            Hyp_Judgt_Bdry_Slots (eq_HJF cl)
-        (* Object case: add the head slot *)
-        | obj_HJF cl =>
-            Snoc (Hyp_Judgt_Bdry_Slots (obj_HJF cl)) cl
-       end.
+  := match hjf with
+       (* Equality case: boundary is everything *)
+       | eq_HJF cl =>
+           Hyp_Judgt_Bdry_Slots (eq_HJF cl)
+       (* Object case: add the head slot *)
+       | obj_HJF cl =>
+           Snoc (Hyp_Judgt_Bdry_Slots (obj_HJF cl)) cl
+     end.
   (* NOTE: the order of slots for term judgements follows “dependency order” — later slots are (morally) dependent on earlier ones, so the type comes before the term.  However, the functions in section [Judgement_Notations] below follow standard written order, so the term comes before the type. *)
 
   Definition Hyp_Judgt_Bdry_Instance (hjf : Hyp_Judgt_Form) γ : Type
