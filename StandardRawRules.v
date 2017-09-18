@@ -4,6 +4,7 @@ Require Import DeductiveClosure.
 Require Import Family.
 Require Import Coproduct.
 Require Import RawSyntax.
+Require Import SignatureMaps.
 Require Import RawTypeTheories.
 
 (** This module defines the “standard rules” — the rules which are not explicitly specified in a type theory, but are always assumed to be present.  These fall into several groups:
@@ -454,27 +455,25 @@ End Structural_Rules.
 
 Section Congruence_Rules.
 
-Context {Proto_Cxt : Shape_System}.
-Context (Σ : @Signature Proto_Cxt).
+  Context {σ : Shape_System}.
+  Context (Σ : @Signature σ).
 
-Definition associated_congruence_rule_spec
-  {a} {γ_concl} {hjf_concl} (R : Rule_Spec Σ a γ_concl hjf_concl)
-  (H : is_obj_HJF hjf_concl)
-  (S : Σ)
-  (e_a : arity S = a + (simple_arity γ_concl))
-  (e_cl : class S = class_of_HJF hjf_concl)
-  : (Rule_Spec Σ (Family.Sum a a) γ_concl
-               (eq_HJF (class_of_HJF hjf_concl))).
-Proof.
-  simple refine (Build_Rule_Spec _ _ _ _ _ _ _ _ _ _).
-  - (* RS_equality_premise: arity of equality premises *)
-    exact (((RS_equality_premise R) + (RS_equality_premise R)) + a). 
-  - (* RS_lt *)
-    cbn.
-    intros [ [ ob_l | ob_r ] | [ [ eq_l | eq_r ] | eq_lr ] ];
-    intros [ [ ob'_l | ob'_r ] | [ [ eq'_l | eq'_r ] | eq'_lr ] ].
-    
-(*
+  Definition associated_original_premise {obs eqs : Arity σ}
+    : (obs + obs) + (eqs + eqs + obs) -> (obs + eqs).
+  Proof.
+    intros p ; repeat destruct p as [p | p];
+      try exact (inl p); exact (inr p).
+  Defined.
+
+  (* The ordering of premises of the congruence rule_spec associated to an object rule_spec. 
+
+  TODO: perhaps try to refactor to avoid so many special cases. *)
+  Definition associated_congruence_rule_lt
+      {obs eqs : Type} (lt : relation (obs + eqs))
+    : relation ((obs + obs) + (eqs + eqs + obs)).
+  Proof.
+  (*  In a more readable organisation, the cases we want are as follows:
+
            ob_l i   ob_r i   eq_l i   eq_r i   eq_lr i
 
 ob_l j     i < j    0        i < j    0        0
@@ -488,42 +487,94 @@ eq_r j     0        i < j    0        i < j    0
 eq_lr j    i ≤ j    i ≤ j    i </≤ j  i </≤ j  i < j
 
 In the “</≤” cases: morally, one could argue either < or ≤ makes more sense there, but they will be equivalent since in those cases one knows i≠j. *)
-    (* column eq_l *)
-    + exact (RS_lt R (inl ob_l) (inl ob'_l)).
-    + exact False.
-    + exact (RS_lt R (inl ob_l) (inr eq'_l)).
-    + exact False.
-    + exact ((RS_lt R (inl ob_l) (inl eq'_lr)) \/ (ob_l = eq'_lr)).
-    (* column ob_r *)
-    + exact False.
-    + exact (RS_lt R (inl ob_r) (inl ob'_r)).
-    + exact False.
-    + exact (RS_lt R (inl ob_r) (inr eq'_r)).
-    + exact ((RS_lt R (inl ob_r) (inl eq'_lr)) \/ (ob_r = eq'_lr)).
-    (* column eq_l *)
-    + exact (RS_lt R (inr eq_l) (inl ob'_l)).
-    + exact False.
-    + exact (RS_lt R (inr eq_l) (inr eq'_l)).
-    + exact False.
-    + exact (RS_lt R (inr eq_l) (inl eq'_lr)).
-    (* column eq_r *)
-    + exact False.
-    + exact (RS_lt R (inr eq_r) (inl ob'_r)).
-    + exact False.
-    + exact (RS_lt R (inr eq_r) (inr eq'_r)).
-    + exact (RS_lt R (inr eq_r) (inl eq'_lr)).
-    (* column eq_lr *)
-    + exact False.
-    + exact False.
-    + exact False.
-    + exact False.
-    + exact (RS_lt R (inl eq_lr) (inl eq'_lr)).
-  (* TODO: goodness, factor out this relation. *)
-  - admit. (* RS_context_expr_of_premise *)
-  - admit. (* RS_hyp_bdry_instance_of_premise *)
-  - admit. (* RS_context_expr_of_conclusion *)
-  - admit. (* RS_hyp_judgt_bdry_instance_of_conclusion *)
-Admitted.
+    intros [ [ ob_l | ob_r ] | [ [ eq_l | eq_r ] | eq_lr ] ];
+    intros [ [ ob'_l | ob'_r ] | [ [ eq'_l | eq'_r ] | eq'_lr ] ].
+      (* column eq_l *)
+    - exact (lt (inl ob_l) (inl ob'_l)).
+    - exact False.
+    - exact (lt (inl ob_l) (inr eq'_l)).
+    - exact False.
+    - exact ((lt (inl ob_l) (inl eq'_lr)) \/ (ob_l = eq'_lr)).
+      (* column ob_r *)
+    - exact False.
+    - exact (lt (inl ob_r) (inl ob'_r)).
+    - exact False.
+    - exact (lt (inl ob_r) (inr eq'_r)).
+    - exact ((lt (inl ob_r) (inl eq'_lr)) \/ (ob_r = eq'_lr)).
+      (* column eq_l *)
+    - exact (lt (inr eq_l) (inl ob'_l)).
+    - exact False.
+    - exact (lt (inr eq_l) (inr eq'_l)).
+    - exact False.
+    - exact (lt (inr eq_l) (inl eq'_lr)).
+      (* column eq_r *)
+    - exact False.
+    - exact (lt (inr eq_r) (inl ob'_r)).
+    - exact False.
+    - exact (lt (inr eq_r) (inr eq'_r)).
+    - exact (lt (inr eq_r) (inl eq'_lr)).
+      (* column eq_lr *)
+    - exact False.
+    - exact False.
+    - exact False.
+    - exact False.
+    - exact (lt (inl eq_lr) (inl eq'_lr)).
+  Defined.
+
+  Definition associated_congruence_rule_original_constructor_translation
+    {a} {γ_concl} {hjf_concl} (R : Rule_Spec Σ a γ_concl hjf_concl)
+    (p : (a + a) + (RS_equality_premise R + RS_equality_premise R + a))
+    : Signature_Map
+        (Metavariable_Extension Σ
+          (RS_arity_of_premise R (associated_original_premise p)))
+        (Metavariable_Extension Σ (Subfamily (a + a)
+           (fun j => associated_congruence_rule_lt (RS_lt R) (inl j) p))).
+  Proof.
+    (* In case [p] is one of the 2 copies of the original premises, there is a single canonical choice for this definition.
+
+    In case [p] is one of the new equality premises (between the 2 copies of the old equality premises), there are in principle 2 possibilities; it should make no difference which one chooses. *)
+  Admitted.
+
+  Definition associated_congruence_rule_spec
+    {a} {γ_concl} {hjf_concl} (R : Rule_Spec Σ a γ_concl hjf_concl)
+    (H : is_obj_HJF hjf_concl)
+    (S : Σ)
+    (e_a : arity S = a + (simple_arity γ_concl))
+    (e_cl : class S = class_of_HJF hjf_concl)
+    : (Rule_Spec Σ (Family.Sum a a) γ_concl
+                 (eq_HJF (class_of_HJF hjf_concl))).
+  Proof.
+    simple refine (Build_Rule_Spec _ _ _ _ _ _ _ _ _ _).
+    - (* RS_equality_premise: arity of equality premises *)
+      exact (((RS_equality_premise R) + (RS_equality_premise R)) + a). 
+    - (* RS_lt *)
+      exact (associated_congruence_rule_lt (RS_lt R)).
+    - (* RS_context_expr_of_premise *)
+      intros p i.
+      refine (Fmap_Raw_Syntax
+        (associated_congruence_rule_original_constructor_translation _ _) _).
+      set (p_orig := associated_original_premise p).
+      destruct p as [ [ ? | ? ] | [ [ ? | ? ] | ? ] ];
+      refine (RS_context_expr_of_premise R p_orig i).
+      (* alternatively, instead of destructing [p], could use equality reasoning on the type of [i]. *)
+    - (* RS_hyp_bdry_instance_of_premise *)
+      intros p.
+      refine (Fmap_Hyp_Judgt_Bdry_Instance
+        (associated_congruence_rule_original_constructor_translation _ _) _).
+      set (p_orig := associated_original_premise p).
+      destruct p as [ [ ? | ? ] | [ [ ? | ? ] | p ] ];
+      try refine (RS_hyp_bdry_instance_of_premise R p_orig).
+      (* The cases where [p] is a copy of an original premise all succeed,
+      leaving just the new equality premises to give. *)
+      cbn.
+      (* A more unified treatment of boundary judgement positions would make this much easier. *)
+      set (ap := a p) in *. destruct ap as [[ | ] γ]; cbn;
+        intros i; simpl Hyp_Judgt_Bdry_Slots in i.
+      * admit. (* case where p was a type premise *)
+      * admit. (* case where p was a term premise *)
+    - admit. (* RS_context_expr_of_conclusion *)
+    - admit. (* RS_hyp_judgt_bdry_instance_of_conclusion *)
+  Admitted.
 
 (* A good test proposition will be the following: whenever a rule-spec is well-typed, then so is its associated congruence rule-spec. *)
 
@@ -531,7 +582,7 @@ Admitted.
 
 (A) disallow conclusion context
 (B) add explicit rule that substitution is a congruence
-  (and maybe then prove something like: if we don’t have conclusion contexts?)
+    (and maybe then prove something like: if we don’t have conclusion contexts?)
 (C) in [associated_congruence_rule_spec], variables from conclusion into extra premises. 
 
 (C) seems a bit of an unnatural half-and-half.  (A) seems the cleantes option; (B) adds a little extra arguably-unnecessary noice (since in the end we show that it doesn’t really add any extra generality), but with a payoff of allowing us to give the “well-known” fact of the equivalences between the two forms of rules as a theorem in our generality.
