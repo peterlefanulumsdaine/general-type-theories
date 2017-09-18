@@ -464,6 +464,8 @@ Section Congruence_Rules.
     intros p ; repeat destruct p as [p | p];
       try exact (inl p); exact (inr p).
   Defined.
+  
+  Arguments associated_original_premise : simpl nomatch.
 
   (* The ordering of premises of the congruence rule_spec associated to an object rule_spec. 
 
@@ -521,6 +523,8 @@ In the “</≤” cases: morally, one could argue either < or ≤ makes more se
     - exact (lt (inl eq_lr) (inl eq'_lr)).
   Defined.
 
+  Arguments associated_congruence_rule_lt : simpl nomatch.
+
   Definition associated_congruence_rule_original_constructor_translation
     {a} {γ_concl} {hjf_concl} (R : Rule_Spec Σ a γ_concl hjf_concl)
     (p : (a + a) + (RS_equality_premise R + RS_equality_premise R + a))
@@ -559,21 +563,41 @@ In the “</≤” cases: morally, one could argue either < or ≤ makes more se
       (* alternatively, instead of destructing [p], could use equality reasoning on the type of [i]. *)
     - (* RS_hyp_bdry_instance_of_premise *)
       intros p.
-      refine (Fmap_Hyp_Judgt_Bdry_Instance
-        (associated_congruence_rule_original_constructor_translation _ _) _).
       set (p_orig := associated_original_premise p).
       destruct p as [ [ ? | ? ] | [ [ ? | ? ] | p ] ];
-      try refine (RS_hyp_bdry_instance_of_premise R p_orig).
-      (* The cases where [p] is a copy of an original premise all succeed,
+      try (refine (Fmap_Hyp_Judgt_Bdry_Instance
+        (associated_congruence_rule_original_constructor_translation _ _) _);
+           refine (RS_hyp_bdry_instance_of_premise R p_orig)).
+      (* The cases where [p] is a copy of an original premise are all just translation,
       leaving just the new equality premises to give. *)
-      cbn.
-      (* A more unified treatment of boundary judgement positions would make this much easier. *)
-      set (ap := a p) in *. destruct ap as [[ | ] γ]; cbn;
-        intros i; simpl Hyp_Judgt_Bdry_Slots in i.
-      * admit. (* case where p was a type premise *)
-      * admit. (* case where p was a term premise *)
-    - admit. (* RS_context_expr_of_conclusion *)
-    - admit. (* RS_hyp_judgt_bdry_instance_of_conclusion *)
+      intros i; simpl Hyp_Judgt_Bdry_Slots in i.
+      destruct i as [ [ i | ] | ]; [ idtac | simpl | simpl]. 
+      + (* boundary of the corresponding original premise *)
+        refine (Fmap_Raw_Syntax
+          (associated_congruence_rule_original_constructor_translation _ _) _).
+        apply (RS_hyp_bdry_instance_of_premise R p_orig).
+      + (* LHS of new equality premise *)
+        admit.
+      + (* RHS of new equality premise *)
+        admit.
+    - (* RS_context_expr_of_conclusion *)
+      intros i.
+      refine (Fmap_Raw_Syntax _ (RS_context_expr_of_conclusion R i)).
+      apply Fmap2_Metavariable_Extension.
+      admit. (* either injection of the family sum *)
+    - (* RS_hyp_judgt_bdry_instance_of_conclusion *)
+      intros [ [ i | ] | ]; simpl. 
+      + (* boundary of original conclusion *)
+        refine (Fmap_Raw_Syntax _ _).
+        * apply Fmap2_Metavariable_Extension.
+          admit.
+        * destruct hjf_concl as [cl | ?].
+          -- exact (RS_hyp_judgt_bdry_instance_of_conclusion R i).
+          -- destruct H. (* [hjf_concl] can’t be an equality judgement *)
+      + (* LHS of new conclusion *)
+        admit.
+      + (* RHS of new conclusion *)
+        admit.
   Admitted.
 
 (* A good test proposition will be the following: whenever a rule-spec is well-typed, then so is its associated congruence rule-spec. *)
