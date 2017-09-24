@@ -1,3 +1,35 @@
+# Project goals
+
+## Main definitions
+
+- definition of a well-specified type theory
+
+## Smaller goal theorems
+
+Theorems/lemmas that would give nice examples to prove, once the main definition is set up, and which should be reasonably straightforward to state+prove
+
+- Well-typedness of associated congruence rules (whenever an original rule-spec is well-typed).
+
+- Equivalence of the “hypothetical” and “absolute” forms of a rule — e.g. pairing rule with components as premises, or as context of conclusion.
+
+- Derivability of presuppositions of any derivable judgement.
+
+- General inversion lemma.  Given any derivable judgement, and any immediate subterm of the head (or even: any subterm of any expression involved), should be able to formulate and derive another judgement with that subterm as the head.
+
+- Equivalence of a rule given with all premises vs. given with the “inferrable” premises omitted.  (Subtlety: what should “equivalent” mean in this and other lemmas? want it to hold just for the theory leading up to + including the given rule, or for further (reasonable) extensions?  If the latter, how to prove it?)
+
+## Larger goal theorems
+
+- Some approach to raising the “inferrable premises can be omitted” theorem to whole type theories!  (Either automatically seek premises to omit when translating the rule-specs, or have it human-specified.)
+
+- Uniqueness of typing?
+
+- Syntax forms a contextual category / CwA / etc
+
+# Original sketch
+
+[PLL’s notes preceding Ljubljana visit, Dec 2016.  TODO: organise these a bit, + bring up to date with subsequent improvements]
+
 notes/plans towards (formalised) general definition of type theory, for Ljubljana visit?
 
 Background:
