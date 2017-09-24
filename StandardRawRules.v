@@ -476,7 +476,7 @@ Section Congruence_Rules.
   Proof.
   (*  In a more readable organisation, the cases we want are as follows:
 
-           ob_l i   ob_r i   eq_l i   eq_r i   eq_lr i
+           ob_l i   ob_r i   eq_l i   eq_r i   eq_new i
 
 ob_l j     i < j    0        i < j    0        0
 
@@ -486,41 +486,41 @@ eq_l j     i < j    0        i < j    0        0
 
 eq_r j     0        i < j    0        i < j    0
 
-eq_lr j    i ≤ j    i ≤ j    i </≤ j  i </≤ j  i < j
+eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
 
-In the “</≤” cases: morally, one could argue either < or ≤ makes more sense there, but they will be equivalent since in those cases one knows i≠j. *)
-    intros [ [ ob_l | ob_r ] | [ [ eq_l | eq_r ] | eq_lr ] ];
-    intros [ [ ob'_l | ob'_r ] | [ [ eq'_l | eq'_r ] | eq'_lr ] ].
+*)
+    intros [ [ ob_l | ob_r ] | [ [ eq_l | eq_r ] | eq_new ] ];
+    intros [ [ ob'_l | ob'_r ] | [ [ eq'_l | eq'_r ] | eq'_new ] ].
       (* column eq_l *)
     - exact (lt (inl ob_l) (inl ob'_l)).
     - exact False.
     - exact (lt (inl ob_l) (inr eq'_l)).
     - exact False.
-    - exact ((lt (inl ob_l) (inl eq'_lr)) \/ (ob_l = eq'_lr)).
+    - exact ((lt (inl ob_l) (inl eq'_new)) \/ (ob_l = eq'_new)).
       (* column ob_r *)
     - exact False.
     - exact (lt (inl ob_r) (inl ob'_r)).
     - exact False.
     - exact (lt (inl ob_r) (inr eq'_r)).
-    - exact ((lt (inl ob_r) (inl eq'_lr)) \/ (ob_r = eq'_lr)).
+    - exact ((lt (inl ob_r) (inl eq'_new)) \/ (ob_r = eq'_new)).
       (* column eq_l *)
     - exact (lt (inr eq_l) (inl ob'_l)).
     - exact False.
     - exact (lt (inr eq_l) (inr eq'_l)).
     - exact False.
-    - exact (lt (inr eq_l) (inl eq'_lr)).
+    - exact (lt (inr eq_l) (inl eq'_new)).
       (* column eq_r *)
     - exact False.
     - exact (lt (inr eq_r) (inl ob'_r)).
     - exact False.
     - exact (lt (inr eq_r) (inr eq'_r)).
-    - exact (lt (inr eq_r) (inl eq'_lr)).
-      (* column eq_lr *)
+    - exact (lt (inr eq_r) (inl eq'_new)).
+      (* column eq_new *)
     - exact False.
     - exact False.
     - exact False.
     - exact False.
-    - exact (lt (inl eq_lr) (inl eq'_lr)).
+    - exact (lt (inl eq_new) (inl eq'_new)).
   Defined.
 
   Arguments associated_congruence_rule_lt : simpl nomatch.
@@ -537,7 +537,40 @@ In the “</≤” cases: morally, one could argue either < or ≤ makes more se
     (* In case [p] is one of the 2 copies of the original premises, there is a single canonical choice for this definition.
 
     In case [p] is one of the new equality premises (between the 2 copies of the old equality premises), there are in principle 2 possibilities; it should make no difference which one chooses. *)
-  Admitted.
+      destruct p as [ [ pob_l | pob_r ] | [ [ peq_l | peq_r ] | peq_new ] ].
+      - (* pob_l *)
+        simple refine (_;_).
+        + intros [s | q].
+          * exact (inl s). 
+          * refine (inr _). exists (inl (pr1 q)). exact (pr2 q).
+        + intros [? | ?]; exact idpath. 
+      - (* pob_r *) 
+        simple refine (_;_).
+        + intros [s | q].
+          * exact (inl s). 
+          * refine (inr _). exists (inr (pr1 q)). exact (pr2 q).
+        + intros [? | ?]; exact idpath. 
+      - (* peq_l *) 
+        simple refine (_;_).
+        + intros [s | q].
+          * exact (inl s). 
+          * refine (inr _). exists (inl (pr1 q)). exact (pr2 q).
+        + intros [? | ?]; exact idpath. 
+      - (* peq_r *) 
+        simple refine (_;_).
+        + intros [s | q].
+          * exact (inl s). 
+          * refine (inr _). exists (inr (pr1 q)). exact (pr2 q).
+        + intros [? | ?]; exact idpath. 
+      - (* peq_new *)
+        simple refine (_;_).
+        + intros [s | q].
+          * exact (inl s). 
+          * refine (inr _).
+            exists (inr (pr1 q)). (* note both [inl], [inr] make this work *)
+            cbn; cbn in q. exact (inl (pr2 q)).
+        + intros [? | ?]; exact idpath.         
+  Defined.
 
   Definition associated_congruence_rule_spec
     {a} {γ_concl} {hjf_concl} (R : Rule_Spec Σ a γ_concl hjf_concl)
