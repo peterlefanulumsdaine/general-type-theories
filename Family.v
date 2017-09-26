@@ -102,7 +102,7 @@ Section Family_Maps.
   Definition Fmap_Family_Sum {X}
       {K K' : Family X} (f : Family_Map K K')
       {L L' : Family X} (g : Family_Map L L')
-  : Family_Map (Sum K L) (Sum K' L').
+    : Family_Map (Sum K L) (Sum K' L').
   Proof.
     simple refine (_;_).
     - intros [ i | j ].
@@ -112,6 +112,20 @@ Section Family_Maps.
       simpl; apply commutes_Family_Map.
   Defined.
 
+  Definition inl_Family {X} {K K' : Family X}
+    : Family_Map K (K + K').
+  Proof.
+    exists inl.
+    intro; apply idpath.
+  Defined.
+
+  Definition inr_Family {X} {K K' : Family X}
+    : Family_Map K' (K + K').
+  Proof.
+    exists inr.
+    intro; apply idpath.
+  Defined.
+  
   (* TODO: oh goodness the naming conventions need improving *)
   Definition Fmap_Family_Fmap
       {X Y} (f : X -> Y)

@@ -469,7 +469,7 @@ Section Congruence_Rules.
 
   (* The ordering of premises of the congruence rule_spec associated to an object rule_spec. 
 
-  TODO: perhaps try to refactor to avoid so many special cases. *)
+  TODO: perhaps try to refactor to avoid so many special cases?  E.g. as: take the lex product of the input relation [R] with the 3-element order ({{0},{1},{0,1}}, ⊂ ) and then pull this back along the suitable map (o+o)+(e+e+o) —> (o+e)*3 ?  *)
   Definition associated_congruence_rule_lt
       {obs eqs : Type} (lt : relation (obs + eqs))
     : relation ((obs + obs) + (eqs + eqs + obs)).
@@ -572,6 +572,18 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
         + intros [? | ?]; exact idpath.         
   Defined.
 
+  (* TODO: move *)
+  (* Useful, with [idpath] as the equality argument, when want wants to construct the smybol argument interactively — this is difficult with original [symb_raw] due to [class S] appearing in the conclusion. *)
+  Definition symb_raw' {Σ' : Signature σ}
+      {γ} {cl} (S : Σ') (e : class S = cl)
+      (args : forall i : arity S,
+        Raw_Syntax Σ' (arg_class i) (shape_coproduct γ (arg_pcxt i)))
+    : Raw_Syntax Σ' cl γ.
+  Proof.
+    destruct e.
+    apply symb_raw; auto.
+  Defined.
+
   Definition associated_congruence_rule_spec
     {a} {γ_concl} {hjf_concl} (R : Rule_Spec Σ a γ_concl hjf_concl)
     (H : is_obj_HJF hjf_concl)
@@ -610,40 +622,75 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
           (associated_congruence_rule_original_constructor_translation _ _) _).
         apply (RS_hyp_bdry_instance_of_premise R p_orig).
       + (* LHS of new equality premise *)
-        admit.
+        cbn. simple refine (symb_raw' _ _ _).
+        * apply inr_Metavariable.
+          refine (inl p; _).
+          apply inr, idpath.
+        * apply idpath.
+        * intros i.
+          apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
       + (* RHS of new equality premise *)
-        admit.
+        cbn. simple refine (symb_raw' _ _ _).
+        * apply inr_Metavariable.
+          refine (inr p; _).
+          apply inr, idpath.
+        * apply idpath.
+        * intros i.
+          apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
     - (* RS_context_expr_of_conclusion *)
       intros i.
       refine (Fmap_Raw_Syntax _ (RS_context_expr_of_conclusion R i)).
-      apply Fmap2_Metavariable_Extension.
-      admit. (* either injection of the family sum *)
+      apply Fmap2_Metavariable_Extension, inl_Family.
     - (* RS_hyp_judgt_bdry_instance_of_conclusion *)
       intros [ [ i | ] | ]; simpl. 
       + (* boundary of original conclusion *)
         refine (Fmap_Raw_Syntax _ _).
-        * apply Fmap2_Metavariable_Extension.
-          admit.
+        * apply Fmap2_Metavariable_Extension, inl_Family.
         * destruct hjf_concl as [cl | ?].
           -- exact (RS_hyp_judgt_bdry_instance_of_conclusion R i).
           -- destruct H. (* [hjf_concl] can’t be an equality judgement *)
       + (* LHS of new conclusion *)
-        admit.
+        cbn. simple refine (symb_raw' _ _ _).
+        * apply inl_Symbol, S.
+        * apply e_cl.
+        * change (arity (inl_Symbol S)) with (arity S).
+          destruct (e_a^); clear e_a.
+          intros [ p | i ].
+          -- simple refine (symb_raw' _ _ _).
+             ++ apply inr_Metavariable.
+                exact (inl p).
+             ++ apply idpath.
+             ++ cbn. intros i.
+                apply var_raw. 
+                apply (coproduct_inj1 shape_is_coproduct).
+                apply (coproduct_inj2 shape_is_coproduct).
+                exact i.
+          -- apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
       + (* RHS of new conclusion *)
-        admit.
-  Admitted.
+        cbn. simple refine (symb_raw' _ _ _).
+        * apply inl_Symbol, S.
+        * apply e_cl.
+        * change (arity (inl_Symbol S)) with (arity S).
+          destruct (e_a^); clear e_a.
+          intros [ p | i ].
+          -- simple refine (symb_raw' _ _ _).
+             ++ apply inr_Metavariable.
+                exact (inr p).
+             ++ apply idpath.
+             ++ cbn. intros i.
+                apply var_raw. 
+                apply (coproduct_inj1 shape_is_coproduct).
+                apply (coproduct_inj2 shape_is_coproduct).
+                exact i.
+          -- apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
+  Defined.
+  (* TODO: the above is a bit unreadable.  An alternative approach that might be clearer and more robust:
+   - factor out the constructions of the head terms of conclusions and premises from [Raw_Rule_of_Rule_Spec], if doable.
+   - here, invoke those, but (for the LHS/RHS of the new equalities), translate them under appropriate context morphisms “inl”, “inr”. *)
 
 (* A good test proposition will be the following: whenever a rule-spec is well-typed, then so is its associated congruence rule-spec. *)
 
-(* TODO: what about congruence for rules in arguments coming from their conclusion contexts?  seems like we have options:
+(* TODO: add “substitution respects judgemental equality” structural rules.  Just like the main “substitution” rules, this should be admissible anyway in case all logical rules are given in “absolute” form, with no context in conclusion, but is required if we allow rules where contexts have non-empty conclusion, and seems natural to include in any case — certainly once we’ve decided to add substitution rules at all. *)
 
-(A) disallow conclusion context
-(B) add explicit rule that substitution is a congruence
-    (and maybe then prove something like: if we don’t have conclusion contexts?)
-(C) in [associated_congruence_rule_spec], variables from conclusion into extra premises. 
-
-(C) seems a bit of an unnatural half-and-half.  (A) seems the cleantes option; (B) adds a little extra arguably-unnecessary noice (since in the end we show that it doesn’t really add any extra generality), but with a payoff of allowing us to give the “well-known” fact of the equivalences between the two forms of rules as a theorem in our generality.
-
-  *)
 End Congruence_Rules.
 
