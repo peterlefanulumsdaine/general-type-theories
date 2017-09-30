@@ -13,11 +13,9 @@ Section Derivability_from_Raw_TT.
           {Σ : Signature σ}.
 
   Definition CCs_from_Raw_TT (T : Raw_Type_Theory Σ)
-    : Family (closure_condition (Judgt_Instance Σ)).
-  Proof.
-    refine (Family.Sum (context_ccs Σ) _).
-    exact (Family.Bind T CCs_of_RR).
-  Defined.
+    : Family (closure_condition (Judgt_Instance Σ))
+  := Structural_CCs Σ
+     + Family.Bind T CCs_of_RR.
 
   Definition Derivation_from_Raw_TT (T : Raw_Type_Theory Σ)
     : Judgt_Instance Σ -> Type
@@ -32,10 +30,8 @@ Section Derivability_from_TT_Spec.
   Definition Raw_TT_of_TT_Spec (T : Type_Theory_Spec σ)
     : Raw_Type_Theory (Signature_of_TT_Spec T).
   Proof.
-    (* First group: the structural rules *)
-    refine (Family.Sum (Structural_Rules _) _).
-    refine (Family.Sum _ _).
-    (* Second group: the explicitly-given logical rules *)
+    refine (_ + _).
+    (* First: the explicitly-given logical rules *)
     - exists (TTS_Rule T).
       intros r.
       refine (Raw_Rule_of_Rule_Spec _ _).
@@ -46,7 +42,7 @@ Section Derivability_from_TT_Spec.
         intros r_obj.
         exists (r; r_obj).
         split; apply idpath.
-    (* Third group: the congruence rules for the type-/term- operations *)
+    (* Second: associated congruence rules for the object-judgement logical rules. *)
     - exists { r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule r) }.
       intros [r Hr].
       refine (Raw_Rule_of_Rule_Spec _ _).

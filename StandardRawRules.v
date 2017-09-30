@@ -7,19 +7,25 @@ Require Import RawSyntax.
 Require Import SignatureMaps.
 Require Import RawTypeTheories.
 
-(** This module defines the “standard rules” — the rules which are not explicitly specified in a type theory, but are always assumed to be present.  These fall into several groups:
+(** This module defines the “standard rules” — the rules which are not explicitly specified in a type theory, but are always assumed to be present.  These fall into several groups.   
 
-- context formation rules (in fact closure conditions in our terminology, not rules, since the latter involve only hypothetical judgements)
-- structural rules
-- congruence rules: any logical rule-specification determines a corresponding cogruence rule specification
+- context formation
+- substitution rules
+- variable rule
+- equality rules
+- associated congruence rules: any logical rule-specification determines a corresponding cogruence rule specification
+
+Since “rule” in our terminology consist just of hypothetical judgements over a common context, the structural rules that don’t fit this form (context formation and substitution) have to be given directly as families of closure conditions.
+
+All of the above *except* for associated congruence rules (TODO: these should really be moved out of this file!) are collected for quick export as a single family [Structural_CCs].
 *)
 
+Section Structural_Rules.
+
+Context {σ : Shape_System}.
+Context (Σ : @Signature σ).
+
 Section Context_Formation.
-
-Context {Proto_Cxt : Shape_System}.
-Context (Σ : @Signature Proto_Cxt).
-
-(* These need to be defined directly as closure conditions, since our raw rules only allow derivations of hypothetical judgements.  *)
 
 Definition empty_context_cc : closure_condition (Judgt_Instance Σ).
 Proof.
@@ -59,21 +65,93 @@ Definition context_ccs
 
 End Context_Formation.
 
-Section Structural_Rules.
+Section Substitution.
 
-(* Structural rules:
+(* General substitution along context maps. *)
+
+Definition subst_cc : Family (closure_condition (Judgt_Instance Σ)).
+Proof.
+  exists {   Γ : Raw_Context Σ
+    & { Γ' : Raw_Context Σ
+    & { f : Raw_Context_Map Σ Γ' Γ
+    & { hjf : Hyp_Judgt_Form
+    & Hyp_Judgt_Form_Instance Σ hjf Γ}}}}.
+  intros [Γ [Γ' [f [hjf hjfi]]]].
+  split.
+  (* premises: *)
+  - apply Snoc.
+    (* f is a context morphism *)
+    + exists Γ.
+      intros i. refine [Tm! Γ' |- _ ; _ !].
+      * exact (f i).
+      * exact (Raw_Subst f (Γ i)).
+    (* the judgement holds over Γ *)
+    + exists (HJF hjf).
+      exists Γ.
+      exact hjfi.
+  (* conclusion: *)
+  - exists (HJF hjf).
+    exists Γ'.
+    intros i. exact (Raw_Subst f (hjfi i)).
+Defined.
+
+(* Substitution respects *equality* of context morphisms *)
+Definition subst_eq_cc : Family (closure_condition (Judgt_Instance Σ)).
+Proof.
+  exists {   Γ : Raw_Context Σ
+    & { Γ' : Raw_Context Σ
+    & { f : Raw_Context_Map Σ Γ' Γ
+    & { f' : Raw_Context_Map Σ Γ' Γ
+    & { cl : Syn_Class
+    & Hyp_Judgt_Form_Instance Σ (obj_HJF cl) Γ}}}}}.
+  intros [Γ [Γ' [f [f' [cl hjfi]]]]].
+  split.
+  (* premises: *)
+  - refine (Snoc (_ + _ + _) _).
+    (* f is a context morphism *)
+    + exists Γ.
+      intros i. refine [Tm! Γ' |- _ ; _ !].
+      * exact (f i).
+      * exact (Raw_Subst f (Γ i)).
+    (* f' is a context morphism *)
+    + exists Γ.
+      intros i. refine [Tm! Γ' |- _ ; _ !].
+      * exact (f' i).
+      * exact (Raw_Subst f' (Γ i)).
+    (* f ≡ f' *)
+    + exists Γ.
+      intros i. refine [TmEq! Γ' |- _ ≡ _ ; _ !].
+    (* TODO: note inconsistent ordering of arguments in [give_Tm_ji] compared to other [give_Foo_ji].  Consider, consistentise? *)
+      * exact (Raw_Subst f (Γ i)).
+      * exact (f i).
+      * exact (f' i).
+    (* the judgement holds over Γ *)
+    + exists (HJF (obj_HJF cl)).
+      exists Γ.
+      exact hjfi.
+ (* conclusion: *) 
+  - exists (HJF (eq_HJF cl)).
+    exists Γ'.
+    cbn. intros [i | ]. 
+    + (* boundry and LHS *)
+      exact (Raw_Subst f (hjfi i)).
+    + (* RHS *)
+      exact (Raw_Subst f' (hjfi None)).
+Defined.
+
+Definition subst_ccs : Family (closure_condition (Judgt_Instance Σ))
+  := subst_cc + subst_eq_cc.
+
+End Substitution.
+
+Section Hyp_Structural_Rules.
+
+(* Hypothetical structural rules:
 
   - var rule
-  - subst, wkg rules, for each type of judgement.
   - equality rules
 
 *)
-
-Context {Proto_Cxt : Shape_System}.
-Context (Σ : @Signature Proto_Cxt).
-
-
-Section Var_Subst_Wkg.
 
 (* The var rule:
 
@@ -87,7 +165,7 @@ Definition var_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty Proto_Cxt )    (* [ A ] *)
+      (Ty , shape_empty σ )    (* [ A ] *)
     >] : Arity _).
   (* Name the symbols. *)
   pose (A := None : Metas).
@@ -104,44 +182,6 @@ Proof.
     + exact [M/ A /].
 Defined.
 
-(* General substitution/weakening: another special case that has to be given directly as a closure condition, since it doesn’t fit the pattern of our raw rules. *)
-
-(* TODO: consider names of access functions. *)
-Record Substitution_Data
-:=
-  { src : Raw_Context Σ
-  ; tgt : Raw_Context Σ
-  ; map : Raw_Context_Map Σ src tgt
-  }.
-
-Definition subst_cc : Family (closure_condition (Judgt_Instance Σ)).
-Proof.
-  exists {f : Substitution_Data
-       & { hjf : Hyp_Judgt_Form
-       & forall i : Hyp_Judgt_Form_Slots hjf,
-                         Raw_Syntax Σ (fam_element _ i) (tgt f) }}.
-  intros [[Γ' Γ f] [hjf hjfi]].
-  split.
-  (* premises: *)
-  - apply Snoc.
-    (* f is a context morphism *)
-    + exists Γ.
-      intros i. refine [Tm! Γ' |- _ ; _ !].
-      * exact (f i).
-      * exact (Raw_Subst f (Γ i)).
-    (* the judgement holds over Γ *)
-    + exists (HJF hjf).
-      exists Γ.
-      exact hjfi.
-  - exists (HJF hjf).
-    exists Γ'.
-    intros i. exact (Raw_Subst f (hjfi i)).
-Defined.
-
-(* TODO: add substitution rule showing substitution respects *equality* of context morphisms *)
-
-End Var_Subst_Wkg.
-
 Section Equality_Rules.
 
 (* rule REFL_TyEq
@@ -154,7 +194,7 @@ Definition refl_ty_eq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty Proto_Cxt )    (* [ A ] *)
+      (Ty , shape_empty σ )    (* [ A ] *)
     >] : Arity _).
   (* Name the symbols. *)
   pose (A := None : Metas).
@@ -182,8 +222,8 @@ Definition symm_ty_eq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty Proto_Cxt )    (* [ A ] *)
-    ; (Ty , shape_empty Proto_Cxt )    (* [ B ] *)
+      (Ty , shape_empty σ )    (* [ A ] *)
+    ; (Ty , shape_empty σ )    (* [ B ] *)
     >] : Arity _).
   (* Name the symbols. *)
   pose (B := None : Metas).
@@ -213,9 +253,9 @@ Definition trans_ty_eq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty Proto_Cxt )    (* [ A ] *)
-    ; (Ty , shape_empty Proto_Cxt )    (* [ B ] *)
-    ; (Ty , shape_empty Proto_Cxt )    (* [ C ] *)
+      (Ty , shape_empty σ )    (* [ A ] *)
+    ; (Ty , shape_empty σ )    (* [ B ] *)
+    ; (Ty , shape_empty σ )    (* [ C ] *)
     >] : Arity _).
   (* Name the symbols. *)
   pose (C := None : Metas).
@@ -251,8 +291,8 @@ Definition refl_tm_eq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty Proto_Cxt)    (* [ A ] *)
-    ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
+      (Ty , shape_empty σ)    (* [ A ] *)
+    ; (Tm , shape_empty σ)    (* [ u ] *)
     >] : Arity _).
   (* Name the symbols. *)
   pose (u := None : Metas).
@@ -283,9 +323,9 @@ Definition symm_tm_eq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty Proto_Cxt)    (* [ A ] *)
-    ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
-    ; (Tm , shape_empty Proto_Cxt)    (* [ v ] *)
+      (Ty , shape_empty σ)    (* [ A ] *)
+    ; (Tm , shape_empty σ)    (* [ u ] *)
+    ; (Tm , shape_empty σ)    (* [ v ] *)
     >] : Arity _).
   (* Name the symbols. *)
   pose (v := None : Metas).
@@ -318,10 +358,10 @@ Definition trans_tm_eq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty Proto_Cxt)    (* [ A ] *)
-    ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
-    ; (Tm , shape_empty Proto_Cxt)    (* [ v ] *)
-    ; (Tm , shape_empty Proto_Cxt)    (* [ w ] *)
+      (Ty , shape_empty σ)    (* [ A ] *)
+    ; (Tm , shape_empty σ)    (* [ u ] *)
+    ; (Tm , shape_empty σ)    (* [ v ] *)
+    ; (Tm , shape_empty σ)    (* [ w ] *)
     >] : Arity _).
   (* Name the symbols. *)
   pose (w := None : Metas).
@@ -364,9 +404,9 @@ Definition coerce_tm_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty Proto_Cxt)    (* [ A ] *)
-    ; (Ty , shape_empty Proto_Cxt)    (* [ B ] *)
-    ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
+      (Ty , shape_empty σ)    (* [ A ] *)
+    ; (Ty , shape_empty σ)    (* [ B ] *)
+    ; (Tm , shape_empty σ)    (* [ u ] *)
     >] : Arity _).
   (* Name the symbols. *)
   pose (u := None : Metas).
@@ -414,10 +454,10 @@ Definition coerce_tmeq_raw_rule : Raw_Rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (Ty , shape_empty Proto_Cxt)    (* [ A ] *)
-    ; (Ty , shape_empty Proto_Cxt)    (* [ B ] *)
-    ; (Tm , shape_empty Proto_Cxt)    (* [ u ] *)
-    ; (Tm , shape_empty Proto_Cxt)    (* [ u' ] *)
+      (Ty , shape_empty σ)    (* [ A ] *)
+    ; (Ty , shape_empty σ)    (* [ B ] *)
+    ; (Tm , shape_empty σ)    (* [ u ] *)
+    ; (Tm , shape_empty σ)    (* [ u' ] *)
     >] : Arity _).
   (* Name the symbols. *)
   pose (A := Some (Some (Some None)) : Metas).
@@ -443,16 +483,32 @@ Proof.
   - exact [TmEq! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ B /] !].
 Defined.
 
+Definition Equality_Raw_Rules : Family (Raw_Rule Σ)
+:= [< refl_ty_eq_raw_rule 
+    ; symm_ty_eq_raw_rule
+    ; trans_ty_eq_raw_rule
+    ; refl_tm_eq_raw_rule 
+    ; symm_tm_eq_raw_rule
+    ; trans_tm_eq_raw_rule
+    ; coerce_tm_raw_rule
+    ; coerce_tmeq_raw_rule
+  >]. 
+
 End Equality_Rules.
 
-Definition Structural_Rules : Family (Raw_Rule Σ).
-  (* TODO: collect all the rules above into a family. 
+End Hyp_Structural_Rules.
 
-   NOTE: make sure not to miss the ones that are closure conditions, not raw rules. *)
-Admitted.
+Definition Structural_CCs : Family (closure_condition (Judgt_Instance Σ))
+:= context_ccs
+  + subst_ccs
+  + CCs_of_RR var_raw_rule
+  + Family.Bind Equality_Raw_Rules CCs_of_RR.
+(* TODO: add Haskell-style >= notation for bind? *)
+(* TODO: capitalise naming in [Context_CCs], etc. *)
 
 End Structural_Rules.
 
+(* TODO: move the following to a separate file, probably — e.g. would make much more sense with [Raw_Rule_of_Rule_Spec]. *)
 Section Congruence_Rules.
 
   Context {σ : Shape_System}.
