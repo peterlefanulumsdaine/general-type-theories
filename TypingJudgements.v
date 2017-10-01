@@ -48,13 +48,13 @@ Section Derivability_from_TT_Spec.
       refine (Raw_Rule_of_Rule_Spec _ _).
       + simple refine
         (associated_congruence_rule_spec
-           _ (Fmap_Rule_Spec _ (TTS_rule_spec r)) _ _ _ _).
+           (Fmap_Rule_Spec _ (TTS_rule_spec r)) _ _ _ _).
         * apply TT_Spec_signature_inclusion_of_rule.
         * exact Hr.
         * exact (r;Hr). (* head symbol of original rule *)
         * apply idpath.
         * apply idpath.
-      + intros []. (* no overall head symbol, since congruence is an equality rule *)
+      + intros []. (* no head symbol, since congs are equality rules *)
   Defined.
 
   Definition Derivation_from_TT_Spec (T : Type_Theory_Spec σ)

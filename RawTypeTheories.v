@@ -170,71 +170,6 @@ Record Rule_Spec
       apply Fmap1_Metavariable_Extension, f.
   Defined.
 
-  (* Translating a rule-spec into a raw rule requires no extra information in the case of an equality-rule; in the case of an object-rule, it requires a symbol of appropriate arity to give the object introduced. *)
-  Definition Raw_Rule_of_Rule_Spec
-    {Σ} {a} {γ_concl} {hjf_concl}
-    (R : Rule_Spec Σ a γ_concl hjf_concl)
-    (Sr : is_obj_HJF hjf_concl
-        -> { S : Σ & (arity S = Family.Sum a (simple_arity γ_concl))
-                     * (class S = class_of_HJF hjf_concl) })
-  : Raw_Rule Σ.
-  (* This construction involves essentially two aspects:
-  - translate the syntax of each expression in the rule-spec from its “local” signatures to the overall signature;
-  - reconstruct the head terms of the object premises and the conclusion *)
-  Proof.
-    refine (Build_Raw_Rule _ a _ _).
-    - (* premises *)
-      exists (RS_Premise R).
-      intros P. 
-      assert (f_P : Signature_Map
-              (Metavariable_Extension Σ (RS_arity_of_premise R P))
-              (Metavariable_Extension Σ a)).
-      {
-        apply Fmap2_Metavariable_Extension.
-        apply Subfamily_inclusion.
-      }
-      exists (HJF (RS_hjf_of_premise _ P)).
-      exists (Fmap_Raw_Context f_P (RS_raw_context_of_premise _ P)).
-      simpl.
-      apply Hyp_Judgt_Instance_from_bdry_plus_head.
-      + refine (Fmap_Hyp_Judgt_Bdry_Instance f_P _).
-        apply RS_hyp_bdry_instance_of_premise.
-      + intro H_obj.
-        destruct P as [ P | P ]; simpl in P.
-        * (* case: P an object premise *)
-          refine (symb_raw (inr P : Metavariable_Extension Σ a) _).
-          intro i. apply var_raw.
-          exact (coproduct_inj1 shape_is_coproduct i).
-        * (* case: P an equality premise *)
-          destruct H_obj. (* ruled out by assumption *)
-    - (* conclusion *)
-      exists (HJF hjf_concl).
-      simpl.
-      exists (pr1 (RS_judgt_bdry_instance_of_conclusion R)).
-      apply Hyp_Judgt_Instance_from_bdry_plus_head.
-      + exact (pr2 (RS_judgt_bdry_instance_of_conclusion R)).
-      + intros H_obj.
-        destruct hjf_concl as [ ocl | ecl ]; simpl in *.
-        * (* case: R an object rule *)
-          destruct (Sr tt) as [S_R [e_a e_cl]]. clear Sr H_obj.
-          destruct e_cl.
-          refine (symb_raw (inl S_R : Metavariable_Extension _ _) _).
-          change (arity (inl S_R : Metavariable_Extension _ _))
-            with (arity S_R). 
-          set (aR := arity S_R) in *. destruct (e_a^); clear e_a.
-          intros [P | i].
-          -- cbn in P.
-            refine (symb_raw (inr P : Metavariable_Extension _ _) _).
-            intros i.
-            apply var_raw.
-            apply (coproduct_inj1 shape_is_coproduct).
-            exact (coproduct_inj2 shape_is_coproduct i).
-          -- apply var_raw.
-            exact (coproduct_inj1 shape_is_coproduct i).
-        * (* case: R an equality rule *)
-          destruct H_obj. (* ruled out by assumption *)
-  Defined.
-
 End RuleSpecs.
 
 Arguments Rule_Spec {_} _ _ _ _.
@@ -316,3 +251,309 @@ Arguments TTS_lt {_ _} _ _.
 Arguments TTS_signature_of_rule {_ _} _.
 Arguments TTS_rule_spec {_ _} _.
 
+(* Each rule-spec induces one or two raw rules: the logical rule itself, and (if it was an object rule) its associated congruence rule.*)
+
+Section Raw_Rules_of_Rule_Specs.
+
+  Context {σ : Shape_System}.
+  Context {Σ : Signature σ}.
+
+  (* Translating a rule-spec into a raw rule requires no extra information in the case of an equality-rule; in the case of an object-rule, it requires a symbol of appropriate arity to give the object introduced. *)
+  Definition Raw_Rule_of_Rule_Spec
+    {a} {γ_concl} {hjf_concl}
+    (R : Rule_Spec Σ a γ_concl hjf_concl)
+    (Sr : is_obj_HJF hjf_concl
+        -> { S : Σ & (arity S = Family.Sum a (simple_arity γ_concl))
+                     * (class S = class_of_HJF hjf_concl) })
+  : Raw_Rule Σ.
+  (* This construction involves essentially two aspects:
+  - translate the syntax of each expression in the rule-spec from its “local” signatures to the overall signature;
+  - reconstruct the head terms of the object premises and the conclusion *)
+  Proof.
+    refine (Build_Raw_Rule _ a _ _).
+    - (* premises *)
+      exists (RS_Premise R).
+      intros P. 
+      assert (f_P : Signature_Map
+              (Metavariable_Extension Σ (RS_arity_of_premise R P))
+              (Metavariable_Extension Σ a)).
+      {
+        apply Fmap2_Metavariable_Extension.
+        apply Subfamily_inclusion.
+      }
+      exists (HJF (RS_hjf_of_premise _ P)).
+      exists (Fmap_Raw_Context f_P (RS_raw_context_of_premise _ P)).
+      simpl.
+      apply Hyp_Judgt_Instance_from_bdry_plus_head.
+      + refine (Fmap_Hyp_Judgt_Bdry_Instance f_P _).
+        apply RS_hyp_bdry_instance_of_premise.
+      + intro H_obj.
+        destruct P as [ P | P ]; simpl in P.
+        * (* case: P an object premise *)
+          refine (symb_raw (inr P : Metavariable_Extension Σ a) _).
+          intro i. apply var_raw.
+          exact (coproduct_inj1 shape_is_coproduct i).
+        * (* case: P an equality premise *)
+          destruct H_obj. (* ruled out by assumption *)
+    - (* conclusion *)
+      exists (HJF hjf_concl).
+      simpl.
+      exists (pr1 (RS_judgt_bdry_instance_of_conclusion R)).
+      apply Hyp_Judgt_Instance_from_bdry_plus_head.
+      + exact (pr2 (RS_judgt_bdry_instance_of_conclusion R)).
+      + intros H_obj.
+        destruct hjf_concl as [ ocl | ecl ]; simpl in *.
+        * (* case: R an object rule *)
+          destruct (Sr tt) as [S_R [e_a e_cl]]. clear Sr H_obj.
+          destruct e_cl.
+          refine (symb_raw (inl S_R : Metavariable_Extension _ _) _).
+          change (arity (inl S_R : Metavariable_Extension _ _))
+            with (arity S_R). 
+          set (aR := arity S_R) in *. destruct (e_a^); clear e_a.
+          intros [P | i].
+          -- cbn in P.
+            refine (symb_raw (inr P : Metavariable_Extension _ _) _).
+            intros i.
+            apply var_raw.
+            apply (coproduct_inj1 shape_is_coproduct).
+            exact (coproduct_inj2 shape_is_coproduct i).
+          -- apply var_raw.
+            exact (coproduct_inj1 shape_is_coproduct i).
+        * (* case: R an equality rule *)
+          destruct H_obj. (* ruled out by assumption *)
+  Defined.
+
+
+  Definition associated_original_premise {obs eqs : Arity σ}
+    : (obs + obs) + (eqs + eqs + obs) -> (obs + eqs).
+  Proof.
+    intros p ; repeat destruct p as [p | p];
+      try exact (inl p); exact (inr p).
+  Defined.
+  
+  Arguments associated_original_premise : simpl nomatch.
+
+  (* The ordering of premises of the congruence rule_spec associated to an object rule_spec. 
+
+  TODO: perhaps try to refactor to avoid so many special cases?  E.g. as: take the lex product of the input relation [R] with the 3-element order ({{0},{1},{0,1}}, ⊂ ) and then pull this back along the suitable map (o+o)+(e+e+o) —> (o+e)*3 ?  *)
+  Definition associated_congruence_rule_lt
+      {obs eqs : Type} (lt : relation (obs + eqs))
+    : relation ((obs + obs) + (eqs + eqs + obs)).
+  Proof.
+  (*  In a more readable organisation, the cases we want are as follows:
+
+           ob_l i   ob_r i   eq_l i   eq_r i   eq_new i
+
+ob_l j     i < j    0        i < j    0        0
+
+ob_r j     0        i < j    0        i < j    0
+ 
+eq_l j     i < j    0        i < j    0        0
+
+eq_r j     0        i < j    0        i < j    0
+
+eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
+
+*)
+    intros [ [ ob_l | ob_r ] | [ [ eq_l | eq_r ] | eq_new ] ];
+    intros [ [ ob'_l | ob'_r ] | [ [ eq'_l | eq'_r ] | eq'_new ] ].
+      (* column eq_l *)
+    - exact (lt (inl ob_l) (inl ob'_l)).
+    - exact False.
+    - exact (lt (inl ob_l) (inr eq'_l)).
+    - exact False.
+    - exact ((lt (inl ob_l) (inl eq'_new)) \/ (ob_l = eq'_new)).
+      (* column ob_r *)
+    - exact False.
+    - exact (lt (inl ob_r) (inl ob'_r)).
+    - exact False.
+    - exact (lt (inl ob_r) (inr eq'_r)).
+    - exact ((lt (inl ob_r) (inl eq'_new)) \/ (ob_r = eq'_new)).
+      (* column eq_l *)
+    - exact (lt (inr eq_l) (inl ob'_l)).
+    - exact False.
+    - exact (lt (inr eq_l) (inr eq'_l)).
+    - exact False.
+    - exact (lt (inr eq_l) (inl eq'_new)).
+      (* column eq_r *)
+    - exact False.
+    - exact (lt (inr eq_r) (inl ob'_r)).
+    - exact False.
+    - exact (lt (inr eq_r) (inr eq'_r)).
+    - exact (lt (inr eq_r) (inl eq'_new)).
+      (* column eq_new *)
+    - exact False.
+    - exact False.
+    - exact False.
+    - exact False.
+    - exact (lt (inl eq_new) (inl eq'_new)).
+  Defined.
+
+  Arguments associated_congruence_rule_lt : simpl nomatch.
+
+  Definition associated_congruence_rule_original_constructor_translation
+    {a} {γ_concl} {hjf_concl} (R : Rule_Spec Σ a γ_concl hjf_concl)
+    (p : (a + a) + (RS_equality_premise R + RS_equality_premise R + a))
+    : Signature_Map
+        (Metavariable_Extension Σ
+          (RS_arity_of_premise R (associated_original_premise p)))
+        (Metavariable_Extension Σ (Subfamily (a + a)
+           (fun j => associated_congruence_rule_lt (RS_lt R) (inl j) p))).
+  Proof.
+    (* In case [p] is one of the 2 copies of the original premises, there is a single canonical choice for this definition.
+
+    In case [p] is one of the new equality premises (between the 2 copies of the old equality premises), there are in principle 2 possibilities; it should make no difference which one chooses. *)
+      destruct p as [ [ pob_l | pob_r ] | [ [ peq_l | peq_r ] | peq_new ] ].
+      - (* pob_l *)
+        simple refine (_;_).
+        + intros [s | q].
+          * exact (inl s). 
+          * refine (inr _). exists (inl (pr1 q)). exact (pr2 q).
+        + intros [? | ?]; exact idpath. 
+      - (* pob_r *) 
+        simple refine (_;_).
+        + intros [s | q].
+          * exact (inl s). 
+          * refine (inr _). exists (inr (pr1 q)). exact (pr2 q).
+        + intros [? | ?]; exact idpath. 
+      - (* peq_l *) 
+        simple refine (_;_).
+        + intros [s | q].
+          * exact (inl s). 
+          * refine (inr _). exists (inl (pr1 q)). exact (pr2 q).
+        + intros [? | ?]; exact idpath. 
+      - (* peq_r *) 
+        simple refine (_;_).
+        + intros [s | q].
+          * exact (inl s). 
+          * refine (inr _). exists (inr (pr1 q)). exact (pr2 q).
+        + intros [? | ?]; exact idpath. 
+      - (* peq_new *)
+        simple refine (_;_).
+        + intros [s | q].
+          * exact (inl s). 
+          * refine (inr _).
+            exists (inr (pr1 q)). (* note both [inl], [inr] make this work *)
+            cbn; cbn in q. exact (inl (pr2 q)).
+        + intros [? | ?]; exact idpath.         
+  Defined.
+
+  (* TODO: move *)
+  (* Useful, with [idpath] as the equality argument, when want wants to construct the smybol argument interactively — this is difficult with original [symb_raw] due to [class S] appearing in the conclusion. *)
+  Definition symb_raw' {Σ' : Signature σ}
+      {γ} {cl} (S : Σ') (e : class S = cl)
+      (args : forall i : arity S,
+        Raw_Syntax Σ' (arg_class i) (shape_coproduct γ (arg_pcxt i)))
+    : Raw_Syntax Σ' cl γ.
+  Proof.
+    destruct e.
+    apply symb_raw; auto.
+  Defined.
+
+  Definition associated_congruence_rule_spec
+    {a} {γ_concl} {hjf_concl} (R : Rule_Spec Σ a γ_concl hjf_concl)
+    (H : is_obj_HJF hjf_concl)
+    (S : Σ)
+    (e_a : arity S = a + (simple_arity γ_concl))
+    (e_cl : class S = class_of_HJF hjf_concl)
+    : (Rule_Spec Σ (Family.Sum a a) γ_concl
+                 (eq_HJF (class_of_HJF hjf_concl))).
+  Proof.
+    simple refine (Build_Rule_Spec _ _ _ _ _ _ _ _ _ _).
+    - (* RS_equality_premise: arity of equality premises *)
+      exact (((RS_equality_premise R) + (RS_equality_premise R)) + a). 
+    - (* RS_lt *)
+      exact (associated_congruence_rule_lt (RS_lt R)).
+    - (* RS_context_expr_of_premise *)
+      intros p i.
+      refine (Fmap_Raw_Syntax
+        (associated_congruence_rule_original_constructor_translation _ _) _).
+      set (p_orig := associated_original_premise p).
+      destruct p as [ [ ? | ? ] | [ [ ? | ? ] | ? ] ];
+      refine (RS_context_expr_of_premise R p_orig i).
+      (* alternatively, instead of destructing [p], could use equality reasoning on the type of [i]. *)
+    - (* RS_hyp_bdry_instance_of_premise *)
+      intros p.
+      set (p_orig := associated_original_premise p).
+      destruct p as [ [ ? | ? ] | [ [ ? | ? ] | p ] ];
+      try (refine (Fmap_Hyp_Judgt_Bdry_Instance
+        (associated_congruence_rule_original_constructor_translation _ _) _);
+           refine (RS_hyp_bdry_instance_of_premise R p_orig)).
+      (* The cases where [p] is a copy of an original premise are all just translation,
+      leaving just the new equality premises to give. *)
+      intros i; simpl Hyp_Judgt_Bdry_Slots in i.
+      destruct i as [ [ i | ] | ]; [ idtac | simpl | simpl]. 
+      + (* boundary of the corresponding original premise *)
+        refine (Fmap_Raw_Syntax
+          (associated_congruence_rule_original_constructor_translation _ _) _).
+        apply (RS_hyp_bdry_instance_of_premise R p_orig).
+      + (* LHS of new equality premise *)
+        cbn. simple refine (symb_raw' _ _ _).
+        * apply inr_Metavariable.
+          refine (inl p; _).
+          apply inr, idpath.
+        * apply idpath.
+        * intros i.
+          apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
+      + (* RHS of new equality premise *)
+        cbn. simple refine (symb_raw' _ _ _).
+        * apply inr_Metavariable.
+          refine (inr p; _).
+          apply inr, idpath.
+        * apply idpath.
+        * intros i.
+          apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
+    - (* RS_context_expr_of_conclusion *)
+      intros i.
+      refine (Fmap_Raw_Syntax _ (RS_context_expr_of_conclusion R i)).
+      apply Fmap2_Metavariable_Extension, inl_Family.
+    - (* RS_hyp_judgt_bdry_instance_of_conclusion *)
+      intros [ [ i | ] | ]; simpl. 
+      + (* boundary of original conclusion *)
+        refine (Fmap_Raw_Syntax _ _).
+        * apply Fmap2_Metavariable_Extension, inl_Family.
+        * destruct hjf_concl as [cl | ?].
+          -- exact (RS_hyp_judgt_bdry_instance_of_conclusion R i).
+          -- destruct H. (* [hjf_concl] can’t be an equality judgement *)
+      + (* LHS of new conclusion *)
+        cbn. simple refine (symb_raw' _ _ _).
+        * apply inl_Symbol, S.
+        * apply e_cl.
+        * change (arity (inl_Symbol S)) with (arity S).
+          destruct (e_a^); clear e_a.
+          intros [ p | i ].
+          -- simple refine (symb_raw' _ _ _).
+             ++ apply inr_Metavariable.
+                exact (inl p).
+             ++ apply idpath.
+             ++ cbn. intros i.
+                apply var_raw. 
+                apply (coproduct_inj1 shape_is_coproduct).
+                apply (coproduct_inj2 shape_is_coproduct).
+                exact i.
+          -- apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
+      + (* RHS of new conclusion *)
+        cbn. simple refine (symb_raw' _ _ _).
+        * apply inl_Symbol, S.
+        * apply e_cl.
+        * change (arity (inl_Symbol S)) with (arity S).
+          destruct (e_a^); clear e_a.
+          intros [ p | i ].
+          -- simple refine (symb_raw' _ _ _).
+             ++ apply inr_Metavariable.
+                exact (inr p).
+             ++ apply idpath.
+             ++ cbn. intros i.
+                apply var_raw. 
+                apply (coproduct_inj1 shape_is_coproduct).
+                apply (coproduct_inj2 shape_is_coproduct).
+                exact i.
+          -- apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
+  Defined.
+  (* TODO: the above is a bit unreadable.  An alternative approach that might be clearer and more robust:
+   - factor out the constructions of the head terms of conclusions and premises from [Raw_Rule_of_Rule_Spec], if doable.
+   - here, invoke those, but (for the LHS/RHS of the new equalities), translate them under appropriate context morphisms “inl”, “inr”. *)
+
+(* A good test proposition will be the following: whenever a rule-spec is well-typed, then so is its associated congruence rule-spec. *)
+
+End Raw_Rules_of_Rule_Specs.
