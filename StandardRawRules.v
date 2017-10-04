@@ -4,8 +4,6 @@ Require Import DeductiveClosure.
 Require Import Family.
 Require Import Coproduct.
 Require Import RawSyntax.
-Require Import SignatureMaps.
-Require Import RawTypeTheories.
 
 (** This module defines the “standard rules” — the rules which are not explicitly specified in a type theory, but are always assumed to be present.  These fall into several groups.   
 
@@ -13,11 +11,10 @@ Require Import RawTypeTheories.
 - substitution rules
 - variable rule
 - equality rules
-- associated congruence rules: any logical rule-specification determines a corresponding cogruence rule specification
 
-Since “rule” in our terminology consist just of hypothetical judgements over a common context, the structural rules that don’t fit this form (context formation and substitution) have to be given directly as families of closure conditions.
+Since “raw rule” in our terminology always mean _hypothetical_ rules, the structural rules that don’t fit this form (context formation and substitution) have to be given directly as families of closure conditions.
 
-All of the above *except* for associated congruence rules (TODO: these should really be moved out of this file!) are collected for quick export as a single family [Structural_CCs].
+All of the above are then collected as a single family [Structural_CCs].
 *)
 
 Section Structural_Rules.
