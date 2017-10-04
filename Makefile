@@ -18,7 +18,7 @@ MODULES := \
 	RawSyntax \
 	SignatureMaps \
 	RawTypeTheories \
-	StandardRawRules \
+	StructuralRules \
 	TypingJudgements \
 
 VS      := $(MODULES:%=%.v)

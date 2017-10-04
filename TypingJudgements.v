@@ -4,7 +4,7 @@ Require Import DeductiveClosure.
 Require Import Family.
 Require Import RawSyntax.
 Require Import RawTypeTheories.
-Require Import StandardRawRules.
+Require Import StructuralRules.
 Require Import SignatureMaps.
 
 Section Derivability_from_Raw_TT.
