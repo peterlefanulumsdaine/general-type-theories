@@ -48,9 +48,9 @@ Section Raw_Syntax.
 
   (* A raw syntactic expression of a syntactic class, relative to a context *)
   Inductive Raw_Syntax
-    : Syn_Class -> σ -> Type
+    : Syn_Class -> Shape σ -> Type
   :=
-  (* a variable in a context is a term in that context *)
+    (* a variable in a context is a term in that context *)
     | var_raw (γ : σ) (i : γ)
         : Raw_Syntax Tm γ
     (* relative to a context [γ], given a symbol [S], if for each of its
@@ -65,11 +65,6 @@ Section Raw_Syntax.
   Global Arguments var_raw [_] _.
   Global Arguments symb_raw [_] _ _.
 
-  (* A useful abbreviation for giving functions constructing raw syntax. *)
-  Definition Args (a : Arity _) γ : Type
-  := forall (i : a),
-    Raw_Syntax (arg_class i) (shape_coproduct γ (arg_pcxt i)).
-
   (* A raw context is a proto-ctx ("collection of identifiers") and a raw syntactic type expression
      for each identifier in the proto-ctx. *)
   Record Raw_Context
@@ -81,6 +76,24 @@ Section Raw_Syntax.
 
   Definition Raw_Context_Map (γ δ : σ)
     := δ -> Raw_Syntax Tm γ.
+
+  (* A couple of utility functions: *)
+
+  (* A useful abbreviation for giving functions constructing raw syntax:
+  the type of suitable arguments for a given arity, in a given context. *)
+  Definition Args (a : Arity _) γ : Type
+  := forall (i : a),
+    Raw_Syntax (arg_class i) (shape_coproduct γ (arg_pcxt i)).
+
+  (* Useful, with [idpath] as the equality argument, when want wants to construct the smybol argument interactively — this is difficult with original [symb_raw] due to [class S] appearing in the conclusion. *)
+  Definition symb_raw'
+      {γ} {cl} (S : Σ) (e : class S = cl)
+      (args : Args (arity S) γ)
+    : Raw_Syntax cl γ.
+  Proof.
+    destruct e.
+    apply symb_raw; auto.
+  Defined.
 
 End Raw_Syntax.
 
