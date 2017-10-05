@@ -20,6 +20,7 @@ MODULES := \
 	RawTypeTheories \
 	StructuralRules \
 	TypingJudgements \
+	TypeTheories \
 
 VS      := $(MODULES:%=%.v)
 

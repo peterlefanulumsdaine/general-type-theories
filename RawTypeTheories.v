@@ -10,7 +10,6 @@ Require Import SignatureMaps.
 
 - [Rule_Spec]: the data one gives to specify a logical rule (before any typechecking)
 - [Type_Theory_Spec]: the data one gives to specify a type theory (before typechecking)
-- [] 
 
 *)
 
