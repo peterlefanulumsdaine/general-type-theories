@@ -15,7 +15,7 @@ Section Signatures.
   Inductive Syn_Class : Type := Ty | Tm.
 
   Definition Arity : Type
-    := Family (Syn_Class * σ).
+    := Family (Syn_Class * Shape σ).
 
   (* Entries in the family represent arguments of a constructor; the [σ] component represents the variables bound in each argument.
 
@@ -51,7 +51,7 @@ Section Raw_Syntax.
     : Syn_Class -> Shape σ -> Type
   :=
     (* a variable in a context is a term in that context *)
-    | var_raw (γ : σ) (i : γ)
+    | var_raw (γ : Shape σ) (i : γ)
         : Raw_Syntax Tm γ
     (* relative to a context [γ], given a symbol [S], if for each of its
        arguments we have a raw syntactic expression relative to [γ] extended by
@@ -68,7 +68,7 @@ Section Raw_Syntax.
   (* A raw context is a proto-ctx ("collection of identifiers") and a raw syntactic type expression
      for each identifier in the proto-ctx. *)
   Record Raw_Context
-  := { Proto_Context_of_Raw_Context :> σ
+  := { Proto_Context_of_Raw_Context :> Shape σ
      ; var_type_of_Raw_Context
          :> forall i : Proto_Context_of_Raw_Context,
             Raw_Syntax Ty Proto_Context_of_Raw_Context

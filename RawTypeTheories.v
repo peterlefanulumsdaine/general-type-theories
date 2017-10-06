@@ -66,15 +66,6 @@ Record Rule_Spec
           (Metavariable_Extension Σ (RS_arity_of_premise i))
           (RS_hjf_of_premise i)
           (RS_proto_cxt_of_premise i)
-  (* arity of the rule as a whole.  TODO: move out of definition! *)
-  ; RS_arity : Arity _
-    := Fmap
-        (fun jγ => (class_of_HJF (fst jγ), snd jγ))
-        (Subfamily RS_Premise
-          (fun j => is_obj_HJF (fst (RS_Premise j))))
-  (* judgement form of conclusion *)
-  ; RS_hjf_of_conclusion : Hyp_Judgt_Form
-    := hjf_conclusion
   (* context expressions of conclusion *)
   (* NOTE: this should never be used directly, always through [RS_raw_context_of_conclusion] *)
   ; RS_context_expr_of_conclusion
@@ -86,12 +77,12 @@ Record Rule_Spec
   ; RS_hyp_judgt_bdry_instance_of_conclusion
       : Hyp_Judgt_Bdry_Instance
           (Metavariable_Extension Σ a)
-          RS_hjf_of_conclusion
+          hjf_conclusion
           γ_conclusion
-  (* full judgement boundary instance of conclusion *)
+  (* full judgement boundary instance of conclusion *) (* TODO: move out of record?? *)
   ; RS_judgt_bdry_instance_of_conclusion
       : Judgt_Bdry_Instance (Metavariable_Extension Σ a)
-                            (HJF RS_hjf_of_conclusion)
+                            (HJF hjf_conclusion)
     := (RS_raw_context_of_conclusion; RS_hyp_judgt_bdry_instance_of_conclusion)
   }.
   (* NOTE 1. One could restrict rule-specs by only allowing the case where the context of the conclusion is empty.  This would simplify this definition, and several things below, and would (one expects) not lose any generality, since one can always move variables from that context to become extra premises, giving an equivalent rule with empty conclusion context.
@@ -168,7 +159,7 @@ Section TTSpecs.
   ; TTS_concl_shape_of_rule : TTS_Rule -> Shape σ
     := fun i => snd (TTS_Rule i)
   (* the ordering on rules.  TODO: will probably need to add well-foundedness. QUESTION: any reason for it to be Prop-valued, or could we just let it be type-valued? *)
-  ; TTS_lt : TTS_Rule -> TTS_Rule -> hProp
+  ; TTS_lt : TTS_Rule -> TTS_Rule -> Type
   (* the signature over which each rule can be written *)
   ; TTS_signature_of_rule : TTS_Rule -> Signature σ
     := fun i => Fmap
