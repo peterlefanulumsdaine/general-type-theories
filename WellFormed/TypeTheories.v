@@ -1,9 +1,9 @@
 Require Import HoTT.
-Require Import ShapeSystems.
-Require Import Family.
-Require Import RawSyntax.
-Require Import RawTypeTheories.
-Require Import TypingJudgements.
+Require Import Proto.ShapeSystems.
+Require Import Auxiliary.Family.
+Require Import Raw.RawSyntax.
+Require Import Raw.RawTypeTheories.
+Require Import Raw.TypingJudgements.
 
 (** In this file: definition of well-typedness of a rule-spec, and a type-theory spec. *)
 

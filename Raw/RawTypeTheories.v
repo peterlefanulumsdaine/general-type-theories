@@ -1,10 +1,10 @@
 Require Import HoTT.
-Require Import Family.
-Require Import ShapeSystems.
-Require Import Coproduct.
-Require Import DeductiveClosure.
-Require Import RawSyntax.
-Require Import SignatureMaps.
+Require Import Auxiliary.Family.
+Require Import Proto.ShapeSystems.
+Require Import Auxiliary.Coproduct.
+Require Import Auxiliary.DeductiveClosure.
+Require Import Raw.RawSyntax.
+Require Import Raw.SignatureMaps.
 
 (** In this file:
 

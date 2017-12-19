@@ -1,11 +1,11 @@
 Require Import HoTT.
-Require Import ShapeSystems.
-Require Import DeductiveClosure.
-Require Import Family.
-Require Import RawSyntax.
-Require Import RawTypeTheories.
-Require Import StructuralRules.
-Require Import SignatureMaps.
+Require Import Proto.ShapeSystems.
+Require Import Auxiliary.DeductiveClosure.
+Require Import Auxiliary.Family.
+Require Import Raw.RawSyntax.
+Require Import Raw.RawTypeTheories.
+Require Import Raw.StructuralRules.
+Require Import Raw.SignatureMaps.
 
 Section Derivability_from_Raw_TT.
 

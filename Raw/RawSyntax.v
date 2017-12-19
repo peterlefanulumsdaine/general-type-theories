@@ -1,8 +1,8 @@
 Require Import HoTT.
-Require Import Family.
-Require Import ShapeSystems.
-Require Import Coproduct.
-Require Import DeductiveClosure.
+Require Import Auxiliary.Family.
+Require Import Proto.ShapeSystems.
+Require Import Auxiliary.Coproduct.
+Require Import Auxiliary.DeductiveClosure.
 
 (* Throughout, we fix a shape system.  It can be implicit in almost everything that depends on it.
 

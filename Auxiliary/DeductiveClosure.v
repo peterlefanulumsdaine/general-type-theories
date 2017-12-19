@@ -1,4 +1,4 @@
-Require Import Family.
+Require Import Auxiliary.Family.
 
 (* A closure condition on [X] says that whenever all elements of
    [cc_premises] is in a set then so ic [cc_conclusion]. *)

@@ -1,8 +1,8 @@
 Require Import HoTT.
-Require Import Family.
-Require Import ShapeSystems.
-Require Import Coproduct.
-Require Import RawSyntax.
+Require Import Auxiliary.Family.
+Require Import Proto.ShapeSystems.
+Require Import Auxiliary.Coproduct.
+Require Import Raw.RawSyntax.
 
 Section Signature_Maps.
 

@@ -9,18 +9,18 @@
 
 # Modules to be included in the main build:
 MODULES := \
-	WellFoundedRelations \
-	Family \
-	Coproduct \
-	DeductiveClosure \
-	ShapeSystems \
-	ShapeSystemExamples \
-	RawSyntax \
-	SignatureMaps \
-	RawTypeTheories \
-	StructuralRules \
-	TypingJudgements \
-	TypeTheories \
+	Auxiliary/WellFoundedRelations \
+	Auxiliary/Family \
+	Auxiliary/Coproduct \
+	Auxiliary/DeductiveClosure \
+	Proto/ShapeSystems \
+	Proto/ShapeSystemExamples \
+	Raw/RawSyntax \
+	Raw/SignatureMaps \
+	Raw/RawTypeTheories \
+	Raw/StructuralRules \
+	Raw/TypingJudgements \
+	WellFormed/TypeTheories \
 
 VS      := $(MODULES:%=%.v)
 
