@@ -7,7 +7,7 @@ Require Import Raw.Syntax.
 (* Substitution on raw syntax [Raw_Subst] is defined in [Raw.Syntax].
   In this file we prove key properties of it; in particular, that raw context maps form a category (modulo truncation assumptions). 
 
-  Note: we assume functional extensionality throughout.  That shouldn’t be required — it should be possible to show that e.g. [Raw_Weaken] respects “recursive extensional equality” of terms, and so on — but using funext makes life a lot simpler. *)
+  Note: we assume functional extensionality throughout.  That shouldn’t be essentially necessary — it should be possible to show that e.g. [Raw_Weaken] respects “recursive extensional equality” of terms, and so on, and hence to show that raw context maps form a category modulo this equality — but using funext makes life a lot simpler. *)
 
 (* TODO: upstream *)
 Arguments Raw_Context_Map_Extending {_ _ _ _} _ _ _.
@@ -47,7 +47,7 @@ Section Raw_Weaken_Functoriality.
 End Raw_Weaken_Functoriality.
 
 
-Section Raw_Context_Map_Category_Structure.
+Section Raw_Context_Category_Structure.
 (* Identity and composition of raw context maps. *)
 
   Context {σ : Shape_System}.
@@ -58,9 +58,13 @@ Section Raw_Context_Map_Category_Structure.
     exact (@var_raw _ _ _).
   Defined.
 
-  (* TODO: comp_Raw_Context *)
+  Definition comp_Raw_Context {γ γ' γ'': σ}
+      (f : Raw_Context_Map Σ γ' γ)
+      (f' : Raw_Context_Map Σ γ'' γ')
+    : Raw_Context_Map Σ γ'' γ
+  := fun x => Raw_Subst f' (f x).
 
-End Raw_Context_Map_Category_Structure.
+End Raw_Context_Category_Structure.
 
 (* Just as the definition of substitution resembles the “lift” operation of a Kleisli-style monad, similarly, its “functoriality” is naturally proved in a form similar to the laws of a Kleisli-style monad.  That is, in terms of
   [ return := var_Raw : γ -> Raw_Syntax γ ]
@@ -182,3 +186,40 @@ Section Raw_Subst_Assoc.
   Defined.
 
 End Raw_Subst_Assoc.
+
+(* Finally, the category laws for raw context maps. *)
+Section Raw_Context_Category.
+
+  Context `{H_Funext : Funext}.
+  Context {σ : Shape_System}.
+  Context {Σ : Signature σ}.
+
+  Lemma id_left_Raw_Context {γ} (f : Raw_Context_Map Σ γ γ)
+    : comp_Raw_Context (id_Raw_Context _) f = f.
+  Proof.
+    apply idpath.
+    (* To understand this, uncomment the following: *)
+    (* [unfold comp_Raw_Context, id_Raw_Context.] *)
+  Defined.
+
+  Lemma id_right_Raw_Context {γ} (f : Raw_Context_Map Σ γ γ)
+    : comp_Raw_Context f (id_Raw_Context _) = f.
+  Proof.
+    apply path_forall; intros x; cbn.
+    apply id_right_Raw_Subst.
+  Defined.
+
+  Lemma assoc_Raw_Context {γ0 γ1 γ2 γ3: σ}
+      (f0 : Raw_Context_Map Σ γ0 γ1)
+      (f1 : Raw_Context_Map Σ γ1 γ2)
+      (f2 : Raw_Context_Map Σ γ2 γ3)
+    : comp_Raw_Context f2 (comp_Raw_Context f1 f0)
+    = comp_Raw_Context (comp_Raw_Context f2 f1) f0.
+  Proof.
+    apply path_forall; intros x; unfold comp_Raw_Context; cbn.
+    refine _^. apply assoc_Raw_Subst.
+  Defined.
+
+End Raw_Context_Category.
+
+
