@@ -20,7 +20,8 @@ MODULES := \
 	Raw/SignatureMaps \
 	Raw/TypeTheories \
 	Raw/StructuralRules \
-	Raw/TypingJudgements \
+	WellFormed/Rules \
+	WellFormed/TypeTheories \
 	WellTyped/TypeTheories \
 
 VS      := $(MODULES:%=%.v)
