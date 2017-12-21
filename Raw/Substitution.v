@@ -4,30 +4,23 @@ Require Import Proto.ShapeSystems.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 
-(* Goal: functoriality of substitution,
-  and the fact that raw context morphisms form a category. *)
+(* Substitution on raw syntax [Raw_Subst] is defined in [Raw.Syntax].
+  In this file we prove key properties of it; in particular, that raw context maps form a category (modulo truncation assumptions). 
 
-(* Outline: first we show functoriality of [Raw_Weaken], directly (since it is defined like a functorial action).
+  Note: we assume functional extensionality throughout.  That shouldn’t be required — it should be possible to show that e.g. [Raw_Weaken] respects “recursive extensional equality” of terms, and so on — but using funext makes life a lot simpler. *)
 
-  Next, since substitution is defined like the “lift” operation of a Kleisli-style monad, we show its “functoriality” in the form of the laws of a Kleisli-style monad.  That is, in terms of
-  [ return := var_Raw : γ -> Raw_Syntax γ ]
-  [ lift := Raw_Subst : (γ' -> Raw_Syntax γ) -> (Raw_Syntax γ' -> Raw_Syntax γ) ]
-  we show
-  [ id_left_Raw_Subst : forall (f : γ' -> Raw_Syntax γ) , (fun a => lift f (return a)) = f ] 
-  [ id_right_Raw_Subst : lift return = idfun : Raw_Syntax γ -> Raw_Syntax γ]
-  [ assoc_Raw_Subst : (lift g) o (lift f) = lift ((lift g) o f) ]
-*)
- 
 (* TODO: upstream *)
 Arguments Raw_Context_Map_Extending {_ _ _ _} _ _ _.
 
-Section Raw_Subst_Assoc.
+(* TODO: consider renaming [Raw_Weaken] to something like [Raw_Reindex_Variables] ?? *)
+
+(* Outline: first we show functoriality of [Raw_Weaken]; this is completely direct. *)
+
+Section Raw_Weaken_Functoriality.
 
   Context `{H_Funext : Funext}.
   Context {σ : Shape_System}.
   Context {Σ : Signature σ}.
-
-  (* For the proof of functoriality of substitution, we first  *)
 
   Fixpoint comp_Raw_Weaken {γ γ' γ'' : σ} (f : γ -> γ') (f' : γ' -> γ'')
       {cl : Syn_Class} (e : Raw_Syntax Σ cl γ)
@@ -51,14 +44,46 @@ Section Raw_Subst_Assoc.
 
   (* todo: id_Raw_Weaken *)
 
-  (* TODO: move *)
+End Raw_Weaken_Functoriality.
+
+
+Section Raw_Context_Map_Category_Structure.
+(* Identity and composition of raw context maps. *)
+
+  Context {σ : Shape_System}.
+  Context {Σ : Signature σ}.
+
   Definition id_Raw_Context (γ : σ) : Raw_Context_Map Σ γ γ.
   Proof.
     exact (@var_raw _ _ _).
   Defined.
 
-  Lemma id_Raw_Context_Map_Extending {γ δ} 
-    : Raw_Context_Map_Extending δ (id_Raw_Context γ)
+  (* TODO: comp_Raw_Context *)
+
+End Raw_Context_Map_Category_Structure.
+
+(* Just as the definition of substitution resembles the “lift” operation of a Kleisli-style monad, similarly, its “functoriality” is naturally proved in a form similar to the laws of a Kleisli-style monad.  That is, in terms of
+  [ return := var_Raw : γ -> Raw_Syntax γ ]
+  [ lift := Raw_Subst : (γ' -> Raw_Syntax γ) -> (Raw_Syntax γ' -> Raw_Syntax γ) ]
+  we show roughly:
+  [ id_left_Raw_Subst : forall (f : γ' -> Raw_Syntax γ) , (fun a => lift f (return a)) = f ] 
+  [ id_right_Raw_Subst : lift return = idfun : Raw_Syntax γ -> Raw_Syntax γ]
+  [ assoc_Raw_Subst : (lift g) o (lift f) = lift ((lift g) o f) ]
+
+  These then suffice to show that raw context maps (roughly, the Kleisli category of this not-exactly-monad) form a category (modulo h-levels).
+
+  TODO: see if this “looks like a monad” can be made more precise: does our approach fit into e.g. relative monads?
+*)
+Section Raw_Subst_Assoc.
+
+  Context `{H_Funext : Funext}.
+  Context {σ : Shape_System}.
+  Context {Σ : Signature σ}.
+
+  (* For the proof of functoriality of substitution, we first  *)
+
+  Lemma id_Raw_Context_Map_Extending {γ δ : Shape σ} 
+    : Raw_Context_Map_Extending δ (@id_Raw_Context _ Σ γ)
     = id_Raw_Context _.
   Proof.
     apply path_arrow.
@@ -87,12 +112,11 @@ Section Raw_Subst_Assoc.
       apply id_right_Raw_Subst.
   Defined.
 
-  (* TODO: rename [Raw_Weaken] to something like [Raw_Reindex_Variables] ?? *)
-
-  Fixpoint Raw_Weaken_Raw_Subst {γ γ' γ'' : σ} (f : Raw_Context_Map Σ γ' γ) (g : γ' -> γ'')
+  Fixpoint Raw_Weaken_Raw_Subst {γ γ' γ'' : σ}
+      (f : Raw_Context_Map Σ γ' γ) (g : γ' -> γ'')
       {cl} (e : Raw_Syntax Σ cl γ)
     : Raw_Weaken g (Raw_Subst f e)
-    = Raw_Subst ((Raw_Weaken g) o f) e.
+      = Raw_Subst ((Raw_Weaken g) o f) e.
   Proof.
     destruct e as [ γ i | γ S args ].
     { apply idpath. }
