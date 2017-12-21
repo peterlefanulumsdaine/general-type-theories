@@ -2,8 +2,8 @@ Require Import HoTT.
 Require Import Proto.ShapeSystems.
 Require Import Auxiliary.DeductiveClosure.
 Require Import Auxiliary.Family.
-Require Import Raw.RawSyntax.
-Require Import Raw.RawTypeTheories.
+Require Import Raw.Syntax.
+Require Import Raw.TypeTheories.
 Require Import Raw.StructuralRules.
 Require Import Raw.SignatureMaps.
 

@@ -3,7 +3,7 @@ Require Import Proto.ShapeSystems.
 Require Import Auxiliary.DeductiveClosure.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
-Require Import Raw.RawSyntax.
+Require Import Raw.Syntax.
 
 (** This module defines the “standard rules” — the rules which are not explicitly specified in a type theory, but are always assumed to be present.  These fall into several groups.   
 

@@ -2,7 +2,7 @@ Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystems.
 Require Import Auxiliary.Coproduct.
-Require Import Raw.RawSyntax.
+Require Import Raw.Syntax.
 
 (* Goal: functoriality of substitution,
   and the fact that raw context morphisms form a category. *)

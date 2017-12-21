@@ -15,10 +15,10 @@ MODULES := \
 	Auxiliary/DeductiveClosure \
 	Proto/ShapeSystems \
 	Proto/ShapeSystemExamples \
-	Raw/RawSyntax \
+	Raw/Syntax \
 	Raw/Substitution \
 	Raw/SignatureMaps \
-	Raw/RawTypeTheories \
+	Raw/TypeTheories \
 	Raw/StructuralRules \
 	Raw/TypingJudgements \
 	WellFormed/TypeTheories \

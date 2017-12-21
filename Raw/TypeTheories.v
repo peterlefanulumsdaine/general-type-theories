@@ -3,7 +3,7 @@ Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystems.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.DeductiveClosure.
-Require Import Raw.RawSyntax.
+Require Import Raw.Syntax.
 Require Import Raw.SignatureMaps.
 
 (** In this file:

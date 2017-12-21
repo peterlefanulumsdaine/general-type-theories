@@ -2,7 +2,7 @@ Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystems.
 Require Import Auxiliary.Coproduct.
-Require Import Raw.RawSyntax.
+Require Import Raw.Syntax.
 
 Section Signature_Maps.
 
@@ -87,4 +87,4 @@ Section Signature_Maps.
 
 End Signature_Maps.
 
-(* TODO: it probably makes more sense to fold these in through [RawSyntax], so that each construction’s functoriality lemmas can be given with the construction itself. *)
+(* TODO: it probably makes more sense to fold these in through [Syntax], so that each construction’s functoriality lemmas can be given with the construction itself. *)
