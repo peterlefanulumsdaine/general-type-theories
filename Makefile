@@ -16,6 +16,7 @@ MODULES := \
 	Proto/ShapeSystems \
 	Proto/ShapeSystemExamples \
 	Raw/RawSyntax \
+	Raw/Substitution \
 	Raw/SignatureMaps \
 	Raw/RawTypeTheories \
 	Raw/StructuralRules \
