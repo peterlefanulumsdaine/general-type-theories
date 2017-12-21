@@ -4,6 +4,8 @@ Require Import Proto.ShapeSystems.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 
+(* TODO: Might it make more sense to fold these in through [Syntax], so that each construction’s functoriality lemmas can be given with the construction itself? *)
+
 Section Signature_Maps.
 
   Context {σ : Shape_System}.
@@ -57,6 +59,25 @@ Section Signature_Maps.
     apply (Fmap_Raw_Syntax f), hjbi.    
   Defined.
 
+  Definition Fmap_Judgt_Form_Instance {Σ Σ'} (f : Signature_Map Σ Σ')
+      {jf}
+    : Judgt_Form_Instance Σ jf -> Judgt_Form_Instance Σ' jf.
+  Proof.
+    destruct jf as [ | hjf].
+    - apply Fmap_Raw_Context, f. 
+    - cbn. intros Γ_hjfi.
+      exists (Fmap_Raw_Context f Γ_hjfi.1). 
+      exact (Fmap_Hyp_Judgt_Form_Instance f Γ_hjfi.2). 
+  Defined.
+
+  Definition Fmap_Judgt_Instance {Σ Σ'} (f : Signature_Map Σ Σ')
+    : Judgt_Instance Σ -> Judgt_Instance Σ'.
+  Proof.
+    intros jf_jfi.
+    exists jf_jfi.1.
+    exact (Fmap_Judgt_Form_Instance f jf_jfi.2).
+  Defined.
+
   (* Metavariable extensions are bifunctorial in their two arguments.
 
    We give the general bifunctoriality action as [Fmap], and the special cases in each argument individually as [Fmap1], [Fmap2]. *)
@@ -85,6 +106,23 @@ Section Signature_Maps.
                     (Metavariable_Extension Σ a')
   := Fmap_Metavariable_Extension (idmap_Family _) f.
 
+  Definition Fmap_Raw_Rule {Σ Σ'} (f : Signature_Map Σ Σ')
+    : Raw_Rule Σ -> Raw_Rule Σ'.
+  Proof.
+    intros R.
+    exists (RR_metas _ R).
+    - refine (Fmap _ (RR_prem _ R)).
+      apply Fmap_Judgt_Instance.
+      apply Fmap1_Metavariable_Extension, f.
+    - refine (Fmap_Judgt_Instance _ (RR_concln _ R)).
+      apply Fmap1_Metavariable_Extension, f.
+  Defined.
+
+  Definition Fmap_Raw_TT {Σ Σ'} (f : Signature_Map Σ Σ')
+    : Raw_Type_Theory Σ -> Raw_Type_Theory Σ'.
+  Proof.
+    apply Fmap, Fmap_Raw_Rule, f.
+  Defined.
+
 End Signature_Maps.
 
-(* TODO: it probably makes more sense to fold these in through [Syntax], so that each construction’s functoriality lemmas can be given with the construction itself. *)

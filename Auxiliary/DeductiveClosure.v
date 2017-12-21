@@ -18,3 +18,8 @@ Inductive Derivation {X} (C : Family (closure_condition X))
     : (forall p : cc_premises (C i), Derivation C (cc_premises _ p))
       -> Derivation C (cc_conclusion (C i)).
 
+Definition singleton_cc {X} (x:X) : closure_condition X
+:=
+  {| cc_premises := Empty_family _
+  ; cc_conclusion := x
+|}.

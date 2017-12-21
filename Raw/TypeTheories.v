@@ -23,3 +23,31 @@ Section Derivability_from_Raw_TT.
   
 End Derivability_from_Raw_TT.
 
+Section Derivable_Rules.
+
+  Context {σ : Shape_System}
+          {Σ : Signature σ}.
+
+  (* TODO: abstract in terms of a derivation of a closure condition from a family thereof. *)
+  Definition Derivation_Raw_Rule_from_Raw_TT
+      (R : Raw_Rule Σ) (T : Raw_Type_Theory Σ)
+    : Type.
+  Proof.
+    set (Σ' := Metavariable_Extension Σ (RR_metas _ R)).
+    assert (f : Signature_Map Σ Σ').
+      apply inl_Family. (* TODO: make this a lemma about signature maps,
+                         so it’s more findable using “SearchAbout” etc *)
+    refine (Derivation _ (RR_concln _ R)).
+    refine (_ + _).
+    - apply CCs_from_Raw_TT.
+      exact (Fmap_Raw_TT f T).
+    - refine (Fmap _ (RR_prem _ R)).
+      apply singleton_cc.
+  Defined.
+
+End Derivable_Rules.
+
+(* TODO:
+  - a map of raw type theories, over a map of signatures, is a function giving a derivation of the translation of each raw rule.
+  - this should extend to a map of “closure systems” (to be defined!), and hence to a map on derivations.
+*)
