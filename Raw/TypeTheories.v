@@ -5,6 +5,7 @@ Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.DeductiveClosure.
 Require Import Raw.Syntax.
 Require Import Raw.SignatureMaps.
+Require Import Raw.Substitution.
 Require Import Raw.StructuralRules.
 
 Section Derivability_from_Raw_TT.
@@ -113,11 +114,15 @@ Section TT_Maps.
           apply (ap (Build_Raw_Context _)).
           apply path_forall.
           refine (plusone_rect _ _ (shape_is_plusone _ _) _ _ _).
-          -- eapply concat. refine (plusone_comp_one _ _ _ _ _ _).
-             admit. (* commutation of [Fmap_Raw_Syntax] and [Raw_Weaken] *)
+          -- eapply concat. { refine (plusone_comp_one _ _ _ _ _ _). }
+             eapply concat. Focus 2.
+               { apply ap. refine (plusone_comp_one _ _ _ _ _ _)^. } Unfocus.
+             apply inverse. apply Fmap_Raw_Weaken. 
           -- intros x. cbn in x.
-             eapply concat. refine (plusone_comp_inj _ _ _ _ _ _ _).
-             admit. (* commutation of [Fmap_Raw_Syntax] and [Raw_Weaken] *)
+             eapply concat. { refine (plusone_comp_inj _ _ _ _ _ _ _). }
+             eapply concat. Focus 2.
+               { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. } Unfocus.
+             apply inverse. apply Fmap_Raw_Weaken. 
       + (* empty context *)
         simple refine (deduce' _ _ _).
         * refine (inl (inl _)). (* use a structural rule *)

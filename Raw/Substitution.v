@@ -3,16 +3,32 @@ Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystems.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
+Require Import Raw.SignatureMaps.
 
 (* Substitution on raw syntax [Raw_Subst] is defined in [Raw.Syntax].
   In this file we prove key properties of it; in particular, that raw context maps form a category (modulo truncation assumptions). 
 
   Note: we assume functional extensionality throughout.  That shouldn’t be essentially necessary — it should be possible to show that e.g. [Raw_Weaken] respects “recursive extensional equality” of terms, and so on, and hence to show that raw context maps form a category modulo this equality — but using funext makes life a lot simpler. *)
 
-(* TODO: upstream *)
-Arguments Raw_Context_Map_Extending {_ _ _ _} _ _ _.
+Section Auxiliary.
+
+  Context {σ : Shape_System}.
+  Context {Σ : Signature σ}.
+
+  Definition transport_Raw_Weaken {γ γ' : σ} (g : γ -> γ')
+      {cl cl' : Syn_Class} (p : cl = cl') (e : Raw_Syntax Σ cl γ)
+    : transport (fun cl => Raw_Syntax Σ cl γ') p (Raw_Weaken g e)
+      = Raw_Weaken g (transport (fun cl => Raw_Syntax Σ cl γ) p e).
+  Proof.
+    destruct p. apply idpath.
+  Defined.
 
 (* TODO: consider renaming [Raw_Weaken] to something like [Raw_Reindex_Variables] ?? *)
+
+End Auxiliary.
+
+(* TODO: upstream *)
+Arguments Raw_Context_Map_Extending {_ _ _ _} _ _ _.
 
 (* Outline: first we show functoriality of [Raw_Weaken]; this is completely direct. *)
 
@@ -221,5 +237,43 @@ Section Raw_Context_Category.
   Defined.
 
 End Raw_Context_Category.
+
+
+(* Here we give naturality of weakening/substitution with respect to signature maps *)
+Section Naturality.
+
+  Context `{H_Funext : Funext}.
+  Context {σ : Shape_System}.
+  Context {Σ Σ' : Signature σ} (f : Signature_Map Σ Σ').
+
+
+  Fixpoint Fmap_Raw_Weaken {γ γ' : σ} (g : γ -> γ')
+      {cl : Syn_Class} (e : Raw_Syntax Σ cl γ)
+    : Fmap_Raw_Syntax f (Raw_Weaken g e)
+      = Raw_Weaken g (Fmap_Raw_Syntax f e).
+  Proof.
+    destruct e as [ γ i | γ S args ].
+  - apply idpath.
+  - simpl.
+    eapply concat.
+    { apply ap, ap, ap. apply path_forall; intros i. apply Fmap_Raw_Weaken. }
+    eapply concat. Focus 2. { apply transport_Raw_Weaken. } Unfocus.
+    apply ap. cbn. apply ap, path_forall. intros i.
+    set (a := arity S) in *.
+    set (a' := arity (f S)) in *.
+    set (p := (ap snd (commutes_Family_Map f S))^ : a = a').
+    (* we now manually fold [p], since neither [fold] nor [change … with …] seems to find the required subterms *)
+    eapply concat.
+      { refine (apD10 _ i). refine (ap (fun p => transport _ p _) _). 
+        exact (idpath p). }
+    eapply concat. Focus 2.
+      { apply ap. refine (apD10 _ i). refine (ap (fun p => transport _ p _) _).     exact (idpath p). } Unfocus.
+    (* Having folded [p], we can now generalize, clear, and destruct it. *)
+    clearbody p a a'.
+    destruct p. apply idpath.
+  Defined.
+  (* NOTE: this proof was remarkably difficult to write; it shows the kind of headaches caused by the appearance of equality in maps of signatures. *)
+
+End Naturality.
 
 
