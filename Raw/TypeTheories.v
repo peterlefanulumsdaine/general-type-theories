@@ -74,6 +74,15 @@ Section TT_Maps.
     exact (transport _ p (deduce _ c f)).
   Defined.
   
+  Definition Fmap_Derivation_from_premises {X Y} (f : X -> Y)
+      {C : Family (closure_condition X)} {P : Family X} {x}
+      (D : Derivation_from_premises C P x)
+    : Derivation_from_premises (Fmap (Fmap_cc f) C) (Fmap f P) (f x). 
+  Proof.
+    (* TODO: give better lemma on gluing derivations-with-premises:
+     given a derivation of (f x) with premises Γ, and derivations of all of Γ from Δ, then get defivation of (f x) from Δ.  Or in this case, an alternative would be just: show Γ = Δ. *)
+  Admitted.
+
   Definition Fmap_CCs_of_Raw_TT
     {Σ : Signature σ} (T : Raw_Type_Theory Σ)
     {Σ' : Signature σ} (T' : Raw_Type_Theory Σ')
@@ -109,7 +118,7 @@ Section TT_Maps.
                 apply (ap (fun x => (_; x))).
                 apply path_forall. intros [ [] | ];
                 apply idpath.
-        * (* show the conlusion is correct *)
+        * (* show the conclusion is as intended *)
           cbn. apply (ap (fun x => (_; x))).
           apply (ap (Build_Raw_Context _)).
           apply path_forall.
@@ -136,7 +145,37 @@ Section TT_Maps.
       + admit.
       + admit.
     - (* Logical rules *)
-      admit.
+      cbn in c_from_rr. rename c_from_rr into c.
+      destruct c as [i [Γ A]].
+      unfold Derivation_of_CC; cbn.
+      set (fc := rule_derivation_of_TT_Map _ _ f i). (* TODO: implicits! *)
+      set (c := T i) in *.
+      set (a := RR_metas Σ c) in *.
+      unfold Derivation_Raw_Rule_from_Raw_TT in fc. cbn in fc.
+      transparent assert (f_a : (Signature_Map
+            (Metavariable_Extension Σ a) (Metavariable_Extension Σ' a))).
+        apply Fmap1_Metavariable_Extension, f.
+      set (ff_a := (Fmap_Derivation_from_premises (Fmap_Judgt_Instance f_a) fc)). 
+      (*
+      Very concretely: fc is over Σ+a.  Must map to Σ'+a, then instantiate.
+      
+      *)
+      (* OK, this can be all abstracted a bit better:
+       - “derivable cc’s” gives a “monad” on closure systems; so “deduce-bind” or something, like “deduce” but with a derivable cc instead of an atomic one 
+       - any instantiation of a derivable raw rule gives a derivable closure condition over CCs_of_TT.
+       - fmap on derivable closure conditions
+       - fmap on *) 
+
+refine (transport (Derivation_from_premises _) _ _). 
+      Focus 2. {
+        apply (Derivation_glue _ _ fc).
+        }
+
+      + (* give rule *)
+        refine (inl (inr _)). cbn.
+        refine (c.1
+      + (* give premises *)
+      + (* show conclusion is as intended *)
   Admitted.
 
   (* TODO: the above shows that we need some serious extra tools for building derivations, in several ways:
