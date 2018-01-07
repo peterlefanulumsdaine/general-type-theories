@@ -365,7 +365,7 @@ Section Algebraic_Extensions.
   Definition Metavariable_Extension (Σ : Signature σ) (a : @Arity σ) : Signature σ.
   Proof.
     refine (Sum Σ _).
-    refine (Fmap _ a).
+    refine (Fmap_Family _ a).
     intros cl_γ. exact (fst cl_γ, simple_arity (snd cl_γ)).
   Defined.
 
@@ -517,7 +517,7 @@ Section Raw_Rules.
     intros [Γ I].
     split.
     - (* premises *)
-      refine (Fmap _ (RR_prem R)).
+      refine (Fmap_Family _ (RR_prem R)).
       apply (instantiate_ji I).
     - apply (instantiate_ji I).
       apply (RR_concln R).

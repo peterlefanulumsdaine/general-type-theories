@@ -77,7 +77,7 @@ Section TT_Maps.
   Definition Fmap_Derivation_from_premises {X Y} (f : X -> Y)
       {C : Family (closure_condition X)} {P : Family X} {x}
       (D : Derivation_from_premises C P x)
-    : Derivation_from_premises (Fmap (Fmap_cc f) C) (Fmap f P) (f x). 
+    : Derivation_from_premises (Fmap_Family (Fmap_cc f) C) (Fmap_Family f P) (f x). 
   Proof.
     (* TODO: give better lemma on gluing derivations-with-premises:
      given a derivation of (f x) with premises Γ, and derivations of all of Γ from Δ, then get defivation of (f x) from Δ.  Or in this case, an alternative would be just: show Γ = Δ. *)
@@ -109,16 +109,16 @@ Section TT_Maps.
   Definition Fmap_Structural_CCs
       {Σ Σ' : Signature σ}
       (f : Signature_Map Σ Σ')
-    : Family_Map (Fmap (Fmap_cc (Fmap_Judgt_Instance f)) (Structural_CCs Σ))
+    : Family_Map (Fmap_Family (Fmap_cc (Fmap_Judgt_Instance f)) (Structural_CCs Σ))
                  (Structural_CCs Σ'). 
   Proof.
     (* TODO: possible better approach:
-       - [Fmap] of families commutes with sums;
+       - [Fmap_Family] of families commutes with sums;
        - then use [repeat apply Fmap_Family_Sum.] or similar.  *)
     (* TODO: intermediate approach: at least allow family map to be constructed as a single function, to avoid duplicated destructing. *)
     simple refine (_;_).
     - intros [ [ [ [ c1 | ] | [c2 | c3] ] | c4 ]  | c5 ].
-      (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
+      (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
       + (* context extension *)
         rename c1 into ΓA.
         refine (inl (inl (inl (Some _)))).
@@ -195,11 +195,11 @@ Section TT_Maps.
     {Σ' : Signature σ} (T' : Raw_Type_Theory Σ')
     (f : TT_Map T T')
   : closure_system_map
-      (Fmap (Fmap_cc (Fmap_Judgt_Instance f)) (CCs_of_Raw_TT T))
+      (Fmap_Family (Fmap_cc (Fmap_Judgt_Instance f)) (CCs_of_Raw_TT T))
       (CCs_of_Raw_TT T').
   Proof.
     intros c. (* We need to unfold [c] a bit here, bit not too much. *)
-    unfold Fmap, fam_index, CCs_of_Raw_TT in c.
+    unfold Fmap_Family, fam_index, CCs_of_Raw_TT in c.
     destruct c as [ c_str | c_from_rr ].
     - (* Structural rules *)
       (* an instance of a structural rule is translated to an instance of the same structural rule *)

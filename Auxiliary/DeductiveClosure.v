@@ -22,7 +22,7 @@ Definition Fmap_cc {X X'} (f : X -> X')
 Proof.
   intros [c_prem c_conc].
   apply Build_closure_condition.
-  - exact (Fmap f c_prem).
+  - exact (Fmap_Family f c_prem).
   - exact (f c_conc).
 Defined.
 
@@ -36,7 +36,7 @@ Inductive Derivation {X} (C : Family (closure_condition X))
 (* Derivations from a given family of “premises”, using a family of closure conditions. *)
 Definition Derivation_from_premises {X} (C : Family (closure_condition X))
   (P : Family X) : X -> Type
-:= Derivation (C + (Fmap singleton_cc P)).
+:= Derivation (C + (Fmap_Family singleton_cc P)).
 
 (* TODO: move*)
 Delimit Scope fam_scope with fam.

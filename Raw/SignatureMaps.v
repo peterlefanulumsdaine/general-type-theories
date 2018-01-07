@@ -80,7 +80,7 @@ Section Signature_Maps.
 
   (* Metavariable extensions are bifunctorial in their two arguments.
 
-   We give the general bifunctoriality action as [Fmap], and the special cases in each argument individually as [Fmap1], [Fmap2]. *)
+   We give the general bifunctoriality action as [Fmap_Family], and the special cases in each argument individually as [Fmap1], [Fmap2]. *)
   Definition Fmap_Metavariable_Extension
       {Σ} {Σ'} (f : Signature_Map Σ Σ')
       {a a' : Arity σ} (g : Family_Map a a')
@@ -89,7 +89,7 @@ Section Signature_Maps.
   Proof.
     apply Fmap_Family_Sum.
     - apply f.
-    - apply Fmap_Family_Fmap, g.
+    - apply Fmap_Fmap_Family, g.
   Defined.
 
   Definition Fmap1_Metavariable_Extension
@@ -111,7 +111,7 @@ Section Signature_Maps.
   Proof.
     intros R.
     exists (RR_metas _ R).
-    - refine (Fmap _ (RR_prem _ R)).
+    - refine (Fmap_Family _ (RR_prem _ R)).
       apply Fmap_Judgt_Instance.
       apply Fmap1_Metavariable_Extension, f.
     - refine (Fmap_Judgt_Instance _ (RR_concln _ R)).
@@ -121,7 +121,7 @@ Section Signature_Maps.
   Definition Fmap_Raw_TT {Σ Σ'} (f : Signature_Map Σ Σ')
     : Raw_Type_Theory Σ -> Raw_Type_Theory Σ'.
   Proof.
-    apply Fmap, Fmap_Raw_Rule, f.
+    apply Fmap_Family, Fmap_Raw_Rule, f.
   Defined.
 
 End Signature_Maps.

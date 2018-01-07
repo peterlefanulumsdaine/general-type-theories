@@ -32,8 +32,8 @@ Record Rule_Spec
   (* family indexing the premises of the rule, and giving for each… *)
   ; RS_Premise : Family (Hyp_Judgt_Form * Proto_Cxt)
     := Family.Sum
-         (Family.Fmap (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) a)
-         (Family.Fmap (fun cl_γ => (eq_HJF (fst cl_γ), snd cl_γ)) RS_equality_premise)
+         (Family.Fmap_Family (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) a)
+         (Family.Fmap_Family (fun cl_γ => (eq_HJF (fst cl_γ), snd cl_γ)) RS_equality_premise)
   (* - the judgement form of each premise, e.g. “term” or “type equality” *)
   ; RS_hjf_of_premise : RS_Premise -> Hyp_Judgt_Form
     := fun i => fst (RS_Premise i)

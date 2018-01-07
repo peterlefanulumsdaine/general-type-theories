@@ -31,7 +31,7 @@ Section TTSpecs.
   ; TTS_lt : TTS_Rule -> TTS_Rule -> Type
   (* the signature over which each rule can be written *)
   ; TTS_signature_of_rule : TTS_Rule -> Signature σ
-    := fun i => Fmap
+    := fun i => Fmap_Family
         (fun jaγ => ( class_of_HJF (fst (fst jaγ))
                    , Family.Sum (snd (fst jaγ)) (simple_arity (snd jaγ))))
         (Subfamily TTS_Rule
