@@ -83,43 +83,64 @@ Section TT_Maps.
      given a derivation of (f x) with premises Γ, and derivations of all of Γ from Δ, then get defivation of (f x) from Δ.  Or in this case, an alternative would be just: show Γ = Δ. *)
   Admitted.
 
-  Definition Fmap_CCs_of_Raw_TT
-    {Σ : Signature σ} (T : Raw_Type_Theory Σ)
-    {Σ' : Signature σ} (T' : Raw_Type_Theory Σ')
-    (f : TT_Map T T')
-  : CC_system_map
-      (Fmap (Fmap_cc (Fmap_Judgt_Instance f)) (CCs_of_Raw_TT T))
-      (CCs_of_Raw_TT T').
+  (* TODO: upstream! and consider naming conventions for such lemmas. *)
+  Definition closure_condition_eq {X} {c c' : closure_condition X}
+    : cc_premises c = cc_premises c'
+    -> cc_conclusion c = cc_conclusion c'
+    -> c = c'.
   Proof.
-    intros c. (* We need to unfold [c] a bit here, bit not too much. *)
-    unfold Fmap, fam_index, CCs_of_Raw_TT in c.
-    destruct c as [ c_str | c_from_rr ].
-    - (* Structural rules *)
-      (* an instance of a structural rule is translated to an instance of the same structural rule *)
-      unfold Derivation_of_CC, Derivation_from_premises.      
-      cbn in c_str.
-      (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: consider this. *)
-      destruct c_str as [ [ [ [ ΓA | ] | [c2 | c3] ] | c4 ]  | c5 ].
+    destruct c, c'; cbn.
+    intros e e'; destruct e, e'.
+    apply idpath.
+  Defined.
+
+  (* TODO: upstream! and consider naming conventions for such lemmas. *)
+  Definition Family_eq `{Funext} {X} {c c' : Family X}
+    (e : fam_index c = fam_index c')
+    (e' : forall i:c, c i = c' (equiv_path _ _ e i) )
+    : c = c'.
+  Proof.
+    destruct c, c'; cbn in *.
+    destruct e. apply ap.
+    apply path_forall; intros i; apply e'.
+  Defined.
+
+  (* TODO: abstract [Family_Map_over] or something, i.e. a displayed-category version of family maps, for use in definitions like this? *)
+  Definition Fmap_Structural_CCs
+      {Σ Σ' : Signature σ}
+      (f : Signature_Map Σ Σ')
+    : Family_Map (Fmap (Fmap_cc (Fmap_Judgt_Instance f)) (Structural_CCs Σ))
+                 (Structural_CCs Σ'). 
+  Proof.
+    (* TODO: possible better approach:
+       - [Fmap] of families commutes with sums;
+       - then use [repeat apply Fmap_Family_Sum.] or similar.  *)
+    (* TODO: intermediate approach: at least allow family map to be constructed as a single function, to avoid duplicated destructing. *)
+    simple refine (_;_).
+    - intros [ [ [ [ c1 | ] | [c2 | c3] ] | c4 ]  | c5 ].
+      (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
       + (* context extension *)
-        simple refine (deduce' _ _ _).
-        * (* pick which rule to use, and which instantiation *)
-          refine (inl (inl _)). (* use a structural rule *)
-          refine (inl (inl (inl (Some _)))). (* pick “context extension” *)
-          exists (Fmap_Raw_Context f ΓA.1).
-          exact (Fmap_Raw_Syntax f ΓA.2).
-        * (* derive the premises *)
-          cbn. intros p.
-          simple refine (deduce' _ _ _). 
-          -- exact (inr p).
-          -- destruct p as [ [ [] | ] | ]; intros [].
-          -- destruct p as [ [ [] | ] | ].
-             ++ apply idpath.
-             ++ apply (ap (fun x => (_; x))).
-                apply (ap (fun x => (_; x))).
-                apply path_forall. intros [ [] | ];
-                apply idpath.
-        * (* show the conclusion is as intended *)
-          cbn. apply (ap (fun x => (_; x))).
+        rename c1 into ΓA.
+        refine (inl (inl (inl (Some _)))).
+        exists (Fmap_Raw_Context f ΓA.1).
+        exact (Fmap_Raw_Syntax f ΓA.2).
+      + (* empty context *) 
+        refine (inl (inl (inl None))).
+      + admit.        
+      + admit.        
+      + admit.        
+      + admit.        
+    - intros [ [ [ [ c1 | ] | [c2 | c3] ] | c4 ]  | c5 ].
+      + (* context extension *)
+        cbn. apply closure_condition_eq. 
+        * simple refine (Family_eq _ _). { apply idpath. }
+          cbn. intros [ [ [] | ] | ].
+          -- apply idpath.
+          -- apply (ap (fun x => (_; x))).
+             apply (ap (fun x => (_; x))).
+             apply path_forall. intros [ [] | ];
+             apply idpath.
+        * cbn. apply (ap (fun x => (_; x))).
           apply (ap (Build_Raw_Context _)).
           apply path_forall.
           refine (plusone_rect _ _ (shape_is_plusone _ _) _ _ _).
@@ -133,17 +154,63 @@ Section TT_Maps.
                { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. } Unfocus.
              apply inverse. apply Fmap_Raw_Weaken. 
       + (* empty context *)
-        simple refine (deduce' _ _ _).
-        * refine (inl (inl _)). (* use a structural rule *)
-          refine (inl (inl (inl None))). (* pick “empty context” *)
-        * cbn. intros [].
+        cbn. apply closure_condition_eq.
+        * simple refine (Family_eq _ _). { apply idpath. }
+          intros [].
         * cbn. apply (ap (fun x => (_; x))).
           apply (ap (Build_Raw_Context _)).
           apply path_forall. refine (empty_rect _ shape_is_empty _).
-      + admit.
-      + admit.
-      + admit.
-      + admit.
+      + admit.        
+      + admit.        
+      + admit.        
+      + admit.        
+  Admitted.
+
+  (* TODO: upstream *)
+  (* TODO: consider name! *)
+  Definition Simple_Derivation_of_CC
+      {X} {C : Family (closure_condition X)} (i : C)
+    : Derivation_of_CC C (C i).
+  Proof.
+    refine (deduce (_+_) (inl i) _). intros p.
+    simple refine (deduce' _ _ _). 
+    - exact (inr p).
+    - intros [].
+    - apply idpath.
+  Defined.
+
+  (* TODO: upstream *)
+  (* CC_system maps are really a sort of Kelisli map, and this is essentially just the unit.  TODO: abstract this out more clearly! *)
+  Definition CC_system_map_of_Family_map
+      {X} {C C' : Family (closure_condition X)} (f : Family_Map C C')
+    : CC_system_map C C'.
+  Proof.
+    intros c. eapply paths_rew.
+    - exact (Simple_Derivation_of_CC (f c)).
+    - apply commutes_Family_Map.
+  Defined.
+
+  (* TODO: rename [CC_system] to [Closure_system]! *)
+
+  Definition Fmap_CCs_of_Raw_TT
+    {Σ : Signature σ} (T : Raw_Type_Theory Σ)
+    {Σ' : Signature σ} (T' : Raw_Type_Theory Σ')
+    (f : TT_Map T T')
+  : CC_system_map
+      (Fmap (Fmap_cc (Fmap_Judgt_Instance f)) (CCs_of_Raw_TT T))
+      (CCs_of_Raw_TT T').
+  Proof.
+    intros c. (* We need to unfold [c] a bit here, bit not too much. *)
+    unfold Fmap, fam_index, CCs_of_Raw_TT in c.
+    destruct c as [ c_str | c_from_rr ].
+    - (* Structural rules *)
+      (* an instance of a structural rule is translated to an instance of the same structural rule *)
+      eapply paths_rew.
+      + refine (Simple_Derivation_of_CC _).
+        refine (inl_Family _).
+        exact (Fmap_Structural_CCs f c_str).
+      + eapply concat. { apply commutes_Family_Map. }
+        refine (commutes_Family_Map _ _). 
     - (* Logical rules *)
       cbn in c_from_rr. rename c_from_rr into c.
       destruct c as [i [Γ A]].
@@ -155,7 +222,6 @@ Section TT_Maps.
       transparent assert (f_a : (Signature_Map
             (Metavariable_Extension Σ a) (Metavariable_Extension Σ' a))).
         apply Fmap1_Metavariable_Extension, f.
-      set (ff_a := (Fmap_Derivation_from_premises (Fmap_Judgt_Instance f_a) fc)). 
       (*
       Very concretely: fc is over Σ+a.  Must map to Σ'+a, then instantiate.
       
@@ -165,17 +231,7 @@ Section TT_Maps.
        - any instantiation of a derivable raw rule gives a derivable closure condition over CCs_of_TT.
        - fmap on derivable closure conditions
        - fmap on *) 
-
-refine (transport (Derivation_from_premises _) _ _). 
-      Focus 2. {
-        apply (Derivation_glue _ _ fc).
-        }
-
-      + (* give rule *)
-        refine (inl (inr _)). cbn.
-        refine (c.1
-      + (* give premises *)
-      + (* show conclusion is as intended *)
+        admit.
   Admitted.
 
   (* TODO: the above shows that we need some serious extra tools for building derivations, in several ways:
