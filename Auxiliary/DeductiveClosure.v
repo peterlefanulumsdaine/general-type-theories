@@ -56,12 +56,11 @@ Definition Derivation_of_CC {X} (C : Family (closure_condition X))
   (c : closure_condition X) : Type
 := Derivation_from_premises C (cc_premises c) (cc_conclusion c).
 
-(* TODO: rename [CC_system] to eg [closure_system] ? *)
-Definition CC_system_map {X} (C C' : Family (closure_condition X)) : Type
+Definition closure_system_map {X} (C C' : Family (closure_condition X)) : Type
 := forall c : C, Derivation_of_CC C' (C c).
 
 Fixpoint Fmap_Derivation {X}
-  {C C' : Family (closure_condition X)} (f : CC_system_map C C')
+  {C C' : Family (closure_condition X)} (f : closure_system_map C C')
   {x:X} (d : Derivation C x) : Derivation C' x.
 Proof.
   destruct d as [c d'].

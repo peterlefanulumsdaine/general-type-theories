@@ -180,23 +180,21 @@ Section TT_Maps.
   Defined.
 
   (* TODO: upstream *)
-  (* CC_system maps are really a sort of Kelisli map, and this is essentially just the unit.  TODO: abstract this out more clearly! *)
-  Definition CC_system_map_of_Family_map
+  (* closure_system maps are really a sort of Kelisli map, and this is essentially just the unit.  TODO: abstract this out more clearly! *)
+  Definition closure_system_map_of_Family_map
       {X} {C C' : Family (closure_condition X)} (f : Family_Map C C')
-    : CC_system_map C C'.
+    : closure_system_map C C'.
   Proof.
     intros c. eapply paths_rew.
     - exact (Simple_Derivation_of_CC (f c)).
     - apply commutes_Family_Map.
   Defined.
 
-  (* TODO: rename [CC_system] to [Closure_system]! *)
-
   Definition Fmap_CCs_of_Raw_TT
     {Σ : Signature σ} (T : Raw_Type_Theory Σ)
     {Σ' : Signature σ} (T' : Raw_Type_Theory Σ')
     (f : TT_Map T T')
-  : CC_system_map
+  : closure_system_map
       (Fmap (Fmap_cc (Fmap_Judgt_Instance f)) (CCs_of_Raw_TT T))
       (CCs_of_Raw_TT T').
   Proof.
