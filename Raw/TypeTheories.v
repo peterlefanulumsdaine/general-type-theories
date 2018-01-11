@@ -105,34 +105,66 @@ Section TT_Maps.
     apply path_forall; intros i; apply e'.
   Defined.
 
+  (* TODO: upstream! *)
+  Definition Build_Family_Map' {A} (K L : Family A)
+      (f : forall i:K, { j:L & L j = K i })
+    : Family_Map K L.
+  Proof.
+    exists (fun i => pr1 (f i)).
+    intros i. exact (pr2 (f i)).
+  Defined.
+
+  (* TODO: upstream! *)
+  Definition Fmap_Raw_Context_Map
+      {Σ Σ' : Signature σ} (f : Signature_Map Σ Σ')
+      {γ γ'} (g : Raw_Context_Map Σ γ' γ)
+    : Raw_Context_Map Σ' γ' γ
+  := fun i => (Fmap_Raw_Syntax f (g i)).
+
+  (* TODO: upstream! *)
+  Lemma Fmap_Raw_Syntax_Raw_Subst
+      {Σ Σ' : Signature σ}
+      (f : Signature_Map Σ Σ')
+      {γ γ'} (g : Raw_Context_Map Σ γ' γ)
+      {cl} (e : Raw_Syntax Σ cl γ)
+    : Fmap_Raw_Syntax f (Raw_Subst g e)
+    = Raw_Subst (Fmap_Raw_Context_Map f g) (Fmap_Raw_Syntax f e).
+  Proof.
+  Admitted.
+
+  (* *)
+  Lemma Fmap_Family_Snoc
+      {X Y} (f : X -> Y)
+      (K : Family X) (x : X)
+    : Fmap_Family f (Snoc K x) = Snoc (Fmap_Family f K) (f x).
+  Proof.
+    simple refine (Family_eq _ _).
+    - apply idpath.
+    - intros [? | ]; apply idpath.
+  Defined.
+
   (* TODO: abstract [Family_Map_over] or something, i.e. a displayed-category version of family maps, for use in definitions like this? *)
   Definition Fmap_Structural_CCs
       {Σ Σ' : Signature σ}
       (f : Signature_Map Σ Σ')
-    : Family_Map (Fmap_Family (Fmap_cc (Fmap_Judgt_Instance f)) (Structural_CCs Σ))
-                 (Structural_CCs Σ'). 
+    : Family_Map
+        (Fmap_Family (Fmap_cc (Fmap_Judgt_Instance f)) (Structural_CCs Σ))
+        (Structural_CCs Σ'). 
   Proof.
     (* TODO: possible better approach:
        - [Fmap_Family] of families commutes with sums;
        - then use [repeat apply Fmap_Family_Sum.] or similar.  *)
     (* TODO: intermediate approach: at least allow family map to be constructed as a single function, to avoid duplicated destructing. *)
-    simple refine (_;_).
-    - intros [ [ [ [ c1 | ] | [c2 | c3] ] | c4 ]  | c5 ].
-      (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
-      + (* context extension *)
-        rename c1 into ΓA.
+    apply Build_Family_Map'.
+    intros [ [ [ [ c1 | ] | [c2 | c3] ] | c4 ]  | c5 ].
+    (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
+    - (* context extension *)
+      simple refine (_;_).
+      + rename c1 into ΓA.
         refine (inl (inl (inl (Some _)))).
         exists (Fmap_Raw_Context f ΓA.1).
         exact (Fmap_Raw_Syntax f ΓA.2).
-      + (* empty context *) 
-        refine (inl (inl (inl None))).
-      + admit.        
-      + admit.        
-      + admit.        
-      + admit.        
-    - intros [ [ [ [ c1 | ] | [c2 | c3] ] | c4 ]  | c5 ].
-      + (* context extension *)
-        cbn. apply closure_condition_eq. 
+      + cbn. apply closure_condition_eq. 
         * simple refine (Family_eq _ _). { apply idpath. }
           cbn. intros [ [ [] | ] | ].
           -- apply idpath.
@@ -153,17 +185,58 @@ Section TT_Maps.
              eapply concat. Focus 2.
                { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. } Unfocus.
              apply inverse. apply Fmap_Raw_Weaken. 
-      + (* empty context *)
-        cbn. apply closure_condition_eq.
-        * simple refine (Family_eq _ _). { apply idpath. }
-          intros [].
-        * cbn. apply (ap (fun x => (_; x))).
-          apply (ap (Build_Raw_Context _)).
-          apply path_forall. refine (empty_rect _ shape_is_empty _).
-      + admit.        
-      + admit.        
-      + admit.        
-      + admit.        
+    - (* empty context *) 
+      exists (inl (inl (inl None))).
+      cbn. apply closure_condition_eq.
+      * simple refine (Family_eq _ _). { apply idpath. }
+        intros [].
+      * cbn. apply (ap (fun x => (_; x))).
+        apply (ap (Build_Raw_Context _)).
+        apply path_forall. refine (empty_rect _ shape_is_empty _).
+    - (* substitution *)
+      destruct c2 as [ Γ [Γ' [g [hjf hjfi]]]].
+      simple refine (_;_).
+      + refine (inl (inl (inr (inl _)))).
+        exists (Fmap_Raw_Context f Γ).
+        exists (Fmap_Raw_Context f Γ').
+        exists (Fmap_Raw_Context_Map f g).
+        exists hjf.
+        exact (Fmap_Hyp_Judgt_Form_Instance f hjfi).
+      + cbn. apply closure_condition_eq; cbn.
+        * apply inverse.
+          eapply concat. { apply Fmap_Family_Snoc. }
+          apply ap011.
+          -- unfold Fmap_Family.
+            apply ap, path_forall; intros i.
+            apply (ap (fun x => (_; x))).
+            apply (ap (fun x => (_; x))).
+            apply path_forall. intros [ [ [] | ] | ].
+            ++ refine (Fmap_Raw_Syntax_Raw_Subst _ _ _).
+            ++ apply idpath.
+          -- apply idpath.
+          (* Fmap_Family_Snoc *)
+        * apply (ap (fun x => (_; x))). cbn.
+          apply (ap (fun x => (_; x))).
+          apply path_forall. intros i.
+          unfold Fmap_Hyp_Judgt_Form_Instance.
+          refine (Fmap_Raw_Syntax_Raw_Subst _ _ _)^.
+    - (* substitution equality *)
+      destruct c3 as [ Γ [Γ' [g [g' [hjf hjfi]]]]].
+      simple refine (_;_).
+      + refine (inl (inl (inr (inr _)))).
+        exists (Fmap_Raw_Context f Γ).
+        exists (Fmap_Raw_Context f Γ').
+        exists (Fmap_Raw_Context_Map f g).
+        exists (Fmap_Raw_Context_Map f g').
+        exists hjf.
+        exact (Fmap_Hyp_Judgt_Form_Instance f hjfi).
+      + admit.
+    - (* var rule *) 
+      simple refine (inl (inr _) ; _); admit.
+    - (* equality rules *)
+      simple refine (inr _; _); admit.
+      (* Thest last two should be doable cleanly by the same lemmas
+      used for logical rules in [Fmap_CCs_of_Raw_TT] below, once that’s done. *)
   Admitted.
 
   (* TODO: upstream *)
