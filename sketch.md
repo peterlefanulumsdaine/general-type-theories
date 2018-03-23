@@ -130,9 +130,3 @@ Serious theorems:
 
 - Peter Aczel “generalised Church-Rosser”??
 
-
-
-
-
-
-

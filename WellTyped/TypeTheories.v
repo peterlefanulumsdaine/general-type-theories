@@ -1,9 +1,10 @@
 Require Import HoTT.
-Require Import ShapeSystems.
-Require Import Family.
-Require Import RawSyntax.
-Require Import RawTypeTheories.
-Require Import TypingJudgements.
+Require Import Proto.ShapeSystems.
+Require Import Auxiliary.Family.
+Require Import Raw.Syntax.
+Require Import Raw.TypeTheories.
+Require Import WellFormed.Rules.
+Require Import WellFormed.TypeTheories.
 
 (** In this file: definition of well-typedness of a rule-spec, and a type-theory spec. *)
 
@@ -70,7 +71,7 @@ Section Welltypedness.
       exists i. apply idpath.
   Defined.
   
-  (* TODO: move upstream, right to [RawSyntax] even? *)
+  (* TODO: move upstream, right to [Syntax] even? *)
   Definition Presup_of_Judgt_Bdry_Instance
       {Σ : Signature σ} {jf} (jbi : Judgt_Bdry_Instance Σ jf)
     : Family (Judgt_Instance Σ).

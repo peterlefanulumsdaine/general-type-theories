@@ -1,16 +1,16 @@
 Require Import HoTT.
-Require Import Family.
-Require Import ShapeSystems.
-Require Import Coproduct.
-Require Import DeductiveClosure.
-Require Import RawSyntax.
-Require Import SignatureMaps.
+Require Import Auxiliary.Family.
+Require Import Proto.ShapeSystems.
+Require Import Auxiliary.Coproduct.
+Require Import Auxiliary.DeductiveClosure.
+Require Import Raw.Syntax.
+Require Import Raw.SignatureMaps.
 
 (** In this file:
 
 - [Rule_Spec]: the data one gives to specify a logical rule (before any typechecking)
-- [Type_Theory_Spec]: the data one gives to specify a type theory (before typechecking)
-
+- [associated_congruence_rule_spec]
+- [Raw_Rule_of_Rule_Spec]
 *)
 
 (** Specification of “well-shaped” rules *)
@@ -32,8 +32,8 @@ Record Rule_Spec
   (* family indexing the premises of the rule, and giving for each… *)
   ; RS_Premise : Family (Hyp_Judgt_Form * Proto_Cxt)
     := Family.Sum
-         (Family.Fmap (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) a)
-         (Family.Fmap (fun cl_γ => (eq_HJF (fst cl_γ), snd cl_γ)) RS_equality_premise)
+         (Family.Fmap_Family (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) a)
+         (Family.Fmap_Family (fun cl_γ => (eq_HJF (fst cl_γ), snd cl_γ)) RS_equality_premise)
   (* - the judgement form of each premise, e.g. “term” or “type equality” *)
   ; RS_hjf_of_premise : RS_Premise -> Hyp_Judgt_Form
     := fun i => fst (RS_Premise i)
@@ -66,15 +66,6 @@ Record Rule_Spec
           (Metavariable_Extension Σ (RS_arity_of_premise i))
           (RS_hjf_of_premise i)
           (RS_proto_cxt_of_premise i)
-  (* arity of the rule as a whole.  TODO: move out of definition! *)
-  ; RS_arity : Arity _
-    := Fmap
-        (fun jγ => (class_of_HJF (fst jγ), snd jγ))
-        (Subfamily RS_Premise
-          (fun j => is_obj_HJF (fst (RS_Premise j))))
-  (* judgement form of conclusion *)
-  ; RS_hjf_of_conclusion : Hyp_Judgt_Form
-    := hjf_conclusion
   (* context expressions of conclusion *)
   (* NOTE: this should never be used directly, always through [RS_raw_context_of_conclusion] *)
   ; RS_context_expr_of_conclusion
@@ -86,12 +77,12 @@ Record Rule_Spec
   ; RS_hyp_judgt_bdry_instance_of_conclusion
       : Hyp_Judgt_Bdry_Instance
           (Metavariable_Extension Σ a)
-          RS_hjf_of_conclusion
+          hjf_conclusion
           γ_conclusion
-  (* full judgement boundary instance of conclusion *)
+  (* full judgement boundary instance of conclusion *) (* TODO: move out of record?? *)
   ; RS_judgt_bdry_instance_of_conclusion
       : Judgt_Bdry_Instance (Metavariable_Extension Σ a)
-                            (HJF RS_hjf_of_conclusion)
+                            (HJF hjf_conclusion)
     := (RS_raw_context_of_conclusion; RS_hyp_judgt_bdry_instance_of_conclusion)
   }.
   (* NOTE 1. One could restrict rule-specs by only allowing the case where the context of the conclusion is empty.  This would simplify this definition, and several things below, and would (one expects) not lose any generality, since one can always move variables from that context to become extra premises, giving an equivalent rule with empty conclusion context.
@@ -148,82 +139,6 @@ End RuleSpecs.
 
 Arguments Rule_Spec {_} _ _ _ _.
 
-(** Specification of a type theory (but before checking that syntax in rules is well-typed. *)
-
-Section TTSpecs.
-
-  Context {σ : Shape_System}.
-
-  Record Type_Theory_Spec
-  := {
-  (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
-    TTS_Rule : Family (Hyp_Judgt_Form * Arity σ * Shape σ)
-  (* the judgement form of the conclusion of each rule *)
-  ; TTS_hjf_of_rule : TTS_Rule -> Hyp_Judgt_Form
-    := fun i => fst (fst (TTS_Rule i))
-  (* the arity of the arguments (i.e. the *object* premises only) of each rule *)
-  ; TTS_arity_of_rule : TTS_Rule -> Arity _
-    := fun i => snd (fst (TTS_Rule i))
-  (* the shape of the conclusion of each rule *)
-  ; TTS_concl_shape_of_rule : TTS_Rule -> Shape σ
-    := fun i => snd (TTS_Rule i)
-  (* the ordering on rules.  TODO: will probably need to add well-foundedness. QUESTION: any reason for it to be Prop-valued, or could we just let it be type-valued? *)
-  ; TTS_lt : TTS_Rule -> TTS_Rule -> hProp
-  (* the signature over which each rule can be written *)
-  ; TTS_signature_of_rule : TTS_Rule -> Signature σ
-    := fun i => Fmap
-        (fun jaγ => ( class_of_HJF (fst (fst jaγ))
-                   , Family.Sum (snd (fst jaγ)) (simple_arity (snd jaγ))))
-        (Subfamily TTS_Rule
-          (fun j => is_obj_HJF (TTS_hjf_of_rule j) * TTS_lt j i))
-  (* the actual rule specification of each rule *)
-  ; TTS_rule_spec
-    : forall i : TTS_Rule,
-        Rule_Spec
-          (TTS_signature_of_rule i)
-          (TTS_arity_of_rule i)
-          (TTS_concl_shape_of_rule i)
-          (TTS_hjf_of_rule i)
-  }.
-
-  Definition Signature_of_TT_Spec (T : Type_Theory_Spec)
-    : Signature σ.
-  Proof.
-    (* symbols are given by the object-judgement rules of T *)
-    exists {r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule _ r)}.
-    intros r_H. set (r := pr1 r_H).
-    split.
-    - exact (class_of_HJF (TTS_hjf_of_rule _ r)).
-    - exact (TTS_arity_of_rule _ r
-            + simple_arity (TTS_concl_shape_of_rule _ r)).
-  Defined.
-    (* NOTE: it is tempting to case-analyse here and say 
-      “when r is an object rule, use [(class_of_HJF …, TTS_arity_of_rule …)];
-       in case r is an equality rule, use reductio ad absurdum with Hr.” 
-     But we get stronger reduction behaviour by just taking [(class_of_HJF …, TTS_arity_of_rule …)] without case-analysing first.  (And up to equality, we get the same result.)  *)
-
-  Definition TT_Spec_signature_inclusion_of_rule
-      {T : Type_Theory_Spec} (r : TTS_Rule T)
-    : Signature_Map (TTS_signature_of_rule _ r) 
-                    (Signature_of_TT_Spec T).
-  Proof.
-    simple refine (_;_).
-    - intros s_isob_lt.
-      exact (pr1 s_isob_lt ; fst (pr2 (s_isob_lt))).
-      (* TODO: introduce access functions for the signature components above? *)
-    - intros s. exact idpath.
-  Defined.
-
-End TTSpecs.
-
-Arguments Type_Theory_Spec _ : clear implicits.
-Arguments TTS_Rule {_} _.
-Arguments TTS_hjf_of_rule {_ _} _.
-Arguments TTS_arity_of_rule {_ _} _.
-Arguments TTS_concl_shape_of_rule {_ _} _.
-Arguments TTS_lt {_ _} _ _.
-Arguments TTS_signature_of_rule {_ _} _.
-Arguments TTS_rule_spec {_ _} _.
 
 Section Associated_Congruence_Rule_Specs.
 

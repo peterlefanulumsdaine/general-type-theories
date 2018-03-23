@@ -20,7 +20,7 @@ Definition Sum {X} (Y1 Y2 : Family X) : Family X
   := {| fam_index := Y1 + Y2
       ; fam_element y := match y with inl y => Y1 y | inr y => Y2 y end |}.
 
-Definition Fmap {X Y} (f : X -> Y) (K : Family X) : Family Y.
+Definition Fmap_Family {X Y} (f : X -> Y) (K : Family X) : Family Y.
 Proof.
   exists K.
   exact (fun i => f (K i)).
@@ -127,10 +127,10 @@ Section Family_Maps.
   Defined.
   
   (* TODO: oh goodness the naming conventions need improving *)
-  Definition Fmap_Family_Fmap
+  Definition Fmap_Fmap_Family
       {X Y} (f : X -> Y)
       {K K' : Family X} (g : Family_Map K K')
-    : Family_Map (Fmap f K) (Fmap f K').
+    : Family_Map (Fmap_Family f K) (Fmap_Family f K').
   Proof.
     exists g.
     intros i. cbn. apply ap. apply commutes_Family_Map.

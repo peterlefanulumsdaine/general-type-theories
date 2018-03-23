@@ -1,4 +1,4 @@
-Require Import Coproduct.
+Require Import Auxiliary.Coproduct.
 
 (* _Shape Systems_ abstract the kind of shapes that contexts can have.
 
