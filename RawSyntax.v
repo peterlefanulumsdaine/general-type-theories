@@ -48,9 +48,9 @@ Section Raw_Syntax.
 
   (* A raw syntactic expression of a syntactic class, relative to a context *)
   Inductive Raw_Syntax
-    : Syn_Class -> σ -> Type
+    : Syn_Class -> Shape σ -> Type
   :=
-  (* a variable in a context is a term in that context *)
+    (* a variable in a context is a term in that context *)
     | var_raw (γ : σ) (i : γ)
         : Raw_Syntax Tm γ
     (* relative to a context [γ], given a symbol [S], if for each of its
@@ -65,22 +65,35 @@ Section Raw_Syntax.
   Global Arguments var_raw [_] _.
   Global Arguments symb_raw [_] _ _.
 
-  (* A useful abbreviation for giving functions constructing raw syntax. *)
-  Definition Args (a : Arity _) γ : Type
-  := forall (i : a),
-    Raw_Syntax (arg_class i) (shape_coproduct γ (arg_pcxt i)).
-
   (* A raw context is a proto-ctx ("collection of identifiers") and a raw syntactic type expression
      for each identifier in the proto-ctx. *)
   Record Raw_Context
-  := { σ_of_Raw_Context :> σ
+  := { Proto_Context_of_Raw_Context :> σ
      ; var_type_of_Raw_Context
-         :> forall i : σ_of_Raw_Context,
-            Raw_Syntax Ty σ_of_Raw_Context
+         :> forall i : Proto_Context_of_Raw_Context,
+            Raw_Syntax Ty Proto_Context_of_Raw_Context
      }.
 
   Definition Raw_Context_Map (γ δ : σ)
     := δ -> Raw_Syntax Tm γ.
+
+  (* A couple of utility functions: *)
+
+  (* A useful abbreviation for giving functions constructing raw syntax:
+  the type of suitable arguments for a given arity, in a given context. *)
+  Definition Args (a : Arity _) γ : Type
+  := forall (i : a),
+    Raw_Syntax (arg_class i) (shape_coproduct γ (arg_pcxt i)).
+
+  (* Useful, with [idpath] as the equality argument, when want wants to construct the smybol argument interactively — this is difficult with original [symb_raw] due to [class S] appearing in the conclusion. *)
+  Definition symb_raw'
+      {γ} {cl} (S : Σ) (e : class S = cl)
+      (args : Args (arity S) γ)
+    : Raw_Syntax cl γ.
+  Proof.
+    destruct e.
+    apply symb_raw; auto.
+  Defined.
 
 End Raw_Syntax.
 
@@ -193,29 +206,33 @@ Section Judgements.
   (* Indices for each kind of judgement form. *)
   (* TODO if we need to access the head and boundaries. *)
 
+  Definition Hyp_Obj_Judgt_Bdry_Slots (cl : Syn_Class)
+  := match cl with
+       (* No hypothetical part in boundary of a type judgement *)
+       | Ty => [< >]
+       (* Boundary of a term judgement: the type of the term *)
+       | Tm => [< Ty >]
+     end.
+
   Definition Hyp_Judgt_Bdry_Slots (hjf : Hyp_Judgt_Form)
     : Family Syn_Class
-    := match hjf with
-        (* No hypothetical part in boundary the type judgement *)
-        | obj_HJF Ty => [< >]
-        (* Both types involved in the equality *)
-        | eq_HJF Ty  => [< Ty ; Ty >]
-        (* Boundary: type of the term *)
-        | obj_HJF Tm => [< Ty >]
-        (* Boundary: the type ; both terms involved *)
-        | eq_HJF Tm  => [< Ty ; Tm ; Tm >]
-      end.
+  := match hjf with
+       (* object judgement boundary: as defined in [Hyp_Obj_Judgt_Bdry_Slots] *)
+       | obj_HJF cl => Hyp_Obj_Judgt_Bdry_Slots cl
+       (* equality judgement boundary: a boundary of the corresponding object-judgement, together with two objects of the given class *)
+       | eq_HJF cl  => Snoc (Snoc (Hyp_Obj_Judgt_Bdry_Slots cl) cl) cl
+     end.
 
   Definition Hyp_Judgt_Form_Slots (hjf : Hyp_Judgt_Form)
     : Family Syn_Class
-    := match hjf with
-        (* Equality case: boundary is everything *)
-        | eq_HJF cl =>
-            Hyp_Judgt_Bdry_Slots (eq_HJF cl)
-        (* Object case: add the head slot *)
-        | obj_HJF cl =>
-            Snoc (Hyp_Judgt_Bdry_Slots (obj_HJF cl)) cl
-       end.
+  := match hjf with
+       (* Equality case: boundary is everything *)
+       | eq_HJF cl =>
+           Hyp_Judgt_Bdry_Slots (eq_HJF cl)
+       (* Object case: add the head slot *)
+       | obj_HJF cl =>
+           Snoc (Hyp_Judgt_Bdry_Slots (obj_HJF cl)) cl
+     end.
   (* NOTE: the order of slots for term judgements follows “dependency order” — later slots are (morally) dependent on earlier ones, so the type comes before the term.  However, the functions in section [Judgement_Notations] below follow standard written order, so the term comes before the type. *)
 
   Definition Hyp_Judgt_Bdry_Instance (hjf : Hyp_Judgt_Form) γ : Type
@@ -226,7 +243,7 @@ Section Judgements.
 
   Definition Judgt_Bdry_Instance (jf : Judgt_Form) : Type
   := match jf with
-       | Cxt_JF => Raw_Context Σ
+       | Cxt_JF => Unit
        | HJF hjf => { Γ : Raw_Context Σ
                    & Hyp_Judgt_Bdry_Instance hjf Γ }
      end.
@@ -240,6 +257,20 @@ Section Judgements.
 
   Definition Judgt_Instance
     := { jf : Judgt_Form & Judgt_Form_Instance jf }.
+
+  Definition Hyp_Judgt_Instance_from_bdry_plus_head {hjf : Hyp_Judgt_Form} {γ}
+      (bdry : Hyp_Judgt_Bdry_Instance hjf γ)
+      (head : is_obj_HJF hjf -> Raw_Syntax Σ (class_of_HJF hjf) γ)
+    : Hyp_Judgt_Form_Instance hjf γ.
+  Proof.
+    destruct hjf as [ ocl | ecl ].
+    - (* case: object judgement *)
+      intros [ i | ].
+      + apply bdry.
+      + apply head. constructor.
+    - (* case: equality judgement *)
+      apply bdry.
+  Defined.
 
 End Judgements.
 
@@ -328,14 +359,14 @@ Section Algebraic_Extensions.
 
   Context {σ : Shape_System}.
 
-  Definition metavariable_arity (γ : σ) : @Arity σ
+  Definition simple_arity (γ : σ) : @Arity σ
   := {| fam_index := γ ; fam_element i := (Tm, shape_empty _) |}.
 
   Definition Metavariable_Extension (Σ : Signature σ) (a : @Arity σ) : Signature σ.
   Proof.
     refine (Sum Σ _).
     refine (Fmap _ a).
-    intros cl_γ. exact (fst cl_γ, metavariable_arity (snd cl_γ)).
+    intros cl_γ. exact (fst cl_γ, simple_arity (snd cl_γ)).
   Defined.
 
   Definition inr_Metavariable {Σ : Signature σ} {a : @Arity σ}
@@ -443,13 +474,13 @@ Context {σ : Shape_System}.
 Context {Σ : Signature σ}.
 
 Definition empty_metavariable_args {γ}
-  : Args Σ (metavariable_arity (shape_empty _)) γ
+  : Args Σ (simple_arity (shape_empty _)) γ
 := empty_rect _ shape_is_empty _.
 
 Definition snoc_metavariable_args {γ δ : σ}
-  : Args Σ (metavariable_arity δ) γ
+  : Args Σ (simple_arity δ) γ
   -> Raw_Syntax Σ Tm γ
-  -> Args Σ (metavariable_arity (shape_extend _ δ)) γ.
+  -> Args Σ (simple_arity (shape_extend _ δ)) γ.
 Proof.
   intros ts t.
   simple refine (plusone_rect _ _ (shape_is_extend _ δ) _ _ _); cbn.
@@ -466,7 +497,6 @@ Notation " '[M/' A ; x , .. , z /] "
   := (symb_raw (inr_Metavariable A) (snoc_metavariable_args .. (snoc_metavariable_args (empty_metavariable_args) x) .. z)) : raw_syntax_scope.
 
 Open Scope raw_syntax_scope.
-
 
 Section Raw_Rules.
 
@@ -493,125 +523,9 @@ Section Raw_Rules.
       apply (RR_concln R).
   Defined.
 
+  Definition Raw_Type_Theory := Family Raw_Rule.
+
 End Raw_Rules.
 
-(** Specification of “well-shaped” rules *)
-Section RuleSpecs.
-
-(* TODO: upstream *)
-Definition reindex {A} (K : Family A) {X} (f : X -> K) : Family A
-  := {|
-       fam_index := X ;
-       fam_element := K o f
-     |}.
-
-(* TODO: upstream *)
-Definition subfamily {A} (K : Family A) (P : K -> Type) : Family A
-  := reindex K (pr1 : { i:K & P i } -> K).
-
-Context {Proto_Cxt : Shape_System}.
-
-Record Rule_Spec
-  (Σ : Signature Proto_Cxt)
-  (a : Arity Proto_Cxt)
-  (hjf_conclusion : Hyp_Judgt_Form)
-:=
-  {
-  (* The arity [a] supplies the family of object-judgment premises. *)
-  (* The family of equality-judgment premises. *)
-    RS_equality_premise : Arity Proto_Cxt
-  (* family indexing the premises of the rule, and giving for each: *)
-  ; RS_Premise : Family (Hyp_Judgt_Form * Proto_Cxt)
-    := Family.Sum
-         (Family.Fmap (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) a)
-         (Family.Fmap (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) RS_equality_premise)
-  (* - the judgement form of each premise, e.g. “term” or “type equality” *)
-  ; RS_hjf_of_premise : RS_Premise -> Hyp_Judgt_Form
-    := fun i => fst (RS_Premise i)
-  (* - the proto-context of each premise *)
-  ; RS_proto_cxt_of_premise : RS_Premise -> Proto_Cxt
-    := fun i => snd (RS_Premise i)
-  (* the ordering relation on the premises *)
-  (* TODO: somewhere we will want to add that this is well-founded; maybe more *)
-  ; RS_lt : RS_Premise -> RS_Premise -> hProp
-  (* for each premise, the arity specifying what metavariables are available in the syntax for this premise; i.e., the family of type/term arguments already introduced by earlier premises *)
-  ; RS_arity_of_premise : RS_Premise -> Arity _
-    := fun i => Fmap
-        (fun jγ => (class_of_HJF (fst jγ), snd jγ))
-        (subfamily RS_Premise
-          (fun j => is_obj_HJF (fst (RS_Premise j)) * RS_lt j i))
-  (* syntactic part of context of premise; this should never be used directly, always through [RS_raw_context_of_premise] *)
-  ; RS_context_expr_of_premise 
-    : forall (i : RS_Premise) (v : RS_proto_cxt_of_premise i),
-        Raw_Syntax
-          (Metavariable_Extension Σ (RS_arity_of_premise i))
-          Ty
-          (RS_proto_cxt_of_premise i)
-  (* raw context of each premise *)
-  ; RS_raw_context_of_premise
-    : forall i : RS_Premise,
-        Raw_Context (Metavariable_Extension Σ (RS_arity_of_premise i))
-    := fun i => Build_Raw_Context _ (RS_context_expr_of_premise i)
-  (* hypothetical judgement boundary instance for each premise *)
-  ; RS_hyp_bdry_instance_of_premise
-    : forall i : RS_Premise,
-        Hyp_Judgt_Bdry_Instance
-          (Metavariable_Extension Σ (RS_arity_of_premise i))
-          (RS_hjf_of_premise i)
-          (RS_proto_cxt_of_premise i)
-  (* arity of the rule as a whole *)
-  ; RS_arity : Arity _
-    := Fmap
-        (fun jγ => (class_of_HJF (fst jγ), snd jγ))
-        (subfamily RS_Premise
-          (fun j => is_obj_HJF (fst (RS_Premise j))))
-  (* judgement form of conclusion *)
-  ; RS_hjf_of_conclusion : Hyp_Judgt_Form
-    := hjf_conclusion
-  (* judgement boundary instance of conclusion *)
-  ; RS_judgt_bdry_instance_of_conclusion
-      : Judgt_Form_Instance
-          (Metavariable_Extension Σ RS_arity)
-          (HJF RS_hjf_of_conclusion)
-  }.
-
-End RuleSpecs.
-
-(** Specification of a type theory (but before checking that syntax in rules is well-typed. *)
-
-Section TTSpecs.
-
-  Context {Proto_Cxt : Shape_System}.
-
-  Record Raw_Type_Theory
-  := {
-  (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
-    RTT_Rule : Family (Hyp_Judgt_Form * Arity Proto_Cxt)
-  (* the ordering relation on the rules *)
-  (* TODO: somewhere we will want to add that this is well-founded; maybe more *)
-  (* the judgement form of the conclusion of each rule *)
-  ; RTT_hjf_of_rule : RTT_Rule -> Hyp_Judgt_Form
-    := fun i => fst (RTT_Rule i)
-  (* the arity (of the *object* premises only) of each rule *)
-  ; RTT_arity_of_rule : RTT_Rule -> Arity _
-    := fun i => snd (RTT_Rule i)
-  (* the ordering on rules.  TODO: will probably need to add well-foundedness *)
-  ; RTT_lt : RTT_Rule -> RTT_Rule -> hProp
-  (* the signature over which each rule can be written *)
-  ; RTT_signature_of_rule : RTT_Rule -> Signature Proto_Cxt
-    := fun i => Fmap
-        (fun jγ => (class_of_HJF (fst jγ), snd jγ))
-        (subfamily RTT_Rule
-          (fun j => is_obj_HJF (RTT_hjf_of_rule j) * RTT_lt j i))
-  (* the actual rule specification of each rule *)
-  ; RTT_rule_spec
-    : forall i : RTT_Rule,
-        Rule_Spec
-          (RTT_signature_of_rule i)
-          (RTT_arity_of_rule i)
-          (RTT_hjf_of_rule i)
-  }.
- 
-End TTSpecs.
-
+Arguments CCs_of_RR {_ _} _.
 
