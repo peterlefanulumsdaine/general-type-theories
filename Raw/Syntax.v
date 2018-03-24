@@ -15,7 +15,7 @@ Section Signatures.
   Inductive Syn_Class : Type := Ty | Tm.
 
   Definition Arity : Type
-    := Family (Syn_Class * Shape σ).
+    := family (Syn_Class * Shape σ).
 
   (* Entries in the family represent arguments of a constructor; the [σ] component represents the variables bound in each argument.
 
@@ -28,7 +28,7 @@ Section Signatures.
   Definition arg_pcxt {a : Arity} (i : a) : σ := snd (a i).
 
   Definition Signature : Type
-    := Family (Syn_Class * Arity).
+    := family (Syn_Class * Arity).
 
   Definition class {Σ : Signature} (S : Σ) : Syn_Class
   := fst (Σ S).
@@ -215,31 +215,31 @@ Section Judgements.
      end.
 
   Definition Hyp_Judgt_Bdry_Slots (hjf : Hyp_Judgt_Form)
-    : Family Syn_Class
+    : family Syn_Class
   := match hjf with
        (* object judgement boundary: as defined in [Hyp_Obj_Judgt_Bdry_Slots] *)
        | obj_HJF cl => Hyp_Obj_Judgt_Bdry_Slots cl
        (* equality judgement boundary: a boundary of the corresponding object-judgement, together with two objects of the given class *)
-       | eq_HJF cl  => Snoc (Snoc (Hyp_Obj_Judgt_Bdry_Slots cl) cl) cl
+       | eq_HJF cl  => Family.adjoin (Family.adjoin (Hyp_Obj_Judgt_Bdry_Slots cl) cl) cl
      end.
 
   Definition Hyp_Judgt_Form_Slots (hjf : Hyp_Judgt_Form)
-    : Family Syn_Class
+    : family Syn_Class
   := match hjf with
        (* Equality case: boundary is everything *)
        | eq_HJF cl =>
            Hyp_Judgt_Bdry_Slots (eq_HJF cl)
        (* Object case: add the head slot *)
        | obj_HJF cl =>
-           Snoc (Hyp_Judgt_Bdry_Slots (obj_HJF cl)) cl
+           Family.adjoin (Hyp_Judgt_Bdry_Slots (obj_HJF cl)) cl
      end.
   (* NOTE: the order of slots for term judgements follows “dependency order” — later slots are (morally) dependent on earlier ones, so the type comes before the term.  However, the functions in section [Judgement_Notations] below follow standard written order, so the term comes before the type. *)
 
   Definition Hyp_Judgt_Bdry_Instance (hjf : Hyp_Judgt_Form) γ : Type
-  := forall i : Hyp_Judgt_Bdry_Slots hjf, Raw_Syntax Σ (fam_element _ i) γ.
+  := forall i : Hyp_Judgt_Bdry_Slots hjf, Raw_Syntax Σ (family_element _ i) γ.
 
   Definition Hyp_Judgt_Form_Instance (hjf : Hyp_Judgt_Form) γ : Type
-  := forall i : Hyp_Judgt_Form_Slots hjf, Raw_Syntax Σ (fam_element _ i) γ.
+  := forall i : Hyp_Judgt_Form_Slots hjf, Raw_Syntax Σ (family_element _ i) γ.
 
   Definition Judgt_Bdry_Instance (jf : Judgt_Form) : Type
   := match jf with
@@ -360,12 +360,13 @@ Section Algebraic_Extensions.
   Context {σ : Shape_System}.
 
   Definition simple_arity (γ : σ) : @Arity σ
-  := {| fam_index := γ ; fam_element i := (Tm, shape_empty _) |}.
+  := {| family_index := γ ;
+        family_element i := (Tm, shape_empty _) |}.
 
   Definition Metavariable_Extension (Σ : Signature σ) (a : @Arity σ) : Signature σ.
   Proof.
-    refine (Sum Σ _).
-    refine (Fmap_Family _ a).
+    refine (Family.sum Σ _).
+    refine (Family.fmap _ a).
     intros cl_γ. exact (fst cl_γ, simple_arity (snd cl_γ)).
   Defined.
 
@@ -506,24 +507,24 @@ Section Raw_Rules.
   Record Raw_Rule
   :=
     { RR_metas : Arity _
-    ; RR_prem : Family (Judgt_Instance (Metavariable_Extension Σ RR_metas))
+    ; RR_prem : family (Judgt_Instance (Metavariable_Extension Σ RR_metas))
     ; RR_concln : (Judgt_Instance (Metavariable_Extension Σ RR_metas))
     }.
 
   Definition CCs_of_RR (R : Raw_Rule)
-    : Family (closure_condition (Judgt_Instance Σ)).
+    : family (closure_condition (Judgt_Instance Σ)).
   Proof.
     exists { Γ : Raw_Context Σ & Instantiation (RR_metas R) Σ Γ }.
     intros [Γ I].
     split.
     - (* premises *)
-      refine (Fmap_Family _ (RR_prem R)).
+      refine (Family.fmap _ (RR_prem R)).
       apply (instantiate_ji I).
     - apply (instantiate_ji I).
       apply (RR_concln R).
   Defined.
 
-  Definition Raw_Type_Theory := Family Raw_Rule.
+  Definition Raw_Type_Theory := family Raw_Rule.
 
 End Raw_Rules.
 

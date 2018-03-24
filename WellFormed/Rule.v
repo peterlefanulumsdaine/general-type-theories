@@ -30,10 +30,10 @@ Record Rule_Spec
   (* The family of equality-judgment premises: *)
     RS_equality_premise : Arity Proto_Cxt
   (* family indexing the premises of the rule, and giving for each… *)
-  ; RS_Premise : Family (Hyp_Judgt_Form * Proto_Cxt)
-    := Family.Sum
-         (Family.Fmap_Family (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) a)
-         (Family.Fmap_Family (fun cl_γ => (eq_HJF (fst cl_γ), snd cl_γ)) RS_equality_premise)
+  ; RS_Premise : family (Hyp_Judgt_Form * Proto_Cxt)
+    := Family.sum
+         (Family.fmap (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) a)
+         (Family.fmap (fun cl_γ => (eq_HJF (fst cl_γ), snd cl_γ)) RS_equality_premise)
   (* - the judgement form of each premise, e.g. “term” or “type equality” *)
   ; RS_hjf_of_premise : RS_Premise -> Hyp_Judgt_Form
     := fun i => fst (RS_Premise i)
@@ -45,7 +45,7 @@ Record Rule_Spec
   ; RS_lt : RS_Premise -> RS_Premise -> Type
   (* for each premise, the arity specifying what metavariables are available in the syntax for this premise; i.e., the family of type/term arguments already introduced by earlier premises *)
   ; RS_arity_of_premise : RS_Premise -> Arity _
-    := fun i => Subfamily a (fun j => RS_lt (inl j) i)
+    := fun i => Family.subfamily a (fun j => RS_lt (inl j) i)
   (* syntactic part of context of premise *)
   (* NOTE: this should never be used directly, always through [RS_raw_context_of_premise] *)
   ; RS_context_expr_of_premise 
@@ -218,7 +218,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
     : Signature_Map
         (Metavariable_Extension Σ
           (RS_arity_of_premise R (associated_original_premise p)))
-        (Metavariable_Extension Σ (Subfamily (a + a)
+        (Metavariable_Extension Σ (Family.subfamily (a + a)
            (fun j => associated_congruence_rule_lt (RS_lt R) (inl j) p))).
   Proof.
     (* In case [p] is one of the 2 copies of the original premises, there is a single canonical choice for this definition.
@@ -249,7 +249,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
     (S : Σ)
     (e_a : arity S = a + (simple_arity γ_concl))
     (e_cl : class S = class_of_HJF hjf_concl)
-    : (Rule_Spec Σ (Family.Sum a a) γ_concl
+    : (Rule_Spec Σ (Family.sum a a) γ_concl
                  (eq_HJF (class_of_HJF hjf_concl))).
   Proof.
     simple refine (Build_Rule_Spec _ _ _ _ _ _ _ _ _ _).
@@ -299,12 +299,12 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
     - (* RS_context_expr_of_conclusion *)
       intros i.
       refine (Fmap_Raw_Syntax _ (RS_context_expr_of_conclusion R i)).
-      apply Fmap2_Metavariable_Extension, inl_Family.
+      apply Fmap2_Metavariable_Extension, Family.map_inl.
     - (* RS_hyp_judgt_bdry_instance_of_conclusion *)
       intros [ [ i | ] | ]; simpl. 
       + (* boundary of original conclusion *)
         refine (Fmap_Raw_Syntax _ _).
-        * apply Fmap2_Metavariable_Extension, inl_Family.
+        * apply Fmap2_Metavariable_Extension, Family.map_inl.
         * destruct hjf_concl as [cl | ?].
           -- exact (RS_hyp_judgt_bdry_instance_of_conclusion R i).
           -- destruct H. (* [hjf_concl] can’t be an equality judgement *)
@@ -364,7 +364,7 @@ Section Raw_Rules_of_Rule_Specs.
     {a} {γ_concl} {hjf_concl}
     (R : Rule_Spec Σ a γ_concl hjf_concl)
     (Sr : is_obj_HJF hjf_concl
-        -> { S : Σ & (arity S = Family.Sum a (simple_arity γ_concl))
+        -> { S : Σ & (arity S = Family.sum a (simple_arity γ_concl))
                      * (class S = class_of_HJF hjf_concl) })
   : Raw_Rule Σ.
   (* This construction involves essentially two aspects:
@@ -380,7 +380,7 @@ Section Raw_Rules_of_Rule_Specs.
               (Metavariable_Extension Σ a)).
       {
         apply Fmap2_Metavariable_Extension.
-        apply Subfamily_inclusion.
+        apply Family.inclusion.
       }
       exists (HJF (RS_hjf_of_premise _ P)).
       exists (Fmap_Raw_Context f_P (RS_raw_context_of_premise _ P)).

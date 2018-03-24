@@ -33,7 +33,7 @@ Proof.
   - exact [Cxt! |- [::] !].
 Defined.
 
-Definition context_extension_cc : Family (closure_condition (Judgt_Instance Σ)).
+Definition context_extension_cc : family (closure_condition (Judgt_Instance Σ)).
 Proof.
   exists { Γ : Raw_Context Σ & Raw_Syntax Σ Ty Γ }.
   intros [ Γ A ]; split.
@@ -46,8 +46,8 @@ Proof.
 Defined.
 
 Definition context_ccs
-  : Family (closure_condition (Judgt_Instance Σ))
-:= Family.Snoc context_extension_cc empty_context_cc.
+  : family (closure_condition (Judgt_Instance Σ))
+:= Family.adjoin context_extension_cc empty_context_cc.
 
 (* NOTE: an issue arising from the present approach to shapes/proto-contexts: if the context extension rule is formulated just with [shape_extend] as above, then it will give no way to ever prove well-typedness of contexts with other shapes; in particular, of contexts using [shape_coproduct], which will arise in the premises of logical rules.
 
@@ -66,7 +66,7 @@ Section Substitution.
 
 (* General substitution along context maps. *)
 
-Definition subst_cc : Family (closure_condition (Judgt_Instance Σ)).
+Definition subst_cc : family (closure_condition (Judgt_Instance Σ)).
 Proof.
   exists {   Γ : Raw_Context Σ
     & { Γ' : Raw_Context Σ
@@ -76,7 +76,7 @@ Proof.
   intros [Γ [Γ' [f [hjf hjfi]]]].
   split.
   (* premises: *)
-  - apply Snoc.
+  - apply Family.adjoin.
     (* f is a context morphism *)
     + exists Γ.
       intros i. refine [Tm! Γ' |- _ ; _ !].
@@ -93,7 +93,7 @@ Proof.
 Defined.
 
 (* Substitution respects *equality* of context morphisms *)
-Definition subst_eq_cc : Family (closure_condition (Judgt_Instance Σ)).
+Definition subst_eq_cc : family (closure_condition (Judgt_Instance Σ)).
 Proof.
   exists {   Γ : Raw_Context Σ
     & { Γ' : Raw_Context Σ
@@ -104,7 +104,7 @@ Proof.
   intros [Γ [Γ' [f [f' [cl hjfi]]]]].
   split.
   (* premises: *)
-  - refine (Snoc (_ + _ + _) _).
+  - refine (Family.adjoin (_ + _ + _) _).
     (* f is a context morphism *)
     + exists Γ.
       intros i. refine [Tm! Γ' |- _ ; _ !].
@@ -136,7 +136,7 @@ Proof.
       exact (Raw_Subst f' (hjfi None)).
 Defined.
 
-Definition subst_ccs : Family (closure_condition (Judgt_Instance Σ))
+Definition subst_ccs : family (closure_condition (Judgt_Instance Σ))
   := subst_cc + subst_eq_cc.
 
 End Substitution.
@@ -480,7 +480,7 @@ Proof.
   - exact [TmEq! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ B /] !].
 Defined.
 
-Definition Equality_Raw_Rules : Family (Raw_Rule Σ)
+Definition Equality_Raw_Rules : family (Raw_Rule Σ)
 := [< refl_ty_eq_raw_rule 
     ; symm_ty_eq_raw_rule
     ; trans_ty_eq_raw_rule
@@ -495,11 +495,11 @@ End Equality_Rules.
 
 End Hyp_Structural_Rules.
 
-Definition Structural_CCs : Family (closure_condition (Judgt_Instance Σ))
+Definition Structural_CCs : family (closure_condition (Judgt_Instance Σ))
 := context_ccs
   + subst_ccs
   + CCs_of_RR var_raw_rule
-  + Family.Bind Equality_Raw_Rules CCs_of_RR.
+  + Family.bind Equality_Raw_Rules CCs_of_RR.
 (* TODO: add Haskell-style >= notation for bind? *)
 (* TODO: capitalise naming in [Context_CCs], etc. *)
 

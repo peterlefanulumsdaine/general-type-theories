@@ -261,7 +261,7 @@ Section Naturality.
     apply ap. cbn. apply ap, path_forall. intros i.
     set (a := arity S) in *.
     set (a' := arity (f S)) in *.
-    set (p := (ap snd (commutes_Family_Map f S))^ : a = a').
+    set (p := (ap snd (Family.map_commutes f S))^ : a = a').
     (* we now manually fold [p], since neither [fold] nor [change … with …] seems to find the required subterms *)
     eapply concat.
       { refine (apD10 _ i). refine (ap (fun p => transport _ p _) _). 

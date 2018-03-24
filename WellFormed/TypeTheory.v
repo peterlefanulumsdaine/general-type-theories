@@ -17,7 +17,7 @@ Section TTSpecs.
   Record Type_Theory_Spec
   := {
   (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
-    TTS_Rule : Family (Hyp_Judgt_Form * Arity σ * Shape σ)
+    TTS_Rule : family (Hyp_Judgt_Form * Arity σ * Shape σ)
   (* the judgement form of the conclusion of each rule *)
   ; TTS_hjf_of_rule : TTS_Rule -> Hyp_Judgt_Form
     := fun i => fst (fst (TTS_Rule i))
@@ -31,10 +31,10 @@ Section TTSpecs.
   ; TTS_lt : TTS_Rule -> TTS_Rule -> Type
   (* the signature over which each rule can be written *)
   ; TTS_signature_of_rule : TTS_Rule -> Signature σ
-    := fun i => Fmap_Family
+    := fun i => Family.fmap
         (fun jaγ => ( class_of_HJF (fst (fst jaγ))
-                   , Family.Sum (snd (fst jaγ)) (simple_arity (snd jaγ))))
-        (Subfamily TTS_Rule
+                   , Family.sum (snd (fst jaγ)) (simple_arity (snd jaγ))))
+        (Family.subfamily TTS_Rule
           (fun j => is_obj_HJF (TTS_hjf_of_rule j) * TTS_lt j i))
   (* the actual rule specification of each rule *)
   ; TTS_rule_spec

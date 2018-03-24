@@ -14,9 +14,9 @@ Section Derivability_from_Raw_TT.
           {Σ : Signature σ}.
 
   Definition CCs_of_Raw_TT (T : Raw_Type_Theory Σ)
-    : Family (closure_condition (Judgt_Instance Σ))
+    : family (closure_condition (Judgt_Instance Σ))
   := Structural_CCs Σ
-     + Family.Bind T CCs_of_RR.
+     + Family.bind T CCs_of_RR.
 
   Definition Derivation_from_Raw_TT (T : Raw_Type_Theory Σ)
     : Judgt_Instance Σ -> Type
@@ -38,8 +38,8 @@ Section Derivable_Rules.
     refine (Derivation_from_premises _ (RR_prem _ R) (RR_concln _ R)).
     apply CCs_of_Raw_TT.
     refine (Fmap_Raw_TT _ T).
-    apply inl_Family. (* TODO: make this a lemma about signature maps,
-                         so it’s more findable using “SearchAbout” etc *)
+    apply Family.map_inl. (* TODO: make this a lemma about signature maps,
+                            so it’s more findable using “SearchAbout” etc *)
   Defined.
 
 End Derivable_Rules.
@@ -65,7 +65,7 @@ Section TT_Maps.
 
   (** An alternative to [deduce], for use in interactive proofs.  [apply deduce] rarely works, since until the rule to be used is fully specified, the conclusion will not typically unify with the “current goal” (and even then, it may not unify judgementally). *)
   (* TODO: consider if there might be better ways to handle this issue? *)
-  Definition deduce' {X : Type} {C : Family (closure_condition X)}
+  Definition deduce' {X : Type} {C : family (closure_condition X)}
       (c : C) (f : forall p : cc_premises (C c),
                   Derivation C ((cc_premises (C c)) p))
       {x : X} (p : cc_conclusion (C c) = x)
@@ -75,9 +75,9 @@ Section TT_Maps.
   Defined.
   
   Definition Fmap_Derivation_from_premises {X Y} (f : X -> Y)
-      {C : Family (closure_condition X)} {P : Family X} {x}
+      {C : family (closure_condition X)} {P : family X} {x}
       (D : Derivation_from_premises C P x)
-    : Derivation_from_premises (Fmap_Family (Fmap_cc f) C) (Fmap_Family f P) (f x). 
+    : Derivation_from_premises (Family.fmap (Fmap_cc f) C) (Family.fmap f P) (f x). 
   Proof.
     (* TODO: give better lemma on gluing derivations-with-premises:
      given a derivation of (f x) with premises Γ, and derivations of all of Γ from Δ, then get defivation of (f x) from Δ.  Or in this case, an alternative would be just: show Γ = Δ. *)
@@ -95,8 +95,8 @@ Section TT_Maps.
   Defined.
 
   (* TODO: upstream! and consider naming conventions for such lemmas. *)
-  Definition Family_eq `{Funext} {X} {c c' : Family X}
-    (e : fam_index c = fam_index c')
+  Definition Family_eq `{Funext} {X} {c c' : family X}
+    (e : family_index c = family_index c')
     (e' : forall i:c, c i = c' (equiv_path _ _ e i) )
     : c = c'.
   Proof.
@@ -106,9 +106,9 @@ Section TT_Maps.
   Defined.
 
   (* TODO: upstream! *)
-  Definition Build_Family_Map' {A} (K L : Family A)
+  Definition Build_Family_Map' {A} (K L : family A)
       (f : forall i:K, { j:L & L j = K i })
-    : Family_Map K L.
+    : Family.map K L.
   Proof.
     exists (fun i => pr1 (f i)).
     intros i. exact (pr2 (f i)).
@@ -135,8 +135,8 @@ Section TT_Maps.
   (* *)
   Lemma Fmap_Family_Snoc
       {X Y} (f : X -> Y)
-      (K : Family X) (x : X)
-    : Fmap_Family f (Snoc K x) = Snoc (Fmap_Family f K) (f x).
+      (K : family X) (x : X)
+    : Family.fmap f (Family.adjoin K x) = Family.adjoin (Family.fmap f K) (f x).
   Proof.
     simple refine (Family_eq _ _).
     - apply idpath.
@@ -147,8 +147,8 @@ Section TT_Maps.
   Definition Fmap_Structural_CCs
       {Σ Σ' : Signature σ}
       (f : Signature_Map Σ Σ')
-    : Family_Map
-        (Fmap_Family (Fmap_cc (Fmap_Judgt_Instance f)) (Structural_CCs Σ))
+    : Family.map
+        (Family.fmap (Fmap_cc (Fmap_Judgt_Instance f)) (Structural_CCs Σ))
         (Structural_CCs Σ'). 
   Proof.
     (* TODO: possible better approach:
@@ -206,7 +206,7 @@ Section TT_Maps.
         * apply inverse.
           eapply concat. { apply Fmap_Family_Snoc. }
           apply ap011.
-          -- unfold Fmap_Family.
+          -- unfold Family.fmap.
             apply ap, path_forall; intros i.
             apply (ap (fun x => (_; x))).
             apply (ap (fun x => (_; x))).
@@ -214,7 +214,7 @@ Section TT_Maps.
             ++ refine (Fmap_Raw_Syntax_Raw_Subst _ _ _).
             ++ apply idpath.
           -- apply idpath.
-          (* Fmap_Family_Snoc *)
+          (* Family_fmap_adjoin *)
         * apply (ap (fun x => (_; x))). cbn.
           apply (ap (fun x => (_; x))).
           apply path_forall. intros i.
@@ -242,7 +242,7 @@ Section TT_Maps.
   (* TODO: upstream *)
   (* TODO: consider name! *)
   Definition Simple_Derivation_of_CC
-      {X} {C : Family (closure_condition X)} (i : C)
+      {X} {C : family (closure_condition X)} (i : C)
     : Derivation_of_CC C (C i).
   Proof.
     refine (deduce (_+_) (inl i) _). intros p.
@@ -255,12 +255,12 @@ Section TT_Maps.
   (* TODO: upstream *)
   (* closure_system maps are really a sort of Kelisli map, and this is essentially just the unit.  TODO: abstract this out more clearly! *)
   Definition closure_system_map_of_Family_map
-      {X} {C C' : Family (closure_condition X)} (f : Family_Map C C')
+      {X} {C C' : family (closure_condition X)} (f : Family.map C C')
     : closure_system_map C C'.
   Proof.
     intros c. eapply paths_rew.
     - exact (Simple_Derivation_of_CC (f c)).
-    - apply commutes_Family_Map.
+    - apply Family.map_commutes.
   Defined.
 
   Definition Fmap_CCs_of_Raw_TT
@@ -268,20 +268,20 @@ Section TT_Maps.
     {Σ' : Signature σ} (T' : Raw_Type_Theory Σ')
     (f : TT_Map T T')
   : closure_system_map
-      (Fmap_Family (Fmap_cc (Fmap_Judgt_Instance f)) (CCs_of_Raw_TT T))
+      (Family.fmap (Fmap_cc (Fmap_Judgt_Instance f)) (CCs_of_Raw_TT T))
       (CCs_of_Raw_TT T').
   Proof.
     intros c. (* We need to unfold [c] a bit here, bit not too much. *)
-    unfold Fmap_Family, fam_index, CCs_of_Raw_TT in c.
+    unfold Family.fmap, family_index, CCs_of_Raw_TT in c.
     destruct c as [ c_str | c_from_rr ].
     - (* Structural rules *)
       (* an instance of a structural rule is translated to an instance of the same structural rule *)
       eapply paths_rew.
       + refine (Simple_Derivation_of_CC _).
-        refine (inl_Family _).
+        refine (Family.map_inl _).
         exact (Fmap_Structural_CCs f c_str).
-      + eapply concat. { apply commutes_Family_Map. }
-        refine (commutes_Family_Map _ _). 
+      + eapply concat. { apply Family.map_commutes. }
+        refine (Family.map_commutes _ _). 
     - (* Logical rules *)
       cbn in c_from_rr. rename c_from_rr into c.
       destruct c as [i [Γ A]].

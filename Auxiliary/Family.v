@@ -1,38 +1,38 @@
 Require Import HoTT.
 
-(** A family in [X] is given by an index type and the map taking indices to elements in [X] *)
-Record Family (X : Type) :=
-  { fam_index :> Type
-  ; fam_element :> fam_index -> X
+(** A family in [X] is given by an index type and the map taking indices to elements in [X]. *)
+Record family (X : Type) :=
+  { family_index :> Type
+  ; family_element :> family_index -> X
   }.
 
-Global Arguments fam_index [_] F : rename.
-Global Arguments fam_element [_] F _ : rename.
+Global Arguments family_index [_] F : rename.
+Global Arguments family_element [_] F _ : rename.
 
 (** The empty family. *)
-Definition Empty_family (X : Type) : Family X.
+Local Definition empty (X : Type) : family X.
 Proof.
   exists Overture.Empty.
   intros [].
 Defined.
 
-Definition Sum {X} (Y1 Y2 : Family X) : Family X
-  := {| fam_index := Y1 + Y2
-      ; fam_element y := match y with inl y => Y1 y | inr y => Y2 y end |}.
+Local Definition sum {X} (Y1 Y2 : family X) : family X
+  := {| family_index := Y1 + Y2
+      ; family_element y := match y with inl y => Y1 y | inr y => Y2 y end |}.
 
-Definition Fmap_Family {X Y} (f : X -> Y) (K : Family X) : Family Y.
+Local Definition fmap {X Y} (f : X -> Y) (K : family X) : family Y.
 Proof.
   exists K.
   exact (fun i => f (K i)).
 Defined.
 
-Definition Singleton {X} (x:X) : Family X.
+Local Definition singleton {X} (x:X) : family X.
 Proof.
   exists Overture.Unit.
   intros _; exact x.
 Defined.
 
-Definition Snoc {X} (K : Family X) (x : X) : Family X.
+Local Definition adjoin {X} (K : family X) (x : X) : family X.
 Proof.
   exists (option K).
   intros [i | ].
@@ -40,108 +40,108 @@ Proof.
   - exact x.
 Defined.
 
-Notation "Y1 + Y2" := (Sum Y1 Y2) : fam_scope.
-Open Scope fam_scope.
-Notation " [< >] " := (Empty_family _) (format "[< >]") : fam_scope.
-Notation " [< x >] " := (Singleton x) : fam_scope.
-Notation " [< x ; .. ; z >] " := (Snoc .. (Snoc (Empty_family _) x) .. z) : fam_scope.
+Notation "Y1 + Y2" := (sum Y1 Y2) : family_scope.
+Open Scope family_scope.
+Notation " [< >] " := (empty _) (format "[< >]") : family_scope.
+Notation " [< x >] " := (singleton x) : family_scope.
+Notation " [< x ; .. ; z >] " := (adjoin .. (adjoin (empty _) x) .. z) : family_scope.
 
-(*Alternative: start with [Singleton] instead of [Empty], i.e.
+Delimit Scope family_scope with family.
 
-  Notation " [ x ; y ; .. ; z ] " := (Snoc .. (Snoc (Singleton x) y) .. z) : fam_scope.
+(*Alternative: start with [singleton] instead of [empty], i.e.
+
+  Notation " [ x ; y ; .. ; z ] " := (adjoin .. (adjoin (singleton x) y) .. z) : family_scope.
 
 For by-hand case-by-case proofs on finite families, that might be a little nicer, avoiding a vacuous step.  TODO: see how these are used in practice; consider this choice. *)
 
 (* Reindexing of a family along a map into the index type *)
-Definition Reindex {A} (K : Family A) {X} (f : X -> K) : Family A
+Local Definition reindex {A} (K : family A) {X} (f : X -> K) : family A
   := {|
-       fam_index := X ;
-       fam_element := K o f
+       family_index := X ;
+       family_element := K o f
      |}.
 
 (* The subfamily of a family determined by a predicate on the index type (which of course can make use of the values of the family) *)
-Definition Subfamily {A} (K : Family A) (P : K -> Type) : Family A
-  := Reindex K (pr1 : { i:K & P i } -> K).
+Local Definition subfamily {A} (K : family A) (P : K -> Type) : family A
+  := reindex K (pr1 : { i:K & P i } -> K).
 
 (* The subfamily of a family determined by a predicate on the value type *)
-Definition Filter {A} (K : Family A) (P : A -> Type) : Family A
-  := Subfamily K (P o K).
+Local Definition filter {A} (K : family A) (P : A -> Type) : family A
+  := subfamily K (P o K).
 
 (* The monadic *bind* operation for families. *)
-Definition Bind {A B}
-  (K : Family A) (f : A -> Family B) : Family B.
+Local Definition bind {A B}
+  (K : family A) (f : A -> family B) : family B.
 Proof.
   exists { i : K & f (K i) }.
   intros [i j].
   exact (f (K i) j).
 Defined.
 
+Section FamilyMap.
 
-Section Family_Maps.
+  Local Definition map {A} (K L : family A)
+    := { f : family_index K -> family_index L & forall i : K, L (f i) = K i }.
 
-  Definition Family_Map {A} (K L : Family A)
-    := { f : K -> L & forall i : K, L (f i) = K i }.
-
-  Definition pr1_Family_Map {A} {K L : Family A}
-    : Family_Map K L -> (K -> L)
+  Local Definition map_index_action {A} {K L : family A}
+    : map K L -> (K -> L)
   := pr1.
-  Coercion pr1_Family_Map : Family_Map >-> Funclass.
+  Coercion map_index_action : map >-> Funclass.
 
-  Definition commutes_Family_Map {A} {K L : Family A}
-    : forall f : Family_Map K L,
+  Local Definition map_commutes {A} {K L : family A}
+    : forall f : map K L,
       forall i : K, L (f i) = K i
   := pr2.
 
-  Definition idmap_Family {X} (K : Family X)
-    : Family_Map K K.
+  Local Definition idmap {X} (K : family X)
+    : map K K.
   Proof.
     econstructor.
     intro; constructor.
   Defined.
 
-  Definition Fmap_Family_Sum {X}
-      {K K' : Family X} (f : Family_Map K K')
-      {L L' : Family X} (g : Family_Map L L')
-    : Family_Map (Sum K L) (Sum K' L').
+  Local Definition map_sum {X}
+      {K K' : family X} (f : map K K')
+      {L L' : family X} (g : map L L')
+    : map (sum K L) (sum K' L').
   Proof.
     simple refine (_;_).
     - intros [ i | j ].
       + apply inl, f, i.
       + apply inr, g, j.
     - intros [ i | j ];
-      simpl; apply commutes_Family_Map.
+      simpl; apply map_commutes.
   Defined.
 
-  Definition inl_Family {X} {K K' : Family X}
-    : Family_Map K (K + K').
+  Local Definition map_inl {X} {K K' : family X}
+    : map K (K + K').
   Proof.
     exists inl.
     intro; apply idpath.
   Defined.
 
-  Definition inr_Family {X} {K K' : Family X}
-    : Family_Map K' (K + K').
+  Local Definition map_inr {X} {K K' : family X}
+    : map K' (K + K').
   Proof.
     exists inr.
     intro; apply idpath.
   Defined.
-  
-  (* TODO: oh goodness the naming conventions need improving *)
-  Definition Fmap_Fmap_Family
+
+  Local Definition map_fmap
       {X Y} (f : X -> Y)
-      {K K' : Family X} (g : Family_Map K K')
-    : Family_Map (Fmap_Family f K) (Fmap_Family f K').
+      {K K' : family X} (g : map K K')
+    : map (fmap f K) (fmap f K').
   Proof.
     exists g.
-    intros i. cbn. apply ap. apply commutes_Family_Map.
+    intros i. cbn. apply ap. apply map_commutes.
   Defined.
 
-  Definition Subfamily_inclusion
-      {A : Type} (K : Family A) (P : K -> Type)
-    : Family_Map (Subfamily K P) K.
+  Local Definition inclusion
+      {A : Type} (K : family A) (P : K -> Type)
+    : map (subfamily K P) K.
   Proof.
     exists pr1.
     intros; apply idpath.
   Defined.
 
-End Family_Maps.
+End FamilyMap.
