@@ -1,7 +1,7 @@
 Require Import Auxiliary.Family.
 
 (* A closure condition on [X] says that whenever all elements of
-   [cc_premises] is in a set then so ic [cc_conclusion]. *)
+   [cc_premises] is in a set then so is [cc_conclusion]. *)
 Record closure_condition (X : Type)
 :=
   { cc_premises : Family X
