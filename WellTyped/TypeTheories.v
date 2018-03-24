@@ -3,7 +3,7 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Raw.Syntax.
 Require Import Raw.Theory.
-Require Import WellFormed.Rules.
+Require Import WellFormed.Rule.
 Require Import WellFormed.TypeTheories.
 
 (** In this file: definition of well-typedness of a rule-spec, and a type-theory spec. *)

@@ -6,7 +6,7 @@ Require Import Auxiliary.DeductiveClosure.
 Require Import Raw.Syntax.
 Require Import Raw.SignatureMap.
 Require Import Raw.Theory.
-Require Import WellFormed.Rules.
+Require Import WellFormed.Rule.
 
 (** Main definition in this file: [Type_Theory_Spec], the data one gives to specify a type theory (but before typechecking it) *)
 

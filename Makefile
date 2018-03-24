@@ -20,7 +20,7 @@ MODULES := \
 	Raw/SignatureMap \
 	Raw/Theory \
 	Raw/StructuralRule \
-	WellFormed/Rules \
+	WellFormed/Rule \
 	WellFormed/TypeTheories \
 	WellTyped/TypeTheories \
 
