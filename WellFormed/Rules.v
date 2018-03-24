@@ -4,7 +4,7 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.DeductiveClosure.
 Require Import Raw.Syntax.
-Require Import Raw.SignatureMaps.
+Require Import Raw.SignatureMap.
 
 (** In this file:
 

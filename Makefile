@@ -17,7 +17,7 @@ MODULES := \
 	Proto/ShapeSystemExamples \
 	Raw/Syntax \
 	Raw/Substitution \
-	Raw/SignatureMaps \
+	Raw/SignatureMap \
 	Raw/TypeTheories \
 	Raw/StructuralRules \
 	WellFormed/Rules \
