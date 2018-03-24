@@ -9,7 +9,7 @@
 
 # Modules to be included in the main build:
 MODULES := \
-	Auxiliary/WellFoundedRelations \
+	Auxiliary/WellFoundedRelation \
 	Auxiliary/Family \
 	Auxiliary/Coproduct \
 	Auxiliary/DeductiveClosure \
