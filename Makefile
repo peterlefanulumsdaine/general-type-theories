@@ -21,7 +21,7 @@ MODULES := \
 	Raw/Theory \
 	Raw/StructuralRule \
 	WellFormed/Rule \
-	WellFormed/TypeTheories \
+	WellFormed/TypeTheory \
 	WellTyped/TypeTheories \
 
 VS      := $(MODULES:%=%.v)
