@@ -6,7 +6,7 @@ Require Import Auxiliary.DeductiveClosure.
 Require Import Raw.Syntax.
 Require Import Raw.SignatureMap.
 Require Import Raw.Substitution.
-Require Import Raw.StructuralRules.
+Require Import Raw.StructuralRule.
 
 Section Derivability_from_Raw_TT.
 
