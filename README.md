@@ -13,9 +13,7 @@ The formalization of the syntax of a general type theory proceeds in several sta
 
 ## Naming conventions
 
-Programmers know about naming conventions. Mathematicians don't, because they think all
-variable names should have a single letter, which alone disqualifies them from suggesting
-any naming conventions, until they prove themselves worthy.
+We observe the following naming conventions.
 
 ### Use singular
 
@@ -26,7 +24,12 @@ singular case. Thus it is `Theory.v` not `Theories.v`. An exceptions is `XYZExam
 
 We do *not* abbreviate any words without a written permission of all project members.
 
-### Lower case with underscores
+### Upper case `CamelCase` for files and sections
+
+Names of files and sections should be written in the `CamelCase` style: each word is
+capitalized, there are no underscores.
+
+### Lower case with underscores for identifiers
 
 All identifier names are in all lower letters, with underscores between words. Thus it is
 `judgment_boundary` and *not* `JudgmentBdry` or `Judgment_Boundary`.
