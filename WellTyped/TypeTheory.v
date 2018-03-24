@@ -1,5 +1,5 @@
 Require Import HoTT.
-Require Import Proto.ShapeSystem.
+Require Import Proto.Shape.
 Require Import Auxiliary.Family.
 Require Import Raw.Syntax.
 Require Import Raw.Theory.

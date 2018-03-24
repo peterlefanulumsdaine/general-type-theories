@@ -1,7 +1,7 @@
 Require Import HoTT.
 Require Import Raw.Syntax.
 Require Import Auxiliary.Coproduct.
-Require Import Proto.ShapeSystem.
+Require Import Proto.Shape.
 
 Section Types_as_shapes.
 
