@@ -2,7 +2,7 @@ Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
-Require Import Auxiliary.DeductiveClosure.
+Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
 Require Import Raw.SignatureMap.
 Require Import Raw.Substitution.
@@ -14,14 +14,13 @@ Section Derivability_from_Raw_TT.
           {Σ : Signature σ}.
 
   Definition CCs_of_Raw_TT (T : Raw_Type_Theory Σ)
-    : family (closure_condition (Judgt_Instance Σ))
-  := Structural_CCs Σ
-     + Family.bind T CCs_of_RR.
+    : Closure.system (Judgt_Instance Σ)
+    := Structural_CCs Σ + Family.bind T CCs_of_RR.
 
-  Definition Derivation_from_Raw_TT (T : Raw_Type_Theory Σ)
+  Definition Derivation_from_Raw_TT (T : Raw_Type_Theory Σ) H
     : Judgt_Instance Σ -> Type
-  := Derivation (CCs_of_Raw_TT T).
-  
+    := Closure.derivation (CCs_of_Raw_TT T) H.
+
 End Derivability_from_Raw_TT.
 
 Section Derivable_Rules.
@@ -35,7 +34,7 @@ Section Derivable_Rules.
       (R : Raw_Rule Σ) (T : Raw_Type_Theory Σ)
     : Type.
   Proof.
-    refine (Derivation_from_premises _ (RR_prem _ R) (RR_concln _ R)).
+    refine (Closure.derivation _ (RR_prem _ R) (RR_concln _ R)).
     apply CCs_of_Raw_TT.
     refine (Fmap_Raw_TT _ T).
     apply Family.map_inl. (* TODO: make this a lemma about signature maps,
@@ -63,30 +62,10 @@ Section TT_Maps.
                          T'
      }.
 
-  (** An alternative to [deduce], for use in interactive proofs.  [apply deduce] rarely works, since until the rule to be used is fully specified, the conclusion will not typically unify with the “current goal” (and even then, it may not unify judgementally). *)
-  (* TODO: consider if there might be better ways to handle this issue? *)
-  Definition deduce' {X : Type} {C : family (closure_condition X)}
-      (c : C) (f : forall p : cc_premises (C c),
-                  Derivation C ((cc_premises (C c)) p))
-      {x : X} (p : cc_conclusion (C c) = x)
-  : Derivation C x.
-  Proof.
-    exact (transport _ p (deduce _ c f)).
-  Defined.
-  
-  Definition Fmap_Derivation_from_premises {X Y} (f : X -> Y)
-      {C : family (closure_condition X)} {P : family X} {x}
-      (D : Derivation_from_premises C P x)
-    : Derivation_from_premises (Family.fmap (Fmap_cc f) C) (Family.fmap f P) (f x). 
-  Proof.
-    (* TODO: give better lemma on gluing derivations-with-premises:
-     given a derivation of (f x) with premises Γ, and derivations of all of Γ from Δ, then get defivation of (f x) from Δ.  Or in this case, an alternative would be just: show Γ = Δ. *)
-  Admitted.
-
   (* TODO: upstream! and consider naming conventions for such lemmas. *)
-  Definition closure_condition_eq {X} {c c' : closure_condition X}
-    : cc_premises c = cc_premises c'
-    -> cc_conclusion c = cc_conclusion c'
+  Definition closure_condition_eq {X} {c c' : Closure.rule X}
+    : Closure.rule_premises c = Closure.rule_premises c'
+    -> Closure.rule_conclusion c = Closure.rule_conclusion c'
     -> c = c'.
   Proof.
     destruct c, c'; cbn.
@@ -148,7 +127,7 @@ Section TT_Maps.
       {Σ Σ' : Signature σ}
       (f : Signature_Map Σ Σ')
     : Family.map
-        (Family.fmap (Fmap_cc (Fmap_Judgt_Instance f)) (Structural_CCs Σ))
+        (Family.fmap (Closure.fmap (Fmap_Judgt_Instance f)) (Structural_CCs Σ))
         (Structural_CCs Σ'). 
   Proof.
     (* TODO: possible better approach:
@@ -240,35 +219,22 @@ Section TT_Maps.
   Admitted.
 
   (* TODO: upstream *)
-  (* TODO: consider name! *)
-  Definition Simple_Derivation_of_CC
-      {X} {C : family (closure_condition X)} (i : C)
-    : Derivation_of_CC C (C i).
-  Proof.
-    refine (deduce (_+_) (inl i) _). intros p.
-    simple refine (deduce' _ _ _). 
-    - exact (inr p).
-    - intros [].
-    - apply idpath.
-  Defined.
-
-  (* TODO: upstream *)
   (* closure_system maps are really a sort of Kelisli map, and this is essentially just the unit.  TODO: abstract this out more clearly! *)
-  Definition closure_system_map_of_Family_map
-      {X} {C C' : family (closure_condition X)} (f : Family.map C C')
-    : closure_system_map C C'.
-  Proof.
-    intros c. eapply paths_rew.
-    - exact (Simple_Derivation_of_CC (f c)).
-    - apply Family.map_commutes.
-  Defined.
+  (* Definition closure_system_map_of_Family_map *)
+  (*     {X} {C D : Closure.system X} (f : Family.map C D) *)
+  (*   : Closure.map C D. *)
+  (* Proof. *)
+  (*   intro i. eapply paths_rew. *)
+  (*   - exact (Simple_Derivation_of_CC (f c)). *)
+  (*   - apply Family.map_commutes. *)
+  (* Defined. *)
 
   Definition Fmap_CCs_of_Raw_TT
     {Σ : Signature σ} (T : Raw_Type_Theory Σ)
     {Σ' : Signature σ} (T' : Raw_Type_Theory Σ')
     (f : TT_Map T T')
-  : closure_system_map
-      (Family.fmap (Fmap_cc (Fmap_Judgt_Instance f)) (CCs_of_Raw_TT T))
+  : Closure.map
+      (Family.fmap (Closure.fmap (Fmap_Judgt_Instance f)) (CCs_of_Raw_TT T))
       (CCs_of_Raw_TT T').
   Proof.
     intros c. (* We need to unfold [c] a bit here, bit not too much. *)
@@ -276,23 +242,24 @@ Section TT_Maps.
     destruct c as [ c_str | c_from_rr ].
     - (* Structural rules *)
       (* an instance of a structural rule is translated to an instance of the same structural rule *)
-      eapply paths_rew.
-      + refine (Simple_Derivation_of_CC _).
-        refine (Family.map_inl _).
-        exact (Fmap_Structural_CCs f c_str).
-      + eapply concat. { apply Family.map_commutes. }
-        refine (Family.map_commutes _ _). 
-    - (* Logical rules *)
-      cbn in c_from_rr. rename c_from_rr into c.
-      destruct c as [i [Γ A]].
-      unfold Derivation_of_CC; cbn.
-      set (fc := rule_derivation_of_TT_Map _ _ f i). (* TODO: implicits! *)
-      set (c := T i) in *.
-      set (a := RR_metas Σ c) in *.
-      unfold Derivation_Raw_Rule_from_Raw_TT in fc. cbn in fc.
-      transparent assert (f_a : (Signature_Map
-            (Metavariable_Extension Σ a) (Metavariable_Extension Σ' a))).
-        apply Fmap1_Metavariable_Extension, f.
+      admit. (* temporarily giving up on this, it seems unfinished anyhow. *)
+      (* eapply paths_rew. *)
+      (* + refine (Simple_Derivation_of_CC _). *)
+      (*   refine (Family.map_inl _). *)
+      (*   exact (Fmap_Structural_CCs f c_str). *)
+      (* + eapply concat. { apply Family.map_commutes. } *)
+      (*   refine (Family.map_commutes _ _).  *)
+    (* - (* Logical rules *) *)
+    (*   cbn in c_from_rr. rename c_from_rr into c. *)
+    (*   destruct c as [i [Γ A]]. *)
+    (*   unfold Derivation_of_CC; cbn. *)
+    (*   set (fc := rule_derivation_of_TT_Map _ _ f i). (* TODO: implicits! *) *)
+    (*   set (c := T i) in *. *)
+    (*   set (a := RR_metas Σ c) in *. *)
+    (*   unfold Derivation_Raw_Rule_from_Raw_TT in fc. cbn in fc. *)
+    (*   transparent assert (f_a : (Signature_Map *)
+    (*         (Metavariable_Extension Σ a) (Metavariable_Extension Σ' a))). *)
+    (*     apply Fmap1_Metavariable_Extension, f. *)
       (*
       Very concretely: fc is over Σ+a.  Must map to Σ'+a, then instantiate.
       
@@ -302,7 +269,6 @@ Section TT_Maps.
        - any instantiation of a derivable raw rule gives a derivable closure condition over CCs_of_TT.
        - fmap on derivable closure conditions
        - fmap on *) 
-        admit.
   Admitted.
 
   (* TODO: the above shows that we need some serious extra tools for building derivations, in several ways:

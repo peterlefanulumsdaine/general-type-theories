@@ -2,7 +2,7 @@ Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
-Require Import Auxiliary.DeductiveClosure.
+Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
 Require Import Raw.SignatureMap.
 

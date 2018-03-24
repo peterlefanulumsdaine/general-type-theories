@@ -102,10 +102,11 @@ Section Welltypedness.
   Definition Derivation_Judgt_Bdry_Instance
       (T : Type_Theory_Spec σ)
       {jf} (jbi : Judgt_Bdry_Instance (Signature_of_TT_Spec T) jf)
+      H
     : Type
   :=
     forall (i : Presup_of_Judgt_Bdry_Instance jbi),
-      Derivation_from_TT_Spec T (Presup_of_Judgt_Bdry_Instance _ i).
+      Derivation_from_TT_Spec T H (Presup_of_Judgt_Bdry_Instance _ i).
 
   Definition Is_Well_Typed_Rule_Spec
       (T : Type_Theory_Spec σ)
@@ -118,7 +119,7 @@ Section Welltypedness.
       admit.
       (* type-check each premise over the extension of [T] by rules for the earlier premises *)
     - (* well-typedness of conclusion boundaries *)
-      simple refine (Derivation_Judgt_Bdry_Instance _ _).
+      (* simple refine (Derivation_Judgt_Bdry_Instance _ _). *)
       (* TODO: refactor type theories to have explicit signature component, so we can reuse metavariable extensions etc. *)
       admit.
       (* type-check conclusion over extension by rules for all premises *)

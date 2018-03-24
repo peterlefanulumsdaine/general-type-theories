@@ -12,7 +12,7 @@ MODULES := \
 	Auxiliary/WellFoundedRelation \
 	Auxiliary/Family \
 	Auxiliary/Coproduct \
-	Auxiliary/DeductiveClosure \
+	Auxiliary/Closure \
 	Proto/ShapeSystem \
 	Proto/ShapeSystemExamples \
 	Raw/Syntax \

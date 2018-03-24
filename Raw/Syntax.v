@@ -2,7 +2,7 @@ Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
-Require Import Auxiliary.DeductiveClosure.
+Require Import Auxiliary.Closure.
 
 (* Throughout, we fix a shape system.  It can be implicit in almost everything that depends on it.
 
@@ -512,7 +512,7 @@ Section Raw_Rules.
     }.
 
   Definition CCs_of_RR (R : Raw_Rule)
-    : family (closure_condition (Judgt_Instance Σ)).
+    : Closure.system (Judgt_Instance Σ).
   Proof.
     exists { Γ : Raw_Context Σ & Instantiation (RR_metas R) Σ Γ }.
     intros [Γ I].

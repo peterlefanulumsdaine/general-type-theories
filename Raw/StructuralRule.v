@@ -1,6 +1,6 @@
 Require Import HoTT.
 Require Import Proto.ShapeSystem.
-Require Import Auxiliary.DeductiveClosure.
+Require Import Auxiliary.Closure.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
@@ -24,7 +24,7 @@ Context (Σ : @Signature σ).
 
 Section Context_Formation.
 
-Definition empty_context_cc : closure_condition (Judgt_Instance Σ).
+Definition empty_context_cc : Closure.rule (Judgt_Instance Σ).
 Proof.
   split.
   (* No premises: *)
@@ -33,7 +33,7 @@ Proof.
   - exact [Cxt! |- [::] !].
 Defined.
 
-Definition context_extension_cc : family (closure_condition (Judgt_Instance Σ)).
+Definition context_extension_cc : Closure.system (Judgt_Instance Σ).
 Proof.
   exists { Γ : Raw_Context Σ & Raw_Syntax Σ Ty Γ }.
   intros [ Γ A ]; split.
@@ -45,9 +45,8 @@ Proof.
   - exact [Cxt! |- (snoc_Raw_Context Γ A) !].
 Defined.
 
-Definition context_ccs
-  : family (closure_condition (Judgt_Instance Σ))
-:= Family.adjoin context_extension_cc empty_context_cc.
+Definition context_ccs : Closure.system (Judgt_Instance Σ)
+  := Family.adjoin context_extension_cc empty_context_cc.
 
 (* NOTE: an issue arising from the present approach to shapes/proto-contexts: if the context extension rule is formulated just with [shape_extend] as above, then it will give no way to ever prove well-typedness of contexts with other shapes; in particular, of contexts using [shape_coproduct], which will arise in the premises of logical rules.
 
@@ -59,14 +58,13 @@ Definition context_ccs
   - for eventual generalisation to infinitary settings, is there some more uniform way of setting this up that would give the standard rules as derived rules?  e.g. (a) put well-orderings on (proto-)contexts, and say: a context is well-typed if each type is well-typed under earlier parts? (b) similar, but without well-orderings (and then allow derivations to take place over not-yet-well-typed contexts)?
 *)
 
-
 End Context_Formation.
 
 Section Substitution.
 
 (* General substitution along context maps. *)
 
-Definition subst_cc : family (closure_condition (Judgt_Instance Σ)).
+Definition subst_cc : Closure.system (Judgt_Instance Σ).
 Proof.
   exists {   Γ : Raw_Context Σ
     & { Γ' : Raw_Context Σ
@@ -93,7 +91,7 @@ Proof.
 Defined.
 
 (* Substitution respects *equality* of context morphisms *)
-Definition subst_eq_cc : family (closure_condition (Judgt_Instance Σ)).
+Definition subst_eq_cc : Closure.system (Judgt_Instance Σ).
 Proof.
   exists {   Γ : Raw_Context Σ
     & { Γ' : Raw_Context Σ
@@ -136,7 +134,7 @@ Proof.
       exact (Raw_Subst f' (hjfi None)).
 Defined.
 
-Definition subst_ccs : family (closure_condition (Judgt_Instance Σ))
+Definition subst_ccs : Closure.system (Judgt_Instance Σ)
   := subst_cc + subst_eq_cc.
 
 End Substitution.
@@ -495,7 +493,7 @@ End Equality_Rules.
 
 End Hyp_Structural_Rules.
 
-Definition Structural_CCs : family (closure_condition (Judgt_Instance Σ))
+Definition Structural_CCs : Closure.system (Judgt_Instance Σ)
 := context_ccs
   + subst_ccs
   + CCs_of_RR var_raw_rule

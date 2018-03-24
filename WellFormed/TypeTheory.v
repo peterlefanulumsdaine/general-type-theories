@@ -2,7 +2,7 @@ Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
-Require Import Auxiliary.DeductiveClosure.
+Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
 Require Import Raw.SignatureMap.
 Require Import Raw.Theory.
@@ -120,8 +120,8 @@ Section Derivability_from_TT_Spec.
       + intros []. (* no head symbol, since congs are equality rules *)
   Defined.
 
-  Definition Derivation_from_TT_Spec (T : Type_Theory_Spec σ)
+  Definition Derivation_from_TT_Spec (T : Type_Theory_Spec σ) H
     : Judgt_Instance (Signature_of_TT_Spec T) -> Type
-  := Derivation_from_Raw_TT (Raw_TT_of_TT_Spec T).
+  := Derivation_from_Raw_TT (Raw_TT_of_TT_Spec T) H.
 
 End Derivability_from_TT_Spec.
