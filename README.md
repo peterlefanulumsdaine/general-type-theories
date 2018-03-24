@@ -11,6 +11,53 @@ The formalization of the syntax of a general type theory proceeds in several sta
    make sure that the syntactic entities or the rules of inference are well-typed.
 3. TO BE CONTINUED.
 
+## Naming conventions
+
+Programmers know about naming conventions. Mathematicians don't, because they think all
+variable names should have a single letter, which alone disqualifies them from suggesting
+any naming conventions, until they prove themselves worthy.
+
+### Use singular
+
+All file names, section names, and identifiers which refer to a structure are in the
+singular case. Thus it is `Theory.v` not `Theories.v`. An exceptions is `XYZExamples`.
+
+### No abbreviations
+
+We do *not* abbreviate any words without a written permission of all project members.
+
+### Lower case with underscores
+
+All identifier names are in all lower letters, with underscores between words. Thus it is
+`judgment_boundary` and *not* `JudgmentBdry` or `Judgment_Boundary`.
+
+### Make definitions `Local`
+
+In a file, use `Local Definition` rather than just `Definition` so that when we refer to
+entities across files, we can tell which file we are referring to. For example, in
+`Family.v` we place
+
+    Local Definition fmap := ...
+
+and then in some other file we refer to it with `Family.fmap`.
+
+**Exception to the `Local` rule:** an identifiers such as `Family.family` can be defined
+as non-local, provided that:
+
+  * writing the fully qualified name looks redundant, e.g., `Family.family` and
+  * it is highly unlikely that another file will contain the same identifier.
+
+The following is *not* a valid reason for removing `Local`: *"But we use it very often."*
+
+### Do not replicate the module name in the identifier
+
+In a module `Foo`, do not define a `Local` identifier `foo_xyz`, instead define just
+`xyz`. When we refer to `xyz` from outside the module it will look right `Foo.xyz`, and
+you can live with the short name withing the module `Foo`.
+
+Note that when `xyz` is declared global, e.g., it is the field name of a globally defined
+`Record`, then it is ok to name it `foo_xyz`. (Example: field name `Family.family_index`.)
+
 
 ## Code structure
 
