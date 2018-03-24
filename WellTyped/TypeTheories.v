@@ -2,7 +2,7 @@ Require Import HoTT.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Raw.Syntax.
-Require Import Raw.TypeTheories.
+Require Import Raw.Theory.
 Require Import WellFormed.Rules.
 Require Import WellFormed.TypeTheories.
 

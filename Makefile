@@ -18,7 +18,7 @@ MODULES := \
 	Raw/Syntax \
 	Raw/Substitution \
 	Raw/SignatureMap \
-	Raw/TypeTheories \
+	Raw/Theory \
 	Raw/StructuralRules \
 	WellFormed/Rules \
 	WellFormed/TypeTheories \
