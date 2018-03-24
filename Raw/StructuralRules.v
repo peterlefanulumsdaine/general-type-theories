@@ -1,5 +1,5 @@
 Require Import HoTT.
-Require Import Proto.ShapeSystems.
+Require Import Proto.ShapeSystem.
 Require Import Auxiliary.DeductiveClosure.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.

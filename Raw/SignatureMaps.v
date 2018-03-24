@@ -1,6 +1,6 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
-Require Import Proto.ShapeSystems.
+Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 
