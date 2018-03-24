@@ -97,10 +97,10 @@ Section Raw_Syntax.
 
 End Raw_Syntax.
 
-Global Arguments Raw_Syntax {_} _ _ _ : clear implicits.
-Global Arguments Raw_Context {_} _ : clear implicits.
-Global Arguments Raw_Context_Map {_} _ _ _ : clear implicits.
-Global Arguments Args {_} _ _ _ : clear implicits.
+Global Arguments Raw_Syntax {_} _ _ _.
+Global Arguments Raw_Context {_} _.
+Global Arguments Raw_Context_Map {_} _ _ _.
+Global Arguments Args {_} _ _ _.
 
 Section Raw_Subst.
 
