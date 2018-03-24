@@ -10,12 +10,12 @@ TODO: modules would probably be a better way to treat this. *)
 
 Section Signatures.
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
 
   Inductive Syn_Class : Type := Ty | Tm.
 
   Definition Arity : Type
-    := family (Syn_Class * Shape σ).
+    := family (Syn_Class * shape_carrier σ).
 
   (* Entries in the family represent arguments of a constructor; the [σ] component represents the variables bound in each argument.
 
@@ -43,15 +43,15 @@ Arguments Arity _ : clear implicits.
 
 Section Raw_Syntax.
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
   Context {Σ : Signature σ}.
 
   (* A raw syntactic expression of a syntactic class, relative to a context *)
   Inductive Raw_Syntax
-    : Syn_Class -> Shape σ -> Type
+    : Syn_Class -> σ -> Type
   :=
     (* a variable in a context is a term in that context *)
-    | var_raw (γ : Shape σ) (i : γ)
+    | var_raw (γ : σ) (i : γ)
         : Raw_Syntax Tm γ
     (* relative to a context [γ], given a symbol [S], if for each of its
        arguments we have a raw syntactic expression relative to [γ] extended by
@@ -59,7 +59,7 @@ Section Raw_Syntax.
     | symb_raw (γ : σ) (S : Σ)
                (args : forall (i : arity S),
                    Raw_Syntax (arg_class i)
-                              (shape_coproduct γ (arg_pcxt i)))
+                              (shape_sum γ (arg_pcxt i)))
       : Raw_Syntax (class S) γ.
 
   Global Arguments var_raw [_] _.
@@ -68,7 +68,7 @@ Section Raw_Syntax.
   (* A raw context is a proto-ctx ("collection of identifiers") and a raw syntactic type expression
      for each identifier in the proto-ctx. *)
   Record Raw_Context
-  := { Proto_Context_of_Raw_Context :> Shape σ
+  := { Proto_Context_of_Raw_Context :> shape_carrier σ
      ; var_type_of_Raw_Context
          :> forall i : Proto_Context_of_Raw_Context,
             Raw_Syntax Ty Proto_Context_of_Raw_Context
@@ -83,7 +83,7 @@ Section Raw_Syntax.
   the type of suitable arguments for a given arity, in a given context. *)
   Definition Args (a : Arity _) γ : Type
   := forall (i : a),
-    Raw_Syntax (arg_class i) (shape_coproduct γ (arg_pcxt i)).
+    Raw_Syntax (arg_class i) (shape_sum γ (arg_pcxt i)).
 
   (* Useful, with [idpath] as the equality argument, when want wants to construct the smybol argument interactively — this is difficult with original [symb_raw] due to [class S] appearing in the conclusion. *)
   Definition symb_raw'
@@ -104,7 +104,7 @@ Global Arguments Args {_} _ _ _.
 
 Section Raw_Subst.
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
   Context {Σ : Signature σ}.
 
   (* First define weakening, as an auxiliary function for substition. *)
@@ -119,21 +119,21 @@ Section Raw_Subst.
   - exact (var_raw (f i)).
   - refine (symb_raw S _). intros i.
     refine (Raw_Weaken _ _ _ _ (args i)).
-    simple refine (coproduct_rect (shape_is_coproduct) _ _ _); cbn.
-    + intros x. apply (coproduct_inj1 (shape_is_coproduct)). exact (f x).
-    + intros x. apply (coproduct_inj2 (shape_is_coproduct)). exact x.
+    simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn.
+    + intros x. apply (coproduct_inj1 (shape_is_sum)). exact (f x).
+    + intros x. apply (coproduct_inj2 (shape_is_sum)). exact x.
   Defined.
 
   Definition Raw_Context_Map_Extending (γ γ' δ : σ)
     : Raw_Context_Map Σ γ' γ
-   -> Raw_Context_Map Σ (shape_coproduct γ' δ) (shape_coproduct γ δ).
+   -> Raw_Context_Map Σ (shape_sum γ' δ) (shape_sum γ δ).
   Proof.
     intros f.
-    simple refine (coproduct_rect (shape_is_coproduct) _ _ _); cbn.
+    simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn.
     - intros i. refine (Raw_Weaken _ (f i)).
-      apply (coproduct_inj1 (shape_is_coproduct)).
+      apply (coproduct_inj1 (shape_is_sum)).
     - intros i. apply var_raw.
-      apply (coproduct_inj2 (shape_is_coproduct)), i.
+      apply (coproduct_inj2 (shape_is_sum)), i.
   Defined.
 
   Fixpoint Raw_Subst
@@ -152,7 +152,7 @@ End Raw_Subst.
 
 Section Raw_Context_Construction.
 
-Context {σ : Shape_System}.
+Context {σ : shape}.
 Context {Σ : Signature σ}.
 
 Definition empty_Raw_Context : Raw_Context Σ.
@@ -180,7 +180,7 @@ Open Scope cxt_scope.
 
 
 Section Judgements.
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
   Context (Σ : Signature σ).
 
   (* The four basic forms are “hypothetical”, i.e. over a context. *)
@@ -276,7 +276,7 @@ End Judgements.
 
 Section Judgement_Notations.
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
   Context {Σ : Signature σ}.
 
 Definition give_Cxt_ji
@@ -357,7 +357,7 @@ Section Algebraic_Extensions.
   allowing us to write expressions like x:A |– b(x) : B(x).
   *)
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
 
   Definition simple_arity (γ : σ) : @Arity σ
   := {| family_index := γ ;
@@ -385,32 +385,32 @@ Section Algebraic_Extensions.
   Definition Instantiation (a : @Arity σ) (Σ : Signature σ) (γ : σ)
     : Type
   := forall i : a,
-       Raw_Syntax Σ (arg_class i) (shape_coproduct γ (arg_pcxt i)).
+       Raw_Syntax Σ (arg_class i) (shape_sum γ (arg_pcxt i)).
 
   (* Given such an instantiation, one can translate syntax over the extended signature into syntax over the base signature. *)
   Definition instantiate
       {a : @Arity σ} {Σ : Signature σ} {γ : σ}
       (I : Instantiation a Σ γ)
       {cl} {δ} (e : Raw_Syntax (Metavariable_Extension Σ a) cl δ)
-    : Raw_Syntax Σ cl (shape_coproduct γ δ).
+    : Raw_Syntax Σ cl (shape_sum γ δ).
   Proof.
     induction e as [ δ i | δ [S | M] args Inst_arg ].
   - refine (var_raw _).
-    exact (coproduct_inj2 (shape_is_coproduct) i).
+    exact (coproduct_inj2 (shape_is_sum) i).
   - refine (symb_raw S _). intros i.
     refine (Raw_Weaken _ (Inst_arg i)).
     apply (Coproduct.assoc
-             shape_is_coproduct shape_is_coproduct
-             shape_is_coproduct shape_is_coproduct).
+             shape_is_sum shape_is_sum
+             shape_is_sum shape_is_sum).
   - simpl in M. (* Substitute [args] into the expression [I M]. *)
     refine (Raw_Subst _ (I M)).
-    refine (coproduct_rect shape_is_coproduct _ _ _).
-    + intros i. apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
+    refine (coproduct_rect shape_is_sum _ _ _).
+    + intros i. apply var_raw, (coproduct_inj1 shape_is_sum), i.
     + intros i.
       refine (Raw_Weaken _ (Inst_arg i)). cbn.
-      refine (Coproduct.fmap shape_is_coproduct shape_is_coproduct _ _).
+      refine (Coproduct.fmap shape_is_sum shape_is_sum _ _).
       exact (fun j => j).
-      exact (Coproduct.empty_right shape_is_coproduct shape_is_empty).
+      exact (Coproduct.empty_right shape_is_sum shape_is_empty).
   Defined.
 
   Global Arguments instantiate {_ _ _} _ [_ _] _.
@@ -421,11 +421,11 @@ Section Algebraic_Extensions.
       (Δ : Raw_Context (Metavariable_Extension Σ a))
     : Raw_Context Σ.
   Proof.
-     exists (shape_coproduct Γ Δ).
-        apply (coproduct_rect shape_is_coproduct).
+     exists (shape_sum Γ Δ).
+        apply (coproduct_rect shape_is_sum).
         + intros i.
           refine (Raw_Weaken _ (Γ i)).
-          exact (coproduct_inj1 shape_is_coproduct).
+          exact (coproduct_inj1 shape_is_sum).
         + intros i.
           exact (instantiate I (Δ i)).
   Defined.
@@ -471,7 +471,7 @@ Section Metavariable_Notations.
   For now we provide the [M/ … /] version, but not yet the general [S/ … /] version.
 *)
 
-Context {σ : Shape_System}.
+Context {σ : shape}.
 Context {Σ : Signature σ}.
 
 Definition empty_metavariable_args {γ}
@@ -486,7 +486,7 @@ Proof.
   intros ts t.
   simple refine (plusone_rect _ _ (shape_is_extend _ δ) _ _ _); cbn.
   - refine (Raw_Weaken _ t).
-    exact (coproduct_inj1 shape_is_coproduct).
+    exact (coproduct_inj1 shape_is_sum).
   - exact ts.
 Defined.
 
@@ -501,7 +501,7 @@ Open Scope raw_syntax_scope.
 
 Section Raw_Rules.
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
   Context (Σ : Signature σ).
 
   Record Raw_Rule

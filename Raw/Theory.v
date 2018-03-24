@@ -10,7 +10,7 @@ Require Import Raw.StructuralRule.
 
 Section Derivability_from_Raw_TT.
 
-  Context {σ : Shape_System}
+  Context {σ : shape}
           {Σ : Signature σ}.
 
   Definition CCs_of_Raw_TT (T : Raw_Type_Theory Σ)
@@ -27,7 +27,7 @@ Section Derivable_Rules.
   (* “Derivable rules” over a type theory;
   or, to be precise, _derivations_ of raw rules over a raw type theory. *)
 
-  Context {σ : Shape_System}
+  Context {σ : shape}
           {Σ : Signature σ}.
 
   Definition Derivation_Raw_Rule_from_Raw_TT
@@ -46,7 +46,7 @@ End Derivable_Rules.
 Section TT_Maps.
 
   Context `{H : Funext}.
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
 
   (* TODO:
     possibly the [Signature_Map] should be extracted as a parameter,

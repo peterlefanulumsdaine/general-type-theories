@@ -40,13 +40,13 @@ Section Types_as_shapes.
     - reflexivity.
   Defined.
 
-  Definition Type_Shape : Shape_System.
+  Definition Type_Shape : shape.
   Proof.
     refine {|
-        Shape := Type ;
-        positions := (fun A => A) ;
+        shape_carrier := Type ;
+        shape_position := (fun A => A) ;
         shape_empty := Empty ;
-        shape_coproduct := sum ;
+        shape_sum := sum ;
         shape_extend := option
       |}.
     - apply is_empty_Empty.
@@ -70,13 +70,13 @@ Section Free_shapes.
     | f_extend c => option (f_positions c)
     end.
 
-  Definition Free_Shape : Shape_System.
+  Definition Free_Shape : shape.
   Proof.
     refine {|
-        Shape := f_cxt ;
-        positions := f_positions ;
+        shape_carrier := f_cxt ;
+        shape_position := f_positions ;
         shape_empty := f_empty ;
-        shape_coproduct := f_coproduct ;
+        shape_sum := f_coproduct ;
         shape_extend := f_extend
       |}.
     - apply is_empty_Empty.
@@ -208,12 +208,12 @@ Section DeBruijn.
         refine (IH _ _ _ i2).
   Defined.
 
-  Definition DeBruijn : Shape_System.
+  Definition DeBruijn : shape.
   Proof.
-    refine {| Shape := nat ;
-              positions := DB_positions ;
+    refine {| shape_carrier := nat ;
+              shape_position := DB_positions ;
               shape_empty := 0 ;
-              shape_coproduct := (fun n m => (n + m)%nat) ;
+              shape_sum := (fun n m => (n + m)%nat) ;
               shape_extend := S
            |}.
     - apply DB_is_empty.
@@ -284,12 +284,12 @@ Section DeBruijn_Fixpoint.
       + intros i2. exact (IH _ _ _ i2).
   Defined.
 
-  Definition DeBruijn_Fixpoint : Shape_System.
+  Definition DeBruijn_Fixpoint : shape.
   Proof.
-    refine {| Shape := nat ;
-              positions := DBF_positions ;
+    refine {| shape_carrier := nat ;
+              shape_position := DBF_positions ;
               shape_empty := 0 ;
-              shape_coproduct := (fun n m => (n + m)%nat) ;
+              shape_sum := (fun n m => (n + m)%nat) ;
               shape_extend := S
            |}.
     - apply is_empty_Empty.

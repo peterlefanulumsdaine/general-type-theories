@@ -12,12 +12,12 @@ Require Import WellFormed.Rule.
 
 Section TTSpecs.
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
 
   Record Type_Theory_Spec
   := {
   (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
-    TTS_Rule : family (Hyp_Judgt_Form * Arity σ * Shape σ)
+    TTS_Rule : family (Hyp_Judgt_Form * Arity σ * shape_carrier σ)
   (* the judgement form of the conclusion of each rule *)
   ; TTS_hjf_of_rule : TTS_Rule -> Hyp_Judgt_Form
     := fun i => fst (fst (TTS_Rule i))
@@ -25,7 +25,7 @@ Section TTSpecs.
   ; TTS_arity_of_rule : TTS_Rule -> Arity _
     := fun i => snd (fst (TTS_Rule i))
   (* the shape of the conclusion of each rule *)
-  ; TTS_concl_shape_of_rule : TTS_Rule -> Shape σ
+  ; TTS_concl_shape_of_rule : TTS_Rule -> shape_carrier σ
     := fun i => snd (TTS_Rule i)
   (* the ordering on rules.  TODO: will probably need to add well-foundedness. QUESTION: any reason for it to be Prop-valued, or could we just let it be type-valued? *)
   ; TTS_lt : TTS_Rule -> TTS_Rule -> Type
@@ -88,7 +88,7 @@ Arguments TTS_rule_spec {_ _} _.
 
 Section Derivability_from_TT_Spec.
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
 
   Definition Raw_TT_of_TT_Spec (T : Type_Theory_Spec σ)
     : Raw_Type_Theory (Signature_of_TT_Spec T).

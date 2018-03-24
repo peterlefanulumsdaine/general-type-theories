@@ -10,7 +10,7 @@ Require Import WellFormed.TypeTheory.
 
 Section Welltypedness.
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
 
   (* TODO: move upstream! *)
   Definition Build_Family_Map' {X} {K L : family X}

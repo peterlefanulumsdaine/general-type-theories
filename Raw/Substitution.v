@@ -12,7 +12,7 @@ Require Import Raw.SignatureMap.
 
 Section Auxiliary.
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
   Context {Σ : Signature σ}.
 
   Definition transport_Raw_Weaken {γ γ' : σ} (g : γ -> γ')
@@ -35,7 +35,7 @@ Arguments Raw_Context_Map_Extending {_ _ _ _} _ _ _.
 Section Raw_Weaken_Functoriality.
 
   Context `{H_Funext : Funext}.
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
   Context {Σ : Signature σ}.
 
   Fixpoint comp_Raw_Weaken {γ γ' γ'' : σ} (f : γ -> γ') (f' : γ' -> γ'')
@@ -66,7 +66,7 @@ End Raw_Weaken_Functoriality.
 Section Raw_Context_Category_Structure.
 (* Identity and composition of raw context maps. *)
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
   Context {Σ : Signature σ}.
 
   Definition id_Raw_Context (γ : σ) : Raw_Context_Map Σ γ γ.
@@ -97,17 +97,17 @@ End Raw_Context_Category_Structure.
 Section Raw_Subst_Assoc.
 
   Context `{H_Funext : Funext}.
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
   Context {Σ : Signature σ}.
 
   (* For the proof of functoriality of substitution, we first  *)
 
-  Lemma id_Raw_Context_Map_Extending {γ δ : Shape σ} 
+  Lemma id_Raw_Context_Map_Extending {γ δ : σ} 
     : Raw_Context_Map_Extending δ (@id_Raw_Context _ Σ γ)
     = id_Raw_Context _.
   Proof.
     apply path_arrow.
-    simple refine (coproduct_rect (shape_is_coproduct) _ _ _); cbn; intros i.
+    simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros i.
     - refine (coproduct_comp_inj1 _).
     - refine (coproduct_comp_inj2 _).
   Defined.
@@ -144,7 +144,7 @@ Section Raw_Subst_Assoc.
     eapply concat. { apply Raw_Weaken_Raw_Subst. }
     apply ap10. refine (apD10 _ _). apply ap. apply path_arrow.
     (* TODO: extract as lemma about [Raw_Context_Map_Extending] ? *)
-    simple refine (coproduct_rect (shape_is_coproduct) _ _ _); cbn; intros x.
+    simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       refine (_^ @ _^). { apply comp_Raw_Weaken. }
       eapply concat. { refine (coproduct_comp_inj1 _). }
@@ -167,7 +167,7 @@ Section Raw_Subst_Assoc.
     cbn. apply ap. apply path_forall; intros i.
     eapply concat. { apply Raw_Subst_Raw_Weaken. }
     apply ap10. refine (apD10 _ _). apply ap. apply path_arrow.
-    simple refine (coproduct_rect (shape_is_coproduct) _ _ _); cbn; intros x.
+    simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       eapply concat. { refine (coproduct_comp_inj1 _). }
       refine _^. refine (coproduct_comp_inj1 _).
@@ -189,7 +189,7 @@ Section Raw_Subst_Assoc.
     apply ap10. refine (apD10 _ _). apply ap.
     apply path_arrow.
     (* TODO: break out the following as a lemma about [Raw_Context_Map_Extending]? *)
-    simple refine (coproduct_rect (shape_is_coproduct) _ _ _); cbn; intros x.
+    simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       refine (_ @ _^). Focus 2. refine (coproduct_comp_inj1 _).
       eapply concat. { apply Raw_Subst_Raw_Weaken. }
@@ -207,7 +207,7 @@ End Raw_Subst_Assoc.
 Section Raw_Context_Category.
 
   Context `{H_Funext : Funext}.
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
   Context {Σ : Signature σ}.
 
   Lemma id_left_Raw_Context {γ} (f : Raw_Context_Map Σ γ γ)
@@ -243,7 +243,7 @@ End Raw_Context_Category.
 Section Naturality.
 
   Context `{H_Funext : Funext}.
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
   Context {Σ Σ' : Signature σ} (f : Signature_Map Σ Σ').
 
 

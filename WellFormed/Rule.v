@@ -16,21 +16,21 @@ Require Import Raw.SignatureMap.
 (** Specification of “well-shaped” rules *)
 Section RuleSpecs.
 
-Context {Proto_Cxt : Shape_System}.
+Context {σ : shape}.
 
 (* The parameters of a rule-spec, beyond its ambient signature, may be a little counter-intuitive.  The point is that they are just what is required to determine the arity of the symbol introduced by the rule, if it’s an object rule. *)
 Record Rule_Spec
-  {Σ : Signature Proto_Cxt}
-  {a : Arity Proto_Cxt} (* arity listing the _object_ premises of the rule *)
-  {γ_conclusion : Shape Proto_Cxt} (* proto-context of the conclusion *)
+  {Σ : Signature σ}
+  {a : Arity σ} (* arity listing the _object_ premises of the rule *)
+  {γ_conclusion : σ} (* proto-context of the conclusion *)
   {hjf_conclusion : Hyp_Judgt_Form} (* judgement form of the conclusion *)
 :=
   {
   (* The arity [a] supplies the family of object-judgment premises. *)
   (* The family of equality-judgment premises: *)
-    RS_equality_premise : Arity Proto_Cxt
+    RS_equality_premise : Arity σ
   (* family indexing the premises of the rule, and giving for each… *)
-  ; RS_Premise : family (Hyp_Judgt_Form * Proto_Cxt)
+  ; RS_Premise : family (Hyp_Judgt_Form * σ)
     := Family.sum
          (Family.fmap (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) a)
          (Family.fmap (fun cl_γ => (eq_HJF (fst cl_γ), snd cl_γ)) RS_equality_premise)
@@ -38,7 +38,7 @@ Record Rule_Spec
   ; RS_hjf_of_premise : RS_Premise -> Hyp_Judgt_Form
     := fun i => fst (RS_Premise i)
   (* - the proto-context of each premise *)
-  ; RS_proto_cxt_of_premise : RS_Premise -> Proto_Cxt
+  ; RS_proto_cxt_of_premise : RS_Premise -> σ
     := fun i => snd (RS_Premise i)
   (* the ordering relation on the premises *)
   (* TODO: somewhere we will want to add that this is well-founded; maybe prop_valued; mayb more *)
@@ -142,7 +142,7 @@ Arguments Rule_Spec {_} _ _ _ _.
 
 Section Associated_Congruence_Rule_Specs.
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
   Context {Σ : Signature σ}.
 
   Definition associated_original_premise {obs eqs : Arity σ}
@@ -287,7 +287,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
           apply inr, idpath.
         * apply idpath.
         * intros i.
-          apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
+          apply var_raw, (coproduct_inj1 shape_is_sum), i.
       + (* RHS of new equality premise *)
         cbn. simple refine (symb_raw' _ _ _).
         * apply inr_Metavariable.
@@ -295,7 +295,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
           apply inr, idpath.
         * apply idpath.
         * intros i.
-          apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
+          apply var_raw, (coproduct_inj1 shape_is_sum), i.
     - (* RS_context_expr_of_conclusion *)
       intros i.
       refine (Fmap_Raw_Syntax _ (RS_context_expr_of_conclusion R i)).
@@ -321,10 +321,10 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
              ++ apply idpath.
              ++ cbn. intros i.
                 apply var_raw. 
-                apply (coproduct_inj1 shape_is_coproduct).
-                apply (coproduct_inj2 shape_is_coproduct).
+                apply (coproduct_inj1 shape_is_sum).
+                apply (coproduct_inj2 shape_is_sum).
                 exact i.
-          -- apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
+          -- apply var_raw, (coproduct_inj1 shape_is_sum), i.
       + (* RHS of new conclusion *)
         cbn. simple refine (symb_raw' _ _ _).
         * apply inl_Symbol, S.
@@ -338,10 +338,10 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
              ++ apply idpath.
              ++ cbn. intros i.
                 apply var_raw. 
-                apply (coproduct_inj1 shape_is_coproduct).
-                apply (coproduct_inj2 shape_is_coproduct).
+                apply (coproduct_inj1 shape_is_sum).
+                apply (coproduct_inj2 shape_is_sum).
                 exact i.
-          -- apply var_raw, (coproduct_inj1 shape_is_coproduct), i.
+          -- apply var_raw, (coproduct_inj1 shape_is_sum), i.
   Defined.
   (* TODO: the above is a bit unreadable.  An alternative approach that might be clearer and more robust:
    - factor out the constructions of the head terms of conclusions and premises from [Raw_Rule_of_Rule_Spec], if doable.
@@ -356,7 +356,7 @@ End Associated_Congruence_Rule_Specs.
 
 Section Raw_Rules_of_Rule_Specs.
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
   Context {Σ : Signature σ}.
 
   (* Translating a rule-spec into a raw rule requires no extra information in the case of an equality-rule; in the case of an object-rule, it requires a symbol of appropriate arity to give the object introduced. *)
@@ -393,7 +393,7 @@ Section Raw_Rules_of_Rule_Specs.
         * (* case: P an object premise *)
           refine (symb_raw (inr P : Metavariable_Extension Σ a) _).
           intro i. apply var_raw.
-          exact (coproduct_inj1 shape_is_coproduct i).
+          exact (coproduct_inj1 shape_is_sum i).
         * (* case: P an equality premise *)
           destruct H_obj. (* ruled out by assumption *)
     - (* conclusion *)
@@ -416,10 +416,10 @@ Section Raw_Rules_of_Rule_Specs.
             refine (symb_raw (inr P : Metavariable_Extension _ _) _).
             intros i.
             apply var_raw.
-            apply (coproduct_inj1 shape_is_coproduct).
-            exact (coproduct_inj2 shape_is_coproduct i).
+            apply (coproduct_inj1 shape_is_sum).
+            exact (coproduct_inj2 shape_is_sum i).
           -- apply var_raw.
-            exact (coproduct_inj1 shape_is_coproduct i).
+            exact (coproduct_inj1 shape_is_sum i).
         * (* case: R an equality rule *)
           destruct H_obj. (* ruled out by assumption *)
   Defined.

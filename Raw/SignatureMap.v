@@ -8,7 +8,7 @@ Require Import Raw.Syntax.
 
 Section Signature_Maps.
 
-  Context {σ : Shape_System}.
+  Context {σ : shape}.
  
   Definition Signature_Map (Σ Σ' : Signature σ) : Type
     := Family.map Σ Σ'.
@@ -28,7 +28,7 @@ Section Signature_Maps.
       + exact (ap fst (Family.map_commutes _ _)).
       + refine (transport
           (fun a : Arity σ => forall i : a,
-               Raw_Syntax Σ' (arg_class i) (shape_coproduct γ (arg_pcxt i)))
+               Raw_Syntax Σ' (arg_class i) (shape_sum γ (arg_pcxt i)))
           _
           fts).
         exact ((ap snd (Family.map_commutes _ _))^).

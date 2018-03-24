@@ -19,7 +19,7 @@ All of the above are then collected as a single family [Structural_CCs].
 
 Section Structural_Rules.
 
-Context {σ : Shape_System}.
+Context {σ : shape}.
 Context (Σ : @Signature σ).
 
 Section Context_Formation.
