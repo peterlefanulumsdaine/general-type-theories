@@ -399,7 +399,7 @@ Section Algebraic_Extensions.
     exact (coproduct_inj2 (shape_is_coproduct) i).
   - refine (symb_raw S _). intros i.
     refine (Raw_Weaken _ (Inst_arg i)).
-    apply (coproduct_assoc
+    apply (Coproduct.assoc
              shape_is_coproduct shape_is_coproduct
              shape_is_coproduct shape_is_coproduct).
   - simpl in M. (* Substitute [args] into the expression [I M]. *)
@@ -410,7 +410,7 @@ Section Algebraic_Extensions.
       refine (Raw_Weaken _ (Inst_arg i)). cbn.
       refine (Coproduct.fmap shape_is_coproduct shape_is_coproduct _ _).
       exact (fun j => j).
-      exact (coproduct_empty_r shape_is_coproduct shape_is_empty).
+      exact (Coproduct.empty_right shape_is_coproduct shape_is_empty).
   Defined.
 
   Global Arguments instantiate {_ _ _} _ [_ _] _.

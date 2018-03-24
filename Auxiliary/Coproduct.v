@@ -13,23 +13,23 @@ End EmptyType.
 
 Section PlusOne.
 
-(** The fact that [X = X0 + 1]. *)
-Record is_plusone (X X0 : Type)
+(** The fact that [X1 = X + 1]. *)
+Record is_plusone (X1 X : Type)
 :=
-  { plusone_one : X
-  ; plusone_inj : X0 -> X
+  { plusone_one : X1
+  ; plusone_inj : X -> X1
   ; plusone_rect
-    : forall (P : X -> Type)
+    : forall (P : X1 -> Type)
              (f_one : P plusone_one)
              (f_inj : forall x, P (plusone_inj x)),
       forall x, P x
   ; plusone_comp_one
-    : forall (P : X -> Type)
+    : forall (P : X1 -> Type)
              (f_one : P plusone_one)
              (f_inj : forall x, P (plusone_inj x)),
       plusone_rect P f_one f_inj plusone_one = f_one
   ; plusone_comp_inj
-    : forall (P : X -> Type)
+    : forall (P : X1 -> Type)
              (f_one : P plusone_one)
              (f_inj : forall x, P (plusone_inj x)),
       forall x, plusone_rect P f_one f_inj (plusone_inj x) = f_inj x
@@ -42,9 +42,9 @@ Record is_plusone (X X0 : Type)
 
 End PlusOne.
 
-
 Section BinaryCoproduct.
 
+(** The fact that [X = X1 + X2]. *)
 Record is_coproduct (X X1 X2 : Type)
 :=
   { coproduct_inj1 : X1 -> X
@@ -72,7 +72,7 @@ Global Arguments coproduct_rect [_ _ _] _ _ _ _ _.
 Global Arguments coproduct_comp_inj1 [_ _ _ _ _ _ _] _.
 Global Arguments coproduct_comp_inj2 [_ _ _ _ _ _ _] _.
 
-Definition coproduct_assoc {X Y Z XY YZ XY_Z X_YZ}
+Local Definition assoc {X Y Z XY YZ XY_Z X_YZ}
            (H_XY : is_coproduct XY X Y)
            (H_XY_Z : is_coproduct XY_Z XY Z)
            (H_YZ : is_coproduct YZ Y Z)
@@ -88,7 +88,7 @@ Definition coproduct_assoc {X Y Z XY YZ XY_Z X_YZ}
       exact (coproduct_inj2 H_XY_Z z).
 Defined.
 
-Definition fmap {X Y XY X' Y' XY'}
+Local Definition fmap {X Y XY X' Y' XY'}
            (H : is_coproduct XY X Y)
            (H' : is_coproduct XY' X' Y')
            (fX : X -> X') (fY : Y -> Y')
@@ -100,7 +100,7 @@ Proof.
   - intro y. exact (coproduct_inj2 H' (fY y)).
 Defined.
 
-Definition coproduct_empty_r {X Y XY}
+Local Definition empty_right {X Y XY}
            (H_XY : is_coproduct XY X Y)
            (H_Y : is_empty Y)
   : XY -> X.
