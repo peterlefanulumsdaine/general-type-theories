@@ -1,7 +1,7 @@
 Require Import HoTT.
 Require Import Raw.Syntax.
 Require Import Auxiliary.Coproduct.
-Require Import Proto.Shape.
+Require Import Proto.ShapeSystem.
 
 Section Types_as_shapes.
 
@@ -40,7 +40,7 @@ Section Types_as_shapes.
     - reflexivity.
   Defined.
 
-  Definition Type_Shape : shape.
+  Definition Type_Shape : shape_system.
   Proof.
     refine {|
         shape_carrier := Type ;
@@ -70,7 +70,7 @@ Section Free_shapes.
     | f_extend c => option (f_positions c)
     end.
 
-  Definition Free_Shape : shape.
+  Definition Free_Shape : shape_system.
   Proof.
     refine {|
         shape_carrier := f_cxt ;
@@ -208,7 +208,7 @@ Section DeBruijn.
         refine (IH _ _ _ i2).
   Defined.
 
-  Definition DeBruijn : shape.
+  Definition DeBruijn : shape_system.
   Proof.
     refine {| shape_carrier := nat ;
               shape_position := DB_positions ;
@@ -284,7 +284,7 @@ Section DeBruijn_Fixpoint.
       + intros i2. exact (IH _ _ _ i2).
   Defined.
 
-  Definition DeBruijn_Fixpoint : shape.
+  Definition DeBruijn_Fixpoint : shape_system.
   Proof.
     refine {| shape_carrier := nat ;
               shape_position := DBF_positions ;

@@ -1,6 +1,6 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
-Require Import Proto.Shape.
+Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 Require Import Raw.SignatureMap.
@@ -12,7 +12,7 @@ Require Import Raw.SignatureMap.
 
 Section Auxiliary.
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
   Context {Σ : Signature σ}.
 
   Definition transport_Raw_Weaken {γ γ' : σ} (g : γ -> γ')
@@ -35,7 +35,7 @@ Arguments Raw_Context_Map_Extending {_ _ _ _} _ _ _.
 Section Raw_Weaken_Functoriality.
 
   Context `{H_Funext : Funext}.
-  Context {σ : shape}.
+  Context {σ : shape_system}.
   Context {Σ : Signature σ}.
 
   Fixpoint comp_Raw_Weaken {γ γ' γ'' : σ} (f : γ -> γ') (f' : γ' -> γ'')
@@ -66,7 +66,7 @@ End Raw_Weaken_Functoriality.
 Section Raw_Context_Category_Structure.
 (* Identity and composition of raw context maps. *)
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
   Context {Σ : Signature σ}.
 
   Definition id_Raw_Context (γ : σ) : Raw_Context_Map Σ γ γ.
@@ -97,7 +97,7 @@ End Raw_Context_Category_Structure.
 Section Raw_Subst_Assoc.
 
   Context `{H_Funext : Funext}.
-  Context {σ : shape}.
+  Context {σ : shape_system}.
   Context {Σ : Signature σ}.
 
   (* For the proof of functoriality of substitution, we first  *)
@@ -207,7 +207,7 @@ End Raw_Subst_Assoc.
 Section Raw_Context_Category.
 
   Context `{H_Funext : Funext}.
-  Context {σ : shape}.
+  Context {σ : shape_system}.
   Context {Σ : Signature σ}.
 
   Lemma id_left_Raw_Context {γ} (f : Raw_Context_Map Σ γ γ)
@@ -243,7 +243,7 @@ End Raw_Context_Category.
 Section Naturality.
 
   Context `{H_Funext : Funext}.
-  Context {σ : shape}.
+  Context {σ : shape_system}.
   Context {Σ Σ' : Signature σ} (f : Signature_Map Σ Σ').
 
 

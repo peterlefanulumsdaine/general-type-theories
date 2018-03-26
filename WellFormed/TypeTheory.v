@@ -1,6 +1,6 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
-Require Import Proto.Shape.
+Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
@@ -12,7 +12,7 @@ Require Import WellFormed.Rule.
 
 Section TTSpecs.
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
 
   Record Type_Theory_Spec
   := {
@@ -88,7 +88,7 @@ Arguments TTS_rule_spec {_ _} _.
 
 Section Derivability_from_TT_Spec.
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
 
   Definition Raw_TT_of_TT_Spec (T : Type_Theory_Spec σ)
     : Raw_Type_Theory (Signature_of_TT_Spec T).

@@ -1,5 +1,5 @@
 Require Import HoTT.
-Require Import Proto.Shape.
+Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Raw.Syntax.
 Require Import Raw.Theory.
@@ -10,7 +10,7 @@ Require Import WellFormed.TypeTheory.
 
 Section Welltypedness.
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
 
   (* TODO: move upstream! *)
   Definition Build_Family_Map' {X} {K L : family X}

@@ -1,6 +1,6 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
-Require Import Proto.Shape.
+Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 
@@ -8,7 +8,7 @@ Require Import Raw.Syntax.
 
 Section Signature_Maps.
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
  
   Definition Signature_Map (Σ Σ' : Signature σ) : Type
     := Family.map Σ Σ'.

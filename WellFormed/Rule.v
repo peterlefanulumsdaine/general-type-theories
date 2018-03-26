@@ -1,6 +1,6 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
-Require Import Proto.Shape.
+Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
@@ -16,7 +16,7 @@ Require Import Raw.SignatureMap.
 (** Specification of “well-shaped” rules *)
 Section RuleSpecs.
 
-Context {σ : shape}.
+Context {σ : shape_system}.
 
 (* The parameters of a rule-spec, beyond its ambient signature, may be a little counter-intuitive.  The point is that they are just what is required to determine the arity of the symbol introduced by the rule, if it’s an object rule. *)
 Record Rule_Spec
@@ -142,7 +142,7 @@ Arguments Rule_Spec {_} _ _ _ _.
 
 Section Associated_Congruence_Rule_Specs.
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
   Context {Σ : Signature σ}.
 
   Definition associated_original_premise {obs eqs : Arity σ}
@@ -356,7 +356,7 @@ End Associated_Congruence_Rule_Specs.
 
 Section Raw_Rules_of_Rule_Specs.
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
   Context {Σ : Signature σ}.
 
   (* Translating a rule-spec into a raw rule requires no extra information in the case of an equality-rule; in the case of an object-rule, it requires a symbol of appropriate arity to give the object introduced. *)

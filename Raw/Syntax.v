@@ -1,6 +1,6 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
-Require Import Proto.Shape.
+Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 
@@ -10,7 +10,7 @@ TODO: modules would probably be a better way to treat this. *)
 
 Section Signatures.
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
 
   Inductive Syn_Class : Type := Ty | Tm.
 
@@ -43,7 +43,7 @@ Arguments Arity _ : clear implicits.
 
 Section Raw_Syntax.
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
   Context {Σ : Signature σ}.
 
   (* A raw syntactic expression of a syntactic class, relative to a context *)
@@ -104,7 +104,7 @@ Global Arguments Args {_} _ _ _.
 
 Section Raw_Subst.
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
   Context {Σ : Signature σ}.
 
   (* First define weakening, as an auxiliary function for substition. *)
@@ -152,7 +152,7 @@ End Raw_Subst.
 
 Section Raw_Context_Construction.
 
-Context {σ : shape}.
+Context {σ : shape_system}.
 Context {Σ : Signature σ}.
 
 Definition empty_Raw_Context : Raw_Context Σ.
@@ -180,7 +180,7 @@ Open Scope cxt_scope.
 
 
 Section Judgements.
-  Context {σ : shape}.
+  Context {σ : shape_system}.
   Context (Σ : Signature σ).
 
   (* The four basic forms are “hypothetical”, i.e. over a context. *)
@@ -276,7 +276,7 @@ End Judgements.
 
 Section Judgement_Notations.
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
   Context {Σ : Signature σ}.
 
 Definition give_Cxt_ji
@@ -357,7 +357,7 @@ Section Algebraic_Extensions.
   allowing us to write expressions like x:A |– b(x) : B(x).
   *)
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
 
   Definition simple_arity (γ : σ) : @Arity σ
   := {| family_index := γ ;
@@ -471,7 +471,7 @@ Section Metavariable_Notations.
   For now we provide the [M/ … /] version, but not yet the general [S/ … /] version.
 *)
 
-Context {σ : shape}.
+Context {σ : shape_system}.
 Context {Σ : Signature σ}.
 
 Definition empty_metavariable_args {γ}
@@ -501,7 +501,7 @@ Open Scope raw_syntax_scope.
 
 Section Raw_Rules.
 
-  Context {σ : shape}.
+  Context {σ : shape_system}.
   Context (Σ : Signature σ).
 
   Record Raw_Rule

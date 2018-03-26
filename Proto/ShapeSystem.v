@@ -16,7 +16,7 @@ Require Import Auxiliary.Coproduct.
 *)
 
 (** A record describing shapes that can be used for contexts and bindings. *)
-Record shape :=
+Record shape_system :=
   { shape_carrier :> Type
   ; shape_position : shape_carrier -> Type (* each shape has some positions, maybe should map to sets *)
   ; shape_empty : shape_carrier (* the empty *)
