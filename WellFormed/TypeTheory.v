@@ -17,23 +17,19 @@ Section TTSpecs.
   Record Type_Theory_Spec
   := {
   (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
-    TTS_Rule : family (Hyp_Judgt_Form * Arity σ * shape_carrier σ)
+    TTS_Rule : family (Hyp_Judgt_Form * Arity σ)
   (* the judgement form of the conclusion of each rule *)
   ; TTS_hjf_of_rule : TTS_Rule -> Hyp_Judgt_Form
-    := fun i => fst (fst (TTS_Rule i))
+    := fun i => fst (TTS_Rule i)
   (* the arity of the arguments (i.e. the *object* premises only) of each rule *)
   ; TTS_arity_of_rule : TTS_Rule -> Arity _
-    := fun i => snd (fst (TTS_Rule i))
-  (* the shape of the conclusion of each rule *)
-  ; TTS_concl_shape_of_rule : TTS_Rule -> shape_carrier σ
     := fun i => snd (TTS_Rule i)
   (* the ordering on rules.  TODO: will probably need to add well-foundedness. QUESTION: any reason for it to be Prop-valued, or could we just let it be type-valued? *)
   ; TTS_lt : TTS_Rule -> TTS_Rule -> Type
   (* the signature over which each rule can be written *)
   ; TTS_signature_of_rule : TTS_Rule -> Signature σ
     := fun i => Family.fmap
-        (fun jaγ => ( class_of_HJF (fst (fst jaγ))
-                   , Family.sum (snd (fst jaγ)) (simple_arity (snd jaγ))))
+        (fun (ja : Hyp_Judgt_Form * Arity σ) => (class_of_HJF (fst ja), snd ja))
         (Family.subfamily TTS_Rule
           (fun j => is_obj_HJF (TTS_hjf_of_rule j) * TTS_lt j i))
   (* the actual rule specification of each rule *)
@@ -42,7 +38,6 @@ Section TTSpecs.
         Rule_Spec
           (TTS_signature_of_rule i)
           (TTS_arity_of_rule i)
-          (TTS_concl_shape_of_rule i)
           (TTS_hjf_of_rule i)
   }.
 
@@ -54,8 +49,7 @@ Section TTSpecs.
     intros r_H. set (r := pr1 r_H).
     split.
     - exact (class_of_HJF (TTS_hjf_of_rule _ r)).
-    - exact (TTS_arity_of_rule _ r
-            + simple_arity (TTS_concl_shape_of_rule _ r)).
+    - exact (TTS_arity_of_rule _ r).
   Defined.
     (* NOTE: it is tempting to case-analyse here and say 
       “when r is an object rule, use [(class_of_HJF …, TTS_arity_of_rule …)];
@@ -71,7 +65,7 @@ Section TTSpecs.
     - intros s_isob_lt.
       exact (pr1 s_isob_lt ; fst (pr2 (s_isob_lt))).
       (* TODO: introduce access functions for the signature components above? *)
-    - intros s. exact idpath.
+    - intros s. apply idpath.
   Defined.
 
 End TTSpecs.
@@ -80,7 +74,6 @@ Arguments Type_Theory_Spec _ : clear implicits.
 Arguments TTS_Rule {_} _.
 Arguments TTS_hjf_of_rule {_ _} _.
 Arguments TTS_arity_of_rule {_ _} _.
-Arguments TTS_concl_shape_of_rule {_ _} _.
 Arguments TTS_lt {_ _} _ _.
 Arguments TTS_signature_of_rule {_ _} _.
 Arguments TTS_rule_spec {_ _} _.

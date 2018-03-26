@@ -22,7 +22,6 @@ Context {σ : shape_system}.
 Record Rule_Spec
   {Σ : Signature σ}
   {a : Arity σ} (* arity listing the _object_ premises of the rule *)
-  {γ_conclusion : σ} (* proto-context of the conclusion *)
   {hjf_conclusion : Hyp_Judgt_Form} (* judgement form of the conclusion *)
 :=
   {
@@ -66,52 +65,46 @@ Record Rule_Spec
           (Metavariable_Extension Σ (RS_arity_of_premise i))
           (RS_hjf_of_premise i)
           (RS_proto_cxt_of_premise i)
-  (* context expressions of conclusion *)
-  (* NOTE: this should never be used directly, always through [RS_raw_context_of_conclusion] *)
-  ; RS_context_expr_of_conclusion
-    : γ_conclusion -> Raw_Syntax (Metavariable_Extension Σ a) Ty γ_conclusion
-  (* raw context of conclusion *)
-  ; RS_raw_context_of_conclusion : Raw_Context (Metavariable_Extension Σ a)
-    := Build_Raw_Context _ RS_context_expr_of_conclusion
   (* hyp judgement boundary instance of conclusion *)
   ; RS_hyp_judgt_bdry_instance_of_conclusion
       : Hyp_Judgt_Bdry_Instance
           (Metavariable_Extension Σ a)
           hjf_conclusion
-          γ_conclusion
+          (shape_empty σ)
   (* full judgement boundary instance of conclusion *) (* TODO: move out of record?? *)
   ; RS_judgt_bdry_instance_of_conclusion
       : Judgt_Bdry_Instance (Metavariable_Extension Σ a)
                             (HJF hjf_conclusion)
-    := (RS_raw_context_of_conclusion; RS_hyp_judgt_bdry_instance_of_conclusion)
+    := (empty_Raw_Context; RS_hyp_judgt_bdry_instance_of_conclusion)
   }.
-  (* NOTE 1. One could restrict rule-specs by only allowing the case where the context of the conclusion is empty.  This would simplify this definition, and several things below, and would (one expects) not lose any generality, since one can always move variables from that context to become extra premises, giving an equivalent rule with empty conclusion context.
+  (* NOTE 1. One could generalise rule-specs by allowing the context of the conclusion to be non-empty.
 
-  However, we retain (for now) the current general version, (a) since rules are sometimes written this way in practice, and (b) to allow a precise theorem stating the claim above about it being equivalent to move variables into the premises. *)
+ This would slightly complicate this definition, and subsequent constructions, and would (one expects) not add any real generality, since one can always move variables from that context to become extra premises, giving an equivalent rule with empty conclusion context (where the equivalence makes use of the “cut”/substitution rule).
 
-  (* NOTE 2. Perhaps the parameters of the definition could be profitably abstracted into a “proto-rule-spec” (probably including also the arity [RS_equality_Premise]), fitting the pattern of the stratificaiton of objects into proto ≤ raw ≤ typed. *)
+  However, it would perhaps be nice (a) since rules are sometimes written this way in practice, and (b) to allow a precise theorem stating the claim above about it being equivalent to move variables into the premises. *)
 
-  Arguments Rule_Spec _ _ _ _ : clear implicits.
+  (* NOTE 2. Perhaps the parameters of the definition of [Rule_Spec] could be profitably abstracted into a “proto-rule-spec” (probably including also the arity [RS_equality_Premise]), fitting the pattern of the stratificaiton of objects into proto ≤ raw ≤ typed. *)
 
-(* Template for defining rule-specs:
+  Arguments Rule_Spec _ _ _ : clear implicits.
 
-  simple refine (Build_Rule_Spec _ _ _ _ _ _ _ _ _ _).
-  - admit. (* RS_equality_premise: arity of equality premises *)
-  - admit. (* RS_lt *)
-  - admit. (* RS_context_expr_of_premise *)
-  - admit. (* RS_hyp_bdry_instance_of_premise *)
-  - admit. (* RS_context_expr_of_conclusion *)
-  - admit. (* RS_hyp_judgt_bdry_instance_of_conclusion *)
-
-*)
+  (* Template for defining rule-specs: *)
+  Definition Example {Σ} {a} {hjf} : Rule_Spec Σ a hjf.
+  Proof.
+    simple refine (Build_Rule_Spec _ _ _ _ _ _ _ _).
+    - admit. (* RS_equality_premise: arity of equality premises *)
+    - admit. (* RS_lt *)
+    - admit. (* RS_context_expr_of_premise *)
+    - admit. (* RS_hyp_bdry_instance_of_premise *)
+    - admit. (* RS_hyp_judgt_bdry_instance_of_conclusion *)
+  Abort.
 
   Definition Fmap_Rule_Spec
       {Σ} {Σ'} (f : Signature_Map Σ Σ')
-      {a} {γ_concl} {hjf_concl}
-      (R : Rule_Spec Σ a γ_concl hjf_concl)
-    : Rule_Spec Σ' a γ_concl hjf_concl.
+      {a} {hjf_concl}
+      (R : Rule_Spec Σ a hjf_concl)
+    : Rule_Spec Σ' a hjf_concl.
   Proof.
-    simple refine (Build_Rule_Spec Σ' a γ_concl hjf_concl _ _ _ _ _ _).
+    simple refine (Build_Rule_Spec Σ' a hjf_concl _ _ _ _ _).
     - exact (RS_equality_premise R).
     - exact (RS_lt R).
     - (* RS_context_expr_of_premise *)
@@ -124,10 +117,6 @@ Record Rule_Spec
         (Fmap_Hyp_Judgt_Bdry_Instance
           _ (RS_hyp_bdry_instance_of_premise R i)).
       apply Fmap1_Metavariable_Extension, f.
-    - (* RS_context_expr_of_conclusion *)
-      intros v.
-      refine (_ (RS_context_expr_of_conclusion R v)).
-      apply Fmap_Raw_Syntax, Fmap1_Metavariable_Extension, f.
     - (* RS_hyp_judgt_bdry_instance_of_conclusion *)
       simple refine 
         (Fmap_Hyp_Judgt_Bdry_Instance
@@ -137,7 +126,7 @@ Record Rule_Spec
 
 End RuleSpecs.
 
-Arguments Rule_Spec {_} _ _ _ _.
+Arguments Rule_Spec {_} _ _ _.
 
 
 Section Associated_Congruence_Rule_Specs.
@@ -213,7 +202,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
   Arguments associated_congruence_rule_lt : simpl nomatch.
 
   Definition associated_congruence_rule_original_constructor_translation
-    {a} {γ_concl} {hjf_concl} (R : Rule_Spec Σ a γ_concl hjf_concl)
+    {a} {hjf_concl} (R : Rule_Spec Σ a hjf_concl)
     (p : (a + a) + (RS_equality_premise R + RS_equality_premise R + a))
     : Signature_Map
         (Metavariable_Extension Σ
@@ -244,15 +233,15 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
   Defined.
 
   Definition associated_congruence_rule_spec
-    {a} {γ_concl} {hjf_concl} (R : Rule_Spec Σ a γ_concl hjf_concl)
+    {a} {hjf_concl} (R : Rule_Spec Σ a hjf_concl)
     (H : is_obj_HJF hjf_concl)
     (S : Σ)
-    (e_a : arity S = a + (simple_arity γ_concl))
+    (e_a : arity S = a)
     (e_cl : class S = class_of_HJF hjf_concl)
-    : (Rule_Spec Σ (Family.sum a a) γ_concl
+    : (Rule_Spec Σ (Family.sum a a)
                  (eq_HJF (class_of_HJF hjf_concl))).
   Proof.
-    simple refine (Build_Rule_Spec _ _ _ _ _ _ _ _ _ _).
+    simple refine (Build_Rule_Spec _ _ _ _ _ _ _ _).
     - (* RS_equality_premise: arity of equality premises *)
       exact (((RS_equality_premise R) + (RS_equality_premise R)) + a). 
     - (* RS_lt *)
@@ -296,10 +285,6 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
         * apply idpath.
         * intros i.
           apply var_raw, (coproduct_inj1 shape_is_sum), i.
-    - (* RS_context_expr_of_conclusion *)
-      intros i.
-      refine (Fmap_Raw_Syntax _ (RS_context_expr_of_conclusion R i)).
-      apply Fmap2_Metavariable_Extension, Family.map_inl.
     - (* RS_hyp_judgt_bdry_instance_of_conclusion *)
       intros [ [ i | ] | ]; simpl. 
       + (* boundary of original conclusion *)
@@ -314,34 +299,32 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
         * apply e_cl.
         * change (arity (inl_Symbol S)) with (arity S).
           destruct (e_a^); clear e_a.
-          intros [ p | i ].
-          -- simple refine (symb_raw' _ _ _).
-             ++ apply inr_Metavariable.
-                exact (inl p).
-             ++ apply idpath.
-             ++ cbn. intros i.
-                apply var_raw. 
-                apply (coproduct_inj1 shape_is_sum).
-                apply (coproduct_inj2 shape_is_sum).
-                exact i.
-          -- apply var_raw, (coproduct_inj1 shape_is_sum), i.
+          intros p.
+          simple refine (symb_raw' _ _ _).
+          -- apply inr_Metavariable.
+             exact (inl p).
+          -- apply idpath.
+          -- cbn. intros i.
+             apply var_raw. 
+             apply (coproduct_inj1 shape_is_sum).
+             apply (coproduct_inj2 shape_is_sum).
+             exact i.
       + (* RHS of new conclusion *)
         cbn. simple refine (symb_raw' _ _ _).
         * apply inl_Symbol, S.
         * apply e_cl.
         * change (arity (inl_Symbol S)) with (arity S).
           destruct (e_a^); clear e_a.
-          intros [ p | i ].
-          -- simple refine (symb_raw' _ _ _).
-             ++ apply inr_Metavariable.
-                exact (inr p).
-             ++ apply idpath.
-             ++ cbn. intros i.
-                apply var_raw. 
-                apply (coproduct_inj1 shape_is_sum).
-                apply (coproduct_inj2 shape_is_sum).
-                exact i.
-          -- apply var_raw, (coproduct_inj1 shape_is_sum), i.
+          intros p.
+          simple refine (symb_raw' _ _ _).
+          -- apply inr_Metavariable.
+             exact (inr p).
+          -- apply idpath.
+          -- cbn. intros i.
+             apply var_raw. 
+             apply (coproduct_inj1 shape_is_sum).
+             apply (coproduct_inj2 shape_is_sum).
+             exact i.
   Defined.
   (* TODO: the above is a bit unreadable.  An alternative approach that might be clearer and more robust:
    - factor out the constructions of the head terms of conclusions and premises from [Raw_Rule_of_Rule_Spec], if doable.
@@ -361,11 +344,10 @@ Section Raw_Rules_of_Rule_Specs.
 
   (* Translating a rule-spec into a raw rule requires no extra information in the case of an equality-rule; in the case of an object-rule, it requires a symbol of appropriate arity to give the object introduced. *)
   Definition Raw_Rule_of_Rule_Spec
-    {a} {γ_concl} {hjf_concl}
-    (R : Rule_Spec Σ a γ_concl hjf_concl)
+    {a} {hjf_concl}
+    (R : Rule_Spec Σ a hjf_concl)
     (Sr : is_obj_HJF hjf_concl
-        -> { S : Σ & (arity S = Family.sum a (simple_arity γ_concl))
-                     * (class S = class_of_HJF hjf_concl) })
+        -> { S : Σ & (arity S = a) * (class S = class_of_HJF hjf_concl) })
   : Raw_Rule Σ.
   (* This construction involves essentially two aspects:
   - translate the syntax of each expression in the rule-spec from its “local” signatures to the overall signature;
@@ -411,15 +393,13 @@ Section Raw_Rules_of_Rule_Specs.
           change (arity (inl S_R : Metavariable_Extension _ _))
             with (arity S_R). 
           set (aR := arity S_R) in *. destruct (e_a^); clear e_a.
-          intros [P | i].
-          -- cbn in P.
-            refine (symb_raw (inr P : Metavariable_Extension _ _) _).
-            intros i.
-            apply var_raw.
-            apply (coproduct_inj1 shape_is_sum).
-            exact (coproduct_inj2 shape_is_sum i).
-          -- apply var_raw.
-            exact (coproduct_inj1 shape_is_sum i).
+          intros p.
+          cbn in p.
+          refine (symb_raw (inr p : Metavariable_Extension _ _) _).
+          intros i.
+          apply var_raw.
+          apply (coproduct_inj1 shape_is_sum).
+          exact (coproduct_inj2 shape_is_sum i).
         * (* case: R an equality rule *)
           destruct H_obj. (* ruled out by assumption *)
   Defined.

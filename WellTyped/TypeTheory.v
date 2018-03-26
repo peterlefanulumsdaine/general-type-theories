@@ -110,8 +110,8 @@ Section Welltypedness.
 
   Definition Is_Well_Typed_Rule_Spec
       (T : Type_Theory_Spec σ)
-      {a} {γ_concl} {hjf_concl}
-      (R : Rule_Spec (Signature_of_TT_Spec T) a γ_concl hjf_concl)
+      {a} {hjf_concl}
+      (R : Rule_Spec (Signature_of_TT_Spec T) a hjf_concl)
     : Type.
   Proof.
      refine (_ * _).
