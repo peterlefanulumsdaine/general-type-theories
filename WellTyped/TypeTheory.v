@@ -144,6 +144,36 @@ Section Welltypedness.
     : Transitive (ae_lt A).
   Admitted.  (* Needs to be added as assuption in [algebraic_extension]. *)
 
+  (* TODO: upstream to [WellFormed.Rule]; 
+           use this in [raw_rule_of_rule] (flattening);
+           consider whether the flattening of the conclusion can also be covered by this. *)
+  Lemma judgement_of_premise 
+      {Σ : signature σ} {a} {A : algebraic_extension Σ a} (i : A)
+      {Σ'} (f : Signature_Map (Metavariable.extend Σ (ae_arity_of_rule _ i)) Σ')
+      (Sr : Judgement.is_object (ae_hjf_of_rule _ i) 
+           -> { S : Σ'
+             & (symbol_arity S = simple_arity (ae_proto_cxt_of_rule _ i))
+             * (symbol_class S = Judgement.class_of (ae_hjf_of_rule _ i))})
+   : judgement_total Σ'.
+  Proof.
+      exists (form_hypothetical (ae_hjf_of_rule _ i)).
+      exists (Fmap_Raw_Context f (ae_raw_context_of_rule _ i)).
+      apply Judgement.hypothetical_instance_from_boundary_and_head.
+      + refine (Fmap_Hyp_Judgt_Bdry_Instance f _).
+        apply ae_hyp_bdry_of_rule.
+      + intro H_obj.
+        destruct i as [ i_obj | i_eq ]; simpl in *.
+        * (* case: i an object rule *)
+          simple refine (raw_symbol' _ _ _).
+          -- refine (Sr _).1. constructor.
+          -- refine (snd (Sr _).2).
+          -- set (e := (fst (Sr tt).2)^). destruct e.
+             intro v. apply raw_variable.
+             exact (coproduct_inj1 shape_is_sum v).
+        * (* case: i an equality rule *)
+          destruct H_obj. (* ruled out by assumption *)
+  Defined.
+   
   Definition is_well_typed_algebraic_extension
       {Σ : signature σ} (T : flat_type_theory Σ)
       {a} (A : algebraic_extension Σ a)
@@ -157,32 +187,20 @@ Section Welltypedness.
     - (* open hypotheses to allow in the derivation *)
       exists {i : ae_rule A & ae_lt _ i r }.
       intros [i lt_i_r].
-      (* TODO: unify the following part with [raw_rule_of_rule]. *)
-      assert (f_i_r : Signature_Map
-        (Metavariable.extend Σ (ae_arity_of_rule _ i))
-        (Metavariable.extend Σ (ae_arity_of_rule _ r))).
-      {
-        apply Fmap2_Metavariable_Extension.
+      apply (judgement_of_premise i).
+      + apply Fmap2_Metavariable_Extension.
         simple refine (_;_).
-        + intros [j lt_j_i].
+        * intros [j lt_j_i].
           simpl. exists j. apply (ae_transitive _ i); assumption.
-        + intro; apply idpath.
-      }
-      exists (form_hypothetical (ae_hjf_of_rule _ i)).
-      exists (Fmap_Raw_Context f_i_r (ae_raw_context_of_rule _ i)).
-      apply Judgement.hypothetical_instance_from_boundary_and_head.
-      + refine (Fmap_Hyp_Judgt_Bdry_Instance f_i_r _).
-        apply ae_hyp_bdry_of_rule.
-      + intro H_obj.
-        destruct i as [ i_obj | i_eq ]; simpl in *.
-        * (* case: i an object rule *)
-          simple refine (raw_symbol' _ _ _).
-          -- apply include_metavariable. exists i_obj. assumption.
-          -- apply idpath.
-          -- intro v. apply raw_variable.
-             exact (coproduct_inj1 shape_is_sum v).
-        * (* case: i an equality rule *)
-          destruct H_obj. (* ruled out by assumption *)
+        * intro; apply idpath.
+      + intros H_i_obj.
+        destruct i as [ i | i ]; simpl in i.
+        * (* case: i an object premise *)
+          simple refine (_;_). 
+          -- apply include_metavariable. exists i. assumption.
+          -- split; apply idpath.
+        * (* case: i an equality premise *)
+          destruct H_i_obj. (* ruled out by assumption *)
   Defined.
   (* Roughly, we want to add the earlier rules of [A] to [T], and typecheck [r] over that.  There are (at least) three ways to do this:
     (1) take earlier rules just as judgements, and allow them as hypotheses in the derivation;
@@ -206,9 +224,22 @@ Section Welltypedness.
     refine (is_well_typed_algebraic_extension T (premise R) * _).
     (* well-typedness of conclusion *)
     refine (Derivation_Judgt_Bdry_Instance _ (judgt_bdry_of_conclusion R) _).
-    - admit.
-    - admit.
-    (* This should parallel [is_well_typed_algebraic_extension] above. *)
-  Admitted.
+    - (* ambient type theory to typecheck premise [p] in *)
+      simple refine (fmap_flat_type_theory _ T).
+      apply include_symbol.
+    - (* open hypotheses to allow in the derivation *)
+      exists (premise R).
+      intros i. apply (judgement_of_premise i).
+      + apply Fmap2_Metavariable_Extension.
+        apply Family.inclusion.
+      + intros H_i_obj.
+        destruct i as [ i | i ]; simpl in i.
+        * (* case: i an object premise *)
+          simple refine (_;_). 
+          -- apply include_metavariable. exact i.
+          -- split; apply idpath.
+        * (* case: i an equality premise *)
+          destruct H_i_obj. (* ruled out by assumption *)
+  Defined.
 
 End Welltypedness.
