@@ -126,7 +126,7 @@ Section MetavariableNotations.
 
     These will typically use [< … >] notation.
 
-  2. Arities of metavariables, from [Metavariable_Extension].
+  2. Arities of metavariables, from [Metavariable.extend].
 
     These will have only (Ty, shape_empty) arguments, and be indexed by the positions of some protocxt, which will itself probably be built up by [shape_extend].
 

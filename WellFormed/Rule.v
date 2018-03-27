@@ -24,20 +24,20 @@ Such an extension can add both object rules and equality rules.  When an extensi
 
 The extension is _algebraic_ in the sense that it does not introduce any new binders; this is the raw-syntax analogue of an arity seen as specifying the metavariable-extension of a signature. *)
 Record algebraic_extension
-  {Σ : Signature σ}
-  {a : Arity σ} (* arity listing the _object_ rules of the extension *)
+  {Σ : signature σ}
+  {a : arity σ} (* arity listing the _object_ rules of the extension *)
 :=
   {
   (* The arity [a] supplies the family of object-judgment rules. *)
   (* The family of equality-judgment rules: *)
-    ae_equality_rule : Arity σ
+    ae_equality_rule : arity σ
   (* family indexing the rules of the extension, and giving for each… *)
-  ; ae_rule :> family (Hyp_Judgt_Form * σ)
+  ; ae_rule :> family (Judgement.hypothetical_form * σ)
     := Family.sum
-         (Family.fmap (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) a)
-         (Family.fmap (fun cl_γ => (eq_HJF (fst cl_γ), snd cl_γ)) ae_equality_rule)
+         (Family.fmap (fun cl_γ => (form_object (fst cl_γ), snd cl_γ)) a)
+         (Family.fmap (fun cl_γ => (form_equality (fst cl_γ), snd cl_γ)) ae_equality_rule)
   (* - the judgement form of each rule, e.g. “term” or “type equality” *)
-  ; ae_hjf_of_rule : ae_rule -> Hyp_Judgt_Form
+  ; ae_hjf_of_rule : ae_rule -> Judgement.hypothetical_form
     := fun i => fst (ae_rule i)
   (* - the proto-context of each rule *)
   ; ae_proto_cxt_of_rule : ae_rule -> σ
@@ -46,26 +46,25 @@ Record algebraic_extension
   (* TODO: somewhere we will want to add that this is well-founded; maybe prop_valued; mayb more *)
   ; ae_lt : ae_rule -> ae_rule -> Type
   (* for each rule, the arity specifying what metavariables are available in the syntax for this rule; i.e., the family of type/term arguments already introduced by earlier rules *)
-  ; ae_arity_of_rule : ae_rule -> Arity _
+  ; ae_arity_of_rule : ae_rule -> arity _
     := fun i => Family.subfamily a (fun j => ae_lt (inl j) i)
   (* syntactic part of context of rule *)
   (* NOTE: this should never be used directly, always through [ae_raw_context_of_rule] *)
   ; ae_context_expr_of_rule
     : forall (i : ae_rule) (v : ae_proto_cxt_of_rule i),
-        Raw_Syntax
-          (Metavariable_Extension Σ (ae_arity_of_rule i))
-          Ty
+        raw_type
+          (Metavariable.extend Σ (ae_arity_of_rule i))
           (ae_proto_cxt_of_rule i)
   (* raw context of each rule *)
   ; ae_raw_context_of_rule
     : forall i : ae_rule,
-        Raw_Context (Metavariable_Extension Σ (ae_arity_of_rule i))
-    := fun i => Build_Raw_Context _ (ae_context_expr_of_rule i)
+        raw_context (Metavariable.extend Σ (ae_arity_of_rule i))
+    := fun i => Build_raw_context _ (ae_context_expr_of_rule i)
   (* hypothetical judgement boundary instance for each rule *)
   ; ae_hyp_bdry_of_rule
     : forall i : ae_rule,
-        Hyp_Judgt_Bdry_Instance
-          (Metavariable_Extension Σ (ae_arity_of_rule i))
+        Judgement.hypothetical_boundary
+          (Metavariable.extend Σ (ae_arity_of_rule i))
           (ae_hjf_of_rule i)
           (ae_proto_cxt_of_rule i)
   }.
@@ -74,16 +73,16 @@ Arguments algebraic_extension _ _ : clear implicits.
 
 (* The parameters of a rule, beyond its ambient signature, may be a little counter-intuitive.  The point is that they are just what is required to determine the arity of the symbol introduced by the rule, if it’s an object rule. *)
 Record rule
-  {Σ : Signature σ}
-  {a : Arity σ} (* arity listing the _object_ premises of the rule *)
-  {hjf_conclusion : Hyp_Judgt_Form} (* judgement form of the conclusion *)
+  {Σ : signature σ}
+  {a : arity σ} (* arity listing the _object_ premises of the rule *)
+  {hjf_conclusion : Judgement.hypothetical_form} (* judgement form of the conclusion *)
 :=
   {
     premise : algebraic_extension Σ a
   (* hyp judgement boundary instance of conclusion: *)
   ; hyp_judgt_bdry_of_conclusion
-      : Hyp_Judgt_Bdry_Instance
-          (Metavariable_Extension Σ a)
+      : Judgement.hypothetical_boundary
+          (Metavariable.extend Σ a)
           hjf_conclusion
           (shape_empty σ)
   }.
@@ -113,7 +112,7 @@ Record rule
   Abort.
 
   Definition judgt_bdry_of_conclusion {Σ} {a} {hjf} (R : rule Σ a hjf)
-    : Judgt_Bdry_Instance (Metavariable_Extension Σ a) (HJF hjf)
+    : Judgement.boundary (Metavariable.extend Σ a) (form_hypothetical hjf)
   := ([::]; hyp_judgt_bdry_of_conclusion R).
 
   Definition Fmap_rule
@@ -154,7 +153,7 @@ Section Associated_Congruence_Rules.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  Definition associated_original_premise {obs eqs : Arity σ}
+  Definition associated_original_premise {obs eqs : arity σ}
     : (obs + obs) + (eqs + eqs + obs) -> (obs + eqs).
   Proof.
     intros p ; repeat destruct p as [p | p];
@@ -226,9 +225,9 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
     (p : (a + a) +
          (ae_equality_rule (premise R) + ae_equality_rule (premise R) + a))
     : Signature_Map
-        (Metavariable_Extension Σ
+        (Metavariable.extend Σ
           (ae_arity_of_rule (premise R) (associated_original_premise p)))
-        (Metavariable_Extension Σ (Family.subfamily (a + a)
+        (Metavariable.extend Σ (Family.subfamily (a + a)
            (fun j => associated_congruence_rule_lt (ae_lt _) (inl j) p))).
   Proof.
     (* In case [p] is one of the 2 copies of the original premises, there is a single canonical choice for this definition.
@@ -255,12 +254,12 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
 
   Definition associated_congruence_rule
     {a} {hjf_concl} (R : rule Σ a hjf_concl)
-    (H : is_obj_HJF hjf_concl)
+    (H : Judgement.is_object hjf_concl)
     (S : Σ)
-    (e_a : arity S = a)
-    (e_cl : class S = class_of_HJF hjf_concl)
+    (e_a : symbol_arity S = a)
+    (e_cl : symbol_class S = Judgement.class_of hjf_concl)
     : (rule Σ (Family.sum a a)
-                 (eq_HJF (class_of_HJF hjf_concl))).
+                 (form_equality (Judgement.class_of hjf_concl))).
   Proof.
     simple refine (Build_rule _ _ _ _ _).
     simple refine (Build_algebraic_extension _ _ _ _ _ _).
@@ -285,28 +284,28 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
            refine (ae_hyp_bdry_of_rule _ p_orig)).
       (* The cases where [p] is a copy of an original premise are all just translation,
       leaving just the new equality premises to give. *)
-      intros i; simpl Hyp_Judgt_Bdry_Slots in i.
+      intros i; simpl Judgement.boundary_slot in i.
       destruct i as [ [ i | ] | ]; [ idtac | simpl | simpl].
       + (* boundary of the corresponding original premise *)
         refine (Fmap_Raw_Syntax
           (associated_congruence_rule_original_constructor_translation _ _) _).
         apply (ae_hyp_bdry_of_rule _ p_orig).
       + (* LHS of new equality premise *)
-        cbn. simple refine (symb_raw' _ _ _).
-        * apply inr_Metavariable.
+        cbn. simple refine (raw_symbol' _ _ _).
+        * apply Metavariable.include_metavariable.
           refine (inl p; _).
           apply inr, idpath.
         * apply idpath.
         * intros i.
           apply raw_variable, (coproduct_inj1 shape_is_sum), i.
       + (* RHS of new equality premise *)
-        cbn. simple refine (symb_raw' _ _ _).
-        * apply inr_Metavariable.
+        cbn. simple refine (raw_symbol' _ _ _).
+        * apply Metavariable.include_metavariable.
           refine (inr p; _).
           apply inr, idpath.
         * apply idpath.
         * intros i.
-          apply var_raw, (coproduct_inj1 shape_is_sum), i.
+          apply raw_variable, (coproduct_inj1 shape_is_sum), i.
     - (* ae_hyp_judgt_bdry_of_conclusion *)
       intros [ [ i | ] | ]; simpl.
       + (* boundary of original conclusion *)
@@ -316,34 +315,34 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
           -- exact (hyp_judgt_bdry_of_conclusion R i).
           -- destruct H. (* [hjf_concl] can’t be an equality judgement *)
       + (* LHS of new conclusion *)
-        cbn. simple refine (symb_raw' _ _ _).
-        * apply inl_Symbol, S.
+        cbn. simple refine (raw_symbol' _ _ _).
+        * apply Metavariable.include_symbol, S.
         * apply e_cl.
-        * change (arity (inl_Symbol S)) with (arity S).
+        * change (symbol_arity (Metavariable.include_symbol S)) with (symbol_arity S).
           destruct (e_a^); clear e_a.
           intros p.
-          simple refine (symb_raw' _ _ _).
-          -- apply inr_Metavariable.
+          simple refine (raw_symbol' _ _ _).
+          -- apply Metavariable.include_metavariable.
              exact (inl p).
           -- apply idpath.
           -- cbn. intros i.
-             apply var_raw.
+             apply raw_variable.
              apply (coproduct_inj1 shape_is_sum).
              apply (coproduct_inj2 shape_is_sum).
              exact i.
       + (* RHS of new conclusion *)
-        cbn. simple refine (symb_raw' _ _ _).
-        * apply inl_Symbol, S.
+        cbn. simple refine (raw_symbol' _ _ _).
+        * apply Metavariable.include_symbol, S.
         * apply e_cl.
-        * change (arity (inl_Symbol S)) with (arity S).
+        * change (symbol_arity (Metavariable.include_symbol S)) with (symbol_arity S).
           destruct (e_a^); clear e_a.
           intros p.
-          simple refine (symb_raw' _ _ _).
-          -- apply inr_Metavariable.
+          simple refine (raw_symbol' _ _ _).
+          -- apply Metavariable.include_metavariable.
              exact (inr p).
           -- apply idpath.
           -- cbn. intros i.
-             apply var_raw.
+             apply raw_variable.
              apply (coproduct_inj1 shape_is_sum).
              apply (coproduct_inj2 shape_is_sum).
              exact i.
@@ -368,25 +367,25 @@ Section Raw_Rules_of_Rules.
   Definition Raw_Rule_of_Rule
     {a} {hjf_concl}
     (R : rule Σ a hjf_concl)
-    (Sr : is_obj_HJF hjf_concl
-        -> { S : Σ & (arity S = a) * (class S = class_of_HJF hjf_concl) })
-  : Raw_Rule Σ.
+    (Sr : Judgement.is_object hjf_concl
+        -> { S : Σ & (symbol_arity S = a) * (symbol_class S = Judgement.class_of hjf_concl) })
+  : flat_rule Σ.
   (* This construction involves essentially two aspects:
   - translate the syntax of each expression in the rule-spec from its “local” signatures to the overall signature;
   - reconstruct the head terms of the object premises and the conclusion *)
   Proof.
-    refine (Build_Raw_Rule _ a _ _).
+    refine (Build_flat_rule _ a _ _).
     - (* premises *)
       exists (premise R).
       intros P.
       assert (f_P : Signature_Map
-              (Metavariable_Extension Σ (ae_arity_of_rule _ P))
-              (Metavariable_Extension Σ a)).
+              (Metavariable.extend Σ (ae_arity_of_rule _ P))
+              (Metavariable.extend Σ a)).
       {
         apply Fmap2_Metavariable_Extension.
         apply Family.inclusion.
       }
-      exists (HJF (ae_hjf_of_rule _ P)).
+      exists (form_hypothetical (ae_hjf_of_rule _ P)).
       exists (Fmap_Raw_Context f_P (ae_raw_context_of_rule _ P)).
       simpl.
       apply Judgement.hypothetical_instance_from_boundary_and_head.
@@ -395,31 +394,31 @@ Section Raw_Rules_of_Rules.
       + intro H_obj.
         destruct P as [ P | P ]; simpl in P.
         * (* case: P an object premise *)
-          refine (symb_raw (inr P : Metavariable_Extension Σ a) _).
+          refine (raw_symbol (inr P : Metavariable.extend Σ a) _).
           intro i. apply raw_variable.
           exact (coproduct_inj1 shape_is_sum i).
         * (* case: P an equality premise *)
           destruct H_obj. (* ruled out by assumption *)
    - (* conclusion *)
-      exists (HJF hjf_concl).
+      exists (form_hypothetical hjf_concl).
       simpl.
       exists (pr1 (judgt_bdry_of_conclusion R)).
-      apply Hyp_Judgt_Instance_from_bdry_plus_head.
+      apply Judgement.hypothetical_instance_from_boundary_and_head.
       + exact (pr2 (judgt_bdry_of_conclusion R)).
       + intros H_obj.
         destruct hjf_concl as [ ocl | ecl ]; simpl in *.
         * (* case: R an object rule *)
           destruct (Sr tt) as [S_R [e_a e_cl]]. clear Sr H_obj.
-          destruct e_cl. (* TODO: can we simplify here with [symb_raw']? *)
-          refine (symb_raw (inl S_R : Metavariable_Extension _ _) _).
-          change (arity (inl S_R : Metavariable_Extension _ _))
-            with (arity S_R).
-          set (aR := arity S_R) in *. destruct (e_a^); clear e_a.
+          destruct e_cl. (* TODO: can we simplify here with [raw_symbol']? *)
+          refine (raw_symbol (inl S_R : Metavariable.extend _ _) _).
+          change (symbol_arity (inl S_R : Metavariable.extend _ _))
+            with (symbol_arity S_R).
+          set (aR := symbol_arity S_R) in *. destruct (e_a^); clear e_a.
           intros p.
           cbn in p.
-          refine (symb_raw (inr p : Metavariable_Extension _ _) _).
+          refine (raw_symbol (inr p : Metavariable.extend _ _) _).
           intros i.
-          apply var_raw.
+          apply raw_variable.
           apply (coproduct_inj1 shape_is_sum).
           exact (coproduct_inj2 shape_is_sum i).
         * (* case: R an equality rule *)

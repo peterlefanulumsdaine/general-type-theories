@@ -30,10 +30,10 @@ Section Welltypedness.
     It is abstracted out because it’s used twice: directly for object judgements, and as part of the case for equality judgements.
     In fact it’s almost trivial, so could easily be inlined; but conceptually it is the same thing both times, and in type theory with more judgements, it could be less trivial, so we keep it factored out. *)
   Definition obj_presup_slots_from_boundary
-    {cl : syntactic_class} (i : Judgement.hypothetical_boundary cl)
+    {cl : syntactic_class} (i : Judgement.object_boundary_slot cl)
     : Family.map
-        (Judgement.hypothetical_boundary (Judgement.hypothetical_boundary cl i))
-        (Judgement.hypothetical_boundary cl).
+        (Judgement.object_boundary_slot (Judgement.object_boundary_slot cl i))
+        (Judgement.object_boundary_slot cl).
   Proof.
     apply Build_Family_Map'. intros j.
     destruct cl as [ | ]; cbn in i.
@@ -45,10 +45,10 @@ Section Welltypedness.
 
   (* TODO: move upstream; consider name! *)
   Definition presup_slots_from_boundary
-    {hjf : judgement_form} (i : Judgement.hypothetical_boundary hjf)
+    {hjf : Judgement.hypothetical_form} (i : Judgement.boundary_slot hjf)
     : Family.map
-        (judgement_form_Slots (form_object (Judgement.hypothetical_boundary hjf i)))
-        (Judgement.hypothetical_boundary hjf).
+        (Judgement.slot (form_object (Judgement.boundary_slot hjf i)))
+        (Judgement.boundary_slot hjf).
   Proof.
     apply Build_Family_Map'.
     intros [ j | ].
@@ -73,7 +73,7 @@ Section Welltypedness.
   
   (* TODO: move upstream, right to [Syntax] even? *)
   Definition Presup_of_Judgt_Bdry_Instance
-      {Σ : signature σ} {jf} (jbi : Judgt_Bdry_Instance Σ jf)
+      {Σ : signature σ} {jf} (jbi : Judgement.boundary Σ jf)
     : family (judgement_total Σ).
   Proof.
     destruct jf as [ | hjf].
@@ -82,9 +82,9 @@ Section Welltypedness.
     - (* hyp judgement: presups are the context,
                         plus the slots of the hyp boundary *)
       apply Family.adjoin.
-      + exists (Judgement.hypothetical_boundary hjf).
+      + exists (Judgement.boundary_slot hjf).
         intros i.
-        exists (HJF (form_object ((Judgement.hypothetical_boundary hjf) i))).
+        exists (form_hypothetical (form_object ((Judgement.boundary_slot hjf) i))).
         exists (pr1 jbi).
         intros j.
         set (p := Family.map_commutes (presup_slots_from_boundary i) j).
@@ -101,8 +101,8 @@ Section Welltypedness.
   (* TODO: think about use of “derivation” vs. “derivability”. *)
   (* TODO: should only depend on a *flat* type theory. *)
   Definition Derivation_Judgt_Bdry_Instance
-      {Σ : Signature σ} (T : Raw_Type_Theory Σ)
-      {jf} (jbi : Judgt_Bdry_Instance Σ jf)
+      {Σ : signature σ} (T : raw_type_theory Σ)
+      {jf} (jbi : Judgement.boundary Σ jf)
       H
     : Type
   :=
@@ -110,29 +110,29 @@ Section Welltypedness.
       Derivation_from_Raw_TT T H (Presup_of_Judgt_Bdry_Instance _ i).
 
   (* TODO: upstream *)
-  Definition extend {Σ : Signature σ} {a : Arity σ}
-      (T : Raw_Type_Theory Σ) (A : algebraic_extension Σ a)
-    : Raw_Type_Theory Σ.
+  Definition extend {Σ : signature σ} {a : arity σ}
+      (T : raw_type_theory Σ) (A : algebraic_extension Σ a)
+    : raw_type_theory Σ.
   Proof.
   Admitted.
   
   (* TODO: upstream, maybe even into def of algebraic extension? *)
   (* TODO: rename [ae_arity_of_rule] to [ae_arity_for_rule] ? *)
-  Definition ae_signature_for_rule {Σ : Signature σ} {a}
+  Definition ae_signature_for_rule {Σ : signature σ} {a}
       {A : algebraic_extension Σ a} (r : A)
-  := (Metavariable_Extension Σ (ae_arity_of_rule _ r)).
+  := (Metavariable.extend Σ (ae_arity_of_rule _ r)).
 
   (* TODO: upstream *)
-  Definition ae_judgt_bdry_of_rule {Σ : Signature σ} {a}
+  Definition ae_judgt_bdry_of_rule {Σ : signature σ} {a}
       {A : algebraic_extension Σ a} (r : A)
-    : Judgt_Bdry_Instance (ae_signature_for_rule r) (HJF (ae_hjf_of_rule _ r)).
+    : Judgement.boundary (ae_signature_for_rule r) (form_hypothetical (ae_hjf_of_rule _ r)).
   Proof.
     exists (ae_raw_context_of_rule _ r).
     apply (ae_hyp_bdry_of_rule).
   Defined.
 
   Definition is_well_typed_algebraic_extension
-      {Σ : Signature σ} (T : Raw_Type_Theory Σ)
+      {Σ : signature σ} (T : raw_type_theory Σ)
       {a} (A : algebraic_extension Σ a)
     : Type.
   Proof.
@@ -155,7 +155,7 @@ Section Welltypedness.
   Admitted.
 
   Definition Is_Well_Typed_Rule
-      {Σ : Signature σ} (T : Raw_Type_Theory Σ)
+      {Σ : signature σ} (T : raw_type_theory Σ)
       {a} {hjf_concl}
       (R : rule Σ a hjf_concl)
     : Type.
@@ -168,4 +168,4 @@ Section Welltypedness.
     (* This should parallel [is_well_typed_algebraic_extension] above. *)
   Admitted.
 
-End Welltypedness.<
+End Welltypedness.

@@ -17,21 +17,21 @@ Section Type_Theories.
   Record Type_Theory
   := {
   (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
-    TT_rule_index :> family (Hyp_Judgt_Form * Arity σ)
+    TT_rule_index :> family (Judgement.hypothetical_form * arity σ)
   (* the judgement form of the conclusion of each rule *)
-  ; TT_hjf_of_rule : TT_rule_index -> Hyp_Judgt_Form
+  ; TT_hjf_of_rule : TT_rule_index -> Judgement.hypothetical_form
     := fun i => fst (TT_rule_index i)
   (* the arity of the arguments (i.e. the *object* premises only) of each rule *)
-  ; TT_arity_of_rule : TT_rule_index -> Arity _
+  ; TT_arity_of_rule : TT_rule_index -> arity _
     := fun i => snd (TT_rule_index i)
   (* the ordering on rules.  TODO: will probably need to add well-foundedness. QUESTION: any reason for it to be Prop-valued, or could we just let it be type-valued? *)
   ; TT_lt : TT_rule_index -> TT_rule_index -> Type
   (* the signature over which each rule can be written *)
-  ; TT_signature_of_rule : TT_rule_index -> Signature σ
+  ; TT_signature_of_rule : TT_rule_index -> signature σ
     := fun i => Family.fmap
-        (fun (ja : Hyp_Judgt_Form * Arity σ) => (class_of_HJF (fst ja), snd ja))
+        (fun (ja : Judgement.hypothetical_form * arity σ) => (Judgement.class_of (fst ja), snd ja))
         (Family.subfamily TT_rule_index
-          (fun j => is_obj_HJF (TT_hjf_of_rule j) * TT_lt j i))
+          (fun j => Judgement.is_object (TT_hjf_of_rule j) * TT_lt j i))
   (* the actual rule specification of each rule *)
   ; TT_rule
     : forall i : TT_rule_index,
@@ -42,19 +42,19 @@ Section Type_Theories.
   }.
 
   Definition Signature_of_Type_Theory (T : Type_Theory)
-    : Signature σ.
+    : signature σ.
   Proof.
     (* symbols are given by the object-judgement rules of T *)
-    exists {r : T & is_obj_HJF (TT_hjf_of_rule _ r)}.
+    exists {r : T & Judgement.is_object (TT_hjf_of_rule _ r)}.
     intros r_H. set (r := pr1 r_H).
     split.
-    - exact (class_of_HJF (TT_hjf_of_rule _ r)).
+    - exact (Judgement.class_of (TT_hjf_of_rule _ r)).
     - exact (TT_arity_of_rule _ r).
   Defined.
     (* NOTE: it is tempting to case-analyse here and say 
-      “when r is an object rule, use [(class_of_HJF …, TT_arity_of_rule …)];
+      “when r is an object rule, use [(Judgement.class_of …, TT_arity_of_rule …)];
        in case r is an equality rule, use reductio ad absurdum with Hr.” 
-     But we get stronger reduction behaviour by just taking [(class_of_HJF …, TT_arity_of_rule …)] without case-analysing first.  (And up to equality, we get the same result.)  *)
+     But we get stronger reduction behaviour by just taking [(Judgement.class_of …, TT_arity_of_rule …)] without case-analysing first.  (And up to equality, we get the same result.)  *)
 
   Definition Type_Theory_signature_inclusion_of_rule
       {T : Type_Theory} (r : T)
@@ -84,7 +84,7 @@ Section Derivability_from_Type_Theory.
   Context {σ : shape_system}.
 
   Definition Raw_TT_of_Type_Theory (T : Type_Theory σ)
-    : Raw_Type_Theory (Signature_of_Type_Theory T).
+    : raw_type_theory (Signature_of_Type_Theory T).
   Proof.
     refine (_ + _).
     (* First: the explicitly-given logical rules *)
@@ -99,7 +99,7 @@ Section Derivability_from_Type_Theory.
         exists (r; r_obj).
         split; apply idpath.
     (* Second: associated congruence rules for the object-judgement logical rules. *)
-    - exists { r : T & is_obj_HJF (TT_hjf_of_rule r) }.
+    - exists { r : T & Judgement.is_object (TT_hjf_of_rule r) }.
       intros [r Hr].
       refine (Raw_Rule_of_Rule _ _).
       + simple refine
@@ -114,7 +114,7 @@ Section Derivability_from_Type_Theory.
   Defined.
 
   Definition Derivation_from_Type_Theory (T : Type_Theory σ) H
-    : Judgt_Instance (Signature_of_Type_Theory T) -> Type
+    : judgement_total (Signature_of_Type_Theory T) -> Type
   := Derivation_from_Raw_TT (Raw_TT_of_Type_Theory T) H.
 
 End Derivability_from_Type_Theory.

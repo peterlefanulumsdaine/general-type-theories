@@ -258,7 +258,7 @@ Section TT_Maps.
     (*   set (a := flat_rule_metas Σ c) in *. *)
     (*   unfold Derivation_Raw_Rule_from_Raw_TT in fc. cbn in fc. *)
     (*   transparent assert (f_a : (Signature_Map *)
-    (*         (Metavariable_Extension Σ a) (Metavariable_Extension Σ' a))). *)
+    (*         (Metavariable.extend Σ a) (Metavariable.extend Σ' a))). *)
     (*     apply Fmap1_Metavariable_Extension, f. *)
       (*
       Very concretely: fc is over Σ+a.  Must map to Σ'+a, then instantiate.

@@ -125,7 +125,7 @@ Proof.
       exists Γ.
       exact hjfi.
  (* conclusion: *)
-  - exists (Judgement.form_hypothetical (form_equation cl)).
+  - exists (Judgement.form_hypothetical (form_equality cl)).
     exists Γ'.
     cbn. intros [i | ].
     + (* boundry and LHS *)
