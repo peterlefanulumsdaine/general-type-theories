@@ -83,8 +83,8 @@ Section Derivability_from_Type_Theory.
 
   Context {σ : shape_system}.
 
-  Definition Raw_TT_of_Type_Theory (T : Type_Theory σ)
-    : raw_type_theory (Signature_of_Type_Theory T).
+  Local Definition flatten (T : Type_Theory σ)
+    : flat_type_theory (Signature_of_Type_Theory T).
   Proof.
     refine (_ + _).
     (* First: the explicitly-given logical rules *)
@@ -115,6 +115,6 @@ Section Derivability_from_Type_Theory.
 
   Definition Derivation_from_Type_Theory (T : Type_Theory σ) H
     : judgement_total (Signature_of_Type_Theory T) -> Type
-  := Derivation_from_Raw_TT (Raw_TT_of_Type_Theory T) H.
+  := Derivation_from_Flat_Type_Theory (flatten T) H.
 
 End Derivability_from_Type_Theory.

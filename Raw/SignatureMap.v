@@ -118,8 +118,8 @@ Section Signature_Maps.
       apply Fmap1_Metavariable_Extension, f.
   Defined.
 
-  Definition Fmap_Raw_TT {Σ Σ'} (f : Signature_Map Σ Σ')
-    : raw_type_theory Σ -> raw_type_theory Σ'.
+  Definition fmap_flat_type_theory {Σ Σ'} (f : Signature_Map Σ Σ')
+    : flat_type_theory Σ -> flat_type_theory Σ'.
   Proof.
     apply Family.fmap, Fmap_Raw_Rule, f.
   Defined.

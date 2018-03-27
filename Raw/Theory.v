@@ -8,20 +8,20 @@ Require Import Raw.SignatureMap.
 Require Import Raw.SubstitutionFacts.
 Require Import Raw.StructuralRule.
 
-Section Derivability_from_Raw_TT.
+Section Derivability_from_Flat_Type_Theory.
 
   Context {σ : shape_system}
           {Σ : signature σ}.
 
-  Definition CCs_of_Raw_TT (T : raw_type_theory Σ)
+  Definition CCs_of_Flat_Type_Theory (T : flat_type_theory Σ)
     : Closure.system (judgement_total Σ)
     := Structural_CCs Σ + Family.bind T FlatRule.closure_system.
 
-  Definition Derivation_from_Raw_TT (T : raw_type_theory Σ) H
+  Definition Derivation_from_Flat_Type_Theory (T : flat_type_theory Σ) H
     : judgement_total Σ -> Type
-    := Closure.derivation (CCs_of_Raw_TT T) H.
+    := Closure.derivation (CCs_of_Flat_Type_Theory T) H.
 
-End Derivability_from_Raw_TT.
+End Derivability_from_Flat_Type_Theory.
 
 Section Derivable_Rules.
   (* “Derivable rules” over a type theory;
@@ -30,13 +30,13 @@ Section Derivable_Rules.
   Context {σ : shape_system}
           {Σ : signature σ}.
 
-  Definition Derivation_Raw_Rule_from_Raw_TT
-      (R : flat_rule Σ) (T : raw_type_theory Σ)
+  Definition Derivation_Raw_Rule_from_Flat_Type_Theory
+      (R : flat_rule Σ) (T : flat_type_theory Σ)
     : Type.
   Proof.
     refine (Closure.derivation _ (flat_rule_premises _ R) (flat_rule_conclusion _ R)).
-    apply CCs_of_Raw_TT.
-    refine (Fmap_Raw_TT _ T).
+    apply CCs_of_Flat_Type_Theory.
+    refine (fmap_flat_type_theory _ T).
     apply Family.map_inl. (* TODO: make this a lemma about signature maps,
                             so it’s more findable using “SearchAbout” etc *)
   Defined.
@@ -53,11 +53,11 @@ Section TT_Maps.
     à la displayed categories?
   *)
   Record TT_Map
-    {Σ : signature σ} (T : raw_type_theory Σ)
-    {Σ' : signature σ} (T' : raw_type_theory Σ')
+    {Σ : signature σ} (T : flat_type_theory Σ)
+    {Σ' : signature σ} (T' : flat_type_theory Σ')
   := { Signature_Map_of_TT_Map :> Signature_Map Σ Σ'
      ; rule_derivation_of_TT_Map
-       : forall R : T, Derivation_Raw_Rule_from_Raw_TT
+       : forall R : T, Derivation_Raw_Rule_from_Flat_Type_Theory
                          (Fmap_Raw_Rule Signature_Map_of_TT_Map (T R))
                          T'
      }.
@@ -215,7 +215,7 @@ Section TT_Maps.
     - (* equality rules *)
       simple refine (inr _; _); admit.
       (* Thest last two should be doable cleanly by the same lemmas
-      used for logical rules in [Fmap_CCs_of_Raw_TT] below, once that’s done. *)
+      used for logical rules in [Fmap_CCs_of_Flat_Type_Theory] below, once that’s done. *)
   Admitted.
 
   (* TODO: upstream *)
@@ -229,16 +229,16 @@ Section TT_Maps.
   (*   - apply Family.map_commutes. *)
   (* Defined. *)
 
-  Definition Fmap_CCs_of_Raw_TT
-    {Σ : signature σ} (T : raw_type_theory Σ)
-    {Σ' : signature σ} (T' : raw_type_theory Σ')
+  Definition Fmap_CCs_of_Flat_Type_Theory
+    {Σ : signature σ} (T : flat_type_theory Σ)
+    {Σ' : signature σ} (T' : flat_type_theory Σ')
     (f : TT_Map T T')
   : Closure.map
-      (Family.fmap (Closure.fmap (Fmap_Judgt_Instance f)) (CCs_of_Raw_TT T))
-      (CCs_of_Raw_TT T').
+      (Family.fmap (Closure.fmap (Fmap_Judgt_Instance f)) (CCs_of_Flat_Type_Theory T))
+      (CCs_of_Flat_Type_Theory T').
   Proof.
     intros c. (* We need to unfold [c] a bit here, bit not too much. *)
-    unfold Family.fmap, family_index, CCs_of_Raw_TT in c.
+    unfold Family.fmap, family_index, CCs_of_Flat_Type_Theory in c.
     destruct c as [ c_str | c_from_rr ].
     - (* Structural rules *)
       (* an instance of a structural rule is translated to an instance of the same structural rule *)
@@ -256,7 +256,7 @@ Section TT_Maps.
     (*   set (fc := rule_derivation_of_TT_Map _ _ f i). (* TODO: implicits! *) *)
     (*   set (c := T i) in *. *)
     (*   set (a := flat_rule_metas Σ c) in *. *)
-    (*   unfold Derivation_Raw_Rule_from_Raw_TT in fc. cbn in fc. *)
+    (*   unfold Derivation_Raw_Rule_from_Flat_Type_Theory in fc. cbn in fc. *)
     (*   transparent assert (f_a : (Signature_Map *)
     (*         (Metavariable.extend Σ a) (Metavariable.extend Σ' a))). *)
     (*     apply Fmap1_Metavariable_Extension, f. *)

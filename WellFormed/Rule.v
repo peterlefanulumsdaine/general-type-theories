@@ -364,6 +364,7 @@ Section Raw_Rules_of_Rules.
   Context {Σ : signature σ}.
 
   (* Flattening a rule into a raw rule requires no extra information in the case of an equality-rule; in the case of an object-rule, it requires a symbol of appropriate arity to give the object introduced. *)
+  (* TODO: rename to “flatten” *)
   Definition Raw_Rule_of_Rule
     {a} {hjf_concl}
     (R : rule Σ a hjf_concl)
@@ -378,6 +379,7 @@ Section Raw_Rules_of_Rules.
     - (* premises *)
       exists (premise R).
       intros P.
+      (* TODO: unify this with [is_well_typed_algebraic_extension]. *)
       assert (f_P : Signature_Map
               (Metavariable.extend Σ (ae_arity_of_rule _ P))
               (Metavariable.extend Σ a)).

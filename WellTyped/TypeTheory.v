@@ -1,8 +1,10 @@
 Require Import HoTT.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
+Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 Require Import Raw.Theory.
+Require Import Raw.SignatureMap.
 Require Import WellFormed.Rule.
 Require Import WellFormed.TypeTheory.
 
@@ -99,20 +101,19 @@ Section Welltypedness.
   (* TODO: consider making Signature_of_Type_Theory a coercion? *)
   (* TODO: consider naming conventions for types of the form “derivation of X from Y” *)
   (* TODO: think about use of “derivation” vs. “derivability”. *)
-  (* TODO: should only depend on a *flat* type theory. *)
   Definition Derivation_Judgt_Bdry_Instance
-      {Σ : signature σ} (T : raw_type_theory Σ)
+      {Σ : signature σ} (T : flat_type_theory Σ)
       {jf} (jbi : Judgement.boundary Σ jf)
-      H
+      (H : family (judgement_total Σ))
     : Type
   :=
     forall (i : Presup_of_Judgt_Bdry_Instance jbi),
-      Derivation_from_Raw_TT T H (Presup_of_Judgt_Bdry_Instance _ i).
+      Derivation_from_Flat_Type_Theory T H (Presup_of_Judgt_Bdry_Instance _ i).
 
   (* TODO: upstream *)
   Definition extend {Σ : signature σ} {a : arity σ}
-      (T : raw_type_theory Σ) (A : algebraic_extension Σ a)
-    : raw_type_theory Σ.
+      (T : flat_type_theory Σ) (A : algebraic_extension Σ a)
+    : flat_type_theory Σ.
   Proof.
   Admitted.
   
@@ -131,17 +132,58 @@ Section Welltypedness.
     apply (ae_hyp_bdry_of_rule).
   Defined.
 
+  (* TODO: upstream; consider naming *)
+  Definition include_symbol (Σ : signature σ) a
+     : (Signature_Map Σ (Metavariable.extend Σ a)).
+  Proof.
+    exists Metavariable.include_symbol.
+    intros; apply idpath.
+  Defined.
+
+  Lemma ae_transitive {Σ : signature σ} {a} {A : algebraic_extension Σ a}
+    : Transitive (ae_lt A).
+  Admitted.  (* Needs to be added as assuption in [algebraic_extension]. *)
+
   Definition is_well_typed_algebraic_extension
-      {Σ : signature σ} (T : raw_type_theory Σ)
+      {Σ : signature σ} (T : flat_type_theory Σ)
       {a} (A : algebraic_extension Σ a)
     : Type.
   Proof.
     refine (forall r : A, _).
     refine (Derivation_Judgt_Bdry_Instance _ (ae_judgt_bdry_of_rule r) _).
-    + (* ambient type theory to typecheck premise [p] in *)
-      admit.
-    + (* open hypotheses to allow in the derivation *)
-      admit.
+    - (* ambient type theory to typecheck premise [p] in *)
+      simple refine (fmap_flat_type_theory _ T).
+      apply include_symbol.
+    - (* open hypotheses to allow in the derivation *)
+      exists {i : ae_rule A & ae_lt _ i r }.
+      intros [i lt_i_r].
+      (* TODO: unify the following part with [raw_rule_of_rule]. *)
+      assert (f_i_r : Signature_Map
+        (Metavariable.extend Σ (ae_arity_of_rule _ i))
+        (Metavariable.extend Σ (ae_arity_of_rule _ r))).
+      {
+        apply Fmap2_Metavariable_Extension.
+        simple refine (_;_).
+        + intros [j lt_j_i].
+          simpl. exists j. apply (ae_transitive _ i); assumption.
+        + intro; apply idpath.
+      }
+      exists (form_hypothetical (ae_hjf_of_rule _ i)).
+      exists (Fmap_Raw_Context f_i_r (ae_raw_context_of_rule _ i)).
+      apply Judgement.hypothetical_instance_from_boundary_and_head.
+      + refine (Fmap_Hyp_Judgt_Bdry_Instance f_i_r _).
+        apply ae_hyp_bdry_of_rule.
+      + intro H_obj.
+        destruct i as [ i_obj | i_eq ]; simpl in *.
+        * (* case: i an object rule *)
+          simple refine (raw_symbol' _ _ _).
+          -- apply include_metavariable. exists i_obj. assumption.
+          -- apply idpath.
+          -- intro v. apply raw_variable.
+             exact (coproduct_inj1 shape_is_sum v).
+        * (* case: i an equality rule *)
+          destruct H_obj. (* ruled out by assumption *)
+  Defined.
   (* Roughly, we want to add the earlier rules of [A] to [T], and typecheck [r] over that.  There are (at least) three ways to do this:
     (1) take earlier rules just as judgements, and allow them as hypotheses in the derivation;
     (2) take earlier rules as judgements, then add rules to [T] giving these judgements as axioms;
@@ -151,11 +193,12 @@ Section Welltypedness.
 
   (1) would nicely fit into the monadic view of derivations.
   (3) would nicely factorise into “take initial segment of an alg ext”, and “extend TT by an alg ext”.
+
+  We currently take option (1).
   *)
-  Admitted.
 
   Definition Is_Well_Typed_Rule
-      {Σ : signature σ} (T : raw_type_theory Σ)
+      {Σ : signature σ} (T : flat_type_theory Σ)
       {a} {hjf_concl}
       (R : rule Σ a hjf_concl)
     : Type.

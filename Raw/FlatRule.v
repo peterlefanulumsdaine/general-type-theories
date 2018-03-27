@@ -34,8 +34,20 @@ Section FlatRule.
       apply (flat_rule_conclusion R).
   Defined.
 
-  Definition raw_type_theory := family flat_rule.
-
 End FlatRule.
+
+Section Flat_Type_Theory.
+
+  Context {σ : shape_system}.
+
+  Definition flat_type_theory (Σ : signature σ) : Type
+     := family (flat_rule Σ).
+
+(*  Definition fmap_flat_type_theory {Σ Σ'} (f : Signature.map Σ Σ')
+     : flat_type_theory Σ -> flat_type_theory Σ'.
+  Proof.
+  Defined. *)
+
+End Flat_Type_Theory.
 
 Arguments closure_system {_ _} _.
