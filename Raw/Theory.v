@@ -5,20 +5,20 @@ Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
 Require Import Raw.SignatureMap.
-Require Import Raw.Substitution.
+Require Import Raw.SubstitutionFacts.
 Require Import Raw.StructuralRule.
 
 Section Derivability_from_Raw_TT.
 
   Context {σ : shape_system}
-          {Σ : Signature σ}.
+          {Σ : signature σ}.
 
-  Definition CCs_of_Raw_TT (T : Raw_Type_Theory Σ)
-    : Closure.system (Judgt_Instance Σ)
-    := Structural_CCs Σ + Family.bind T CCs_of_RR.
+  Definition CCs_of_Raw_TT (T : raw_type_theory Σ)
+    : Closure.system (judgement_total Σ)
+    := Structural_CCs Σ + Family.bind T FlatRule.closure_system.
 
-  Definition Derivation_from_Raw_TT (T : Raw_Type_Theory Σ) H
-    : Judgt_Instance Σ -> Type
+  Definition Derivation_from_Raw_TT (T : raw_type_theory Σ) H
+    : judgement_total Σ -> Type
     := Closure.derivation (CCs_of_Raw_TT T) H.
 
 End Derivability_from_Raw_TT.
@@ -28,13 +28,13 @@ Section Derivable_Rules.
   or, to be precise, _derivations_ of raw rules over a raw type theory. *)
 
   Context {σ : shape_system}
-          {Σ : Signature σ}.
+          {Σ : signature σ}.
 
   Definition Derivation_Raw_Rule_from_Raw_TT
-      (R : Raw_Rule Σ) (T : Raw_Type_Theory Σ)
+      (R : flat_rule Σ) (T : raw_type_theory Σ)
     : Type.
   Proof.
-    refine (Closure.derivation _ (RR_prem _ R) (RR_concln _ R)).
+    refine (Closure.derivation _ (flat_rule_premises _ R) (flat_rule_conclusion _ R)).
     apply CCs_of_Raw_TT.
     refine (Fmap_Raw_TT _ T).
     apply Family.map_inl. (* TODO: make this a lemma about signature maps,
@@ -53,8 +53,8 @@ Section TT_Maps.
     à la displayed categories?
   *)
   Record TT_Map
-    {Σ : Signature σ} (T : Raw_Type_Theory Σ)
-    {Σ' : Signature σ} (T' : Raw_Type_Theory Σ')
+    {Σ : signature σ} (T : raw_type_theory Σ)
+    {Σ' : signature σ} (T' : raw_type_theory Σ')
   := { Signature_Map_of_TT_Map :> Signature_Map Σ Σ'
      ; rule_derivation_of_TT_Map
        : forall R : T, Derivation_Raw_Rule_from_Raw_TT
@@ -95,19 +95,19 @@ Section TT_Maps.
 
   (* TODO: upstream! *)
   Definition Fmap_Raw_Context_Map
-      {Σ Σ' : Signature σ} (f : Signature_Map Σ Σ')
-      {γ γ'} (g : Raw_Context_Map Σ γ' γ)
-    : Raw_Context_Map Σ' γ' γ
+      {Σ Σ' : signature σ} (f : Signature_Map Σ Σ')
+      {γ γ'} (g : Context.map Σ γ' γ)
+    : Context.map Σ' γ' γ
   := fun i => (Fmap_Raw_Syntax f (g i)).
 
   (* TODO: upstream! *)
   Lemma Fmap_Raw_Syntax_Raw_Subst
-      {Σ Σ' : Signature σ}
+      {Σ Σ' : signature σ}
       (f : Signature_Map Σ Σ')
-      {γ γ'} (g : Raw_Context_Map Σ γ' γ)
-      {cl} (e : Raw_Syntax Σ cl γ)
-    : Fmap_Raw_Syntax f (Raw_Subst g e)
-    = Raw_Subst (Fmap_Raw_Context_Map f g) (Fmap_Raw_Syntax f e).
+      {γ γ'} (g : Context.map Σ γ' γ)
+      {cl} (e : raw_expression Σ cl γ)
+    : Fmap_Raw_Syntax f (substitute g e)
+    = substitute (Fmap_Raw_Context_Map f g) (Fmap_Raw_Syntax f e).
   Proof.
   Admitted.
 
@@ -124,11 +124,11 @@ Section TT_Maps.
 
   (* TODO: abstract [Family_Map_over] or something, i.e. a displayed-category version of family maps, for use in definitions like this? *)
   Definition Fmap_Structural_CCs
-      {Σ Σ' : Signature σ}
+      {Σ Σ' : signature σ}
       (f : Signature_Map Σ Σ')
     : Family.map
         (Family.fmap (Closure.fmap (Fmap_Judgt_Instance f)) (Structural_CCs Σ))
-        (Structural_CCs Σ'). 
+        (Structural_CCs Σ').
   Proof.
     (* TODO: possible better approach:
        - [Fmap_Family] of families commutes with sums;
@@ -143,7 +143,7 @@ Section TT_Maps.
         refine (inl (inl (inl (Some _)))).
         exists (Fmap_Raw_Context f ΓA.1).
         exact (Fmap_Raw_Syntax f ΓA.2).
-      + cbn. apply closure_condition_eq. 
+      + cbn. apply closure_condition_eq.
         * simple refine (Family_eq _ _). { apply idpath. }
           cbn. intros [ [ [] | ] | ].
           -- apply idpath.
@@ -152,25 +152,25 @@ Section TT_Maps.
              apply path_forall. intros [ [] | ];
              apply idpath.
         * cbn. apply (ap (fun x => (_; x))).
-          apply (ap (Build_Raw_Context _)).
+          apply (ap (Build_raw_context _)).
           apply path_forall.
           refine (plusone_rect _ _ (shape_is_extend _ _) _ _ _).
           -- eapply concat. { refine (plusone_comp_one _ _ _ _ _ _). }
              eapply concat. Focus 2.
                { apply ap. refine (plusone_comp_one _ _ _ _ _ _)^. } Unfocus.
-             apply inverse. apply Fmap_Raw_Weaken. 
+             apply inverse. apply Fmap_Raw_Weaken.
           -- intros x. cbn in x.
              eapply concat. { refine (plusone_comp_inj _ _ _ _ _ _ _). }
              eapply concat. Focus 2.
                { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. } Unfocus.
-             apply inverse. apply Fmap_Raw_Weaken. 
-    - (* empty context *) 
+             apply inverse. apply Fmap_Raw_Weaken.
+    - (* empty context *)
       exists (inl (inl (inl None))).
       cbn. apply closure_condition_eq.
       * simple refine (Family_eq _ _). { apply idpath. }
         intros [].
       * cbn. apply (ap (fun x => (_; x))).
-        apply (ap (Build_Raw_Context _)).
+        apply (ap (Build_raw_context _)).
         apply path_forall. refine (empty_rect _ shape_is_empty _).
     - (* substitution *)
       destruct c2 as [ Γ [Γ' [g [hjf hjfi]]]].
@@ -180,7 +180,7 @@ Section TT_Maps.
         exists (Fmap_Raw_Context f Γ').
         exists (Fmap_Raw_Context_Map f g).
         exists hjf.
-        exact (Fmap_judgement_form_Instance f hjfi).
+        exact (Fmap_Hyp_Judgt_Form_Instance f hjfi).
       + cbn. apply closure_condition_eq; cbn.
         * apply inverse.
           eapply concat. { apply Fmap_Family_Snoc. }
@@ -197,7 +197,7 @@ Section TT_Maps.
         * apply (ap (fun x => (_; x))). cbn.
           apply (ap (fun x => (_; x))).
           apply path_forall. intros i.
-          unfold Fmap_judgement_form_Instance.
+          unfold Fmap_Hyp_Judgt_Form_Instance.
           refine (Fmap_Raw_Syntax_Raw_Subst _ _ _)^.
     - (* substitution equality *)
       destruct c3 as [ Γ [Γ' [g [g' [hjf hjfi]]]]].
@@ -208,9 +208,9 @@ Section TT_Maps.
         exists (Fmap_Raw_Context_Map f g).
         exists (Fmap_Raw_Context_Map f g').
         exists hjf.
-        exact (Fmap_judgement_form_Instance f hjfi).
+        exact (Fmap_Hyp_Judgt_Form_Instance f hjfi).
       + admit.
-    - (* var rule *) 
+    - (* var rule *)
       simple refine (inl (inr _) ; _); admit.
     - (* equality rules *)
       simple refine (inr _; _); admit.
@@ -230,8 +230,8 @@ Section TT_Maps.
   (* Defined. *)
 
   Definition Fmap_CCs_of_Raw_TT
-    {Σ : Signature σ} (T : Raw_Type_Theory Σ)
-    {Σ' : Signature σ} (T' : Raw_Type_Theory Σ')
+    {Σ : signature σ} (T : raw_type_theory Σ)
+    {Σ' : signature σ} (T' : raw_type_theory Σ')
     (f : TT_Map T T')
   : Closure.map
       (Family.fmap (Closure.fmap (Fmap_Judgt_Instance f)) (CCs_of_Raw_TT T))
@@ -255,20 +255,20 @@ Section TT_Maps.
     (*   unfold Derivation_of_CC; cbn. *)
     (*   set (fc := rule_derivation_of_TT_Map _ _ f i). (* TODO: implicits! *) *)
     (*   set (c := T i) in *. *)
-    (*   set (a := RR_metas Σ c) in *. *)
+    (*   set (a := flat_rule_metas Σ c) in *. *)
     (*   unfold Derivation_Raw_Rule_from_Raw_TT in fc. cbn in fc. *)
     (*   transparent assert (f_a : (Signature_Map *)
     (*         (Metavariable_Extension Σ a) (Metavariable_Extension Σ' a))). *)
     (*     apply Fmap1_Metavariable_Extension, f. *)
       (*
       Very concretely: fc is over Σ+a.  Must map to Σ'+a, then instantiate.
-      
+
       *)
       (* OK, this can be all abstracted a bit better:
-       - “derivable cc’s” gives a “monad” on closure systems; so “deduce-bind” or something, like “deduce” but with a derivable cc instead of an atomic one 
+       - “derivable cc’s” gives a “monad” on closure systems; so “deduce-bind” or something, like “deduce” but with a derivable cc instead of an atomic one
        - any instantiation of a derivable raw rule gives a derivable closure condition over CCs_of_TT.
        - fmap on derivable closure conditions
-       - fmap on *) 
+       - fmap on *)
   Admitted.
 
   (* TODO: the above shows that we need some serious extra tools for building derivations, in several ways:

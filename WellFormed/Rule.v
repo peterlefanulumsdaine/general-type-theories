@@ -20,7 +20,7 @@ Context {σ : shape_system}.
 
 (* The parameters of a rule-spec, beyond its ambient signature, may be a little counter-intuitive.  The point is that they are just what is required to determine the arity of the symbol introduced by the rule, if it’s an object rule. *)
 Record Rule_Spec
-  {Σ : Signature σ}
+  {Σ : signature σ}
   {a : Arity σ} (* arity listing the _object_ premises of the rule *)
   {γ_conclusion : σ} (* proto-context of the conclusion *)
   {hjf_conclusion : judgement_form} (* judgement form of the conclusion *)
@@ -57,8 +57,8 @@ Record Rule_Spec
   (* raw context of each premise *)
   ; RS_raw_context_of_premise
     : forall i : RS_Premise,
-        Raw_Context (Metavariable_Extension Σ (RS_arity_of_premise i))
-    := fun i => Build_Raw_Context _ (RS_context_expr_of_premise i)
+        raw_context (Metavariable_Extension Σ (RS_arity_of_premise i))
+    := fun i => Build_raw_context _ (RS_context_expr_of_premise i)
   (* hypothetical judgement boundary instance for each premise *)
   ; RS_hyp_bdry_instance_of_premise
     : forall i : RS_Premise,
@@ -71,8 +71,8 @@ Record Rule_Spec
   ; RS_context_expr_of_conclusion
     : γ_conclusion -> Raw_Syntax (Metavariable_Extension Σ a) Ty γ_conclusion
   (* raw context of conclusion *)
-  ; RS_raw_context_of_conclusion : Raw_Context (Metavariable_Extension Σ a)
-    := Build_Raw_Context _ RS_context_expr_of_conclusion
+  ; RS_raw_context_of_conclusion : raw_context (Metavariable_Extension Σ a)
+    := Build_raw_context _ RS_context_expr_of_conclusion
   (* hyp judgement boundary instance of conclusion *)
   ; RS_hyp_judgt_bdry_instance_of_conclusion
       : Judgement.boundary_instance
@@ -143,7 +143,7 @@ Arguments Rule_Spec {_} _ _ _ _.
 Section Associated_Congruence_Rule_Specs.
 
   Context {σ : shape_system}.
-  Context {Σ : Signature σ}.
+  Context {Σ : signature σ}.
 
   Definition associated_original_premise {obs eqs : Arity σ}
     : (obs + obs) + (eqs + eqs + obs) -> (obs + eqs).
@@ -287,7 +287,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
           apply inr, idpath.
         * apply idpath.
         * intros i.
-          apply var_raw, (coproduct_inj1 shape_is_sum), i.
+          apply raw_variable, (coproduct_inj1 shape_is_sum), i.
       + (* RHS of new equality premise *)
         cbn. simple refine (symb_raw' _ _ _).
         * apply inr_Metavariable.
@@ -295,7 +295,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
           apply inr, idpath.
         * apply idpath.
         * intros i.
-          apply var_raw, (coproduct_inj1 shape_is_sum), i.
+          apply raw_variable, (coproduct_inj1 shape_is_sum), i.
     - (* RS_context_expr_of_conclusion *)
       intros i.
       refine (Fmap_Raw_Syntax _ (RS_context_expr_of_conclusion R i)).
@@ -320,11 +320,11 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
                 exact (inl p).
              ++ apply idpath.
              ++ cbn. intros i.
-                apply var_raw. 
+                apply raw_variable. 
                 apply (coproduct_inj1 shape_is_sum).
                 apply (coproduct_inj2 shape_is_sum).
                 exact i.
-          -- apply var_raw, (coproduct_inj1 shape_is_sum), i.
+          -- apply raw_variable, (coproduct_inj1 shape_is_sum), i.
       + (* RHS of new conclusion *)
         cbn. simple refine (symb_raw' _ _ _).
         * apply inl_Symbol, S.
@@ -337,11 +337,11 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
                 exact (inr p).
              ++ apply idpath.
              ++ cbn. intros i.
-                apply var_raw. 
+                apply raw_variable. 
                 apply (coproduct_inj1 shape_is_sum).
                 apply (coproduct_inj2 shape_is_sum).
                 exact i.
-          -- apply var_raw, (coproduct_inj1 shape_is_sum), i.
+          -- apply raw_variable, (coproduct_inj1 shape_is_sum), i.
   Defined.
   (* TODO: the above is a bit unreadable.  An alternative approach that might be clearer and more robust:
    - factor out the constructions of the head terms of conclusions and premises from [Raw_Rule_of_Rule_Spec], if doable.
@@ -357,7 +357,7 @@ End Associated_Congruence_Rule_Specs.
 Section Raw_Rules_of_Rule_Specs.
 
   Context {σ : shape_system}.
-  Context {Σ : Signature σ}.
+  Context {Σ : signature σ}.
 
   (* Translating a rule-spec into a raw rule requires no extra information in the case of an equality-rule; in the case of an object-rule, it requires a symbol of appropriate arity to give the object introduced. *)
   Definition Raw_Rule_of_Rule_Spec
@@ -366,7 +366,7 @@ Section Raw_Rules_of_Rule_Specs.
     (Sr : is_object_form hjf_concl
         -> { S : Σ & (arity S = Family.sum a (simple_arity γ_concl))
                      * (class S = class_of_HJF hjf_concl) })
-  : Raw_Rule Σ.
+  : flat_rule Σ.
   (* This construction involves essentially two aspects:
   - translate the syntax of each expression in the rule-spec from its “local” signatures to the overall signature;
   - reconstruct the head terms of the object premises and the conclusion *)
@@ -392,7 +392,7 @@ Section Raw_Rules_of_Rule_Specs.
         destruct P as [ P | P ]; simpl in P.
         * (* case: P an object premise *)
           refine (symb_raw (inr P : Metavariable_Extension Σ a) _).
-          intro i. apply var_raw.
+          intro i. apply raw_variable.
           exact (coproduct_inj1 shape_is_sum i).
         * (* case: P an equality premise *)
           destruct H_obj. (* ruled out by assumption *)
@@ -415,10 +415,10 @@ Section Raw_Rules_of_Rule_Specs.
           -- cbn in P.
             refine (symb_raw (inr P : Metavariable_Extension _ _) _).
             intros i.
-            apply var_raw.
+            apply raw_variable.
             apply (coproduct_inj1 shape_is_sum).
             exact (coproduct_inj2 shape_is_sum i).
-          -- apply var_raw.
+          -- apply raw_variable.
             exact (coproduct_inj1 shape_is_sum i).
         * (* case: R an equality rule *)
           destruct H_obj. (* ruled out by assumption *)

@@ -73,8 +73,8 @@ Section Welltypedness.
   
   (* TODO: move upstream, right to [Syntax] even? *)
   Definition Presup_of_Judgt_Bdry_Instance
-      {Σ : Signature σ} {jf} (jbi : Judgt_Bdry_Instance Σ jf)
-    : family (Judgt_Instance Σ).
+      {Σ : signature σ} {jf} (jbi : Judgt_Bdry_Instance Σ jf)
+    : family (judgement_total Σ).
   Proof.
     destruct jf as [ | hjf].
     - (* context judgement: no boundary *)
@@ -125,4 +125,4 @@ Section Welltypedness.
       (* type-check conclusion over extension by rules for all premises *)
   Admitted.
 
-End Welltypedness.
+End Welltypedness.<

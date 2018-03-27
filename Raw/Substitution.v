@@ -3,7 +3,6 @@ Require Import Proto.ShapeSystem.
 Require Import Raw.Presyntax.
 Require Import Raw.Expression.
 
-(* To be moved to Raw/Substitution.v. *)
 Section RawSubstitution.
 
   Context {σ : shape_system}.
@@ -15,27 +14,27 @@ Section RawSubstitution.
 
   (* We first define a substitution which just replaces variables for variables.
      This notion simultaneously subsumest weakening, contraction, and exchange. *)
-  Fixpoint raw_variable_substitution {γ γ' : σ} (f : γ -> γ')
+  Local Fixpoint rename {γ γ' : σ} (f : γ -> γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
     : raw_expression Σ cl γ'.
   Proof.
     destruct e as [ γ i | γ S args ].
   - exact (raw_variable (f i)).
   - refine (raw_symbol S _). intros i.
-    refine (raw_variable_substitution _ _ _ _ (args i)).
+    refine (rename _ _ _ _ (args i)).
     simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn.
     + intros x. apply (coproduct_inj1 (shape_is_sum)). exact (f x).
     + intros x. apply (coproduct_inj2 (shape_is_sum)). exact x.
   Defined.
 
   (* A substitution from [γ] to [γ'] may be extended to one from [γ + δ] to [γ' + δ]. *)
-  Definition raw_substitution_extension (γ γ' δ : σ)
+  Local Definition extend (γ γ' δ : σ)
     : raw_substitution γ' γ -> raw_substitution (shape_sum γ' δ) (shape_sum γ δ).
   Proof.
     intros f.
     simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn.
     - intros i.
-      refine (raw_variable_substitution _ (f i)).
+      refine (rename _ (f i)).
       apply (coproduct_inj1 (shape_is_sum)).
     - intros i.
       apply raw_variable.
@@ -53,7 +52,9 @@ Section RawSubstitution.
     - exact (f i).
     - refine (raw_symbol S _). intros i.
       refine (substitute _ _ _ _ (args i)).
-      apply raw_substitution_extension. exact f.
+      apply extend. exact f.
   Defined.
 
 End RawSubstitution.
+
+Arguments rename {_ _ _ _} _ {_} _.

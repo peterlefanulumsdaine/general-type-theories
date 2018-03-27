@@ -5,42 +5,39 @@ Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 Require Import Raw.SignatureMap.
 
-(* Substitution on raw syntax [Raw_Subst] is defined in [Raw.Syntax].
-  In this file we prove key properties of it; in particular, that raw context maps form a category (modulo truncation assumptions). 
+(* Substitution on raw syntax [substitute] is defined in [Raw.Syntax].
+  In this file we prove key properties of it; in particular, that raw context maps form a category (modulo truncation assumptions).
 
-  Note: we assume functional extensionality throughout.  That shouldn’t be essentially necessary — it should be possible to show that e.g. [Raw_Weaken] respects “recursive extensional equality” of terms, and so on, and hence to show that raw context maps form a category modulo this equality — but using funext makes life a lot simpler. *)
+  Note: we assume functional extensionality throughout.  That shouldn’t be essentially necessary — it should be possible to show that e.g. [Substitution.rename] respects “recursive extensional equality” of terms, and so on, and hence to show that raw context maps form a category modulo this equality — but using funext makes life a lot simpler. *)
 
 Section Auxiliary.
 
   Context {σ : shape_system}.
-  Context {Σ : Signature σ}.
+  Context {Σ : signature σ}.
 
   Definition transport_Raw_Weaken {γ γ' : σ} (g : γ -> γ')
-      {cl cl' : syntactic_class} (p : cl = cl') (e : Raw_Syntax Σ cl γ)
-    : transport (fun cl => Raw_Syntax Σ cl γ') p (Raw_Weaken g e)
-      = Raw_Weaken g (transport (fun cl => Raw_Syntax Σ cl γ) p e).
+      {cl cl' : syntactic_class} (p : cl = cl') (e : raw_expression Σ cl γ)
+    : transport (fun cl => raw_expression Σ cl γ') p (Substitution.rename g e)
+      = Substitution.rename g (transport (fun cl => raw_expression Σ cl γ) p e).
   Proof.
     destruct p. apply idpath.
   Defined.
 
-(* TODO: consider renaming [Raw_Weaken] to something like [Raw_Reindex_Variables] ?? *)
+(* TODO: consider renaming [raw_variable_substitution] to something like [Raw_Reindex_Variables] ?? *)
 
 End Auxiliary.
 
-(* TODO: upstream *)
-Arguments Raw_Context_Map_Extending {_ _ _ _} _ _ _.
-
-(* Outline: first we show functoriality of [Raw_Weaken]; this is completely direct. *)
+(* Outline: first we show functoriality of [raw_variable_substitution]; this is completely direct. *)
 
 Section Raw_Weaken_Functoriality.
 
   Context `{H_Funext : Funext}.
   Context {σ : shape_system}.
-  Context {Σ : Signature σ}.
+  Context {Σ : signature σ}.
 
   Fixpoint comp_Raw_Weaken {γ γ' γ'' : σ} (f : γ -> γ') (f' : γ' -> γ'')
-      {cl : syntactic_class} (e : Raw_Syntax Σ cl γ)
-    : Raw_Weaken (f' o f) e = Raw_Weaken f' (Raw_Weaken f e).
+      {cl : syntactic_class} (e : raw_expression Σ cl γ)
+    : Substitution.rename (f' o f) e = Substitution.rename f' (Substitution.rename f e).
   Proof.
     destruct e as [ γ i | γ S args ].
   - reflexivity.
@@ -49,7 +46,7 @@ Section Raw_Weaken_Functoriality.
     + apply comp_Raw_Weaken.
     + apply ap10. refine (apD10 _ _). apply ap.
       apply path_arrow.
-      refine (coproduct_rect _ _ _ _); intros x. 
+      refine (coproduct_rect _ _ _ _); intros x.
       * refine (_ @ _^). { refine (coproduct_comp_inj1 _). }
         eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         refine (coproduct_comp_inj1 _).
@@ -67,26 +64,26 @@ Section Raw_Context_Category_Structure.
 (* Identity and composition of raw context maps. *)
 
   Context {σ : shape_system}.
-  Context {Σ : Signature σ}.
+  Context {Σ : signature σ}.
 
-  Definition id_Raw_Context (γ : σ) : Raw_Context_Map Σ γ γ.
+  Definition id_Raw_Context (γ : σ) : Context.map Σ γ γ.
   Proof.
-    exact (@var_raw _ _ _).
+    exact (@raw_variable _ _ _).
   Defined.
 
   Definition comp_Raw_Context {γ γ' γ'': σ}
-      (f : Raw_Context_Map Σ γ' γ)
-      (f' : Raw_Context_Map Σ γ'' γ')
-    : Raw_Context_Map Σ γ'' γ
-  := fun x => Raw_Subst f' (f x).
+      (f : Context.map Σ γ' γ)
+      (f' : Context.map Σ γ'' γ')
+    : Context.map Σ γ'' γ
+  := fun x => substitute f' (f x).
 
 End Raw_Context_Category_Structure.
 
 (* Just as the definition of substitution resembles the “lift” operation of a Kleisli-style monad, similarly, its “functoriality” is naturally proved in a form similar to the laws of a Kleisli-style monad.  That is, in terms of
-  [ return := var_Raw : γ -> Raw_Syntax γ ]
-  [ lift := Raw_Subst : (γ' -> Raw_Syntax γ) -> (Raw_Syntax γ' -> Raw_Syntax γ) ]
+  [ return := raw_variable : γ -> Raw_Syntax γ ]
+  [ lift := substitute : (γ' -> Raw_Syntax γ) -> (Raw_Syntax γ' -> Raw_Syntax γ) ]
   we show roughly:
-  [ id_left_Raw_Subst : forall (f : γ' -> Raw_Syntax γ) , (fun a => lift f (return a)) = f ] 
+  [ id_left_Raw_Subst : forall (f : γ' -> Raw_Syntax γ) , (fun a => lift f (return a)) = f ]
   [ id_right_Raw_Subst : lift return = idfun : Raw_Syntax γ -> Raw_Syntax γ]
   [ assoc_Raw_Subst : (lift g) o (lift f) = lift ((lift g) o f) ]
 
@@ -98,12 +95,12 @@ Section Raw_Subst_Assoc.
 
   Context `{H_Funext : Funext}.
   Context {σ : shape_system}.
-  Context {Σ : Signature σ}.
+  Context {Σ : signature σ}.
 
   (* For the proof of functoriality of substitution, we first  *)
 
-  Lemma id_Raw_Context_Map_Extending {γ δ : σ} 
-    : Raw_Context_Map_Extending δ (@id_Raw_Context _ Σ γ)
+  Lemma id_Raw_Context_Map_Extending {γ δ : σ}
+    : Substitution.extend _ _ δ (@id_Raw_Context _ Σ γ)
     = id_Raw_Context _.
   Proof.
     apply path_arrow.
@@ -112,14 +109,14 @@ Section Raw_Subst_Assoc.
     - refine (coproduct_comp_inj2 _).
   Defined.
 
-  Definition id_left_Raw_Subst {γ γ' : σ} (f : Raw_Context_Map Σ γ' γ) (x : _)
-    : Raw_Subst f (var_raw x) = f x.
+  Definition id_left_Raw_Subst {γ γ' : σ} (f : Context.map Σ γ' γ) (x : _)
+    : substitute f (raw_variable x) = f x.
   Proof.
     apply idpath.
   Defined.
 
-  Fixpoint id_right_Raw_Subst {γ : σ} {cl : syntactic_class} (e : Raw_Syntax Σ cl γ)
-    : Raw_Subst (id_Raw_Context γ) e = e.
+  Fixpoint id_right_Raw_Subst {γ : σ} {cl : syntactic_class} (e : raw_expression Σ cl γ)
+    : substitute (id_Raw_Context γ) e = e.
   Proof.
     destruct e as [ γ i | γ S args ].
     - apply idpath.
@@ -133,10 +130,10 @@ Section Raw_Subst_Assoc.
   Defined.
 
   Fixpoint Raw_Weaken_Raw_Subst {γ γ' γ'' : σ}
-      (f : Raw_Context_Map Σ γ' γ) (g : γ' -> γ'')
-      {cl} (e : Raw_Syntax Σ cl γ)
-    : Raw_Weaken g (Raw_Subst f e)
-      = Raw_Subst ((Raw_Weaken g) o f) e.
+      (f : Context.map Σ γ' γ) (g : γ' -> γ'')
+      {cl} (e : raw_expression Σ cl γ)
+    : Substitution.rename g (substitute f e)
+      = substitute ((Substitution.rename g) o f) e.
   Proof.
     destruct e as [ γ i | γ S args ].
     { apply idpath. }
@@ -157,10 +154,10 @@ Section Raw_Subst_Assoc.
       apply ap. refine _^. refine (coproduct_comp_inj2 _).
   Defined.
 
-  Fixpoint Raw_Subst_Raw_Weaken {γ γ' γ'' : σ} (f : γ -> γ') (g : Raw_Context_Map Σ γ'' γ')
-      {cl} (e : Raw_Syntax Σ cl γ)
-    : Raw_Subst g (Raw_Weaken f e)
-    = Raw_Subst (g o f) e.
+  Fixpoint Raw_Subst_Raw_Weaken {γ γ' γ'' : σ} (f : γ -> γ') (g : Context.map Σ γ'' γ')
+      {cl} (e : raw_expression Σ cl γ)
+    : substitute g (Substitution.rename f e)
+    = substitute (g o f) e.
   Proof.
     destruct e as [ γ i | γ S args ].
     { apply idpath. }
@@ -177,10 +174,10 @@ Section Raw_Subst_Assoc.
   Defined.
 
   Fixpoint assoc_Raw_Subst {γ γ' γ'': σ}
-      (f : Raw_Context_Map Σ γ' γ)
-      (f' : Raw_Context_Map Σ γ'' γ')
-      {cl : syntactic_class} (e : Raw_Syntax Σ cl γ)
-    : Raw_Subst f' (Raw_Subst f e) = Raw_Subst (fun i => Raw_Subst f' (f i)) e.
+      (f : Context.map Σ γ' γ)
+      (f' : Context.map Σ γ'' γ')
+      {cl : syntactic_class} (e : raw_expression Σ cl γ)
+    : substitute f' (substitute f e) = substitute (fun i => substitute f' (f i)) e.
   Proof.
     destruct e as [ γ i | γ S args ].
     { apply idpath. }
@@ -208,9 +205,9 @@ Section Raw_Context_Category.
 
   Context `{H_Funext : Funext}.
   Context {σ : shape_system}.
-  Context {Σ : Signature σ}.
+  Context {Σ : signature σ}.
 
-  Lemma id_left_Raw_Context {γ} (f : Raw_Context_Map Σ γ γ)
+  Lemma id_left_Raw_Context {γ} (f : Context.map Σ γ γ)
     : comp_Raw_Context (id_Raw_Context _) f = f.
   Proof.
     apply idpath.
@@ -218,7 +215,7 @@ Section Raw_Context_Category.
     (* [unfold comp_Raw_Context, id_Raw_Context.] *)
   Defined.
 
-  Lemma id_right_Raw_Context {γ} (f : Raw_Context_Map Σ γ γ)
+  Lemma id_right_Raw_Context {γ} (f : Context.map Σ γ γ)
     : comp_Raw_Context f (id_Raw_Context _) = f.
   Proof.
     apply path_forall; intros x; cbn.
@@ -226,9 +223,9 @@ Section Raw_Context_Category.
   Defined.
 
   Lemma assoc_Raw_Context {γ0 γ1 γ2 γ3: σ}
-      (f0 : Raw_Context_Map Σ γ0 γ1)
-      (f1 : Raw_Context_Map Σ γ1 γ2)
-      (f2 : Raw_Context_Map Σ γ2 γ3)
+      (f0 : Context.map Σ γ0 γ1)
+      (f1 : Context.map Σ γ1 γ2)
+      (f2 : Context.map Σ γ2 γ3)
     : comp_Raw_Context f2 (comp_Raw_Context f1 f0)
     = comp_Raw_Context (comp_Raw_Context f2 f1) f0.
   Proof.
@@ -244,13 +241,13 @@ Section Naturality.
 
   Context `{H_Funext : Funext}.
   Context {σ : shape_system}.
-  Context {Σ Σ' : Signature σ} (f : Signature_Map Σ Σ').
+  Context {Σ Σ' : signature σ} (f : Signature_Map Σ Σ').
 
 
   Fixpoint Fmap_Raw_Weaken {γ γ' : σ} (g : γ -> γ')
-      {cl : syntactic_class} (e : Raw_Syntax Σ cl γ)
-    : Fmap_Raw_Syntax f (Raw_Weaken g e)
-      = Raw_Weaken g (Fmap_Raw_Syntax f e).
+      {cl : syntactic_class} (e : raw_expression Σ cl γ)
+    : Fmap_Raw_Syntax f (Substitution.rename g e)
+      = Substitution.rename g (Fmap_Raw_Syntax f e).
   Proof.
     destruct e as [ γ i | γ S args ].
   - apply idpath.
@@ -259,12 +256,12 @@ Section Naturality.
     { apply ap, ap, ap. apply path_forall; intros i. apply Fmap_Raw_Weaken. }
     eapply concat. Focus 2. { apply transport_Raw_Weaken. } Unfocus.
     apply ap. cbn. apply ap, path_forall. intros i.
-    set (a := arity S) in *.
-    set (a' := arity (f S)) in *.
+    set (a := symbol_arity S) in *.
+    set (a' := symbol_arity (f S)) in *.
     set (p := (ap snd (Family.map_commutes f S))^ : a = a').
     (* we now manually fold [p], since neither [fold] nor [change … with …] seems to find the required subterms *)
     eapply concat.
-      { refine (apD10 _ i). refine (ap (fun p => transport _ p _) _). 
+      { refine (apD10 _ i). refine (ap (fun p => transport _ p _) _).
         exact (idpath p). }
     eapply concat. Focus 2.
       { apply ap. refine (apD10 _ i). refine (ap (fun p => transport _ p _) _).     exact (idpath p). } Unfocus.
@@ -275,5 +272,3 @@ Section Naturality.
   (* NOTE: this proof was remarkably difficult to write; it shows the kind of headaches caused by the appearance of equality in maps of signatures. *)
 
 End Naturality.
-
-

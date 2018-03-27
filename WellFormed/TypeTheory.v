@@ -30,7 +30,7 @@ Section TTSpecs.
   (* the ordering on rules.  TODO: will probably need to add well-foundedness. QUESTION: any reason for it to be Prop-valued, or could we just let it be type-valued? *)
   ; TTS_lt : TTS_Rule -> TTS_Rule -> Type
   (* the signature over which each rule can be written *)
-  ; TTS_signature_of_rule : TTS_Rule -> Signature σ
+  ; TTS_signature_of_rule : TTS_Rule -> signature σ
     := fun i => Family.fmap
         (fun jaγ => ( class_of_HJF (fst (fst jaγ))
                    , Family.sum (snd (fst jaγ)) (simple_arity (snd jaγ))))
@@ -47,7 +47,7 @@ Section TTSpecs.
   }.
 
   Definition Signature_of_TT_Spec (T : Type_Theory_Spec)
-    : Signature σ.
+    : signature σ.
   Proof.
     (* symbols are given by the object-judgement rules of T *)
     exists {r : TTS_Rule T & is_object_form (TTS_hjf_of_rule _ r)}.
@@ -91,7 +91,7 @@ Section Derivability_from_TT_Spec.
   Context {σ : shape_system}.
 
   Definition Raw_TT_of_TT_Spec (T : Type_Theory_Spec σ)
-    : Raw_Type_Theory (Signature_of_TT_Spec T).
+    : raw_type_theory (Signature_of_TT_Spec T).
   Proof.
     refine (_ + _).
     (* First: the explicitly-given logical rules *)
@@ -121,7 +121,7 @@ Section Derivability_from_TT_Spec.
   Defined.
 
   Definition Derivation_from_TT_Spec (T : Type_Theory_Spec σ) H
-    : Judgt_Instance (Signature_of_TT_Spec T) -> Type
+    : judgement_total (Signature_of_TT_Spec T) -> Type
   := Derivation_from_Raw_TT (Raw_TT_of_TT_Spec T) H.
 
 End Derivability_from_TT_Spec.

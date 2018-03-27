@@ -171,8 +171,8 @@ End Judgement_Notations.
 Notation "'[Cxt!' |- Γ !]" := (make_context_ji Γ) : judgement_scope.
 Notation "'[Ty!' Γ |- A !]" := (make_type_ji Γ A) : judgement_scope.
 Notation "'[TyEq!' Γ |- A ≡ A' !]" := (make_type_equation_ji Γ A A') : judgement_scope.
-Notation "'!' Γ |- a ; A !]" :=  (make_term_ji Γ a A) : judgement_scope.
-Notation "'Eq!' Γ |- a ≡ a' ; A !]" := (make_type_equation_ji Γ A a a') : judgement_scope.
+Notation "'[Tm!' Γ |- a ; A !]" :=  (make_term_ji Γ a A) : judgement_scope.
+Notation "'[TmEq!' Γ |- a ≡ a' ; A !]" := (make_term_equation_ji Γ A a a') : judgement_scope.
 
 Open Scope judgement_scope.
 

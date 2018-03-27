@@ -21,8 +21,10 @@ MODULES := \
 	Raw/Context \
 	Raw/Judgement \
 	Raw/Metavariable \
+	Raw/FlatRule \
 	Raw/Syntax \
 	Raw/SignatureMap \
+	Raw/SubstitutionFacts \
 	Raw/Theory \
 	Raw/StructuralRule \
 	WellFormed/Rule \
