@@ -8,58 +8,58 @@ Require Import Raw.SignatureMap.
 Require Import Raw.Theory.
 Require Import WellFormed.Rule.
 
-(** Main definition in this file: [Type_Theory_Spec], the data one gives to specify a type theory (but before typechecking it) *)
+(** Main definition in this file: [Type_Theory], the data one gives to specify a type theory (but before typechecking it) *)
 
-Section TTSpecs.
+Section Type_Theories.
 
   Context {σ : shape_system}.
 
-  Record Type_Theory_Spec
+  Record Type_Theory
   := {
   (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
-    TTS_Rule : family (Hyp_Judgt_Form * Arity σ)
+    TT_rule_index :> family (Hyp_Judgt_Form * Arity σ)
   (* the judgement form of the conclusion of each rule *)
-  ; TTS_hjf_of_rule : TTS_Rule -> Hyp_Judgt_Form
-    := fun i => fst (TTS_Rule i)
+  ; TT_hjf_of_rule : TT_rule_index -> Hyp_Judgt_Form
+    := fun i => fst (TT_rule_index i)
   (* the arity of the arguments (i.e. the *object* premises only) of each rule *)
-  ; TTS_arity_of_rule : TTS_Rule -> Arity _
-    := fun i => snd (TTS_Rule i)
+  ; TT_arity_of_rule : TT_rule_index -> Arity _
+    := fun i => snd (TT_rule_index i)
   (* the ordering on rules.  TODO: will probably need to add well-foundedness. QUESTION: any reason for it to be Prop-valued, or could we just let it be type-valued? *)
-  ; TTS_lt : TTS_Rule -> TTS_Rule -> Type
+  ; TT_lt : TT_rule_index -> TT_rule_index -> Type
   (* the signature over which each rule can be written *)
-  ; TTS_signature_of_rule : TTS_Rule -> Signature σ
+  ; TT_signature_of_rule : TT_rule_index -> Signature σ
     := fun i => Family.fmap
         (fun (ja : Hyp_Judgt_Form * Arity σ) => (class_of_HJF (fst ja), snd ja))
-        (Family.subfamily TTS_Rule
-          (fun j => is_obj_HJF (TTS_hjf_of_rule j) * TTS_lt j i))
+        (Family.subfamily TT_rule_index
+          (fun j => is_obj_HJF (TT_hjf_of_rule j) * TT_lt j i))
   (* the actual rule specification of each rule *)
-  ; TTS_rule_spec
-    : forall i : TTS_Rule,
-        Rule_Spec
-          (TTS_signature_of_rule i)
-          (TTS_arity_of_rule i)
-          (TTS_hjf_of_rule i)
+  ; TT_rule
+    : forall i : TT_rule_index,
+        rule
+          (TT_signature_of_rule i)
+          (TT_arity_of_rule i)
+          (TT_hjf_of_rule i)
   }.
 
-  Definition Signature_of_TT_Spec (T : Type_Theory_Spec)
+  Definition Signature_of_Type_Theory (T : Type_Theory)
     : Signature σ.
   Proof.
     (* symbols are given by the object-judgement rules of T *)
-    exists {r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule _ r)}.
+    exists {r : T & is_obj_HJF (TT_hjf_of_rule _ r)}.
     intros r_H. set (r := pr1 r_H).
     split.
-    - exact (class_of_HJF (TTS_hjf_of_rule _ r)).
-    - exact (TTS_arity_of_rule _ r).
+    - exact (class_of_HJF (TT_hjf_of_rule _ r)).
+    - exact (TT_arity_of_rule _ r).
   Defined.
     (* NOTE: it is tempting to case-analyse here and say 
-      “when r is an object rule, use [(class_of_HJF …, TTS_arity_of_rule …)];
+      “when r is an object rule, use [(class_of_HJF …, TT_arity_of_rule …)];
        in case r is an equality rule, use reductio ad absurdum with Hr.” 
-     But we get stronger reduction behaviour by just taking [(class_of_HJF …, TTS_arity_of_rule …)] without case-analysing first.  (And up to equality, we get the same result.)  *)
+     But we get stronger reduction behaviour by just taking [(class_of_HJF …, TT_arity_of_rule …)] without case-analysing first.  (And up to equality, we get the same result.)  *)
 
-  Definition TT_Spec_signature_inclusion_of_rule
-      {T : Type_Theory_Spec} (r : TTS_Rule T)
-    : Signature_Map (TTS_signature_of_rule _ r) 
-                    (Signature_of_TT_Spec T).
+  Definition Type_Theory_signature_inclusion_of_rule
+      {T : Type_Theory} (r : T)
+    : Signature_Map (TT_signature_of_rule _ r) 
+                    (Signature_of_Type_Theory T).
   Proof.
     simple refine (_;_).
     - intros s_isob_lt.
@@ -68,44 +68,44 @@ Section TTSpecs.
     - intros s. apply idpath.
   Defined.
 
-End TTSpecs.
+End Type_Theories.
 
-Arguments Type_Theory_Spec _ : clear implicits.
-Arguments TTS_Rule {_} _.
-Arguments TTS_hjf_of_rule {_ _} _.
-Arguments TTS_arity_of_rule {_ _} _.
-Arguments TTS_lt {_ _} _ _.
-Arguments TTS_signature_of_rule {_ _} _.
-Arguments TTS_rule_spec {_ _} _.
+Arguments Type_Theory _ : clear implicits.
+Arguments TT_rule_index {_} _.
+Arguments TT_hjf_of_rule {_ _} _.
+Arguments TT_arity_of_rule {_ _} _.
+Arguments TT_lt {_ _} _ _.
+Arguments TT_signature_of_rule {_ _} _.
+Arguments TT_rule {_ _} _.
 
 
-Section Derivability_from_TT_Spec.
+Section Derivability_from_Type_Theory.
 
   Context {σ : shape_system}.
 
-  Definition Raw_TT_of_TT_Spec (T : Type_Theory_Spec σ)
-    : Raw_Type_Theory (Signature_of_TT_Spec T).
+  Definition Raw_TT_of_Type_Theory (T : Type_Theory σ)
+    : Raw_Type_Theory (Signature_of_Type_Theory T).
   Proof.
     refine (_ + _).
     (* First: the explicitly-given logical rules *)
-    - exists (TTS_Rule T).
+    - exists (TT_rule_index T).
       intros r.
-      refine (Raw_Rule_of_Rule_Spec _ _).
-      + (* translate rule_specs up to the full signature *)
-        refine (Fmap_Rule_Spec _ (TTS_rule_spec r)).
-        apply TT_Spec_signature_inclusion_of_rule.
+      refine (Raw_Rule_of_Rule _ _).
+      + (* translate rules up to the full signature *)
+        refine (Fmap_rule _ (TT_rule r)).
+        apply Type_Theory_signature_inclusion_of_rule.
       + (* pick their symbol in the full signature, if applicable *)
         intros r_obj.
         exists (r; r_obj).
         split; apply idpath.
     (* Second: associated congruence rules for the object-judgement logical rules. *)
-    - exists { r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule r) }.
+    - exists { r : T & is_obj_HJF (TT_hjf_of_rule r) }.
       intros [r Hr].
-      refine (Raw_Rule_of_Rule_Spec _ _).
+      refine (Raw_Rule_of_Rule _ _).
       + simple refine
-        (associated_congruence_rule_spec
-           (Fmap_Rule_Spec _ (TTS_rule_spec r)) _ _ _ _).
-        * apply TT_Spec_signature_inclusion_of_rule.
+        (associated_congruence_rule
+           (Fmap_rule _ (TT_rule r)) _ _ _ _).
+        * apply Type_Theory_signature_inclusion_of_rule.
         * exact Hr.
         * exact (r;Hr). (* head symbol of original rule *)
         * apply idpath.
@@ -113,8 +113,8 @@ Section Derivability_from_TT_Spec.
       + intros []. (* no head symbol, since congs are equality rules *)
   Defined.
 
-  Definition Derivation_from_TT_Spec (T : Type_Theory_Spec σ) H
-    : Judgt_Instance (Signature_of_TT_Spec T) -> Type
-  := Derivation_from_Raw_TT (Raw_TT_of_TT_Spec T) H.
+  Definition Derivation_from_Type_Theory (T : Type_Theory σ) H
+    : Judgt_Instance (Signature_of_Type_Theory T) -> Type
+  := Derivation_from_Raw_TT (Raw_TT_of_Type_Theory T) H.
 
-End Derivability_from_TT_Spec.
+End Derivability_from_Type_Theory.

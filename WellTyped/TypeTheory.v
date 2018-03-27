@@ -6,7 +6,7 @@ Require Import Raw.Theory.
 Require Import WellFormed.Rule.
 Require Import WellFormed.TypeTheory.
 
-(** In this file: definition of well-typedness of a rule-spec, and a type-theory spec. *)
+(** In this file: definition of well-typedness of a rule, and of a type-theory. *)
 
 Section Welltypedness.
 
@@ -96,22 +96,22 @@ Section Welltypedness.
   Defined.
 
   (* TODO: move upstream to [TypingJudgements] *)
-  (* TODO: consider making Signature_of_TT_Spec a coercion *)
+  (* TODO: consider making Signature_of_Type_Theory a coercion? *)
   (* TODO: consider naming conventions for types of the form “derivation of X from Y” *)
   (* TODO: think about use of “derivation” vs. “derivability”. *)
   Definition Derivation_Judgt_Bdry_Instance
-      (T : Type_Theory_Spec σ)
-      {jf} (jbi : Judgt_Bdry_Instance (Signature_of_TT_Spec T) jf)
+      (T : Type_Theory σ)
+      {jf} (jbi : Judgt_Bdry_Instance (Signature_of_Type_Theory T) jf)
       H
     : Type
   :=
     forall (i : Presup_of_Judgt_Bdry_Instance jbi),
-      Derivation_from_TT_Spec T H (Presup_of_Judgt_Bdry_Instance _ i).
+      Derivation_from_Type_Theory T H (Presup_of_Judgt_Bdry_Instance _ i).
 
-  Definition Is_Well_Typed_Rule_Spec
-      (T : Type_Theory_Spec σ)
+  Definition Is_Well_Typed_Rule
+      {Σ : Signature σ} (T : Raw_Type_Theory Σ)
       {a} {hjf_concl}
-      (R : Rule_Spec (Signature_of_TT_Spec T) a hjf_concl)
+      (R : rule Σ a hjf_concl)
     : Type.
   Proof.
      refine (_ * _).
