@@ -23,19 +23,19 @@ Record Rule_Spec
   {Σ : Signature σ}
   {a : Arity σ} (* arity listing the _object_ premises of the rule *)
   {γ_conclusion : σ} (* proto-context of the conclusion *)
-  {hjf_conclusion : Hyp_Judgt_Form} (* judgement form of the conclusion *)
+  {hjf_conclusion : judgement_form} (* judgement form of the conclusion *)
 :=
   {
   (* The arity [a] supplies the family of object-judgment premises. *)
   (* The family of equality-judgment premises: *)
     RS_equality_premise : Arity σ
   (* family indexing the premises of the rule, and giving for each… *)
-  ; RS_Premise : family (Hyp_Judgt_Form * σ)
+  ; RS_Premise : family (judgement_form * σ)
     := Family.sum
-         (Family.fmap (fun cl_γ => (obj_HJF (fst cl_γ), snd cl_γ)) a)
-         (Family.fmap (fun cl_γ => (eq_HJF (fst cl_γ), snd cl_γ)) RS_equality_premise)
+         (Family.fmap (fun cl_γ => (form_object (fst cl_γ), snd cl_γ)) a)
+         (Family.fmap (fun cl_γ => (form_equation (fst cl_γ), snd cl_γ)) RS_equality_premise)
   (* - the judgement form of each premise, e.g. “term” or “type equality” *)
-  ; RS_hjf_of_premise : RS_Premise -> Hyp_Judgt_Form
+  ; RS_hjf_of_premise : RS_Premise -> judgement_form
     := fun i => fst (RS_Premise i)
   (* - the proto-context of each premise *)
   ; RS_proto_cxt_of_premise : RS_Premise -> σ
@@ -62,7 +62,7 @@ Record Rule_Spec
   (* hypothetical judgement boundary instance for each premise *)
   ; RS_hyp_bdry_instance_of_premise
     : forall i : RS_Premise,
-        Hyp_Judgt_Bdry_Instance
+        Judgement.boundary_instance
           (Metavariable_Extension Σ (RS_arity_of_premise i))
           (RS_hjf_of_premise i)
           (RS_proto_cxt_of_premise i)
@@ -75,7 +75,7 @@ Record Rule_Spec
     := Build_Raw_Context _ RS_context_expr_of_conclusion
   (* hyp judgement boundary instance of conclusion *)
   ; RS_hyp_judgt_bdry_instance_of_conclusion
-      : Hyp_Judgt_Bdry_Instance
+      : Judgement.boundary_instance
           (Metavariable_Extension Σ a)
           hjf_conclusion
           γ_conclusion
@@ -245,12 +245,12 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
 
   Definition associated_congruence_rule_spec
     {a} {γ_concl} {hjf_concl} (R : Rule_Spec Σ a γ_concl hjf_concl)
-    (H : is_obj_HJF hjf_concl)
+    (H : is_object_form hjf_concl)
     (S : Σ)
     (e_a : arity S = a + (simple_arity γ_concl))
     (e_cl : class S = class_of_HJF hjf_concl)
     : (Rule_Spec Σ (Family.sum a a) γ_concl
-                 (eq_HJF (class_of_HJF hjf_concl))).
+                 (form_equation (class_of_HJF hjf_concl))).
   Proof.
     simple refine (Build_Rule_Spec _ _ _ _ _ _ _ _ _ _).
     - (* RS_equality_premise: arity of equality premises *)
@@ -363,7 +363,7 @@ Section Raw_Rules_of_Rule_Specs.
   Definition Raw_Rule_of_Rule_Spec
     {a} {γ_concl} {hjf_concl}
     (R : Rule_Spec Σ a γ_concl hjf_concl)
-    (Sr : is_obj_HJF hjf_concl
+    (Sr : is_object_form hjf_concl
         -> { S : Σ & (arity S = Family.sum a (simple_arity γ_concl))
                      * (class S = class_of_HJF hjf_concl) })
   : Raw_Rule Σ.
@@ -385,7 +385,7 @@ Section Raw_Rules_of_Rule_Specs.
       exists (HJF (RS_hjf_of_premise _ P)).
       exists (Fmap_Raw_Context f_P (RS_raw_context_of_premise _ P)).
       simpl.
-      apply Hyp_Judgt_Instance_from_bdry_plus_head.
+      apply Judgement.hypothetical_instance_from_boundary_and_head.
       + refine (Fmap_Hyp_Judgt_Bdry_Instance f_P _).
         apply RS_hyp_bdry_instance_of_premise.
       + intro H_obj.
@@ -400,7 +400,7 @@ Section Raw_Rules_of_Rule_Specs.
       exists (HJF hjf_concl).
       simpl.
       exists (pr1 (RS_judgt_bdry_instance_of_conclusion R)).
-      apply Hyp_Judgt_Instance_from_bdry_plus_head.
+      apply Judgement.hypothetical_instance_from_boundary_and_head.
       + exact (pr2 (RS_judgt_bdry_instance_of_conclusion R)).
       + intros H_obj.
         destruct hjf_concl as [ ocl | ecl ]; simpl in *.

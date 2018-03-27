@@ -15,8 +15,13 @@ MODULES := \
 	Auxiliary/Closure \
 	Proto/ShapeSystem \
 	Proto/ShapeSystemExamples \
-	Raw/Syntax \
+	Raw/Presyntax \
+	Raw/Expression \
 	Raw/Substitution \
+	Raw/Context \
+	Raw/Judgement \
+	Raw/Metavariable \
+	Raw/Syntax \
 	Raw/SignatureMap \
 	Raw/Theory \
 	Raw/StructuralRule \

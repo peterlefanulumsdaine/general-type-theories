@@ -22,18 +22,18 @@ Section Welltypedness.
     intros i; exact (pr2 (f i)).
   Defined.
 
-  Arguments Hyp_Obj_Judgt_Bdry_Slots : simpl nomatch.
-  Arguments Hyp_Judgt_Bdry_Slots : simpl nomatch.
+  Arguments Judgement.hypothetical_boundary : simpl nomatch.
+  Arguments Judgement.hypothetical_boundary : simpl nomatch.
 
   (* TODO: move upstream; consider name! *)
   (* This is the special case of [presup_slots_from_boundary] for object judgements.
     It is abstracted out because it’s used twice: directly for object judgements, and as part of the case for equality judgements.
     In fact it’s almost trivial, so could easily be inlined; but conceptually it is the same thing both times, and in type theory with more judgements, it could be less trivial, so we keep it factored out. *)
   Definition obj_presup_slots_from_boundary
-    {cl : Syn_Class} (i : Hyp_Obj_Judgt_Bdry_Slots cl)
+    {cl : syntactic_class} (i : Judgement.hypothetical_boundary cl)
     : Family.map
-        (Hyp_Obj_Judgt_Bdry_Slots (Hyp_Obj_Judgt_Bdry_Slots cl i))
-        (Hyp_Obj_Judgt_Bdry_Slots cl).
+        (Judgement.hypothetical_boundary (Judgement.hypothetical_boundary cl i))
+        (Judgement.hypothetical_boundary cl).
   Proof.
     apply Build_Family_Map'. intros j.
     destruct cl as [ | ]; cbn in i.
@@ -45,10 +45,10 @@ Section Welltypedness.
 
   (* TODO: move upstream; consider name! *)
   Definition presup_slots_from_boundary
-    {hjf : Hyp_Judgt_Form} (i : Hyp_Judgt_Bdry_Slots hjf)
+    {hjf : judgement_form} (i : Judgement.hypothetical_boundary hjf)
     : Family.map
-        (Hyp_Judgt_Form_Slots (obj_HJF (Hyp_Judgt_Bdry_Slots hjf i)))
-        (Hyp_Judgt_Bdry_Slots hjf).
+        (judgement_form_Slots (form_object (Judgement.hypothetical_boundary hjf i)))
+        (Judgement.hypothetical_boundary hjf).
   Proof.
     apply Build_Family_Map'.
     intros [ j | ].
@@ -82,16 +82,16 @@ Section Welltypedness.
     - (* hyp judgement: presups are the context,
                         plus the slots of the hyp boundary *)
       apply Family.adjoin.
-      + exists (Hyp_Judgt_Bdry_Slots hjf).
+      + exists (Judgement.hypothetical_boundary hjf).
         intros i.
-        exists (HJF (obj_HJF ((Hyp_Judgt_Bdry_Slots hjf) i))).
+        exists (HJF (form_object ((Judgement.hypothetical_boundary hjf) i))).
         exists (pr1 jbi).
         intros j.
         set (p := Family.map_commutes (presup_slots_from_boundary i) j).
         set (j' := presup_slots_from_boundary i j) in *.
         destruct p.
         exact (pr2 jbi j').
-      + exists (Cxt_JF).
+      + exists (form_context).
         exact (pr1 jbi).
   Defined.
 

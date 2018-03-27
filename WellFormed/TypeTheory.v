@@ -17,9 +17,9 @@ Section TTSpecs.
   Record Type_Theory_Spec
   := {
   (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
-    TTS_Rule : family (Hyp_Judgt_Form * Arity σ * shape_carrier σ)
+    TTS_Rule : family (judgement_form * Arity σ * shape_carrier σ)
   (* the judgement form of the conclusion of each rule *)
-  ; TTS_hjf_of_rule : TTS_Rule -> Hyp_Judgt_Form
+  ; TTS_hjf_of_rule : TTS_Rule -> judgement_form
     := fun i => fst (fst (TTS_Rule i))
   (* the arity of the arguments (i.e. the *object* premises only) of each rule *)
   ; TTS_arity_of_rule : TTS_Rule -> Arity _
@@ -35,7 +35,7 @@ Section TTSpecs.
         (fun jaγ => ( class_of_HJF (fst (fst jaγ))
                    , Family.sum (snd (fst jaγ)) (simple_arity (snd jaγ))))
         (Family.subfamily TTS_Rule
-          (fun j => is_obj_HJF (TTS_hjf_of_rule j) * TTS_lt j i))
+          (fun j => is_object_form (TTS_hjf_of_rule j) * TTS_lt j i))
   (* the actual rule specification of each rule *)
   ; TTS_rule_spec
     : forall i : TTS_Rule,
@@ -50,7 +50,7 @@ Section TTSpecs.
     : Signature σ.
   Proof.
     (* symbols are given by the object-judgement rules of T *)
-    exists {r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule _ r)}.
+    exists {r : TTS_Rule T & is_object_form (TTS_hjf_of_rule _ r)}.
     intros r_H. set (r := pr1 r_H).
     split.
     - exact (class_of_HJF (TTS_hjf_of_rule _ r)).
@@ -106,7 +106,7 @@ Section Derivability_from_TT_Spec.
         exists (r; r_obj).
         split; apply idpath.
     (* Second: associated congruence rules for the object-judgement logical rules. *)
-    - exists { r : TTS_Rule T & is_obj_HJF (TTS_hjf_of_rule r) }.
+    - exists { r : TTS_Rule T & is_object_form (TTS_hjf_of_rule r) }.
       intros [r Hr].
       refine (Raw_Rule_of_Rule_Spec _ _).
       + simple refine

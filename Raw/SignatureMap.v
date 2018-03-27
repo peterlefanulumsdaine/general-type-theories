@@ -45,15 +45,15 @@ Section Signature_Maps.
 
   Definition Fmap_Hyp_Judgt_Bdry_Instance {Σ Σ'} (f : Signature_Map Σ Σ')
       {hjf} {γ}
-    : Hyp_Judgt_Bdry_Instance Σ hjf γ -> Hyp_Judgt_Bdry_Instance Σ' hjf γ.
+    : Judgement.boundary_instance Σ hjf γ -> Judgement.boundary_instance Σ' hjf γ.
   Proof.
     intros hjbi i.
     apply (Fmap_Raw_Syntax f), hjbi.
   Defined.
 
-  Definition Fmap_Hyp_Judgt_Form_Instance {Σ Σ'} (f : Signature_Map Σ Σ')
+  Definition Fmap_judgement_form_Instance {Σ Σ'} (f : Signature_Map Σ Σ')
       {hjf} {γ}
-    : Hyp_Judgt_Form_Instance Σ hjf γ -> Hyp_Judgt_Form_Instance Σ' hjf γ.
+    : judgement_form_Instance Σ hjf γ -> judgement_form_Instance Σ' hjf γ.
   Proof.
     intros hjbi i.
     apply (Fmap_Raw_Syntax f), hjbi.    
@@ -67,7 +67,7 @@ Section Signature_Maps.
     - apply Fmap_Raw_Context, f. 
     - cbn. intros Γ_hjfi.
       exists (Fmap_Raw_Context f Γ_hjfi.1). 
-      exact (Fmap_Hyp_Judgt_Form_Instance f Γ_hjfi.2). 
+      exact (Fmap_judgement_form_Instance f Γ_hjfi.2). 
   Defined.
 
   Definition Fmap_Judgt_Instance {Σ Σ'} (f : Signature_Map Σ Σ')

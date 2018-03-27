@@ -180,7 +180,7 @@ Section TT_Maps.
         exists (Fmap_Raw_Context f Γ').
         exists (Fmap_Raw_Context_Map f g).
         exists hjf.
-        exact (Fmap_Hyp_Judgt_Form_Instance f hjfi).
+        exact (Fmap_judgement_form_Instance f hjfi).
       + cbn. apply closure_condition_eq; cbn.
         * apply inverse.
           eapply concat. { apply Fmap_Family_Snoc. }
@@ -197,7 +197,7 @@ Section TT_Maps.
         * apply (ap (fun x => (_; x))). cbn.
           apply (ap (fun x => (_; x))).
           apply path_forall. intros i.
-          unfold Fmap_Hyp_Judgt_Form_Instance.
+          unfold Fmap_judgement_form_Instance.
           refine (Fmap_Raw_Syntax_Raw_Subst _ _ _)^.
     - (* substitution equality *)
       destruct c3 as [ Γ [Γ' [g [g' [hjf hjfi]]]]].
@@ -208,7 +208,7 @@ Section TT_Maps.
         exists (Fmap_Raw_Context_Map f g).
         exists (Fmap_Raw_Context_Map f g').
         exists hjf.
-        exact (Fmap_Hyp_Judgt_Form_Instance f hjfi).
+        exact (Fmap_judgement_form_Instance f hjfi).
       + admit.
     - (* var rule *) 
       simple refine (inl (inr _) ; _); admit.

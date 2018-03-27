@@ -69,8 +69,8 @@ Proof.
   exists {   Γ : Raw_Context Σ
     & { Γ' : Raw_Context Σ
     & { f : Raw_Context_Map Σ Γ' Γ
-    & { hjf : Hyp_Judgt_Form
-    & Hyp_Judgt_Form_Instance Σ hjf Γ}}}}.
+    & { hjf : judgement_form
+    & judgement_form_Instance Σ hjf Γ}}}}.
   intros [Γ [Γ' [f [hjf hjfi]]]].
   split.
   (* premises: *)
@@ -97,8 +97,8 @@ Proof.
     & { Γ' : Raw_Context Σ
     & { f : Raw_Context_Map Σ Γ' Γ
     & { f' : Raw_Context_Map Σ Γ' Γ
-    & { cl : Syn_Class
-    & Hyp_Judgt_Form_Instance Σ (obj_HJF cl) Γ}}}}}.
+    & { cl : syntactic_class
+    & judgement_form_Instance Σ (form_object cl) Γ}}}}}.
   intros [Γ [Γ' [f [f' [cl hjfi]]]]].
   split.
   (* premises: *)
@@ -121,11 +121,11 @@ Proof.
       * exact (f i).
       * exact (f' i).
     (* the judgement holds over Γ *)
-    + exists (HJF (obj_HJF cl)).
+    + exists (HJF (form_object cl)).
       exists Γ.
       exact hjfi.
  (* conclusion: *) 
-  - exists (HJF (eq_HJF cl)).
+  - exists (HJF (form_equation cl)).
     exists Γ'.
     cbn. intros [i | ]. 
     + (* boundry and LHS *)
