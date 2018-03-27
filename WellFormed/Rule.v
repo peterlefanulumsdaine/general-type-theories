@@ -363,6 +363,34 @@ Section Raw_Rules_of_Rules.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
+  (* TODO: consider whether the flattening of the conclusion can also be covered by this. *)
+  Lemma judgement_of_premise 
+      {a} {A : algebraic_extension Σ a} (i : A)
+      {Σ'} (f : Signature_Map (Metavariable.extend Σ (ae_arity_of_rule _ i)) Σ')
+      (Sr : Judgement.is_object (ae_hjf_of_rule _ i) 
+           -> { S : Σ'
+             & (symbol_arity S = simple_arity (ae_proto_cxt_of_rule _ i))
+             * (symbol_class S = Judgement.class_of (ae_hjf_of_rule _ i))})
+   : judgement_total Σ'.
+  Proof.
+    exists (form_hypothetical (ae_hjf_of_rule _ i)).
+    exists (Fmap_Raw_Context f (ae_raw_context_of_rule _ i)).
+    apply Judgement.hypothetical_instance_from_boundary_and_head.
+    - refine (Fmap_Hyp_Judgt_Bdry_Instance f _).
+      apply ae_hyp_bdry_of_rule.
+    - intro H_obj.
+      destruct i as [ i_obj | i_eq ]; simpl in *.
+      + (* case: i an object rule *)
+        simple refine (raw_symbol' _ _ _).
+        * refine (Sr _).1. constructor.
+        * refine (snd (Sr _).2).
+        * set (e := (fst (Sr tt).2)^). destruct e.
+           intro v. apply raw_variable.
+           exact (coproduct_inj1 shape_is_sum v).
+      + (* case: i an equality rule *)
+        destruct H_obj. (* ruled out by assumption *)
+  Defined.
+  
   (* Flattening a rule into a raw rule requires no extra information in the case of an equality-rule; in the case of an object-rule, it requires a symbol of appropriate arity to give the object introduced. *)
   (* TODO: rename to “flatten” *)
   Definition Raw_Rule_of_Rule
@@ -378,30 +406,20 @@ Section Raw_Rules_of_Rules.
     refine (Build_flat_rule _ a _ _).
     - (* premises *)
       exists (premise R).
-      intros P.
-      (* TODO: unify this with [is_well_typed_algebraic_extension]. *)
-      assert (f_P : Signature_Map
-              (Metavariable.extend Σ (ae_arity_of_rule _ P))
-              (Metavariable.extend Σ a)).
-      {
-        apply Fmap2_Metavariable_Extension.
+      intros i.
+      apply (judgement_of_premise i).
+      + apply Fmap2_Metavariable_Extension.
         apply Family.inclusion.
-      }
-      exists (form_hypothetical (ae_hjf_of_rule _ P)).
-      exists (Fmap_Raw_Context f_P (ae_raw_context_of_rule _ P)).
-      simpl.
-      apply Judgement.hypothetical_instance_from_boundary_and_head.
-      + refine (Fmap_Hyp_Judgt_Bdry_Instance f_P _).
-        apply ae_hyp_bdry_of_rule.
-      + intro H_obj.
-        destruct P as [ P | P ]; simpl in P.
-        * (* case: P an object premise *)
-          refine (raw_symbol (inr P : Metavariable.extend Σ a) _).
-          intro i. apply raw_variable.
-          exact (coproduct_inj1 shape_is_sum i).
-        * (* case: P an equality premise *)
-          destruct H_obj. (* ruled out by assumption *)
+      + intros H_i_obj.
+        destruct i as [ i | i ]; simpl in i.
+        * (* case: i an object premise *)
+          simple refine (_;_). 
+          -- apply include_metavariable. exact i.
+          -- split; apply idpath.
+        * (* case: i an equality premise *)
+          destruct H_i_obj. (* ruled out by assumption *)
    - (* conclusion *)
+     (* TODO: consider whether this can be unified with [judgement_of_premise] *)
       exists (form_hypothetical hjf_concl).
       simpl.
       exists (pr1 (judgt_bdry_of_conclusion R)).

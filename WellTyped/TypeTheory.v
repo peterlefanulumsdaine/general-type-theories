@@ -144,36 +144,6 @@ Section Welltypedness.
     : Transitive (ae_lt A).
   Admitted.  (* Needs to be added as assuption in [algebraic_extension]. *)
 
-  (* TODO: upstream to [WellFormed.Rule]; 
-           use this in [raw_rule_of_rule] (flattening);
-           consider whether the flattening of the conclusion can also be covered by this. *)
-  Lemma judgement_of_premise 
-      {Σ : signature σ} {a} {A : algebraic_extension Σ a} (i : A)
-      {Σ'} (f : Signature_Map (Metavariable.extend Σ (ae_arity_of_rule _ i)) Σ')
-      (Sr : Judgement.is_object (ae_hjf_of_rule _ i) 
-           -> { S : Σ'
-             & (symbol_arity S = simple_arity (ae_proto_cxt_of_rule _ i))
-             * (symbol_class S = Judgement.class_of (ae_hjf_of_rule _ i))})
-   : judgement_total Σ'.
-  Proof.
-      exists (form_hypothetical (ae_hjf_of_rule _ i)).
-      exists (Fmap_Raw_Context f (ae_raw_context_of_rule _ i)).
-      apply Judgement.hypothetical_instance_from_boundary_and_head.
-      + refine (Fmap_Hyp_Judgt_Bdry_Instance f _).
-        apply ae_hyp_bdry_of_rule.
-      + intro H_obj.
-        destruct i as [ i_obj | i_eq ]; simpl in *.
-        * (* case: i an object rule *)
-          simple refine (raw_symbol' _ _ _).
-          -- refine (Sr _).1. constructor.
-          -- refine (snd (Sr _).2).
-          -- set (e := (fst (Sr tt).2)^). destruct e.
-             intro v. apply raw_variable.
-             exact (coproduct_inj1 shape_is_sum v).
-        * (* case: i an equality rule *)
-          destruct H_obj. (* ruled out by assumption *)
-  Defined.
-   
   Definition is_well_typed_algebraic_extension
       {Σ : signature σ} (T : flat_type_theory Σ)
       {a} (A : algebraic_extension Σ a)
