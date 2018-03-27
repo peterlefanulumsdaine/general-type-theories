@@ -99,14 +99,60 @@ Section Welltypedness.
   (* TODO: consider making Signature_of_Type_Theory a coercion? *)
   (* TODO: consider naming conventions for types of the form “derivation of X from Y” *)
   (* TODO: think about use of “derivation” vs. “derivability”. *)
+  (* TODO: should only depend on a *flat* type theory. *)
   Definition Derivation_Judgt_Bdry_Instance
-      (T : Type_Theory σ)
-      {jf} (jbi : Judgt_Bdry_Instance (Signature_of_Type_Theory T) jf)
+      {Σ : Signature σ} (T : Raw_Type_Theory Σ)
+      {jf} (jbi : Judgt_Bdry_Instance Σ jf)
       H
     : Type
   :=
     forall (i : Presup_of_Judgt_Bdry_Instance jbi),
-      Derivation_from_Type_Theory T H (Presup_of_Judgt_Bdry_Instance _ i).
+      Derivation_from_Raw_TT T H (Presup_of_Judgt_Bdry_Instance _ i).
+
+  (* TODO: upstream *)
+  Definition extend {Σ : Signature σ} {a : Arity σ}
+      (T : Raw_Type_Theory Σ) (A : algebraic_extension Σ a)
+    : Raw_Type_Theory Σ.
+  Proof.
+  Admitted.
+  
+  (* TODO: upstream, maybe even into def of algebraic extension? *)
+  (* TODO: rename [ae_arity_of_rule] to [ae_arity_for_rule] ? *)
+  Definition ae_signature_for_rule {Σ : Signature σ} {a}
+      {A : algebraic_extension Σ a} (r : A)
+  := (Metavariable_Extension Σ (ae_arity_of_rule _ r)).
+
+  (* TODO: upstream *)
+  Definition ae_judgt_bdry_of_rule {Σ : Signature σ} {a}
+      {A : algebraic_extension Σ a} (r : A)
+    : Judgt_Bdry_Instance (ae_signature_for_rule r) (HJF (ae_hjf_of_rule _ r)).
+  Proof.
+    exists (ae_raw_context_of_rule _ r).
+    apply (ae_hyp_bdry_of_rule).
+  Defined.
+
+  Definition is_well_typed_algebraic_extension
+      {Σ : Signature σ} (T : Raw_Type_Theory Σ)
+      {a} (A : algebraic_extension Σ a)
+    : Type.
+  Proof.
+    refine (forall r : A, _).
+    refine (Derivation_Judgt_Bdry_Instance _ (ae_judgt_bdry_of_rule r) _).
+    + (* ambient type theory to typecheck premise [p] in *)
+      admit.
+    + (* open hypotheses to allow in the derivation *)
+      admit.
+  (* Roughly, we want to add the earlier rules of [A] to [T], and typecheck [r] over that.  There are (at least) three ways to do this:
+    (1) take earlier rules just as judgements, and allow them as hypotheses in the derivation;
+    (2) take earlier rules as judgements, then add rules to [T] giving these judgements as axioms;
+    (3) actually give the extension of [T] by the preceding part of [A] as a type theory, i.e. turn rules of [A] into actual *rules*, with the variables of their contexts turned into term premises.  This option avoids extra use of the “cut” rule in derivations.
+
+    In any case we must first translate [T] up to the extended signature of [R].
+
+  (1) would nicely fit into the monadic view of derivations.
+  (3) would nicely factorise into “take initial segment of an alg ext”, and “extend TT by an alg ext”.
+  *)
+  Admitted.
 
   Definition Is_Well_Typed_Rule
       {Σ : Signature σ} (T : Raw_Type_Theory Σ)
@@ -114,15 +160,12 @@ Section Welltypedness.
       (R : rule Σ a hjf_concl)
     : Type.
   Proof.
-     refine (_ * _).
-    - (* well-typedness of premise boundaries *)
-      admit.
-      (* type-check each premise over the extension of [T] by rules for the earlier premises *)
-    - (* well-typedness of conclusion boundaries *)
-      (* simple refine (Derivation_Judgt_Bdry_Instance _ _). *)
-      (* TODO: refactor type theories to have explicit signature component, so we can reuse metavariable extensions etc. *)
-      admit.
-      (* type-check conclusion over extension by rules for all premises *)
+    refine (is_well_typed_algebraic_extension T (premise R) * _).
+    (* well-typedness of conclusion *)
+    refine (Derivation_Judgt_Bdry_Instance _ (judgt_bdry_of_conclusion R) _).
+    - admit.
+    - admit.
+    (* This should parallel [is_well_typed_algebraic_extension] above. *)
   Admitted.
 
 End Welltypedness.

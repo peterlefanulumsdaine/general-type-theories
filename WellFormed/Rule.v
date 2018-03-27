@@ -70,7 +70,7 @@ Record algebraic_extension
           (ae_proto_cxt_of_rule i)
   }.
 
-  Arguments algebraic_extension _ _ : clear implicits. 
+Arguments algebraic_extension _ _ : clear implicits. 
 
 (* The parameters of a rule, beyond its ambient signature, may be a little counter-intuitive.  The point is that they are just what is required to determine the arity of the symbol introduced by the rule, if it’s an object rule. *)
 Record rule
@@ -79,7 +79,7 @@ Record rule
   {hjf_conclusion : Hyp_Judgt_Form} (* judgement form of the conclusion *)
 :=
   {
-    premise :> algebraic_extension Σ a
+    premise : algebraic_extension Σ a
   (* hyp judgement boundary instance of conclusion: *)
   ; hyp_judgt_bdry_of_conclusion
       : Hyp_Judgt_Bdry_Instance
@@ -124,17 +124,17 @@ Record rule
   Proof.
     simple refine (Build_rule Σ' a hjf_concl _ _).
     simple refine (Build_algebraic_extension _ _ _ _ _ _).
-    - exact (ae_equality_rule R).
-    - exact (ae_lt R).
+    - exact (ae_equality_rule (premise R)).
+    - exact (ae_lt (premise R)).
     - (* ae_context_expr_of_rule *)
       intros i v.
-      refine (_ (ae_context_expr_of_rule R i v)).
+      refine (_ (ae_context_expr_of_rule _ i v)).
       apply Fmap_Raw_Syntax, Fmap1_Metavariable_Extension, f.
     - (* ae_hyp_bdry_of_rule *)
       intros i.
       simple refine 
         (Fmap_Hyp_Judgt_Bdry_Instance
-          _ (ae_hyp_bdry_of_rule R i)).
+          _ (ae_hyp_bdry_of_rule _ i)).
       apply Fmap1_Metavariable_Extension, f.
     - (* hyp_judgt_bdry_of_conclusion *)
       simple refine 
@@ -145,8 +145,9 @@ Record rule
 
 End Rule.
 
+(* globalise argument declarations *)
+Arguments algebraic_extension {_} _ _.
 Arguments rule {_} _ _ _.
-
 
 Section Associated_Congruence_Rules.
 
@@ -222,12 +223,13 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
 
   Definition associated_congruence_rule_original_constructor_translation
     {a} {hjf_concl} (R : rule Σ a hjf_concl)
-    (p : (a + a) + (ae_equality_rule R + ae_equality_rule R + a))
+    (p : (a + a) + 
+         (ae_equality_rule (premise R) + ae_equality_rule (premise R) + a))
     : Signature_Map
         (Metavariable_Extension Σ
-          (ae_arity_of_rule R (associated_original_premise p)))
+          (ae_arity_of_rule (premise R) (associated_original_premise p)))
         (Metavariable_Extension Σ (Family.subfamily (a + a)
-           (fun j => associated_congruence_rule_lt (ae_lt R) (inl j) p))).
+           (fun j => associated_congruence_rule_lt (ae_lt _) (inl j) p))).
   Proof.
     (* In case [p] is one of the 2 copies of the original premises, there is a single canonical choice for this definition.
 
@@ -263,16 +265,16 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
     simple refine (Build_rule _ _ _ _ _).
     simple refine (Build_algebraic_extension _ _ _ _ _ _).
     - (* ae_equality_rule: arity of equality premises *)
-      exact (((ae_equality_rule R) + (ae_equality_rule R)) + a). 
+      exact (((ae_equality_rule (premise R)) + (ae_equality_rule (premise R))) + a). 
     - (* ae_lt *)
-      exact (associated_congruence_rule_lt (ae_lt R)).
+      exact (associated_congruence_rule_lt (ae_lt _)).
     - (* ae_context_expr_of_rule *)
       intros p i.
       refine (Fmap_Raw_Syntax
         (associated_congruence_rule_original_constructor_translation _ _) _).
       set (p_orig := associated_original_premise p).
       destruct p as [ [ ? | ? ] | [ [ ? | ? ] | ? ] ];
-      refine (ae_context_expr_of_rule R p_orig i).
+      refine (ae_context_expr_of_rule _ p_orig i).
       (* alternatively, instead of destructing [p], could use equality reasoning on the type of [i]. *)
     - (* ae_hyp_bdry_of_rule *)
       intros p.
@@ -280,7 +282,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
       destruct p as [ [ ? | ? ] | [ [ ? | ? ] | p ] ];
       try (refine (Fmap_Hyp_Judgt_Bdry_Instance
         (associated_congruence_rule_original_constructor_translation _ _) _);
-           refine (ae_hyp_bdry_of_rule R p_orig)).
+           refine (ae_hyp_bdry_of_rule _ p_orig)).
       (* The cases where [p] is a copy of an original premise are all just translation,
       leaving just the new equality premises to give. *)
       intros i; simpl Hyp_Judgt_Bdry_Slots in i.
@@ -288,7 +290,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
       + (* boundary of the corresponding original premise *)
         refine (Fmap_Raw_Syntax
           (associated_congruence_rule_original_constructor_translation _ _) _).
-        apply (ae_hyp_bdry_of_rule R p_orig).
+        apply (ae_hyp_bdry_of_rule _ p_orig).
       + (* LHS of new equality premise *)
         cbn. simple refine (symb_raw' _ _ _).
         * apply inr_Metavariable.
@@ -375,10 +377,10 @@ Section Raw_Rules_of_Rules.
   Proof.
     refine (Build_Raw_Rule _ a _ _).
     - (* premises *)
-      exists (ae_rule R).
+      exists (premise R).
       intros P. 
       assert (f_P : Signature_Map
-              (Metavariable_Extension Σ (ae_arity_of_rule R P))
+              (Metavariable_Extension Σ (ae_arity_of_rule _ P))
               (Metavariable_Extension Σ a)).
       {
         apply Fmap2_Metavariable_Extension.
