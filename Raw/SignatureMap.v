@@ -106,7 +106,7 @@ Section Signature_Maps.
                     (Metavariable.extend Σ a')
   := Fmap_Metavariable_Extension (Family.idmap _) f.
 
-  Definition Fmap_Raw_Rule {Σ Σ'} (f : Signature_Map Σ Σ')
+  Definition Fmap_Flat_Rule {Σ Σ'} (f : Signature_Map Σ Σ')
     : flat_rule Σ -> flat_rule Σ'.
   Proof.
     intros R.
@@ -121,7 +121,7 @@ Section Signature_Maps.
   Definition fmap_flat_type_theory {Σ Σ'} (f : Signature_Map Σ Σ')
     : flat_type_theory Σ -> flat_type_theory Σ'.
   Proof.
-    apply Family.fmap, Fmap_Raw_Rule, f.
+    apply Family.fmap, Fmap_Flat_Rule, f.
   Defined.
 
 End Signature_Maps.

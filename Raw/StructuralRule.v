@@ -12,7 +12,7 @@ Require Import Raw.Syntax.
 - variable rule
 - equality rules
 
-Since “raw rule” in our terminology always mean _hypothetical_ rules, the structural rules that don’t fit this form (context formation and substitution) have to be given directly as families of closure conditions.
+Since “rule” in our terminology always mean _hypothetical_ rules, the structural rules that don’t fit this form (context formation and substitution) have to be given directly as families of closure conditions.
 
 All of the above are then collected as a single family [Structural_CCs].
 *)
@@ -156,7 +156,7 @@ x:A |– x:A
 
 *)
 
-Definition var_raw_rule : flat_rule Σ.
+Definition var_flat_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -185,7 +185,7 @@ Section Equality_Rules.
     ⊢ A ≡ A
 *)
 
-Definition refl_ty_eq_raw_rule : flat_rule Σ.
+Definition refl_ty_eq_flat_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -213,7 +213,7 @@ Defined.
    ⊢ B ≡ A
 *)
 
-Definition symm_ty_eq_raw_rule : flat_rule Σ.
+Definition symm_ty_eq_flat_rule : flat_rule Σ.
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
@@ -244,7 +244,7 @@ Defined.
        ⊢ A ≡ C
 *)
 
-Definition trans_ty_eq_raw_rule : flat_rule Σ.
+Definition trans_ty_eq_flat_rule : flat_rule Σ.
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
@@ -282,7 +282,7 @@ Defined.
 ⊢ u ≡ u : A
 *)
 
-Definition refl_tm_eq_raw_rule : flat_rule Σ.
+Definition refl_tm_eq_flat_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -314,7 +314,7 @@ Defined.
    ⊢ v ≡ u : A
 *)
 
-Definition symm_tm_eq_raw_rule : flat_rule Σ.
+Definition symm_tm_eq_flat_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -349,7 +349,7 @@ Defined.
          ⊢ u ≡ w : A
 *)
 
-Definition trans_tm_eq_raw_rule : flat_rule Σ.
+Definition trans_tm_eq_flat_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -395,7 +395,7 @@ Defined.
  ⊢ u : B
 *)
 
-Definition coerce_tm_raw_rule : flat_rule Σ.
+Definition coerce_tm_flat_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -445,7 +445,7 @@ Defined.
  ⊢ u = u' : B
 *)
 
-Definition coerce_tmeq_raw_rule : flat_rule Σ.
+Definition coerce_tmeq_flat_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -478,15 +478,15 @@ Proof.
   - exact [TmEq! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ B /] !].
 Defined.
 
-Definition Equality_Raw_Rules : family (flat_rule Σ)
-:= [< refl_ty_eq_raw_rule
-    ; symm_ty_eq_raw_rule
-    ; trans_ty_eq_raw_rule
-    ; refl_tm_eq_raw_rule
-    ; symm_tm_eq_raw_rule
-    ; trans_tm_eq_raw_rule
-    ; coerce_tm_raw_rule
-    ; coerce_tmeq_raw_rule
+Definition Equality_Flat_Rules : family (flat_rule Σ)
+:= [< refl_ty_eq_flat_rule
+    ; symm_ty_eq_flat_rule
+    ; trans_ty_eq_flat_rule
+    ; refl_tm_eq_flat_rule
+    ; symm_tm_eq_flat_rule
+    ; trans_tm_eq_flat_rule
+    ; coerce_tm_flat_rule
+    ; coerce_tmeq_flat_rule
   >].
 
 End Equality_Rules.
@@ -496,8 +496,8 @@ End Hyp_Structural_Rules.
 Definition Structural_CCs : Closure.system (judgement_total Σ)
 := context_ccs
   + subst_ccs
-  + FlatRule.closure_system var_raw_rule
-  + Family.bind Equality_Raw_Rules FlatRule.closure_system.
+  + FlatRule.closure_system var_flat_rule
+  + Family.bind Equality_Flat_Rules FlatRule.closure_system.
 (* TODO: add Haskell-style >= notation for bind? *)
 (* TODO: capitalise naming in [Context_CCs], etc. *)
 

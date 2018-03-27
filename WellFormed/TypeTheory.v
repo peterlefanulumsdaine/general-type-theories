@@ -90,7 +90,7 @@ Section Derivability_from_Type_Theory.
     (* First: the explicitly-given logical rules *)
     - exists (TT_rule_index T).
       intros r.
-      refine (Raw_Rule_of_Rule _ _).
+      refine (flatten _ _).
       + (* translate rules up to the full signature *)
         refine (Fmap_rule _ (TT_rule r)).
         apply Type_Theory_signature_inclusion_of_rule.
@@ -101,7 +101,7 @@ Section Derivability_from_Type_Theory.
     (* Second: associated congruence rules for the object-judgement logical rules. *)
     - exists { r : T & Judgement.is_object (TT_hjf_of_rule r) }.
       intros [r Hr].
-      refine (Raw_Rule_of_Rule _ _).
+      refine (flatten _ _).
       + simple refine
         (associated_congruence_rule
            (Fmap_rule _ (TT_rule r)) _ _ _ _).

@@ -25,12 +25,12 @@ End Derivability_from_Flat_Type_Theory.
 
 Section Derivable_Rules.
   (* “Derivable rules” over a type theory;
-  or, to be precise, _derivations_ of raw rules over a raw type theory. *)
+  or, to be precise, _derivations_ of flat rules over a flat type theory. *)
 
   Context {σ : shape_system}
           {Σ : signature σ}.
 
-  Definition Derivation_Raw_Rule_from_Flat_Type_Theory
+  Definition Derivation_Flat_Rule_from_Flat_Type_Theory
       (R : flat_rule Σ) (T : flat_type_theory Σ)
     : Type.
   Proof.
@@ -57,8 +57,8 @@ Section TT_Maps.
     {Σ' : signature σ} (T' : flat_type_theory Σ')
   := { Signature_Map_of_TT_Map :> Signature_Map Σ Σ'
      ; rule_derivation_of_TT_Map
-       : forall R : T, Derivation_Raw_Rule_from_Flat_Type_Theory
-                         (Fmap_Raw_Rule Signature_Map_of_TT_Map (T R))
+       : forall R : T, Derivation_Flat_Rule_from_Flat_Type_Theory
+                         (Fmap_Flat_Rule Signature_Map_of_TT_Map (T R))
                          T'
      }.
 
@@ -256,7 +256,7 @@ Section TT_Maps.
     (*   set (fc := rule_derivation_of_TT_Map _ _ f i). (* TODO: implicits! *) *)
     (*   set (c := T i) in *. *)
     (*   set (a := flat_rule_metas Σ c) in *. *)
-    (*   unfold Derivation_Raw_Rule_from_Flat_Type_Theory in fc. cbn in fc. *)
+    (*   unfold Derivation_Flat_Rule_from_Flat_Type_Theory in fc. cbn in fc. *)
     (*   transparent assert (f_a : (Signature_Map *)
     (*         (Metavariable.extend Σ a) (Metavariable.extend Σ' a))). *)
     (*     apply Fmap1_Metavariable_Extension, f. *)
@@ -266,7 +266,7 @@ Section TT_Maps.
       *)
       (* OK, this can be all abstracted a bit better:
        - “derivable cc’s” gives a “monad” on closure systems; so “deduce-bind” or something, like “deduce” but with a derivable cc instead of an atomic one
-       - any instantiation of a derivable raw rule gives a derivable closure condition over CCs_of_TT.
+       - any instantiation of a derivable flat rule gives a derivable closure condition over CCs_of_TT.
        - fmap on derivable closure conditions
        - fmap on *)
   Admitted.

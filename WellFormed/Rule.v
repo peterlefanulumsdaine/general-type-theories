@@ -10,7 +10,7 @@ Require Import Raw.SignatureMap.
 
 - [rule]: the data one gives to specify a logical rule (before any typechecking)
 - [associated_congruence_rule]
-- [Raw_Rule_of_rule]
+- [flatten]
 *)
 
 (** Specification of “well-shaped” rules *)
@@ -93,7 +93,7 @@ Record rule
 
   However, it could be nice (a) since rules are sometimes written this way in practice, and (b) to allow a precise theorem stating the claim above about it being equivalent to move variables into the premises.
 
-  On the other hand, so long as the _flattened_ rules [Raw_Rule] allow arbitrary conclusion judgements, one can still use those to give a lemma about the equivalence. *)
+  On the other hand, so long as the _flattened_ rules [flat_rule] allow arbitrary conclusion judgements, one can still use those to give a lemma about the equivalence. *)
 
   (* NOTE 2. Perhaps the parameters of the definition of [rule] could be profitably abstracted into a “proto-rule-spec” (probably including also the arity [ae_equality_rule]), fitting the pattern of the stratificaiton of objects into proto ≤ raw ≤ typed. *)
 
@@ -348,7 +348,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
              exact i.
   Defined.
   (* TODO: the above is a bit unreadable.  An alternative approach that might be clearer and more robust:
-   - factor out the constructions of the head terms of conclusions and premises from [Raw_Rule_of_rule], if doable.
+   - factor out the constructions of the head terms of conclusions and premises from [flatten], if doable.
    - here, invoke those, but (for the LHS/RHS of the new equalities), translate them under appropriate context morphisms “inl”, “inr”. *)
 
 (* A good test proposition will be the following: whenever a rule is well-typed, then so is its associated congruence rule. *)
@@ -356,13 +356,16 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
 End Associated_Congruence_Rules.
 
 
-(* Each rule induces one or two raw rules: the logical rule itself, and (if it was an object rule) its associated congruence rule.*)
+(* Each (ordered) rule induces one or two flat rules: the logical rule itself, and (if it was an object rule) its associated congruence rule.*)
 
-Section Raw_Rules_of_Rules.
+Section Flattening.
 
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
+  (* In flattening a rule, and in other settings (e.g. type-checking the premises), we often want to extract premises as judgements.
+
+   We need to do this into several different signatures, so in this lemma, we isolate exactly what is required: a map from the signature of this premise, plus (in case the premise is an object premise) a symbol to use as the head of the judgement, i.e. the metavariable introduced by the premise. *)
   (* TODO: consider whether the flattening of the conclusion can also be covered by this. *)
   Lemma judgement_of_premise 
       {a} {A : algebraic_extension Σ a} (i : A)
@@ -391,9 +394,8 @@ Section Raw_Rules_of_Rules.
         destruct H_obj. (* ruled out by assumption *)
   Defined.
   
-  (* Flattening a rule into a raw rule requires no extra information in the case of an equality-rule; in the case of an object-rule, it requires a symbol of appropriate arity to give the object introduced. *)
-  (* TODO: rename to “flatten” *)
-  Definition Raw_Rule_of_Rule
+  (* Flattening a rule requires no extra information in the case of an equality-rule; in the case of an object-rule, it requires a symbol of appropriate arity to give the object introduced. *)
+  Definition flatten
     {a} {hjf_concl}
     (R : rule Σ a hjf_concl)
     (Sr : Judgement.is_object hjf_concl
@@ -445,4 +447,4 @@ Section Raw_Rules_of_Rules.
           destruct H_obj. (* ruled out by assumption *)
   Defined.
 
-End Raw_Rules_of_Rules.
+End Flattening.
