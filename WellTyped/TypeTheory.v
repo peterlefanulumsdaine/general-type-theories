@@ -1,6 +1,7 @@
 Require Import HoTT.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
+Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 Require Import Raw.Theory.
@@ -140,11 +141,7 @@ Section Welltypedness.
     intros; apply idpath.
   Defined.
 
-  (* TODO: add as assumption in [algebraic_extension]. *)
-  Lemma ae_transitive {Σ : signature σ} {a} {A : algebraic_extension Σ a}
-    : Transitive (ae_lt A).
-  Admitted.
-
+Require Auxiliary.WellFounded.
   Definition is_well_typed_algebraic_extension
       {Σ : signature σ} (T : flat_type_theory Σ)
       {a} (A : algebraic_extension Σ a)
@@ -162,7 +159,7 @@ Section Welltypedness.
       + apply Fmap2_Metavariable_Extension.
         simple refine (_;_).
         * intros [j lt_j_i].
-          simpl. exists j. apply (ae_transitive _ i); assumption.
+          simpl. exists j. apply (WellFounded.transitive (ae_lt A) _ i r); assumption.
         * intro; apply idpath.
       + intros H_i_obj.
         destruct i as [ i | i ]; simpl in i.
@@ -213,11 +210,6 @@ Section Welltypedness.
           destruct H_i_obj. (* ruled out by assumption *)
   Defined.
 
-  (* TODO: add as assumption in [Type_Theory]. *)
-  Lemma tt_transitive {T : Type_Theory σ}
-    : Transitive (@TT_lt _ T).
-  Admitted.
-
   (* TODO: upstream to [WellFormed.TypeTheory] *)
   (* NOTE: could easily be generalised to give the sub-type-theory on any down-closed subset of the rules, if that’s ever needed. *)
   Definition sub_type_theory_below_rule (T : Type_Theory σ) (i : T)
@@ -226,15 +218,16 @@ Section Welltypedness.
     simple refine (Build_Type_Theory _ _ _ ).
     - refine (Family.subfamily (TT_rule_index T) _).
       intros j. exact (TT_lt j i).
-    - intros [j _] [k _]. exact (TT_lt j k).
+    - refine (WellFounded.pullback _ (@TT_lt _ T)).
+      exact (projT1).
     - cbn. intros [j lt_j_i].
       refine (Fmap_rule _ (TT_rule j)).
       apply Family.map_fmap.
       simple refine (_;_).
       + intros [k [k_obj lt_k_j]].
         simple refine (_;_).
-        * exists k. apply (tt_transitive _ j); assumption.
-        * split; assumption.
+        * exists k. apply (transitive _ _ j); assumption.
+        * cbn. split; assumption.
       + intros ?; apply idpath.
   Defined.
 

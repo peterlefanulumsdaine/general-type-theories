@@ -1,5 +1,6 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
+Require Import Auxiliary.WellFounded.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
@@ -43,8 +44,7 @@ Record algebraic_extension
   ; ae_proto_cxt_of_rule : ae_rule -> σ
     := fun i => snd (ae_rule i)
   (* the ordering relation on the rules *)
-  (* TODO: somewhere we will want to add that this is well-founded; maybe prop_valued; mayb more *)
-  ; ae_lt : ae_rule -> ae_rule -> Type
+  ; ae_lt : well_founded_order ae_rule
   (* for each rule, the arity specifying what metavariables are available in the syntax for this rule; i.e., the family of type/term arguments already introduced by earlier rules *)
   ; ae_arity_of_rule : ae_rule -> arity _
     := fun i => Family.subfamily a (fun j => ae_lt (inl j) i)
@@ -220,6 +220,25 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
 
   Arguments associated_congruence_rule_lt : simpl nomatch.
 
+  Definition associated_congruence_rule_lt_transitive
+      {obs eqs : Type} (lt : relation (obs + eqs)) (lt_trans : Transitive lt)
+    : Transitive (associated_congruence_rule_lt lt).
+  Admitted. (* TODO: refactor [associated_congruence_rule_lt] to make this tractable. *)
+
+  Definition associated_congruence_rule_lt_well_founded
+      {obs eqs : Type} (lt : relation (obs + eqs)) (lt_wf : is_well_founded lt)
+    : is_well_founded (associated_congruence_rule_lt lt).
+  Admitted. (* TODO: refactor [associated_congruence_rule_lt] to make this tractable. *)
+
+  Definition associated_congruence_rule_lt_well_founded_order
+      {obs eqs : Type} (lt : well_founded_order (obs + eqs))
+    : well_founded_order ((obs + obs) + (eqs + eqs + obs)).
+  Proof.
+    exists (associated_congruence_rule_lt lt).
+    - apply associated_congruence_rule_lt_well_founded, well_founded.
+    - apply associated_congruence_rule_lt_transitive, transitive. 
+  Defined.
+
   Definition associated_congruence_rule_original_constructor_translation
     {a} {hjf_concl} (R : rule Σ a hjf_concl)
     (p : (a + a) +
@@ -266,7 +285,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
     - (* ae_equality_rule: arity of equality premises *)
       exact (((ae_equality_rule (premise R)) + (ae_equality_rule (premise R))) + a).
     - (* ae_lt *)
-      exact (associated_congruence_rule_lt (ae_lt _)).
+      exact (associated_congruence_rule_lt_well_founded_order (ae_lt _)).
     - (* ae_context_expr_of_rule *)
       intros p i.
       refine (Fmap_Raw_Syntax

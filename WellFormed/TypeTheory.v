@@ -1,5 +1,6 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
+Require Import Auxiliary.WellFounded.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
@@ -24,8 +25,8 @@ Section Type_Theories.
   (* the arity of the arguments (i.e. the *object* premises only) of each rule *)
   ; TT_arity_of_rule : TT_rule_index -> arity _
     := fun i => snd (TT_rule_index i)
-  (* the ordering on rules.  TODO: will probably need to add well-foundedness. QUESTION: any reason for it to be Prop-valued, or could we just let it be type-valued? *)
-  ; TT_lt : TT_rule_index -> TT_rule_index -> Type
+  (* the ordering on rules *)
+  ; TT_lt : well_founded_order TT_rule_index
   (* the signature over which each rule can be written *)
   ; TT_signature_of_rule : TT_rule_index -> signature σ
     := fun i => Family.fmap
@@ -74,7 +75,7 @@ Arguments Type_Theory _ : clear implicits.
 Arguments TT_rule_index {_} _.
 Arguments TT_hjf_of_rule {_ _} _.
 Arguments TT_arity_of_rule {_ _} _.
-Arguments TT_lt {_ _} _ _.
+Arguments TT_lt {_ _}.
 Arguments TT_signature_of_rule {_ _} _.
 Arguments TT_rule {_ _} _.
 
