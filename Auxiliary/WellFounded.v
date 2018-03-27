@@ -16,24 +16,121 @@ Arguments well_founded_order _ : clear implicits.
 Identity Coercion id_relation : relation >-> Funclass.
 (* Required in order to apply [well_founded_order] (or other things coercing to [relation]) to arguments *)
 
+(* An order is well-founded if it embeds into a known well-founded order. *)
+Definition well_founded_if_embeds {X Y} (f : X -> Y)
+    {RX : relation X} {RY : relation Y} (RY_wf : is_well_founded RY)
+    (H_f : forall x x', RX x x' -> RY (f x) (f x'))
+  : is_well_founded RX.
+Proof.
+  intros P P_hereditary.
+  set (Q := fun y:Y => forall x:X, (f x = y) -> P x).
+  assert (H_Q : forall y, Q y).
+  { apply RY_wf.
+    intros y Q_below_y x e_fx_y.
+    destruct e_fx_y. rename Q_below_y into Q_below_fx.
+    apply P_hereditary.
+    intros x' lt_x'_x.
+    simple refine (Q_below_fx (f x') _ _ _).
+    + apply H_f; assumption.
+    + apply idpath.
+  }
+  intros x. refine (H_Q (f x) x _). apply idpath.
+Defined.
+
 Local Definition pullback {X Y} (f : X -> Y)
   : well_founded_order Y -> well_founded_order X.
 Proof.
   intros lt.
   exists (fun x x' => lt (f x) (f x')).
-  - intros P P_hereditary.
-    set (Q := fun y:Y => forall x:X, (f x = y) -> P x).
-    assert (H_Q : forall y, Q y).
-    { apply (well_founded lt).
-      intros y Q_below_y x e_fx_y.
-      destruct e_fx_y. rename Q_below_y into Q_below_fx.
-      apply P_hereditary.
-      intros x' lt_x'_x.
-      simple refine (Q_below_fx (f x') _ _ _).
-      + assumption.
-      + apply idpath.
-    }
-    intros x. refine (H_Q (f x) x _). apply idpath.
+  - apply (well_founded_if_embeds f (well_founded lt)). intros; assumption.
   - intros x x' x'' lt_x_x' lt_x'_x''.
     apply (transitive lt _ (f x')); assumption.
+Defined.
+
+Local Definition family_sum
+  {X : Type} (lt_X : well_founded_order X)
+  {Y : X -> Type} (lt_Y : forall x, well_founded_order (Y x))
+  : well_founded_order {x:X & Y x}.
+Proof.
+  simple refine (Build_well_founded_order _ _ _ _).
+  - intros xy xy'.
+    refine (lt_X xy.1 xy'.1
+            + { e : xy.1 = xy'.1 & lt_Y _ (transport Y e xy.2) xy'.2}).
+  - intros P P_hereditary.
+    set (PX := fun x => forall y, P (x;y)).
+    assert (PX_total : forall x, PX x).
+    { apply (well_founded lt_X).
+      intros x PX_below_x.
+      unfold PX. apply (well_founded (lt_Y x)).
+      intros y Px_below_y.
+      apply (P_hereditary (x;y)).
+      intros [x' y'] [ lt_x_x' | [e lt_y_y'] ].
+      + apply PX_below_x, lt_x_x'.
+      + simpl in *. destruct e. apply Px_below_y, lt_y_y'.
+    }
+    intros [x y]; apply PX_total.
+  - intros [x y] [x' y'] [x'' y'']
+           [ lt_x_x' | e_lt_y_y' ] [ lt_x'_x'' | e_lt_y'_y''].
+    + apply inl. apply (transitive lt_X _ x'); assumption.
+    + apply inl. destruct (e_lt_y'_y''.1). assumption.
+    + apply inl. destruct (e_lt_y_y'.1). assumption.
+    + apply inr. cbn in *.
+      destruct e_lt_y_y' as [ e lt_y_y']; destruct e.
+      destruct e_lt_y'_y'' as [ e' lt_y'_y'']; destruct e'.
+      cbn in *. exists (idpath _).
+      apply (transitive (lt_Y x) _ y'); assumption.
+Defined.
+
+Local Definition lex_product {X Y}
+    (lt_X : well_founded_order X) (lt_Y : well_founded_order Y)
+  : well_founded_order (X*Y).
+Proof.
+  refine (pullback _ (family_sum lt_X (fun x => lt_Y))).
+  intros xy. exact (fst xy; snd xy).
+Defined.
+
+(* TODO: find better name; see https://mathoverflow.net/questions/296349/ *)
+Definition semi_reflexive_product
+           {X Y} (lt_X : well_founded_order X) (lt_Y : well_founded_order Y)
+  : well_founded_order (X*Y).
+Proof.
+  exists (fun xy xy' => ((lt_X (fst xy) (fst xy') * lt_Y (snd xy) (snd xy'))
+                         + ((fst xy = fst xy') * lt_Y (snd xy) (snd xy'))
+                         + (lt_X (fst xy) (fst xy') * (snd xy = snd xy')))).
+  - apply (well_founded_if_embeds idmap (well_founded (lex_product lt_X lt_Y))).
+    intros [x y] [x' y'] [[[lx ly] | [e ly]] | [lx e]].
+    + apply inl; assumption.
+    + apply inr. exists e. destruct e; exact ly.
+    + apply inl; assumption.
+  - intros [x y] [x' y'] [x'' y'']
+      [[[l_x_x' l_y_y'] | [e_x_x' l_y_y']] | [l_x_x' e_y_y']]
+      [[[l_x'_x'' l_y'_y''] | [e_x'_x'' l_y'_y'']] | [l_x'_x'' e_y'_y'']];
+    cbn in *.
+    + apply inl, inl. split.
+      * eapply transitive; eassumption.
+      * eapply transitive; eassumption.
+    + apply inl, inl. split.
+      * destruct e_x'_x''; assumption.
+      * eapply transitive; eassumption.
+    + apply inl, inl. split.
+      * eapply transitive; eassumption.
+      * destruct e_y'_y''; assumption.
+    + apply inl, inl. split.
+      * destruct e_x_x'; assumption.
+      * eapply transitive; eassumption.
+    + apply inl, inr. split.
+      * destruct e_x_x'; assumption.
+      * eapply transitive; eassumption.
+    + apply inl, inl. split.
+      * destruct e_x_x'; assumption.
+      * destruct e_y'_y''; assumption.
+    + apply inl, inl. split.
+      * eapply transitive; eassumption.
+      * destruct e_y_y'; assumption.
+    + apply inl, inl. split.
+      * destruct e_x'_x''; assumption.
+      * destruct e_y_y'; assumption.
+    + apply inr. split.
+      * eapply transitive; eassumption.
+      * destruct e_y_y'; assumption.
 Defined.

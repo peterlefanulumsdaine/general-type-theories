@@ -148,6 +148,42 @@ End Rule.
 Arguments algebraic_extension {_} _ _.
 Arguments rule {_} _ _ _.
 
+
+Module Span.
+(* Some auxiliary constructions for defining the ordering of the premises in the associated congruence rule of a constructor. *)
+  
+  Local Inductive span : Type := l | r | t.
+  
+  Local Definition lt_relation : relation span
+  := fun x y => match x, y with 
+                | l, t => True
+                | r, t => True
+                | x, y => False
+  end.
+  
+  Definition lt_well_founded : is_well_founded lt_relation.
+  Proof.
+    intros P P_hereditary.
+    assert (Pl : P l). { apply P_hereditary. intros [ | | ] []. }
+    assert (Pr : P r). { apply P_hereditary. intros [ | | ] []. }
+    intros [ | | ]; try assumption.
+    apply P_hereditary. intros [ | | ] l; try assumption; destruct l.
+  Defined.
+  
+  Definition lt_transitive : Transitive lt_relation.
+  Proof.
+    intros [ | | ] [ | | ] [ | | ] l l'; destruct l, l'; exact tt.
+  Defined.
+  
+  Definition lt : well_founded_order span.
+  Proof.
+    exists lt_relation.
+    - apply lt_well_founded.
+    - apply lt_transitive.
+  Defined.
+
+End Span.
+
 Section Associated_Congruence_Rules.
 
   Context {σ : shape_system}.
@@ -166,78 +202,35 @@ Section Associated_Congruence_Rules.
 
   TODO: perhaps try to refactor to avoid so many special cases?  E.g. as: take the lex product of the input relation [R] with the 3-element order ({{0},{1},{0,1}}, ⊂ ) and then pull this back along the suitable map (o+o)+(e+e+o) —> (o+e)*3 ?  *)
   Definition associated_congruence_rule_lt
-      {obs eqs : Type} (lt : relation (obs + eqs))
-    : relation ((obs + obs) + (eqs + eqs + obs)).
+      {obs eqs : Type} (lt : well_founded_order (obs + eqs))
+    : well_founded_order ((obs + obs) + (eqs + eqs + obs)).
   Proof.
-  (*  In a more readable organisation, the cases we want are as follows:
-
-           ob_l i   ob_r i   eq_l i   eq_r i   eq_new i
-
-ob_l j     i < j    0        i < j    0        0
-
-ob_r j     0        i < j    0        i < j    0
-
-eq_l j     i < j    0        i < j    0        0
-
-eq_r j     0        i < j    0        i < j    0
-
-eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
-
-*)
-    intros [ [ ob_l | ob_r ] | [ [ eq_l | eq_r ] | eq_new ] ];
-    intros [ [ ob'_l | ob'_r ] | [ [ eq'_l | eq'_r ] | eq'_new ] ].
-      (* column eq_l *)
-    - exact (lt (inl ob_l) (inl ob'_l)).
-    - exact False.
-    - exact (lt (inl ob_l) (inr eq'_l)).
-    - exact False.
-    - exact ((lt (inl ob_l) (inl eq'_new)) \/ (ob_l = eq'_new)).
-      (* column ob_r *)
-    - exact False.
-    - exact (lt (inl ob_r) (inl ob'_r)).
-    - exact False.
-    - exact (lt (inl ob_r) (inr eq'_r)).
-    - exact ((lt (inl ob_r) (inl eq'_new)) \/ (ob_r = eq'_new)).
-      (* column eq_l *)
-    - exact (lt (inr eq_l) (inl ob'_l)).
-    - exact False.
-    - exact (lt (inr eq_l) (inr eq'_l)).
-    - exact False.
-    - exact (lt (inr eq_l) (inl eq'_new)).
-      (* column eq_r *)
-    - exact False.
-    - exact (lt (inr eq_r) (inl ob'_r)).
-    - exact False.
-    - exact (lt (inr eq_r) (inr eq'_r)).
-    - exact (lt (inr eq_r) (inl eq'_new)).
-      (* column eq_new *)
-    - exact False.
-    - exact False.
-    - exact False.
-    - exact False.
-    - exact (lt (inl eq_new) (inl eq'_new)).
+    refine (WellFounded.pullback _ (semi_reflexive_product lt Span.lt)).
+    intros [ [ ob_l | ob_r ] | [ [ eq_l | eq_r ] | eq_new ] ].
+    + exact (inl ob_l, Span.l).
+    + exact (inl ob_r, Span.r).
+    + exact (inr eq_l, Span.l).
+    + exact (inr eq_r, Span.r).
+    + exact (inl eq_new, Span.t).
   Defined.
 
   Arguments associated_congruence_rule_lt : simpl nomatch.
 
-  Definition associated_congruence_rule_lt_transitive
-      {obs eqs : Type} (lt : relation (obs + eqs)) (lt_trans : Transitive lt)
-    : Transitive (associated_congruence_rule_lt lt).
-  Admitted. (* TODO: refactor [associated_congruence_rule_lt] to make this tractable. *)
+  (*  Unwinding this definition, the relation is be defined as follows:
 
-  Definition associated_congruence_rule_lt_well_founded
-      {obs eqs : Type} (lt : relation (obs + eqs)) (lt_wf : is_well_founded lt)
-    : is_well_founded (associated_congruence_rule_lt lt).
-  Admitted. (* TODO: refactor [associated_congruence_rule_lt] to make this tractable. *)
+           ob_l j   ob_r j   eq_l j   eq_r j   eq_new j
 
-  Definition associated_congruence_rule_lt_well_founded_order
-      {obs eqs : Type} (lt : well_founded_order (obs + eqs))
-    : well_founded_order ((obs + obs) + (eqs + eqs + obs)).
-  Proof.
-    exists (associated_congruence_rule_lt lt).
-    - apply associated_congruence_rule_lt_well_founded, well_founded.
-    - apply associated_congruence_rule_lt_transitive, transitive. 
-  Defined.
+ob_l i     i < j    0        i < j    0        i ≤ j
+
+ob_r i     0        i < j    0        i < j    i ≤ j
+
+eq_l i     i < j    0        i < j    0        i < j
+
+eq_r i     0        i < j    0        i < j    i < j
+
+eq_new i   0        0        0        0        i < j
+
+*)
 
   Definition associated_congruence_rule_original_constructor_translation
     {a} {hjf_concl} (R : rule Σ a hjf_concl)
@@ -257,16 +250,20 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
     - intros q.
       destruct p as [ [ pob_l | pob_r ] | [ [ peq_l | peq_r ] | peq_new ] ].
       + (* pob_l *)
-        exists (inl (pr1 q)). exact (pr2 q).
+        exists (inl (pr1 q)).
+        apply inr; cbn. split; try apply idpath. exact (pr2 q).
       + (* pob_r *)
-        exists (inr (pr1 q)). exact (pr2 q).
+        exists (inr (pr1 q)).
+        apply inr; cbn. split; try apply idpath. exact (pr2 q).
       + (* peq_l *)
-        exists (inl (pr1 q)). exact (pr2 q).
+        exists (inl (pr1 q)).
+        apply inr; cbn. split; try apply idpath. exact (pr2 q).
       + (* peq_r *)
-        exists (inr (pr1 q)). exact (pr2 q).
+        exists (inr (pr1 q)).
+        apply inr; cbn. split; try apply idpath. exact (pr2 q).
       + (* peq_new *)
         exists (inr (pr1 q)). (* note both [inl], [inr] make this work *)
-        exact (inl (pr2 q)).
+        apply inl, inl; cbn. split; try constructor. exact (pr2 q).
     - intros q.
       repeat destruct p as [ p | p ]; apply idpath.
   Defined.
@@ -285,7 +282,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
     - (* ae_equality_rule: arity of equality premises *)
       exact (((ae_equality_rule (premise R)) + (ae_equality_rule (premise R))) + a).
     - (* ae_lt *)
-      exact (associated_congruence_rule_lt_well_founded_order (ae_lt _)).
+      exact (associated_congruence_rule_lt (ae_lt _)).
     - (* ae_context_expr_of_rule *)
       intros p i.
       refine (Fmap_Raw_Syntax
@@ -313,7 +310,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
         cbn. simple refine (raw_symbol' _ _ _).
         * apply Metavariable.include_metavariable.
           refine (inl p; _).
-          apply inr, idpath.
+          cbn. apply inl, inr; split; constructor.
         * apply idpath.
         * intros i.
           apply raw_variable, (coproduct_inj1 shape_is_sum), i.
@@ -321,7 +318,7 @@ eq_new j   i ≤ j    i ≤ j    i < j    i < j    i < j
         cbn. simple refine (raw_symbol' _ _ _).
         * apply Metavariable.include_metavariable.
           refine (inr p; _).
-          apply inr, idpath.
+          cbn. apply inl, inr; split; constructor.
         * apply idpath.
         * intros i.
           apply raw_variable, (coproduct_inj1 shape_is_sum), i.
