@@ -140,9 +140,10 @@ Section Welltypedness.
     intros; apply idpath.
   Defined.
 
+  (* TODO: add as assumption in [algebraic_extension]. *)
   Lemma ae_transitive {Σ : signature σ} {a} {A : algebraic_extension Σ a}
     : Transitive (ae_lt A).
-  Admitted.  (* Needs to be added as assuption in [algebraic_extension]. *)
+  Admitted.
 
   Definition is_well_typed_algebraic_extension
       {Σ : signature σ} (T : flat_type_theory Σ)
@@ -185,7 +186,7 @@ Section Welltypedness.
   We currently take option (1).
   *)
 
-  Definition Is_Well_Typed_Rule
+  Definition is_well_typed_rule
       {Σ : signature σ} (T : flat_type_theory Σ)
       {a} {hjf_concl}
       (R : rule Σ a hjf_concl)
@@ -210,6 +211,54 @@ Section Welltypedness.
           -- split; apply idpath.
         * (* case: i an equality premise *)
           destruct H_i_obj. (* ruled out by assumption *)
+  Defined.
+
+  (* TODO: add as assumption in [Type_Theory]. *)
+  Lemma tt_transitive {T : Type_Theory σ}
+    : Transitive (@TT_lt _ T).
+  Admitted.
+
+  (* TODO: upstream to [WellFormed.TypeTheory] *)
+  (* NOTE: could easily be generalised to give the sub-type-theory on any down-closed subset of the rules, if that’s ever needed. *)
+  Definition sub_type_theory_below_rule (T : Type_Theory σ) (i : T)
+    : Type_Theory σ.
+  Proof.
+    simple refine (Build_Type_Theory _ _ _ ).
+    - refine (Family.subfamily (TT_rule_index T) _).
+      intros j. exact (TT_lt j i).
+    - intros [j _] [k _]. exact (TT_lt j k).
+    - cbn. intros [j lt_j_i].
+      refine (Fmap_rule _ (TT_rule j)).
+      apply Family.map_fmap.
+      simple refine (_;_).
+      + intros [k [k_obj lt_k_j]].
+        simple refine (_;_).
+        * exists k. apply (tt_transitive _ j); assumption.
+        * split; assumption.
+      + intros ?; apply idpath.
+  Defined.
+
+  (* TODO: upstream to [WellFormed.TypeTheory] *)
+  (* NOTE: should be moreover an isomorphism *)
+  Definition signature_of_sub_type_theory (T : Type_Theory σ) (i : T)
+    : Signature_Map
+        (Signature_of_Type_Theory (sub_type_theory_below_rule T i))
+        (TT_signature_of_rule i).
+  Proof.
+    simple refine (_;_).
+    - intros [[j lt_j_i] j_obj]. exists j. split; assumption.
+    - intros ?; apply idpath.
+  Defined.
+
+  Definition is_well_typed_type_theory (T : Type_Theory σ) : Type.
+  Proof.
+    refine (forall R : T, _).
+    refine (is_well_typed_rule _ (TT_rule R)).
+    refine (fmap_flat_type_theory _ _).
+    Focus 2. { refine (@TypeTheory.flatten _ _).
+      exact (sub_type_theory_below_rule T R). }
+    Unfocus.
+    apply signature_of_sub_type_theory.
   Defined.
 
 End Welltypedness.
