@@ -1,7 +1,7 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
-Require Import Presyntax.
+Require Import Signature.
 
 Section RawSyntax.
 
@@ -58,3 +58,24 @@ Global Arguments raw_type {_} _ _.
 Global Arguments raw_term {_} _ _.
 Global Arguments arguments {_} _ _ _.
 
+Section Signature_Maps.
+
+  Context {σ : shape_system}.
+  
+  Local Definition fmap {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {cl} {γ}
+    : raw_expression Σ cl γ -> raw_expression Σ' cl γ.
+  Proof.
+    intros t. induction t as [ γ i | γ S ts fts].
+    - exact (raw_variable i).
+    - refine (transport (fun cl => raw_expression _ cl _) _ (raw_symbol (f S) _)).
+      + exact (ap fst (Family.map_commutes _ _)).
+      + refine (transport
+          (fun a : arity σ => forall i : a,
+               raw_expression Σ' (argument_class i) (shape_sum γ (argument_shape i)))
+          _
+          fts).
+        exact ((ap snd (Family.map_commutes _ _))^).
+  Defined.
+
+End Signature_Maps.

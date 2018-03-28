@@ -5,7 +5,6 @@ Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 Require Import Raw.Derivation.
-Require Import Raw.SignatureMap.
 Require Import Raw.Rule.
 Require Import Raw.TypeTheory.
 
@@ -135,7 +134,7 @@ Section Welltypedness.
 
   (* TODO: upstream; consider naming *)
   Definition include_symbol (Σ : signature σ) a
-     : (Signature_Map Σ (Metavariable.extend Σ a)).
+     : (Signature.map Σ (Metavariable.extend Σ a)).
   Proof.
     exists Metavariable.include_symbol.
     intros; apply idpath.
@@ -156,7 +155,7 @@ Require Auxiliary.WellFounded.
       exists {i : ae_premise A & ae_lt _ i r }.
       intros [i lt_i_r].
       apply (judgement_of_premise i).
-      + apply Fmap2_Metavariable_Extension.
+      + apply Metavariable.fmap2.
         simple refine (_;_).
         * intros [j lt_j_i].
           simpl. exists j. apply (WellFounded.transitive (ae_lt A) _ i r); assumption.
@@ -198,7 +197,7 @@ Require Auxiliary.WellFounded.
     - (* open hypotheses to allow in the derivation *)
       exists (premise R).
       intros i. apply (judgement_of_premise i).
-      + apply Fmap2_Metavariable_Extension.
+      + apply Metavariable.fmap2.
         apply Family.inclusion.
       + intros H_i_obj.
         destruct i as [ i | i ]; simpl in i.
@@ -234,7 +233,7 @@ Require Auxiliary.WellFounded.
   (* TODO: upstream to [Raw.TypeTheory] *)
   (* NOTE: should be moreover an isomorphism *)
   Definition signature_of_sub_type_theory (T : Type_Theory σ) (i : T)
-    : Signature_Map
+    : Signature.map
         (Signature_of_Type_Theory (sub_type_theory_below_rule T i))
         (TT_signature_of_rule i).
   Proof.

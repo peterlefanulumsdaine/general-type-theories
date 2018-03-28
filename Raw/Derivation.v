@@ -4,7 +4,6 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
-Require Import Raw.SignatureMap.
 Require Import Raw.SubstitutionFacts.
 Require Import Raw.StructuralRule.
 
@@ -49,43 +48,43 @@ Section TT_Maps.
   Context {σ : shape_system}.
 
   (* TODO:
-    possibly the [Signature_Map] should be extracted as a parameter,
+    possibly the [Signature.map] should be extracted as a parameter,
     à la displayed categories?
   *)
   Record TT_Map
     {Σ : signature σ} (T : flat_type_theory Σ)
     {Σ' : signature σ} (T' : flat_type_theory Σ')
-  := { Signature_Map_of_TT_Map :> Signature_Map Σ Σ'
+  := { Signature_map_of_TT_Map :> Signature.map Σ Σ'
      ; rule_derivation_of_TT_Map
        : forall R : T, Derivation_Flat_Rule_from_Flat_Type_Theory
-                         (Fmap_Flat_Rule Signature_Map_of_TT_Map (T R))
+                         (FlatRule.fmap Signature_map_of_TT_Map (T R))
                          T'
      }.
 
   (* TODO: upstream! *)
   Definition Fmap_Raw_Context_Map
-      {Σ Σ' : signature σ} (f : Signature_Map Σ Σ')
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {γ γ'} (g : Context.map Σ γ' γ)
     : Context.map Σ' γ' γ
-  := fun i => (Fmap_Raw_Syntax f (g i)).
+  := fun i => (Expression.fmap f (g i)).
 
   (* TODO: upstream! *)
-  Lemma Fmap_Raw_Syntax_Raw_Subst
+  Lemma fmap_Raw_Subst
       {Σ Σ' : signature σ}
-      (f : Signature_Map Σ Σ')
+      (f : Signature.map Σ Σ')
       {γ γ'} (g : Context.map Σ γ' γ)
       {cl} (e : raw_expression Σ cl γ)
-    : Fmap_Raw_Syntax f (substitute g e)
-    = substitute (Fmap_Raw_Context_Map f g) (Fmap_Raw_Syntax f e).
+    : Expression.fmap f (substitute g e)
+    = substitute (Fmap_Raw_Context_Map f g) (Expression.fmap f e).
   Proof.
   Admitted.
 
   (* TODO: abstract [Family_Map_over] or something, i.e. a displayed-category version of family maps, for use in definitions like this? *)
   Definition Fmap_Structural_CCs
       {Σ Σ' : signature σ}
-      (f : Signature_Map Σ Σ')
+      (f : Signature.map Σ Σ')
     : Family.map
-        (Family.fmap (Closure.fmap (Fmap_Judgt_Instance f)) (Structural_CCs Σ))
+        (Family.fmap (Closure.fmap (fmap_judgement_total f)) (Structural_CCs Σ))
         (Structural_CCs Σ').
   Proof.
     (* TODO: possible better approach:
@@ -99,8 +98,8 @@ Section TT_Maps.
       simple refine (_;_).
       + rename c1 into ΓA.
         refine (inl (inl (inl (Some _)))).
-        exists (Fmap_Raw_Context f ΓA.1).
-        exact (Fmap_Raw_Syntax f ΓA.2).
+        exists (Context.fmap f ΓA.1).
+        exact (Expression.fmap f ΓA.2).
       + cbn. apply Closure.rule_eq.
         * simple refine (Family.eq _ _). { apply idpath. }
           cbn. intros [ [ [] | ] | ].
@@ -134,11 +133,11 @@ Section TT_Maps.
       destruct c2 as [ Γ [Γ' [g [hjf hjfi]]]].
       simple refine (_;_).
       + refine (inl (inl (inr (inl _)))).
-        exists (Fmap_Raw_Context f Γ).
-        exists (Fmap_Raw_Context f Γ').
+        exists (Context.fmap f Γ).
+        exists (Context.fmap f Γ').
         exists (Fmap_Raw_Context_Map f g).
         exists hjf.
-        exact (Fmap_Hyp_Judgt_Form_Instance f hjfi).
+        exact (fmap_hypothetical_judgement f hjfi).
       + cbn. apply Closure.rule_eq; cbn.
         * apply inverse.
           eapply concat. { apply Family.map_adjoin. }
@@ -148,25 +147,25 @@ Section TT_Maps.
             apply (ap (fun x => (_; x))).
             apply (ap (fun x => (_; x))).
             apply path_forall. intros [ [ [] | ] | ].
-            ++ refine (Fmap_Raw_Syntax_Raw_Subst _ _ _).
+            ++ refine (fmap_Raw_Subst _ _ _).
             ++ apply idpath.
           -- apply idpath.
           (* Family_fmap_adjoin *)
         * apply (ap (fun x => (_; x))). cbn.
           apply (ap (fun x => (_; x))).
           apply path_forall. intros i.
-          unfold Fmap_Hyp_Judgt_Form_Instance.
-          refine (Fmap_Raw_Syntax_Raw_Subst _ _ _)^.
+          unfold fmap_hypothetical_judgement.
+          refine (fmap_Raw_Subst _ _ _)^.
     - (* substitution equality *)
       destruct c3 as [ Γ [Γ' [g [g' [hjf hjfi]]]]].
       simple refine (_;_).
       + refine (inl (inl (inr (inr _)))).
-        exists (Fmap_Raw_Context f Γ).
-        exists (Fmap_Raw_Context f Γ').
+        exists (Context.fmap f Γ).
+        exists (Context.fmap f Γ').
         exists (Fmap_Raw_Context_Map f g).
         exists (Fmap_Raw_Context_Map f g').
         exists hjf.
-        exact (Fmap_Hyp_Judgt_Form_Instance f hjfi).
+        exact (fmap_hypothetical_judgement f hjfi).
       + admit.
     - (* var rule *)
       simple refine (inl (inr _) ; _); admit.
@@ -181,7 +180,7 @@ Section TT_Maps.
     {Σ' : signature σ} (T' : flat_type_theory Σ')
     (f : TT_Map T T')
   : Closure.map
-      (Family.fmap (Closure.fmap (Fmap_Judgt_Instance f)) (CCs_of_Flat_Type_Theory T))
+      (Family.fmap (Closure.fmap (fmap_judgement_total f)) (CCs_of_Flat_Type_Theory T))
       (CCs_of_Flat_Type_Theory T').
   Proof.
     intros c. (* We need to unfold [c] a bit here, bit not too much. *)
@@ -204,9 +203,9 @@ Section TT_Maps.
     (*   set (c := T i) in *. *)
     (*   set (a := flat_rule_metas Σ c) in *. *)
     (*   unfold Derivation_Flat_Rule_from_Flat_Type_Theory in fc. cbn in fc. *)
-    (*   transparent assert (f_a : (Signature_Map *)
+    (*   transparent assert (f_a : (Signature.map *)
     (*         (Metavariable.extend Σ a) (Metavariable.extend Σ' a))). *)
-    (*     apply Fmap1_Metavariable_Extension, f. *)
+    (*     apply Metavariable.fmap1, f. *)
       (*
       Very concretely: fc is over Σ+a.  Must map to Σ'+a, then instantiate.
 

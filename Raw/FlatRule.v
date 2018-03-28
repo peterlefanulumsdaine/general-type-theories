@@ -1,7 +1,7 @@
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Presyntax.
+Require Import Raw.Signature.
 Require Import Raw.Context.
 Require Import Raw.Judgement.
 Require Import Raw.Metavariable.
@@ -43,11 +43,34 @@ Section Flat_Type_Theory.
   Definition flat_type_theory (Σ : signature σ) : Type
      := family (flat_rule Σ).
 
-(*  Definition fmap_flat_type_theory {Σ Σ'} (f : Signature.map Σ Σ')
-     : flat_type_theory Σ -> flat_type_theory Σ'.
-  Proof.
-  Defined. *)
-
 End Flat_Type_Theory.
 
 Arguments closure_system {_ _} _.
+
+
+Section Signature_Maps.
+
+  Context {σ : shape_system}.
+
+  Local Definition fmap {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+    : flat_rule Σ -> flat_rule Σ'.
+  Proof.
+    intros R.
+    exists (flat_rule_metas _ R).
+    - refine (Family.fmap _ (flat_rule_premises _ R)).
+      apply fmap_judgement_total.
+      apply Metavariable.fmap1, f.
+    - refine (fmap_judgement_total _ (flat_rule_conclusion _ R)).
+      apply Metavariable.fmap1, f.
+  Defined.
+
+  Definition fmap_flat_type_theory {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+    : flat_type_theory Σ -> flat_type_theory Σ'.
+  Proof.
+    apply Family.fmap, fmap, f.
+  Defined.
+  
+End Signature_Maps.
+
+  
+

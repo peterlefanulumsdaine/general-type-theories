@@ -15,7 +15,7 @@ MODULES := \
 	Auxiliary/Closure \
 	Proto/ShapeSystem \
 	Proto/ShapeSystemExamples \
-	Raw/Presyntax \
+	Raw/Signature \
 	Raw/Expression \
 	Raw/Substitution \
 	Raw/Context \
@@ -23,13 +23,12 @@ MODULES := \
 	Raw/Metavariable \
 	Raw/FlatRule \
 	Raw/Syntax \
-	Raw/SignatureMap \
 	Raw/SubstitutionFacts \
 	Raw/Derivation \
 	Raw/StructuralRule \
 	Raw/Rule \
 	Raw/TypeTheory \
-	WellTyped/TypeTheory
+	Typed/TypeTheory
 
 VS      := $(MODULES:%=%.v)
 

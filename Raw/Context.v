@@ -1,10 +1,9 @@
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Presyntax.
+Require Import Raw.Signature.
 Require Import Raw.Expression.
 Require Import Raw.Substitution.
 
-(* To be moved to Raw/Context.v. *)
 Section RawContext.
 
   Context {σ : shape_system}.
@@ -50,3 +49,17 @@ Open Scope context_scope.
 
 Global Arguments raw_context {_} _.
 
+Section Signature_Maps.
+
+  Context {σ : shape_system}.
+
+  Local Definition fmap {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+    : raw_context Σ -> raw_context Σ'.
+  Proof.
+    intros Γ.
+    exists (raw_context_carrier Γ).
+    intros i. refine (_ (raw_context_type Γ i)).
+    apply (Expression.fmap f).
+  Defined.
+
+End Signature_Maps.

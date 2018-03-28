@@ -58,3 +58,14 @@ Section Signature.
 End Signature.
 
 Arguments signature _ : clear implicits.
+
+Section Map.
+
+  Context {σ : shape_system}.
+ 
+  Local Definition map (Σ Σ' : signature σ) : Type
+    := Family.map Σ Σ'.
+
+  Identity Coercion family_map_of_map : map >-> Family.map.
+
+End Map.

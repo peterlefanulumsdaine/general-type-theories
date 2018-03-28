@@ -3,7 +3,6 @@ Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
-Require Import Raw.SignatureMap.
 
 (* Substitution on raw syntax [substitute] is defined in [Raw.Syntax].
   In this file we prove key properties of it; in particular, that raw context maps form a category (modulo truncation assumptions).
@@ -241,13 +240,13 @@ Section Naturality.
 
   Context `{H_Funext : Funext}.
   Context {σ : shape_system}.
-  Context {Σ Σ' : signature σ} (f : Signature_Map Σ Σ').
+  Context {Σ Σ' : signature σ} (f : Signature.map Σ Σ').
 
 
   Fixpoint Fmap_Raw_Weaken {γ γ' : σ} (g : γ -> γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
-    : Fmap_Raw_Syntax f (Substitution.rename g e)
-      = Substitution.rename g (Fmap_Raw_Syntax f e).
+    : Expression.fmap f (Substitution.rename g e)
+      = Substitution.rename g (Expression.fmap f e).
   Proof.
     destruct e as [ γ i | γ S args ].
   - apply idpath.
