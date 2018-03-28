@@ -21,52 +21,52 @@ Context {σ : shape_system}.
 
 (* An (ordered, raw) rule consists of premises and a conclusion.  For various reasons, we abstract the form of the premises as an _algebraic extension_.
 
-Such an extension can add both object rules and equality rules.  When an extension is used as premises of a rule, these rules become the premises, introducing type/term metavariables and equality premises respectively.
+Such an extension can add both object premises (introducing type/term premises) and equality premises.
 
-The extension is _algebraic_ in the sense that it does not introduce any new binders; this is the raw-syntax analogue of an arity seen as specifying the metavariable-extension of a signature. *)
+Besides being viewed as the premises of a rule, the premises can be seen as particularly simple rules themselves for extending a type theory.  Viewed this way, they are _algebraic_ in the sense that it does not introduce any new binders, and only take term arguments (no type arguments). This is the raw-syntax analogue of an arity seen as specifying the metavariable-extension of a signature. *)
 Record algebraic_extension
   {Σ : signature σ}
-  {a : arity σ} (* arity listing the _object_ rules of the extension *)
+  {a : arity σ} (* arity listing the _object_ premises of the extension *)
 :=
   {
-  (* The arity [a] supplies the family of object-judgment rules. *)
-  (* The family of equality-judgment rules: *)
-    ae_equality_rule : arity σ
-  (* family indexing the rules of the extension, and giving for each… *)
-  ; ae_rule :> family (Judgement.hypothetical_form * σ)
+  (* The arity [a] supplies the family of object-judgment premises. *)
+  (* The family of equality-judgment premises: *)
+    ae_equality_premise : arity σ
+  (* family indexing the premises of the extension, and giving for each… *)
+  ; ae_premise :> family (Judgement.hypothetical_form * σ)
     := Family.sum
          (Family.fmap (fun cl_γ => (form_object (fst cl_γ), snd cl_γ)) a)
-         (Family.fmap (fun cl_γ => (form_equality (fst cl_γ), snd cl_γ)) ae_equality_rule)
-  (* - the judgement form of each rule, e.g. “term” or “type equality” *)
-  ; ae_hjf_of_rule : ae_rule -> Judgement.hypothetical_form
-    := fun i => fst (ae_rule i)
-  (* - the proto-context of each rule *)
-  ; ae_proto_cxt_of_rule : ae_rule -> σ
-    := fun i => snd (ae_rule i)
-  (* the ordering relation on the rules *)
-  ; ae_lt : well_founded_order ae_rule
-  (* for each rule, the arity specifying what metavariables are available in the syntax for this rule; i.e., the family of type/term arguments already introduced by earlier rules *)
-  ; ae_arity_of_rule : ae_rule -> arity _
+         (Family.fmap (fun cl_γ => (form_equality (fst cl_γ), snd cl_γ)) ae_equality_premise)
+  (* - the judgement form of each premise, e.g. “term” or “type equality” *)
+  ; ae_hjf_of_premise : ae_premise -> Judgement.hypothetical_form
+    := fun i => fst (ae_premise i)
+  (* - the proto-context of each premise *)
+  ; ae_proto_cxt_of_premise : ae_premise -> σ
+    := fun i => snd (ae_premise i)
+  (* the ordering relation on the premises *)
+  ; ae_lt : well_founded_order ae_premise
+  (* for each premise, the arity specifying what metavariables are available in the syntax for this premise; i.e., the family of type/term arguments already introduced by earlier premises *)
+  ; ae_arity_of_premise : ae_premise -> arity _
     := fun i => Family.subfamily a (fun j => ae_lt (inl j) i)
-  (* syntactic part of context of rule *)
-  (* NOTE: this should never be used directly, always through [ae_raw_context_of_rule] *)
-  ; ae_context_expr_of_rule
-    : forall (i : ae_rule) (v : ae_proto_cxt_of_rule i),
+  (* syntactic part of context of premise *)
+  (* NOTE: this should never be used directly, always through [ae_raw_context_of_premise] *)
+  ; ae_context_expr_of_premise
+    : forall (i : ae_premise) (v : ae_proto_cxt_of_premise i),
         raw_type
-          (Metavariable.extend Σ (ae_arity_of_rule i))
-          (ae_proto_cxt_of_rule i)
-  (* raw context of each rule *)
-  ; ae_raw_context_of_rule
-    : forall i : ae_rule,
-        raw_context (Metavariable.extend Σ (ae_arity_of_rule i))
-    := fun i => Build_raw_context _ (ae_context_expr_of_rule i)
-  (* hypothetical judgement boundary instance for each rule *)
-  ; ae_hyp_bdry_of_rule
-    : forall i : ae_rule,
+          (Metavariable.extend Σ (ae_arity_of_premise i))
+          (ae_proto_cxt_of_premise i)
+  (* raw context of each premise *)
+  ; ae_raw_context_of_premise
+    : forall i : ae_premise,
+        raw_context (Metavariable.extend Σ (ae_arity_of_premise i))
+    := fun i => Build_raw_context _ (ae_context_expr_of_premise i)
+  (* hypothetical judgement boundary instance for each premise *)
+  ; ae_hyp_bdry_of_premise
+    : forall i : ae_premise,
         Judgement.hypothetical_boundary
-          (Metavariable.extend Σ (ae_arity_of_rule i))
-          (ae_hjf_of_rule i)
-          (ae_proto_cxt_of_rule i)
+          (Metavariable.extend Σ (ae_arity_of_premise i))
+          (ae_hjf_of_premise i)
+          (ae_proto_cxt_of_premise i)
   }.
 
 Arguments algebraic_extension _ _ : clear implicits.
@@ -95,7 +95,7 @@ Record rule
 
   On the other hand, so long as the _flattened_ rules [flat_rule] allow arbitrary conclusion judgements, one can still use those to give a lemma about the equivalence. *)
 
-  (* NOTE 2. Perhaps the parameters of the definition of [rule] could be profitably abstracted into a “proto-rule-spec” (probably including also the arity [ae_equality_rule]), fitting the pattern of the stratificaiton of objects into proto ≤ raw ≤ typed. *)
+  (* NOTE 2. Perhaps the parameters of the definition of [rule] could be profitably abstracted into a “proto-rule-spec” (probably including also the arity [ae_equality_premise]), fitting the pattern of the stratificaiton of objects into proto ≤ raw ≤ typed. *)
 
   Arguments rule _ _ _ : clear implicits.
 
@@ -104,10 +104,10 @@ Record rule
   Proof.
     simple refine (Build_rule _ _ _ _ _).
     simple refine (Build_algebraic_extension _ _ _ _ _ _).
-    - admit. (* ae_equality_rule: arity specifying equality premises *)
+    - admit. (* ae_equality_premise: arity specifying equality premises *)
     - admit. (* ae_lt *)
-    - admit. (* ae_context_expr_of_rule *)
-    - admit. (* ae_hyp_bdry_of_rule *)
+    - admit. (* ae_context_expr_of_premise *)
+    - admit. (* ae_hyp_bdry_of_premise *)
     - admit. (* hyp_judgt_bdry_of_conclusion *)
   Abort.
 
@@ -123,17 +123,17 @@ Record rule
   Proof.
     simple refine (Build_rule Σ' a hjf_concl _ _).
     simple refine (Build_algebraic_extension _ _ _ _ _ _).
-    - exact (ae_equality_rule (premise R)).
+    - exact (ae_equality_premise (premise R)).
     - exact (ae_lt (premise R)).
-    - (* ae_context_expr_of_rule *)
+    - (* ae_context_expr_of_premise *)
       intros i v.
-      refine (_ (ae_context_expr_of_rule _ i v)).
+      refine (_ (ae_context_expr_of_premise _ i v)).
       apply Fmap_Raw_Syntax, Fmap1_Metavariable_Extension, f.
-    - (* ae_hyp_bdry_of_rule *)
+    - (* ae_hyp_bdry_of_premise *)
       intros i.
       simple refine
         (Fmap_Hyp_Judgt_Bdry_Instance
-          _ (ae_hyp_bdry_of_rule _ i)).
+          _ (ae_hyp_bdry_of_premise _ i)).
       apply Fmap1_Metavariable_Extension, f.
     - (* hyp_judgt_bdry_of_conclusion *)
       simple refine
@@ -235,10 +235,10 @@ eq_new i   0        0        0        0        i < j
   Definition associated_congruence_rule_original_constructor_translation
     {a} {hjf_concl} (R : rule Σ a hjf_concl)
     (p : (a + a) +
-         (ae_equality_rule (premise R) + ae_equality_rule (premise R) + a))
+         (ae_equality_premise (premise R) + ae_equality_premise (premise R) + a))
     : Signature_Map
         (Metavariable.extend Σ
-          (ae_arity_of_rule (premise R) (associated_original_premise p)))
+          (ae_arity_of_premise (premise R) (associated_original_premise p)))
         (Metavariable.extend Σ (Family.subfamily (a + a)
            (fun j => associated_congruence_rule_lt (ae_lt _) (inl j) p))).
   Proof.
@@ -279,25 +279,25 @@ eq_new i   0        0        0        0        i < j
   Proof.
     simple refine (Build_rule _ _ _ _ _).
     simple refine (Build_algebraic_extension _ _ _ _ _ _).
-    - (* ae_equality_rule: arity of equality premises *)
-      exact (((ae_equality_rule (premise R)) + (ae_equality_rule (premise R))) + a).
+    - (* ae_equality_premise: arity of equality premises *)
+      exact (((ae_equality_premise (premise R)) + (ae_equality_premise (premise R))) + a).
     - (* ae_lt *)
       exact (associated_congruence_rule_lt (ae_lt _)).
-    - (* ae_context_expr_of_rule *)
+    - (* ae_context_expr_of_premise *)
       intros p i.
       refine (Fmap_Raw_Syntax
         (associated_congruence_rule_original_constructor_translation _ _) _).
       set (p_orig := associated_original_premise p).
       destruct p as [ [ ? | ? ] | [ [ ? | ? ] | ? ] ];
-      refine (ae_context_expr_of_rule _ p_orig i).
+      refine (ae_context_expr_of_premise _ p_orig i).
       (* alternatively, instead of destructing [p], could use equality reasoning on the type of [i]. *)
-    - (* ae_hyp_bdry_of_rule *)
+    - (* ae_hyp_bdry_of_premise *)
       intros p.
       set (p_orig := associated_original_premise p).
       destruct p as [ [ ? | ? ] | [ [ ? | ? ] | p ] ];
       try (refine (Fmap_Hyp_Judgt_Bdry_Instance
         (associated_congruence_rule_original_constructor_translation _ _) _);
-           refine (ae_hyp_bdry_of_rule _ p_orig)).
+           refine (ae_hyp_bdry_of_premise _ p_orig)).
       (* The cases where [p] is a copy of an original premise are all just translation,
       leaving just the new equality premises to give. *)
       intros i; simpl Judgement.boundary_slot in i.
@@ -305,7 +305,7 @@ eq_new i   0        0        0        0        i < j
       + (* boundary of the corresponding original premise *)
         refine (Fmap_Raw_Syntax
           (associated_congruence_rule_original_constructor_translation _ _) _).
-        apply (ae_hyp_bdry_of_rule _ p_orig).
+        apply (ae_hyp_bdry_of_premise _ p_orig).
       + (* LHS of new equality premise *)
         cbn. simple refine (raw_symbol' _ _ _).
         * apply Metavariable.include_metavariable.
@@ -385,18 +385,18 @@ Section Flattening.
   (* TODO: consider whether the flattening of the conclusion can also be covered by this. *)
   Lemma judgement_of_premise 
       {a} {A : algebraic_extension Σ a} (i : A)
-      {Σ'} (f : Signature_Map (Metavariable.extend Σ (ae_arity_of_rule _ i)) Σ')
-      (Sr : Judgement.is_object (ae_hjf_of_rule _ i) 
+      {Σ'} (f : Signature_Map (Metavariable.extend Σ (ae_arity_of_premise _ i)) Σ')
+      (Sr : Judgement.is_object (ae_hjf_of_premise _ i) 
            -> { S : Σ'
-             & (symbol_arity S = simple_arity (ae_proto_cxt_of_rule _ i))
-             * (symbol_class S = Judgement.class_of (ae_hjf_of_rule _ i))})
+             & (symbol_arity S = simple_arity (ae_proto_cxt_of_premise _ i))
+             * (symbol_class S = Judgement.class_of (ae_hjf_of_premise _ i))})
    : judgement_total Σ'.
   Proof.
-    exists (form_hypothetical (ae_hjf_of_rule _ i)).
-    exists (Fmap_Raw_Context f (ae_raw_context_of_rule _ i)).
+    exists (form_hypothetical (ae_hjf_of_premise _ i)).
+    exists (Fmap_Raw_Context f (ae_raw_context_of_premise _ i)).
     apply Judgement.hypothetical_instance_from_boundary_and_head.
     - refine (Fmap_Hyp_Judgt_Bdry_Instance f _).
-      apply ae_hyp_bdry_of_rule.
+      apply ae_hyp_bdry_of_premise.
     - intro H_obj.
       destruct i as [ i_obj | i_eq ]; simpl in *.
       + (* case: i an object rule *)

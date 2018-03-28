@@ -119,18 +119,18 @@ Section Welltypedness.
   Admitted.
   
   (* TODO: upstream, maybe even into def of algebraic extension? *)
-  (* TODO: rename [ae_arity_of_rule] to [ae_arity_for_rule] ? *)
-  Definition ae_signature_for_rule {Σ : signature σ} {a}
+  (* TODO: rename [ae_arity_of_premise] to [ae_arity_for_premise] ? *)
+  Definition ae_signature_for_premise {Σ : signature σ} {a}
       {A : algebraic_extension Σ a} (r : A)
-  := (Metavariable.extend Σ (ae_arity_of_rule _ r)).
+  := (Metavariable.extend Σ (ae_arity_of_premise _ r)).
 
   (* TODO: upstream *)
-  Definition ae_judgt_bdry_of_rule {Σ : signature σ} {a}
+  Definition ae_judgt_bdry_of_premise {Σ : signature σ} {a}
       {A : algebraic_extension Σ a} (r : A)
-    : Judgement.boundary (ae_signature_for_rule r) (form_hypothetical (ae_hjf_of_rule _ r)).
+    : Judgement.boundary (ae_signature_for_premise r) (form_hypothetical (ae_hjf_of_premise _ r)).
   Proof.
-    exists (ae_raw_context_of_rule _ r).
-    apply (ae_hyp_bdry_of_rule).
+    exists (ae_raw_context_of_premise _ r).
+    apply (ae_hyp_bdry_of_premise).
   Defined.
 
   (* TODO: upstream; consider naming *)
@@ -148,12 +148,12 @@ Require Auxiliary.WellFounded.
     : Type.
   Proof.
     refine (forall r : A, _).
-    refine (Derivation_Judgt_Bdry_Instance _ (ae_judgt_bdry_of_rule r) _).
+    refine (Derivation_Judgt_Bdry_Instance _ (ae_judgt_bdry_of_premise r) _).
     - (* ambient type theory to typecheck premise [p] in *)
       simple refine (fmap_flat_type_theory _ T).
       apply include_symbol.
     - (* open hypotheses to allow in the derivation *)
-      exists {i : ae_rule A & ae_lt _ i r }.
+      exists {i : ae_premise A & ae_lt _ i r }.
       intros [i lt_i_r].
       apply (judgement_of_premise i).
       + apply Fmap2_Metavariable_Extension.
@@ -170,16 +170,16 @@ Require Auxiliary.WellFounded.
         * (* case: i an equality premise *)
           destruct H_i_obj. (* ruled out by assumption *)
   Defined.
-  (* Roughly, we want to add the earlier rules of [A] to [T], and typecheck [r] over that.  There are (at least) three ways to do this:
-    (1) take earlier rules just as judgements, and allow them as hypotheses in the derivation;
-    (2) take earlier rules as judgements, then add rules to [T] giving these judgements as axioms;
-    (3) actually give the extension of [T] by the preceding part of [A] as a type theory, i.e. turn rules of [A] into actual *rules*, with the variables of their contexts turned into term premises.  This option avoids extra use of the “cut” rule in derivations.
-
-    In any case we must first translate [T] up to the extended signature of [R].
-
+  (* NOTE: when checking we want to add the earlier premises of [A] to [T], and typecheck [r] over that.  There are (at least) three ways to do this:
+  (1) take earlier rules just as judgements, and allow them as hypotheses in the derivation;
+  (2) take earlier rules as judgements, then add rules to [T] giving these judgements as axioms;
+  (3) give the extension of [T] by the preceding part of [A] as a type theory, i.e. turn rules of [A] into actual *rules*, with the variables of their contexts turned into term premises.
+  
+  In any case we must first translate [T] up to the extended signature of [R].
+  
   (1) would nicely fit into the monadic view of derivations.
-  (3) would nicely factorise into “take initial segment of an alg ext”, and “extend TT by an alg ext”.
-
+  (3) would nicely factorise into “take initial segment of an alg ext”, and “extend TT by an alg ext”; also avoids the need to frequently use “cut” when invoking the earlier premises in the derivations
+  
   We currently take option (1).
   *)
 
