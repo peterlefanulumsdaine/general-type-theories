@@ -87,7 +87,7 @@ Record rule
           (shape_empty σ)
   }.
 
-(* NOTE 1. One could generalise rule-specs by allowing the context of the conclusion to be non-empty.
+(* NOTE 1. One could generalise rules by allowing the context of the conclusion to be non-empty.
 
  This would slightly complicate this definition, and subsequent constructions, and would (one expects) not add any real generality, since one can always move variables from that context to become extra premises, giving an equivalent rule with empty conclusion context (where the equivalence makes use of the “cut”/substitution rule).
 
@@ -95,11 +95,11 @@ Record rule
 
   On the other hand, so long as the _flattened_ rules [flat_rule] allow arbitrary conclusion judgements, one can still use those to give a lemma about the equivalence. *)
 
-  (* NOTE 2. Perhaps the parameters of the definition of [rule] could be profitably abstracted into a “proto-rule-spec” (probably including also the arity [ae_equality_premise]), fitting the pattern of the stratificaiton of objects into proto ≤ raw ≤ typed. *)
+  (* NOTE 2. Perhaps the parameters of the definition of [rule] could be profitably abstracted into a “proto-rule” (probably including also the arity [ae_equality_premise]), fitting the pattern of the stratificaiton of objects into proto ≤ raw ≤ typed. *)
 
   Arguments rule _ _ _ : clear implicits.
 
-  (* Template for defining rule-specs: *)
+  (* Template for defining rules: *)
   Definition Example {Σ} {a} {hjf} : rule Σ a hjf.
   Proof.
     simple refine (Build_rule _ _ _ _ _).
@@ -151,16 +151,16 @@ Arguments rule {_} _ _ _.
 
 Module Span.
 (* Some auxiliary constructions for defining the ordering of the premises in the associated congruence rule of a constructor. *)
-  
+
   Local Inductive span : Type := l | r | t.
-  
+
   Local Definition lt_relation : relation span
-  := fun x y => match x, y with 
+  := fun x y => match x, y with
                 | l, t => True
                 | r, t => True
                 | x, y => False
   end.
-  
+
   Definition lt_well_founded : is_well_founded lt_relation.
   Proof.
     intros P P_hereditary.
@@ -169,12 +169,12 @@ Module Span.
     intros [ | | ]; try assumption.
     apply P_hereditary. intros [ | | ] l; try assumption; destruct l.
   Defined.
-  
+
   Definition lt_transitive : Transitive lt_relation.
   Proof.
     intros [ | | ] [ | | ] [ | | ] l l'; destruct l, l'; exact tt.
   Defined.
-  
+
   Definition lt : well_founded_order span.
   Proof.
     exists lt_relation.
@@ -381,10 +381,10 @@ Section Flattening.
 
    We need to do this into several different signatures, so in this lemma, we isolate exactly what is required: a map from the signature of this premise, plus (in case the premise is an object premise) a symbol to use as the head of the judgement, i.e. the metavariable introduced by the premise. *)
   (* TODO: consider whether the flattening of the conclusion can also be covered by this. *)
-  Lemma judgement_of_premise 
+  Lemma judgement_of_premise
       {a} {A : algebraic_extension Σ a} (i : A)
       {Σ'} (f : Signature_Map (Metavariable.extend Σ (ae_arity_of_premise _ i)) Σ')
-      (Sr : Judgement.is_object (ae_hjf_of_premise _ i) 
+      (Sr : Judgement.is_object (ae_hjf_of_premise _ i)
            -> { S : Σ'
              & (symbol_arity S = simple_arity (ae_proto_cxt_of_premise _ i))
              * (symbol_class S = Judgement.class_of (ae_hjf_of_premise _ i))})
@@ -407,7 +407,7 @@ Section Flattening.
       + (* case: i an equality rule *)
         destruct H_obj. (* ruled out by assumption *)
   Defined.
-  
+
   (* Flattening a rule requires no extra information in the case of an equality-rule; in the case of an object-rule, it requires a symbol of appropriate arity to give the object introduced. *)
   Definition flatten
     {a} {hjf_concl}
@@ -416,7 +416,7 @@ Section Flattening.
         -> { S : Σ & (symbol_arity S = a) * (symbol_class S = Judgement.class_of hjf_concl) })
   : flat_rule Σ.
   (* This construction involves essentially two aspects:
-  - translate the syntax of each expression in the rule-spec from its “local” signatures to the overall signature;
+  - translate the syntax of each expression in the rule from its “local” signatures to the overall signature;
   - reconstruct the head terms of the object premises and the conclusion *)
   Proof.
     refine (Build_flat_rule _ a _ _).
@@ -429,7 +429,7 @@ Section Flattening.
       + intros H_i_obj.
         destruct i as [ i | i ]; simpl in i.
         * (* case: i an object premise *)
-          simple refine (_;_). 
+          simple refine (_;_).
           -- apply include_metavariable. exact i.
           -- split; apply idpath.
         * (* case: i an equality premise *)
