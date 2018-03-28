@@ -29,6 +29,23 @@ Section Derivation.
 
 End Derivation.
 
+Section Boundary_Derivations.
+
+  Context {σ : shape_system}
+          {Σ : signature σ}.
+
+  (* TODO: consider naming conventions for types of the form “derivation of X from Y” *)
+  Definition Derivation_Judgt_Bdry_Instance
+      {Σ : signature σ} (T : flat_type_theory Σ)
+      {jf} (jbi : Judgement.boundary Σ jf)
+      (H : family (judgement_total Σ))
+    : Type
+  :=
+    forall (i : presupposition_of_boundary jbi),
+      Derivation_from_Flat_Type_Theory T H (presupposition_of_boundary _ i).
+
+End Boundary_Derivations.
+
 (** “Derivable rules” over a type theory;
 or, to be precise, _derivations_ of flat rules over a flat type theory. *)
 Section Derivable_Rules.
@@ -67,24 +84,6 @@ Section TT_Maps.
                          (FlatRule.fmap Signature_map_of_TT_Map (T R))
                          T'
      }.
-
-  (* TODO: upstream! *)
-  Definition Fmap_Raw_Context_Map
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {γ γ'} (g : Context.map Σ γ' γ)
-    : Context.map Σ' γ' γ
-  := fun i => (Expression.fmap f (g i)).
-
-  (* TODO: upstream! *)
-  Lemma fmap_Raw_Subst
-      {Σ Σ' : signature σ}
-      (f : Signature.map Σ Σ')
-      {γ γ'} (g : Context.map Σ γ' γ)
-      {cl} (e : raw_expression Σ cl γ)
-    : Expression.fmap f (substitute g e)
-    = substitute (Fmap_Raw_Context_Map f g) (Expression.fmap f e).
-  Proof.
-  Admitted.
 
   (* TODO: abstract [Family_Map_over] or something, i.e. a displayed-category version of family maps, for use in definitions like this? *)
   Definition Fmap_Structural_CCs
@@ -142,7 +141,7 @@ Section TT_Maps.
       + refine (inl (inl (inr (inl _)))).
         exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
-        exists (Fmap_Raw_Context_Map f g).
+        exists (fmap_raw_context_map f g).
         exists hjf.
         exact (fmap_hypothetical_judgement f hjfi).
       + cbn. apply Closure.rule_eq; cbn.
@@ -169,8 +168,8 @@ Section TT_Maps.
       + refine (inl (inl (inr (inr _)))).
         exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
-        exists (Fmap_Raw_Context_Map f g).
-        exists (Fmap_Raw_Context_Map f g').
+        exists (fmap_raw_context_map f g).
+        exists (fmap_raw_context_map f g').
         exists hjf.
         exact (fmap_hypothetical_judgement f hjfi).
       + admit.

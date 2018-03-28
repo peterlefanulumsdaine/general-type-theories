@@ -84,9 +84,8 @@ Section Judgement.
          { Γ : raw_context Σ & hypothetical_judgement hjf Γ }
        end.
 
-  (** I know this is ugly, but I do not want to introduce "instance" all over the place.
-      Will first check to see which types are most frequently mentioned in the rest of the
-      code. *)
+  (** I know the name [judgement_total] is ugly, but I do not want to introduce "instance" all over the place.
+      Will first check to see which types are most frequently mentioned in the rest of the code. *)
     (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly. *)
   Definition judgement_total
     := { jf : form & judgement jf }.
@@ -108,6 +107,7 @@ Section Judgement.
 
 End Judgement.
 
+Arguments hypothetical_boundary : simpl nomatch.
 
 Section Judgement_Notations.
 
@@ -177,6 +177,83 @@ Notation "'[TmEq!' Γ |- a ≡ a' ; A !]" := (make_term_equality_ji Γ A a a') :
 
 Open Scope judgement_scope.
 
+Section Presuppositions.
+
+(** Whenever an object appears in the boundary of an object judgement, then its boundary embeds into that boundary.
+
+NOTE. This is a special case of [presup_slots_from_boundary] below. It is abstracted out because it’s used twice: directly for object judgements, and as part of the case for equality judgements.
+
+In fact it’s almost trivial, so could easily be inlined; but conceptually it is the same thing both times, and in type theory with more judgements, it would be less trivial, so we keep it factored out. *)
+  Definition object_boundary_from_boundary_slots
+    {cl : syntactic_class} (i : object_boundary_slot cl)
+    : Family.map
+        (object_boundary_slot (object_boundary_slot cl i))
+        (object_boundary_slot cl).
+  Proof.
+    apply Family.Build_map'. intros j.
+    destruct cl as [ | ]; cbn in i.
+    (* Ty: nothing to do, no objects in boundary *)
+    - destruct i.
+    (* Tm: i must be type, so again nothing left, no j in its boundary *)
+    - destruct i as [[] |]; destruct j.
+  Defined.
+
+(** Wherever an judgement [I] occurs as a presupposition of a judgement [J],
+there is a canonical embedding of the slots of [I] into the slots of [J]. *)
+  Definition presupposition_from_boundary_slots
+    {hjf : hypothetical_form} (i : boundary_slot hjf)
+    : Family.map
+        (slot (form_object (boundary_slot hjf i)))
+        (boundary_slot hjf).
+  Proof.
+    apply Family.Build_map'.
+    intros [ j | ].
+    - (* case: j in boundary part of presupposition *)
+      destruct hjf as [ cl | cl ].
+      + (* original hjf is object judgement *)
+        exists (object_boundary_from_boundary_slots i j).
+        apply (Family.map_commutes _ j).
+      + (* original hjf is equality judgement *)
+        destruct i as [ [i' | ] | ].
+        * (* i is in shared bdry of LHS/RHS *)
+          cbn in j.
+          exists (Some (Some (object_boundary_from_boundary_slots i' j))).
+          apply (Family.map_commutes _ j).
+        * (* i is RHS *)
+          exists (Some (Some j)). apply idpath.
+        * (* i is LHS *)
+          exists (Some (Some j)). apply idpath.
+    - (* case: j is head of presupposition *)
+      exists i. apply idpath.
+  Defined.
+
+  Context {σ : shape_system}.
+  
+  Definition presupposition_of_boundary
+      {Σ : signature σ} {jf} (jbi : Judgement.boundary Σ jf)
+    : family (judgement_total Σ).
+  Proof.
+    destruct jf as [ | hjf].
+    - (* context judgement: no boundary *)
+      apply Family.empty.
+    - (* hyp judgement: presups are the context,
+                        plus the slots of the hyp boundary *)
+      apply Family.adjoin.
+      + exists (Judgement.boundary_slot hjf).
+        intros i.
+        exists (form_hypothetical (form_object ((Judgement.boundary_slot hjf) i))).
+        exists (pr1 jbi).
+        intros j.
+        set (p := Family.map_commutes (presupposition_from_boundary_slots i) j).
+        set (j' := presupposition_from_boundary_slots i j) in *.
+        destruct p.
+        exact (pr2 jbi j').
+      + exists (form_context).
+        exact (pr1 jbi).
+  Defined.
+
+
+End Presuppositions.
 
 Section Signature_Maps.
 

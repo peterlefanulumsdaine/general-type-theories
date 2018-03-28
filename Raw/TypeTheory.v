@@ -54,6 +54,7 @@ Section Type_Theories.
       “when r is an object rule, use [(Judgement.class_of …, TT_arity_of_rule …)];
        in case r is an equality rule, use reductio ad absurdum with Hr.” 
      But we get stronger reduction behaviour by just taking [(Judgement.class_of …, TT_arity_of_rule …)] without case-analysing first.  (And up to equality, we get the same result.)  *)
+  (* TODO: consider making this a coercion? *)
 
   Definition Type_Theory_signature_inclusion_of_rule
       {T : Type_Theory} (r : T)
@@ -65,6 +66,37 @@ Section Type_Theories.
       exact (pr1 s_isob_lt ; fst (pr2 (s_isob_lt))).
       (* TODO: introduce access functions for the signature components above? *)
     - intros s. apply idpath.
+  Defined.
+
+  (* NOTE: could easily be generalised to give the sub-type-theory on any down-closed subset of the rules, if that’s ever needed. *)
+  Definition sub_type_theory_below_rule (T : Type_Theory) (i : T)
+    : Type_Theory.
+  Proof.
+    simple refine (Build_Type_Theory _ _ _ ).
+    - refine (Family.subfamily (TT_rule_index T) _).
+      intros j. exact (TT_lt _ j i).
+    - refine (WellFounded.pullback _ (TT_lt T)).
+      exact (projT1).
+    - cbn. intros [j lt_j_i].
+      refine (Fmap_rule _ (TT_rule _ j)).
+      apply Family.map_fmap.
+      simple refine (_;_).
+      + intros [k [k_obj lt_k_j]].
+        simple refine (_;_).
+        * exists k. apply (transitive _ _ j); assumption.
+        * cbn. split; assumption.
+      + intros ?; apply idpath.
+  Defined.
+
+  (* NOTE: in fact, this map should be an isomorphism *)
+  Definition signature_of_sub_type_theory (T : Type_Theory) (i : T)
+    : Signature.map
+        (Signature_of_Type_Theory (sub_type_theory_below_rule T i))
+        (TT_signature_of_rule _ i).
+  Proof.
+    simple refine (_;_).
+    - intros [[j lt_j_i] j_obj]. exists j. split; assumption.
+    - intros ?; apply idpath.
   Defined.
 
 End Type_Theories.

@@ -242,7 +242,6 @@ Section Naturality.
   Context {σ : shape_system}.
   Context {Σ Σ' : signature σ} (f : Signature.map Σ Σ').
 
-
   Fixpoint Fmap_Raw_Weaken {γ γ' : σ} (g : γ -> γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
     : Expression.fmap f (Substitution.rename g e)
@@ -269,5 +268,13 @@ Section Naturality.
     destruct p. apply idpath.
   Defined.
   (* NOTE: this proof was remarkably difficult to write; it shows the kind of headaches caused by the appearance of equality in maps of signatures. *)
+
+  Lemma fmap_Raw_Subst
+      {γ γ'} (g : Context.map Σ γ' γ)
+      {cl} (e : raw_expression Σ cl γ)
+    : Expression.fmap f (substitute g e)
+    = substitute (fmap_raw_context_map f g) (Expression.fmap f e).
+  Proof.
+  Admitted.
 
 End Naturality.

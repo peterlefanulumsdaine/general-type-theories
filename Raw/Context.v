@@ -62,4 +62,11 @@ Section Signature_Maps.
     apply (Expression.fmap f).
   Defined.
 
+  (* TODO: consider naming of this.  Perhaps put this and similar things into a module [Map] in this file, so it can be e.g. [Context.Map.fmap] ?  *)
+  Definition fmap_raw_context_map
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {γ γ'} (g : map Σ γ' γ)
+    : map Σ' γ' γ
+  := fun i => (Expression.fmap f (g i)).
+
 End Signature_Maps.
