@@ -3,7 +3,6 @@ Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
-Require Import Raw.SignatureMap.
 
 (* Substitution on raw syntax [substitute] is defined in [Raw.Syntax].
   In this file we prove key properties of it; in particular, that raw context maps form a category (modulo truncation assumptions).

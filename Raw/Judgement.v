@@ -87,6 +87,7 @@ Section Judgement.
   (** I know this is ugly, but I do not want to introduce "instance" all over the place.
       Will first check to see which types are most frequently mentioned in the rest of the
       code. *)
+    (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly. *)
   Definition judgement_total
     := { jf : form & judgement jf }.
 
@@ -176,3 +177,49 @@ Notation "'[TmEq!' Γ |- a ≡ a' ; A !]" := (make_term_equality_ji Γ A a a') :
 
 Open Scope judgement_scope.
 
+
+Section Signature_Maps.
+
+  Context {σ : shape_system}.
+
+  Definition fmap_hypothetical_boundary
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {hjf} {γ}
+    : hypothetical_boundary Σ hjf γ -> hypothetical_boundary Σ' hjf γ.
+  Proof.
+    intros hjbi i.
+    apply (Expression.fmap f), hjbi.
+  Defined.
+
+  Definition fmap_hypothetical_judgement
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {hjf} {γ}
+    : hypothetical_judgement Σ hjf γ -> hypothetical_judgement Σ' hjf γ.
+  Proof.
+    intros hjbi i.
+    apply (Expression.fmap f), hjbi.
+  Defined.
+
+  (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly. *)
+  Local Definition fmap {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {jf}
+    : judgement Σ jf -> judgement Σ' jf.
+  Proof.
+    destruct jf as [ | hjf].
+    - apply Context.fmap, f.
+    - cbn. intros Γ_hjfi.
+      exists (Context.fmap f Γ_hjfi.1).
+      exact (fmap_hypothetical_judgement f Γ_hjfi.2).
+  Defined.
+
+  (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly. *)
+  Definition fmap_judgement_total {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+    : judgement_total Σ -> judgement_total Σ'.
+  Proof.
+    intros jf_jfi.
+    exists jf_jfi.1.
+    exact (fmap f jf_jfi.2).
+  Defined.
+
+
+End Signature_Maps.

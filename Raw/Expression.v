@@ -58,7 +58,7 @@ Global Arguments raw_type {_} _ _.
 Global Arguments raw_term {_} _ _.
 Global Arguments arguments {_} _ _ _.
 
-Section Fmap_Raw_Syntax.
+Section Signature_Maps.
 
   Context {σ : shape_system}.
   
@@ -78,4 +78,4 @@ Section Fmap_Raw_Syntax.
         exact ((ap snd (Family.map_commutes _ _))^).
   Defined.
 
-End Fmap_Raw_Syntax.
+End Signature_Maps.

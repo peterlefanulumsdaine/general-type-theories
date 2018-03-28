@@ -5,7 +5,6 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
-Require Import Raw.SignatureMap.
 Require Import Raw.Derivation.
 Require Import Raw.Rule.
 

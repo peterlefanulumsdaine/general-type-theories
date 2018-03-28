@@ -171,3 +171,33 @@ Notation " '[M/' A ; x , .. , z /] "
 
 Open Scope syntax_scope.
 
+Section Signature_Maps.
+
+  Context {σ : shape_system}.
+
+  (* Metavariable extension is bifunctorial in both arguments (the signature and the arity).
+
+  We give the general bifunctoriality action as [Fmap_Family], and the special cases in each argument individually as [Fmap1], [Fmap2]. *)
+  Local Definition fmap
+      {Σ Σ'  : signature σ} (f : Signature.map Σ Σ')
+      {a a' : arity σ} (g : Family.map a a')
+    : Signature.map (extend Σ a) (extend Σ' a').
+  Proof.
+    apply Family.map_sum.
+    - apply f.
+    - apply Family.map_fmap, g.
+  Defined.
+
+  Local Definition fmap1
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      (a : arity σ)
+    : Signature.map (extend Σ a) (extend Σ' a)
+  := fmap f (Family.idmap _).
+
+  Local Definition fmap2
+      (Σ : signature σ)
+      {a a' : arity σ} (f : Family.map a a')
+    : Signature.map (extend Σ a) (extend Σ a')
+  := fmap (Family.idmap _) f.
+
+End Signature_Maps.

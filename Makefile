@@ -23,7 +23,6 @@ MODULES := \
 	Raw/Metavariable \
 	Raw/FlatRule \
 	Raw/Syntax \
-	Raw/SignatureMap \
 	Raw/SubstitutionFacts \
 	Raw/Derivation \
 	Raw/StructuralRule \
