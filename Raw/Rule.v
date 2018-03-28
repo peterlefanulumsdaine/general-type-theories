@@ -116,7 +116,7 @@ Record rule
   := ([::]; hyp_judgt_bdry_of_conclusion R).
 
   Definition Fmap_rule
-      {Σ} {Σ'} (f : Signature_Map Σ Σ')
+      {Σ} {Σ'} (f : Signature.map Σ Σ')
       {a} {hjf_concl}
       (R : rule Σ a hjf_concl)
     : rule Σ' a hjf_concl.
@@ -128,7 +128,7 @@ Record rule
     - (* ae_context_expr_of_premise *)
       intros i v.
       refine (_ (ae_context_expr_of_premise _ i v)).
-      apply Fmap_Raw_Syntax, Fmap1_Metavariable_Extension, f.
+      apply Expression.fmap, Fmap1_Metavariable_Extension, f.
     - (* ae_hyp_bdry_of_premise *)
       intros i.
       simple refine
@@ -234,7 +234,7 @@ eq_new i   0        0        0        0        i < j
     {a} {hjf_concl} (R : rule Σ a hjf_concl)
     (p : (a + a) +
          (ae_equality_premise (premise R) + ae_equality_premise (premise R) + a))
-    : Signature_Map
+    : Signature.map
         (Metavariable.extend Σ
           (ae_arity_of_premise (premise R) (associated_original_premise p)))
         (Metavariable.extend Σ (Family.subfamily (a + a)
@@ -283,7 +283,7 @@ eq_new i   0        0        0        0        i < j
       exact (associated_congruence_rule_lt (ae_lt _)).
     - (* ae_context_expr_of_premise *)
       intros p i.
-      refine (Fmap_Raw_Syntax
+      refine (Expression.fmap
         (associated_congruence_rule_original_constructor_translation _ _) _).
       set (p_orig := associated_original_premise p).
       destruct p as [ [ ? | ? ] | [ [ ? | ? ] | ? ] ];
@@ -301,7 +301,7 @@ eq_new i   0        0        0        0        i < j
       intros i; simpl Judgement.boundary_slot in i.
       destruct i as [ [ i | ] | ]; [ idtac | simpl | simpl].
       + (* boundary of the corresponding original premise *)
-        refine (Fmap_Raw_Syntax
+        refine (Expression.fmap
           (associated_congruence_rule_original_constructor_translation _ _) _).
         apply (ae_hyp_bdry_of_premise _ p_orig).
       + (* LHS of new equality premise *)
@@ -323,7 +323,7 @@ eq_new i   0        0        0        0        i < j
     - (* ae_hyp_judgt_bdry_of_conclusion *)
       intros [ [ i | ] | ]; simpl.
       + (* boundary of original conclusion *)
-        refine (Fmap_Raw_Syntax _ _).
+        refine (Expression.fmap _ _).
         * apply Fmap2_Metavariable_Extension, Family.map_inl.
         * destruct hjf_concl as [cl | ?].
           -- exact (hyp_judgt_bdry_of_conclusion R i).
@@ -383,7 +383,7 @@ Section Flattening.
   (* TODO: consider whether the flattening of the conclusion can also be covered by this. *)
   Lemma judgement_of_premise 
       {a} {A : algebraic_extension Σ a} (i : A)
-      {Σ'} (f : Signature_Map (Metavariable.extend Σ (ae_arity_of_premise _ i)) Σ')
+      {Σ'} (f : Signature.map (Metavariable.extend Σ (ae_arity_of_premise _ i)) Σ')
       (Sr : Judgement.is_object (ae_hjf_of_premise _ i) 
            -> { S : Σ'
              & (symbol_arity S = simple_arity (ae_proto_cxt_of_premise _ i))

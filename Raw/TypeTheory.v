@@ -59,7 +59,7 @@ Section Type_Theories.
 
   Definition Type_Theory_signature_inclusion_of_rule
       {T : Type_Theory} (r : T)
-    : Signature_Map (TT_signature_of_rule _ r) 
+    : Signature.map (TT_signature_of_rule _ r) 
                     (Signature_of_Type_Theory T).
   Proof.
     simple refine (_;_).

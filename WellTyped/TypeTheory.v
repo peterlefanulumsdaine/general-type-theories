@@ -135,7 +135,7 @@ Section Welltypedness.
 
   (* TODO: upstream; consider naming *)
   Definition include_symbol (Σ : signature σ) a
-     : (Signature_Map Σ (Metavariable.extend Σ a)).
+     : (Signature.map Σ (Metavariable.extend Σ a)).
   Proof.
     exists Metavariable.include_symbol.
     intros; apply idpath.
@@ -234,7 +234,7 @@ Require Auxiliary.WellFounded.
   (* TODO: upstream to [Raw.TypeTheory] *)
   (* NOTE: should be moreover an isomorphism *)
   Definition signature_of_sub_type_theory (T : Type_Theory σ) (i : T)
-    : Signature_Map
+    : Signature.map
         (Signature_of_Type_Theory (sub_type_theory_below_rule T i))
         (TT_signature_of_rule i).
   Proof.
