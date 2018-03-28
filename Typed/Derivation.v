@@ -66,6 +66,7 @@ Section Derivable_Rules.
 
 End Derivable_Rules.
 
+(* TODO: probably this section should be broken out to a separate file. *)
 Section TT_Maps.
 
   Context `{H : Funext}.
@@ -85,7 +86,7 @@ Section TT_Maps.
                          T'
      }.
 
-  (* TODO: abstract [Family_Map_over] or something, i.e. a displayed-category version of family maps, for use in definitions like this? *)
+  (* TODO: perhaps abstract [Family_Map_over] or something, i.e. a displayed-category version of family maps, for use in definitions like this? *)
   Definition Fmap_Structural_CCs
       {Σ Σ' : signature σ}
       (f : Signature.map Σ Σ')
