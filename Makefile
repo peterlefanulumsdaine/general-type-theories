@@ -15,7 +15,7 @@ MODULES := \
 	Auxiliary/Closure \
 	Proto/ShapeSystem \
 	Proto/ShapeSystemExamples \
-	Raw/Presyntax \
+	Raw/Signature \
 	Raw/Expression \
 	Raw/Substitution \
 	Raw/Context \

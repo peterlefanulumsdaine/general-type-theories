@@ -1,7 +1,7 @@
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Presyntax.
+Require Import Raw.Signature.
 Require Import Raw.Context.
 Require Import Raw.Judgement.
 Require Import Raw.Metavariable.

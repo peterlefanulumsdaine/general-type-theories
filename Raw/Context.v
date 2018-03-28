@@ -1,6 +1,6 @@
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Presyntax.
+Require Import Raw.Signature.
 Require Import Raw.Expression.
 Require Import Raw.Substitution.
 
