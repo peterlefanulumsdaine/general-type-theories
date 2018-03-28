@@ -6,25 +6,32 @@ Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
 Require Import Raw.SubstitutionFacts.
 Require Import Raw.StructuralRule.
+Require Import Raw.TypeTheory.
 
-Section Derivability_from_Flat_Type_Theory.
+(** Typing derivations over type theories *)
+Section Derivation.
 
-  Context {σ : shape_system}
-          {Σ : signature σ}.
+  Context {σ : shape_system}.
 
-  Definition CCs_of_Flat_Type_Theory (T : flat_type_theory Σ)
+  Definition CCs_of_Flat_Type_Theory
+      {Σ : signature σ} (T : flat_type_theory Σ)
     : Closure.system (judgement_total Σ)
-    := Structural_CCs Σ + Family.bind T FlatRule.closure_system.
+  := Structural_CCs Σ + Family.bind T FlatRule.closure_system.
 
-  Definition Derivation_from_Flat_Type_Theory (T : flat_type_theory Σ) H
+  Definition Derivation_from_Flat_Type_Theory
+      {Σ : signature σ} (T : flat_type_theory Σ) H
     : judgement_total Σ -> Type
-    := Closure.derivation (CCs_of_Flat_Type_Theory T) H.
+  := Closure.derivation (CCs_of_Flat_Type_Theory T) H.
 
-End Derivability_from_Flat_Type_Theory.
+  Definition Derivation_from_Type_Theory (T : Type_Theory σ) H
+    : judgement_total (Signature_of_Type_Theory T) -> Type
+  := Derivation_from_Flat_Type_Theory (TypeTheory.flatten T) H.
 
+End Derivation.
+
+(** “Derivable rules” over a type theory;
+or, to be precise, _derivations_ of flat rules over a flat type theory. *)
 Section Derivable_Rules.
-  (* “Derivable rules” over a type theory;
-  or, to be precise, _derivations_ of flat rules over a flat type theory. *)
 
   Context {σ : shape_system}
           {Σ : signature σ}.
