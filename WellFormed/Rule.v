@@ -198,9 +198,7 @@ Section Associated_Congruence_Rules.
 
   Arguments associated_original_premise : simpl nomatch.
 
-  (* The ordering of premises of the congruence rule associated to an object rule.
-
-  TODO: perhaps try to refactor to avoid so many special cases?  E.g. as: take the lex product of the input relation [R] with the 3-element order ({{0},{1},{0,1}}, ⊂ ) and then pull this back along the suitable map (o+o)+(e+e+o) —> (o+e)*3 ?  *)
+  (* The ordering of premises of the congruence rule associated to an object rule. *)
   Definition associated_congruence_rule_lt
       {obs eqs : Type} (lt : well_founded_order (obs + eqs))
     : well_founded_order ((obs + obs) + (eqs + eqs + obs)).

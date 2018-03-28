@@ -4,7 +4,7 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
-Require Import Raw.Theory.
+Require Import Raw.Derivation.
 Require Import Raw.SignatureMap.
 Require Import WellFormed.Rule.
 Require Import WellFormed.TypeTheory.

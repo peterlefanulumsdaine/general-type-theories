@@ -25,7 +25,7 @@ MODULES := \
 	Raw/Syntax \
 	Raw/SignatureMap \
 	Raw/SubstitutionFacts \
-	Raw/Theory \
+	Raw/Derivation \
 	Raw/StructuralRule \
 	WellFormed/Rule \
 	WellFormed/TypeTheory \
