@@ -62,37 +62,6 @@ Section TT_Maps.
                          T'
      }.
 
-  (* TODO: upstream! and consider naming conventions for such lemmas. *)
-  Definition closure_condition_eq {X} {c c' : Closure.rule X}
-    : Closure.rule_premises c = Closure.rule_premises c'
-    -> Closure.rule_conclusion c = Closure.rule_conclusion c'
-    -> c = c'.
-  Proof.
-    destruct c, c'; cbn.
-    intros e e'; destruct e, e'.
-    apply idpath.
-  Defined.
-
-  (* TODO: upstream! and consider naming conventions for such lemmas. *)
-  Definition Family_eq `{Funext} {X} {c c' : family X}
-    (e : family_index c = family_index c')
-    (e' : forall i:c, c i = c' (equiv_path _ _ e i) )
-    : c = c'.
-  Proof.
-    destruct c, c'; cbn in *.
-    destruct e. apply ap.
-    apply path_forall; intros i; apply e'.
-  Defined.
-
-  (* TODO: upstream! *)
-  Definition Build_Family_Map' {A} (K L : family A)
-      (f : forall i:K, { j:L & L j = K i })
-    : Family.map K L.
-  Proof.
-    exists (fun i => pr1 (f i)).
-    intros i. exact (pr2 (f i)).
-  Defined.
-
   (* TODO: upstream! *)
   Definition Fmap_Raw_Context_Map
       {Σ Σ' : signature σ} (f : Signature_Map Σ Σ')
@@ -111,17 +80,6 @@ Section TT_Maps.
   Proof.
   Admitted.
 
-  (* *)
-  Lemma Fmap_Family_Snoc
-      {X Y} (f : X -> Y)
-      (K : family X) (x : X)
-    : Family.fmap f (Family.adjoin K x) = Family.adjoin (Family.fmap f K) (f x).
-  Proof.
-    simple refine (Family_eq _ _).
-    - apply idpath.
-    - intros [? | ]; apply idpath.
-  Defined.
-
   (* TODO: abstract [Family_Map_over] or something, i.e. a displayed-category version of family maps, for use in definitions like this? *)
   Definition Fmap_Structural_CCs
       {Σ Σ' : signature σ}
@@ -134,7 +92,7 @@ Section TT_Maps.
        - [Fmap_Family] of families commutes with sums;
        - then use [repeat apply Fmap_Family_Sum.] or similar.  *)
     (* TODO: intermediate approach: at least allow family map to be constructed as a single function, to avoid duplicated destructing. *)
-    apply Build_Family_Map'.
+    apply Family.Build_map'.
     intros [ [ [ [ c1 | ] | [c2 | c3] ] | c4 ]  | c5 ].
     (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
     - (* context extension *)
@@ -143,8 +101,8 @@ Section TT_Maps.
         refine (inl (inl (inl (Some _)))).
         exists (Fmap_Raw_Context f ΓA.1).
         exact (Fmap_Raw_Syntax f ΓA.2).
-      + cbn. apply closure_condition_eq.
-        * simple refine (Family_eq _ _). { apply idpath. }
+      + cbn. apply Closure.rule_eq.
+        * simple refine (Family.eq _ _). { apply idpath. }
           cbn. intros [ [ [] | ] | ].
           -- apply idpath.
           -- apply (ap (fun x => (_; x))).
@@ -166,8 +124,8 @@ Section TT_Maps.
              apply inverse. apply Fmap_Raw_Weaken.
     - (* empty context *)
       exists (inl (inl (inl None))).
-      cbn. apply closure_condition_eq.
-      * simple refine (Family_eq _ _). { apply idpath. }
+      cbn. apply Closure.rule_eq.
+      * simple refine (Family.eq _ _). { apply idpath. }
         intros [].
       * cbn. apply (ap (fun x => (_; x))).
         apply (ap (Build_raw_context _)).
@@ -181,9 +139,9 @@ Section TT_Maps.
         exists (Fmap_Raw_Context_Map f g).
         exists hjf.
         exact (Fmap_Hyp_Judgt_Form_Instance f hjfi).
-      + cbn. apply closure_condition_eq; cbn.
+      + cbn. apply Closure.rule_eq; cbn.
         * apply inverse.
-          eapply concat. { apply Fmap_Family_Snoc. }
+          eapply concat. { apply Family.map_adjoin. }
           apply ap011.
           -- unfold Family.fmap.
             apply ap, path_forall; intros i.
@@ -217,17 +175,6 @@ Section TT_Maps.
       (* Thest last two should be doable cleanly by the same lemmas
       used for logical rules in [Fmap_CCs_of_Flat_Type_Theory] below, once that’s done. *)
   Admitted.
-
-  (* TODO: upstream *)
-  (* closure_system maps are really a sort of Kelisli map, and this is essentially just the unit.  TODO: abstract this out more clearly! *)
-  (* Definition closure_system_map_of_Family_map *)
-  (*     {X} {C D : Closure.system X} (f : Family.map C D) *)
-  (*   : Closure.map C D. *)
-  (* Proof. *)
-  (*   intro i. eapply paths_rew. *)
-  (*   - exact (Simple_Derivation_of_CC (f c)). *)
-  (*   - apply Family.map_commutes. *)
-  (* Defined. *)
 
   Definition Fmap_CCs_of_Flat_Type_Theory
     {Σ : signature σ} (T : flat_type_theory Σ)

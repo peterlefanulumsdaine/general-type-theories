@@ -9,6 +9,18 @@ Record family (X : Type) :=
 Global Arguments family_index [_] F : rename.
 Global Arguments family_element [_] F _ : rename.
 
+(* Lemma for equalities of families (requiring funext).
+   TODO: consider naming conventions for such lemmas. *)
+Local Definition eq `{Funext} {X} {c c' : family X}
+    (e : family_index c = family_index c')
+    (e' : forall i:c, c i = c' (equiv_path _ _ e i) )
+  : c = c'.
+Proof.
+  destruct c, c'; cbn in *.
+  destruct e. apply ap.
+  apply path_forall; intros i; apply e'.
+Defined.
+
 (** The empty family. *)
 Local Definition empty (X : Type) : family X.
 Proof.
@@ -83,6 +95,16 @@ Section FamilyMap.
   Local Definition map {A} (K L : family A)
     := { f : family_index K -> family_index L & forall i : K, L (f i) = K i }.
 
+  (* Re-grouping of [Build_map]: useful when the map and equality components for each input are most easily given together, e.g. if they involve an induction on the input. *)
+  Definition Build_map' {A} (K L : family A)
+      (f : forall i:K, { j:L & L j = K i })
+    : map K L.
+  Proof.
+    exists (fun i => pr1 (f i)).
+    intros i. exact (pr2 (f i)).
+  Defined.
+
+
   Local Definition map_index_action {A} {K L : family A}
     : map K L -> (K -> L)
   := pr1.
@@ -142,6 +164,16 @@ Section FamilyMap.
   Proof.
     exists pr1.
     intros; apply idpath.
+  Defined.
+
+  Local Lemma map_adjoin `{Funext}
+      {X Y} (f : X -> Y)
+      (K : family X) (x : X)
+    : fmap f (adjoin K x) = adjoin (fmap f K) (f x).
+  Proof.
+    simple refine (eq _ _).
+    - apply idpath.
+    - intros [? | ]; apply idpath.
   Defined.
 
 End FamilyMap.
