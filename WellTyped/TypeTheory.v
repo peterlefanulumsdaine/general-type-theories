@@ -255,3 +255,14 @@ Require Auxiliary.WellFounded.
   Defined.
 
 End Welltypedness.
+
+Section TypeTheory.
+
+  Context {σ : shape_system}.
+
+  Record type_theory : Type
+  := { raw_type_theory_of_well_typed :> Type_Theory σ
+     ; is_well_typed : is_well_typed_type_theory
+                         raw_type_theory_of_well_typed }.
+
+End TypeTheory.
