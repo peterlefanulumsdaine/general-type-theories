@@ -122,12 +122,12 @@ Section TT_Maps.
           -- eapply concat. { refine (plusone_comp_one _ _ _ _ _ _). }
              eapply concat. Focus 2.
                { apply ap. refine (plusone_comp_one _ _ _ _ _ _)^. } Unfocus.
-             apply inverse. apply Fmap_Raw_Weaken.
+             apply inverse. apply fmap_rename.
           -- intros x. cbn in x.
              eapply concat. { refine (plusone_comp_inj _ _ _ _ _ _ _). }
              eapply concat. Focus 2.
                { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. } Unfocus.
-             apply inverse. apply Fmap_Raw_Weaken.
+             apply inverse. apply fmap_rename.
     - (* empty context *)
       exists (inl (inl (inl None))).
       cbn. apply Closure.rule_eq.
@@ -154,7 +154,7 @@ Section TT_Maps.
             apply (ap (fun x => (_; x))).
             apply (ap (fun x => (_; x))).
             apply path_forall. intros [ [ [] | ] | ].
-            ++ refine (fmap_Raw_Subst _ _ _).
+            ++ refine (fmap_substitute _ _ _).
             ++ apply idpath.
           -- apply idpath.
           (* Family_fmap_adjoin *)
@@ -162,7 +162,7 @@ Section TT_Maps.
           apply (ap (fun x => (_; x))).
           apply path_forall. intros i.
           unfold fmap_hypothetical_judgement.
-          refine (fmap_Raw_Subst _ _ _)^.
+          refine (fmap_substitute _ _ _)^.
     - (* substitution equality *)
       destruct c3 as [ Γ [Γ' [g [g' [hjf hjfi]]]]].
       simple refine (_;_).

@@ -14,7 +14,7 @@ Section Auxiliary.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  Definition transport_Raw_Weaken {γ γ' : σ} (g : γ -> γ')
+  Definition transport_rename {γ γ' : σ} (g : γ -> γ')
       {cl cl' : syntactic_class} (p : cl = cl') (e : raw_expression Σ cl γ)
     : transport (fun cl => raw_expression Σ cl γ') p (Substitution.rename g e)
       = Substitution.rename g (transport (fun cl => raw_expression Σ cl γ) p e).
@@ -22,7 +22,13 @@ Section Auxiliary.
     destruct p. apply idpath.
   Defined.
 
-(* TODO: consider renaming [raw_variable_substitution] to something like [Raw_Reindex_Variables] ?? *)
+    Definition transport_substitute {γ γ' : σ} (g : _)
+      {cl cl' : syntactic_class} (p : cl = cl') (e : raw_expression Σ cl γ)
+    : transport (fun cl => raw_expression Σ cl γ') p (substitute g e)
+      = substitute g (transport (fun cl => raw_expression Σ cl γ) p e).
+  Proof.
+    destruct p. apply idpath.
+  Defined.
 
 End Auxiliary.
 
@@ -242,7 +248,7 @@ Section Naturality.
   Context {σ : shape_system}.
   Context {Σ Σ' : signature σ} (f : Signature.map Σ Σ').
 
-  Fixpoint Fmap_Raw_Weaken {γ γ' : σ} (g : γ -> γ')
+  Fixpoint fmap_rename {γ γ' : σ} (g : γ -> γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
     : Expression.fmap f (Substitution.rename g e)
       = Substitution.rename g (Expression.fmap f e).
@@ -251,30 +257,54 @@ Section Naturality.
   - apply idpath.
   - simpl.
     eapply concat.
-    { apply ap, ap, ap. apply path_forall; intros i. apply Fmap_Raw_Weaken. }
-    eapply concat. Focus 2. { apply transport_Raw_Weaken. } Unfocus.
-    apply ap. cbn. apply ap, path_forall. intros i.
-    set (a := symbol_arity S) in *.
-    set (a' := symbol_arity (f S)) in *.
-    set (p := (ap snd (Family.map_commutes f S))^ : a = a').
-    (* we now manually fold [p], since neither [fold] nor [change … with …] seems to find the required subterms *)
-    eapply concat.
-      { refine (apD10 _ i). refine (ap (fun p => transport _ p _) _).
-        exact (idpath p). }
-    eapply concat. Focus 2.
-      { apply ap. refine (apD10 _ i). refine (ap (fun p => transport _ p _) _).     exact (idpath p). } Unfocus.
-    (* Having folded [p], we can now generalize, clear, and destruct it. *)
-    clearbody p a a'.
-    destruct p. apply idpath.
+    { apply ap, ap, ap. apply path_forall; intros i. apply fmap_rename. }
+    eapply concat. Focus 2. { apply transport_rename. } Unfocus.
+    apply ap. cbn. apply ap.
+    set (ΣfS := Σ' (f S)). change (symbol_arity (f S)) with (snd ΣfS).
+    set (p := Family.map_commutes f S : ΣfS = _). clearbody p ΣfS.
+    rewrite <- (inv_V p).
+    set (p' := p^); clearbody p'; clear p.
+    destruct p'; apply idpath.
   Defined.
-  (* NOTE: this proof was remarkably difficult to write; it shows the kind of headaches caused by the appearance of equality in maps of signatures. *)
-
-  Lemma fmap_Raw_Subst
+  (* NOTE: this proof was surprisingly difficult to write; it shows the kind of headaches caused by the appearance of equality in maps of signatures. *)
+  
+  Local Definition fmap_extend
+    {γ γ' δ : σ} (g : raw_substitution γ' γ)
+    : fmap_raw_context_map f (Substitution.extend _ _ δ g)
+    = Substitution.extend _ _ δ (fmap_raw_context_map f g).
+  Proof.
+    apply path_forall.
+    refine (coproduct_rect shape_is_sum _ _ _).
+    - intros i. unfold fmap_raw_context_map.
+      eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+      eapply concat. { apply fmap_rename. }
+      apply inverse. refine (coproduct_comp_inj1 _).
+    - intros i. unfold fmap_raw_context_map.
+      eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+      apply inverse. refine (coproduct_comp_inj2 _).
+  Defined.
+  
+  Fixpoint fmap_substitute
       {γ γ'} (g : Context.map Σ γ' γ)
       {cl} (e : raw_expression Σ cl γ)
     : Expression.fmap f (substitute g e)
     = substitute (fmap_raw_context_map f g) (Expression.fmap f e).
   Proof.
-  Admitted.
+    destruct e as [ γ i | γ S args ].
+    - apply idpath.
+    - simpl.
+      eapply concat.
+      { apply ap, ap, ap. apply path_forall; intros i. apply fmap_substitute. }
+      eapply concat. Focus 2. { apply transport_substitute. } Unfocus.
+      apply ap. cbn. apply ap.
+      set (ΣfS := Σ' (f S)). change (symbol_arity (f S)) with (snd ΣfS).
+      set (p := Family.map_commutes f S : ΣfS = _). clearbody p ΣfS.
+      rewrite <- (inv_V p).
+      set (p' := p^); clearbody p'; clear p.
+      destruct p'. cbn.
+      apply path_forall; intros i.
+      apply ap10. refine (apD10 _ _). apply ap.
+      apply fmap_extend.
+  Defined.
 
 End Naturality.
