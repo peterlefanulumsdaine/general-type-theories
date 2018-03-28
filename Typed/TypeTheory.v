@@ -4,9 +4,9 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
-Require Import Raw.Derivation.
 Require Import Raw.Rule.
 Require Import Raw.TypeTheory.
+Require Import Typed.Derivation.
 
 (** In this file: definition of well-typedness of a rule, and of a type-theory. *)
 

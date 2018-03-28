@@ -24,10 +24,10 @@ MODULES := \
 	Raw/FlatRule \
 	Raw/Syntax \
 	Raw/SubstitutionFacts \
-	Raw/Derivation \
 	Raw/StructuralRule \
 	Raw/Rule \
 	Raw/TypeTheory \
+	Typed/Derivation \
 	Typed/TypeTheory
 
 VS      := $(MODULES:%=%.v)
