@@ -6,8 +6,8 @@ Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 Require Import Raw.Derivation.
 Require Import Raw.SignatureMap.
-Require Import WellFormed.Rule.
-Require Import WellFormed.TypeTheory.
+Require Import Raw.Rule.
+Require Import Raw.TypeTheory.
 
 (** In this file: definition of well-typedness of a rule, and of a type-theory. *)
 
@@ -210,7 +210,7 @@ Require Auxiliary.WellFounded.
           destruct H_i_obj. (* ruled out by assumption *)
   Defined.
 
-  (* TODO: upstream to [WellFormed.TypeTheory] *)
+  (* TODO: upstream to [Raw.TypeTheory] *)
   (* NOTE: could easily be generalised to give the sub-type-theory on any down-closed subset of the rules, if that’s ever needed. *)
   Definition sub_type_theory_below_rule (T : Type_Theory σ) (i : T)
     : Type_Theory σ.
@@ -231,7 +231,7 @@ Require Auxiliary.WellFounded.
       + intros ?; apply idpath.
   Defined.
 
-  (* TODO: upstream to [WellFormed.TypeTheory] *)
+  (* TODO: upstream to [Raw.TypeTheory] *)
   (* NOTE: should be moreover an isomorphism *)
   Definition signature_of_sub_type_theory (T : Type_Theory σ) (i : T)
     : Signature_Map

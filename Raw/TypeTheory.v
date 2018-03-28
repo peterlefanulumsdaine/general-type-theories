@@ -7,7 +7,7 @@ Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
 Require Import Raw.SignatureMap.
 Require Import Raw.Derivation.
-Require Import WellFormed.Rule.
+Require Import Raw.Rule.
 
 (** Main definition in this file: [Type_Theory], the data one gives to specify a type theory (but before typechecking it) *)
 

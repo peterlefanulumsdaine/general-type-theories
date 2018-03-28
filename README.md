@@ -160,7 +160,7 @@ Note that when `xyz` is declared global, e.g., it is the field name of a globall
 * [`Auxiliary`](./Auxiliary) -- mathematical generalities
 * [`Proto`](./Proto) -- shape systems
 * [`Raw`](./Raw) -- raw syntax and type theories
-* [`WellFormed`](./WellFormed) -- only Peter knows
+* [`Raw`](./Raw) -- only Peter knows
 * [`WellTyped`](./WellTyped) -- only Peter knows
 
 
