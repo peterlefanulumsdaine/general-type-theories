@@ -110,10 +110,11 @@ Section AlgebraicExtension.
   Local Definition instantiate_judgement
       {a : @arity σ} {Σ : signature σ} {Γ : raw_context Σ}
       (I : instantiation a Σ Γ)
-      (e : judgement_total (extend Σ a))
+      (j : judgement_total (extend Σ a))
     : judgement_total Σ.
   Proof.
-    destruct e as [jf jfi]. exists jf ; destruct jf ; simpl in *.
+    exists (pr1 j).
+    destruct j as [jf jfi] ; destruct jf ; simpl in *.
     - apply (instantiate_context I). assumption.
     - destruct jfi as [Δ hjfi].
       simple refine (existT _ _ _).

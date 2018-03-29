@@ -254,16 +254,16 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
 
   (* TODO: move up in this file *)
   Definition boundary_of_judgement
-      {Σ : signature σ} {jf} (jbi : judgement Σ jf)
+      {Σ : signature σ} {jf} (j : judgement Σ jf)
     : boundary Σ jf.
   Proof.
     destruct jf as [ | hjf].
     - constructor. (* context judgement: no boundary *)
     - (* hyp judgement *)
-      cbn in jbi. exists (pr1 jbi). intros i.
+      cbn in j. exists (pr1 j). intros i.
       destruct hjf as [ ob_hjf | eq_hjf ].
-      + exact (pr2 jbi (Some i)).
-      + exact (pr2 jbi i).
+      + exact (pr2 j (Some i)).
+      + exact (pr2 j i).
   Defined.
 
   Definition presupposition
