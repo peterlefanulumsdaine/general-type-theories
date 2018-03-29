@@ -28,7 +28,10 @@ MODULES := \
 	Raw/Rule \
 	Raw/TypeTheory \
 	Typed/Derivation \
-	Typed/TypeTheory
+	Typed/TypeTheory \
+	Metatheorems/Presuppositions \
+	Metatheorems/CutElimination \
+	Metatheorems/UniqueTyping
 
 VS      := $(MODULES:%=%.v)
 

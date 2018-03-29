@@ -230,7 +230,7 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
   Context {σ : shape_system}.
   
   Definition presupposition_of_boundary
-      {Σ : signature σ} {jf} (jbi : Judgement.boundary Σ jf)
+      {Σ : signature σ} {jf} (jbi : boundary Σ jf)
     : family (judgement_total Σ).
   Proof.
     destruct jf as [ | hjf].
@@ -239,9 +239,9 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
     - (* hyp judgement: presups are the context,
                         plus the slots of the hyp boundary *)
       apply Family.adjoin.
-      + exists (Judgement.boundary_slot hjf).
+      + exists (boundary_slot hjf).
         intros i.
-        exists (form_hypothetical (form_object ((Judgement.boundary_slot hjf) i))).
+        exists (form_hypothetical (form_object ((boundary_slot hjf) i))).
         exists (pr1 jbi).
         intros j.
         set (p := Family.map_commutes (presupposition_from_boundary_slots i) j).
@@ -252,7 +252,25 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
         exact (pr1 jbi).
   Defined.
 
+  (* TODO: move up in this file *)
+  Definition boundary_of_judgement
+      {Σ : signature σ} {jf} (jbi : judgement Σ jf)
+    : boundary Σ jf.
+  Proof.
+    destruct jf as [ | hjf].
+    - constructor. (* context judgement: no boundary *)
+    - (* hyp judgement *)
+      cbn in jbi. exists (pr1 jbi). intros i.
+      destruct hjf as [ ob_hjf | eq_hjf ].
+      + exact (pr2 jbi (Some i)).
+      + exact (pr2 jbi i).
+  Defined.
 
+  Definition presupposition
+      {Σ : signature σ} {jf} (ji : judgement Σ jf)
+    : family (judgement_total Σ)
+  := presupposition_of_boundary (boundary_of_judgement ji).
+  
 End Presuppositions.
 
 Section Signature_Maps.
