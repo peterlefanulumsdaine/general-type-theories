@@ -45,32 +45,45 @@ Record algebraic_extension
   (* the ordering relation on the premises *)
   ; ae_lt : well_founded_order ae_premise
   (* for each premise, the arity specifying what metavariables are available in the syntax for this premise; i.e., the family of type/term arguments already introduced by earlier premises *)
-  ; ae_arity_of_premise : ae_premise -> arity _
+  ; ae_arity_for_premise : ae_premise -> arity _
     := fun i => Family.subfamily a (fun j => ae_lt (inl j) i)
+  ; ae_signature_for_premise : ae_premise -> signature _
+    := fun i => Metavariable.extend Σ (ae_arity_for_premise i)
   (* syntactic part of context of premise *)
   (* NOTE: this should never be used directly, always through [ae_raw_context_of_premise] *)
   ; ae_context_expr_of_premise
     : forall (i : ae_premise) (v : ae_proto_cxt_of_premise i),
         raw_type
-          (Metavariable.extend Σ (ae_arity_of_premise i))
+          (ae_signature_for_premise i)
           (ae_proto_cxt_of_premise i)
   (* raw context of each premise *)
   ; ae_raw_context_of_premise
     : forall i : ae_premise,
-        raw_context (Metavariable.extend Σ (ae_arity_of_premise i))
+        raw_context (ae_signature_for_premise i)
     := fun i => Build_raw_context _ (ae_context_expr_of_premise i)
   (* hypothetical judgement boundary instance for each premise *)
   ; ae_hyp_bdry_of_premise
     : forall i : ae_premise,
         Judgement.hypothetical_boundary
-          (Metavariable.extend Σ (ae_arity_of_premise i))
+          (ae_signature_for_premise i)
           (ae_hjf_of_premise i)
           (ae_proto_cxt_of_premise i)
   }.
 
 Arguments algebraic_extension _ _ : clear implicits.
+(* TODO: make the record argument implicit in most fields. *)
 
-(* The parameters of a rule, beyond its ambient signature, may be a little counter-intuitive.  The point is that they are just what is required to determine the arity of the symbol introduced by the rule, if it’s an object rule. *)
+Definition ae_judgt_bdry_of_premise
+    {Σ : signature σ} {a}
+    {A : algebraic_extension Σ a} (r : A)
+  : Judgement.boundary (ae_signature_for_premise _ r)
+                       (form_hypothetical (ae_hjf_of_premise _ r)).
+Proof.
+  exists (ae_raw_context_of_premise _ r).
+  apply (ae_hyp_bdry_of_premise).
+Defined.
+
+(* The parameters of a rule, beyond its ambient signature, may be a little counter-intuitive.  The point is that they are just what is required to determine the arity of the symbol introduced by the rule (if it’s an object rule), and in any case the arity of its associated flat rule. *)
 Record rule
   {Σ : signature σ}
   {a : arity σ} (* arity listing the _object_ premises of the rule *)
@@ -234,8 +247,7 @@ eq_new i   0        0        0        0        i < j
     (p : (a + a) +
          (ae_equality_premise (premise R) + ae_equality_premise (premise R) + a))
     : Signature.map
-        (Metavariable.extend Σ
-          (ae_arity_of_premise (premise R) (associated_original_premise p)))
+        (ae_signature_for_premise (premise R) (associated_original_premise p))
         (Metavariable.extend Σ (Family.subfamily (a + a)
            (fun j => associated_congruence_rule_lt (ae_lt _) (inl j) p))).
   Proof.
@@ -331,7 +343,9 @@ eq_new i   0        0        0        0        i < j
         cbn. simple refine (raw_symbol' _ _ _).
         * apply Metavariable.include_symbol, S.
         * apply e_cl.
-        * change (symbol_arity (Metavariable.include_symbol S)) with (symbol_arity S).
+        * simpl symbol_arity.
+          change (symbol_arity (Metavariable.include_symbol_carrier S))
+            with (symbol_arity S).
           destruct (e_a^); clear e_a.
           intros p.
           simple refine (raw_symbol' _ _ _).
@@ -347,7 +361,9 @@ eq_new i   0        0        0        0        i < j
         cbn. simple refine (raw_symbol' _ _ _).
         * apply Metavariable.include_symbol, S.
         * apply e_cl.
-        * change (symbol_arity (Metavariable.include_symbol S)) with (symbol_arity S).
+        * simpl symbol_arity.
+          change (symbol_arity (Metavariable.include_symbol_carrier S))
+            with (symbol_arity S).
           destruct (e_a^); clear e_a.
           intros p.
           simple refine (raw_symbol' _ _ _).
@@ -382,7 +398,7 @@ Section Flattening.
   (* TODO: consider whether the flattening of the conclusion can also be covered by this. *)
   Lemma judgement_of_premise
       {a} {A : algebraic_extension Σ a} (i : A)
-      {Σ'} (f : Signature.map (Metavariable.extend Σ (ae_arity_of_premise _ i)) Σ')
+      {Σ'} (f : Signature.map (ae_signature_for_premise _ i) Σ')
       (Sr : Judgement.is_object (ae_hjf_of_premise _ i)
            -> { S : Σ'
              & (symbol_arity S = simple_arity (ae_proto_cxt_of_premise _ i))

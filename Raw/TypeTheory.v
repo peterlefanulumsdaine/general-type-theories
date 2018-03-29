@@ -5,7 +5,6 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
-Require Import Raw.Derivation.
 Require Import Raw.Rule.
 
 (** Main definition in this file: [Type_Theory], the data one gives to specify a type theory (but before typechecking it) *)
@@ -55,6 +54,7 @@ Section Type_Theories.
       “when r is an object rule, use [(Judgement.class_of …, TT_arity_of_rule …)];
        in case r is an equality rule, use reductio ad absurdum with Hr.” 
      But we get stronger reduction behaviour by just taking [(Judgement.class_of …, TT_arity_of_rule …)] without case-analysing first.  (And up to equality, we get the same result.)  *)
+  (* TODO: consider making this a coercion? *)
 
   Definition Type_Theory_signature_inclusion_of_rule
       {T : Type_Theory} (r : T)
@@ -68,6 +68,37 @@ Section Type_Theories.
     - intros s. apply idpath.
   Defined.
 
+  (* NOTE: could easily be generalised to give the sub-type-theory on any down-closed subset of the rules, if that’s ever needed. *)
+  Definition sub_type_theory_below_rule (T : Type_Theory) (i : T)
+    : Type_Theory.
+  Proof.
+    simple refine (Build_Type_Theory _ _ _ ).
+    - refine (Family.subfamily (TT_rule_index T) _).
+      intros j. exact (TT_lt _ j i).
+    - refine (WellFounded.pullback _ (TT_lt T)).
+      exact (projT1).
+    - cbn. intros [j lt_j_i].
+      refine (Fmap_rule _ (TT_rule _ j)).
+      apply Family.map_fmap.
+      simple refine (_;_).
+      + intros [k [k_obj lt_k_j]].
+        simple refine (_;_).
+        * exists k. apply (transitive _ _ j); assumption.
+        * cbn. split; assumption.
+      + intros ?; apply idpath.
+  Defined.
+
+  (* NOTE: in fact, this map should be an isomorphism *)
+  Definition signature_of_sub_type_theory (T : Type_Theory) (i : T)
+    : Signature.map
+        (Signature_of_Type_Theory (sub_type_theory_below_rule T i))
+        (TT_signature_of_rule _ i).
+  Proof.
+    simple refine (_;_).
+    - intros [[j lt_j_i] j_obj]. exists j. split; assumption.
+    - intros ?; apply idpath.
+  Defined.
+
 End Type_Theories.
 
 Arguments Type_Theory _ : clear implicits.
@@ -79,7 +110,7 @@ Arguments TT_signature_of_rule {_ _} _.
 Arguments TT_rule {_ _} _.
 
 
-Section Derivability_from_Type_Theory.
+Section Flattening.
 
   Context {σ : shape_system}.
 
@@ -113,8 +144,4 @@ Section Derivability_from_Type_Theory.
       + intros []. (* no head symbol, since congs are equality rules *)
   Defined.
 
-  Definition Derivation_from_Type_Theory (T : Type_Theory σ) H
-    : judgement_total (Signature_of_Type_Theory T) -> Type
-  := Derivation_from_Flat_Type_Theory (flatten T) H.
-
-End Derivability_from_Type_Theory.
+End Flattening.

@@ -6,25 +6,49 @@ Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
 Require Import Raw.SubstitutionFacts.
 Require Import Raw.StructuralRule.
+Require Import Raw.TypeTheory.
 
-Section Derivability_from_Flat_Type_Theory.
+(** Typing derivations over type theories *)
+Section Derivation.
+
+  Context {σ : shape_system}.
+
+  Definition CCs_of_Flat_Type_Theory
+      {Σ : signature σ} (T : flat_type_theory Σ)
+    : Closure.system (judgement_total Σ)
+  := Structural_CCs Σ + Family.bind T FlatRule.closure_system.
+
+  Definition Derivation_from_Flat_Type_Theory
+      {Σ : signature σ} (T : flat_type_theory Σ) H
+    : judgement_total Σ -> Type
+  := Closure.derivation (CCs_of_Flat_Type_Theory T) H.
+
+  Definition Derivation_from_Type_Theory (T : Type_Theory σ) H
+    : judgement_total (Signature_of_Type_Theory T) -> Type
+  := Derivation_from_Flat_Type_Theory (TypeTheory.flatten T) H.
+
+End Derivation.
+
+Section Boundary_Derivations.
 
   Context {σ : shape_system}
           {Σ : signature σ}.
 
-  Definition CCs_of_Flat_Type_Theory (T : flat_type_theory Σ)
-    : Closure.system (judgement_total Σ)
-    := Structural_CCs Σ + Family.bind T FlatRule.closure_system.
+  (* TODO: consider naming conventions for types of the form “derivation of X from Y” *)
+  Definition Derivation_Judgt_Bdry_Instance
+      {Σ : signature σ} (T : flat_type_theory Σ)
+      {jf} (jbi : Judgement.boundary Σ jf)
+      (H : family (judgement_total Σ))
+    : Type
+  :=
+    forall (i : presupposition_of_boundary jbi),
+      Derivation_from_Flat_Type_Theory T H (presupposition_of_boundary _ i).
 
-  Definition Derivation_from_Flat_Type_Theory (T : flat_type_theory Σ) H
-    : judgement_total Σ -> Type
-    := Closure.derivation (CCs_of_Flat_Type_Theory T) H.
+End Boundary_Derivations.
 
-End Derivability_from_Flat_Type_Theory.
-
+(** “Derivable rules” over a type theory;
+or, to be precise, _derivations_ of flat rules over a flat type theory. *)
 Section Derivable_Rules.
-  (* “Derivable rules” over a type theory;
-  or, to be precise, _derivations_ of flat rules over a flat type theory. *)
 
   Context {σ : shape_system}
           {Σ : signature σ}.
@@ -42,6 +66,7 @@ Section Derivable_Rules.
 
 End Derivable_Rules.
 
+(* TODO: probably this section should be broken out to a separate file. *)
 Section TT_Maps.
 
   Context `{H : Funext}.
@@ -61,25 +86,7 @@ Section TT_Maps.
                          T'
      }.
 
-  (* TODO: upstream! *)
-  Definition Fmap_Raw_Context_Map
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {γ γ'} (g : Context.map Σ γ' γ)
-    : Context.map Σ' γ' γ
-  := fun i => (Expression.fmap f (g i)).
-
-  (* TODO: upstream! *)
-  Lemma fmap_Raw_Subst
-      {Σ Σ' : signature σ}
-      (f : Signature.map Σ Σ')
-      {γ γ'} (g : Context.map Σ γ' γ)
-      {cl} (e : raw_expression Σ cl γ)
-    : Expression.fmap f (substitute g e)
-    = substitute (Fmap_Raw_Context_Map f g) (Expression.fmap f e).
-  Proof.
-  Admitted.
-
-  (* TODO: abstract [Family_Map_over] or something, i.e. a displayed-category version of family maps, for use in definitions like this? *)
+  (* TODO: perhaps abstract [Family_Map_over] or something, i.e. a displayed-category version of family maps, for use in definitions like this? *)
   Definition Fmap_Structural_CCs
       {Σ Σ' : signature σ}
       (f : Signature.map Σ Σ')
@@ -115,12 +122,12 @@ Section TT_Maps.
           -- eapply concat. { refine (plusone_comp_one _ _ _ _ _ _). }
              eapply concat. Focus 2.
                { apply ap. refine (plusone_comp_one _ _ _ _ _ _)^. } Unfocus.
-             apply inverse. apply Fmap_Raw_Weaken.
+             apply inverse. apply fmap_rename.
           -- intros x. cbn in x.
              eapply concat. { refine (plusone_comp_inj _ _ _ _ _ _ _). }
              eapply concat. Focus 2.
                { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. } Unfocus.
-             apply inverse. apply Fmap_Raw_Weaken.
+             apply inverse. apply fmap_rename.
     - (* empty context *)
       exists (inl (inl (inl None))).
       cbn. apply Closure.rule_eq.
@@ -135,7 +142,7 @@ Section TT_Maps.
       + refine (inl (inl (inr (inl _)))).
         exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
-        exists (Fmap_Raw_Context_Map f g).
+        exists (fmap_raw_context_map f g).
         exists hjf.
         exact (fmap_hypothetical_judgement f hjfi).
       + cbn. apply Closure.rule_eq; cbn.
@@ -147,7 +154,7 @@ Section TT_Maps.
             apply (ap (fun x => (_; x))).
             apply (ap (fun x => (_; x))).
             apply path_forall. intros [ [ [] | ] | ].
-            ++ refine (fmap_Raw_Subst _ _ _).
+            ++ refine (fmap_substitute _ _ _).
             ++ apply idpath.
           -- apply idpath.
           (* Family_fmap_adjoin *)
@@ -155,15 +162,15 @@ Section TT_Maps.
           apply (ap (fun x => (_; x))).
           apply path_forall. intros i.
           unfold fmap_hypothetical_judgement.
-          refine (fmap_Raw_Subst _ _ _)^.
+          refine (fmap_substitute _ _ _)^.
     - (* substitution equality *)
       destruct c3 as [ Γ [Γ' [g [g' [hjf hjfi]]]]].
       simple refine (_;_).
       + refine (inl (inl (inr (inr _)))).
         exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
-        exists (Fmap_Raw_Context_Map f g).
-        exists (Fmap_Raw_Context_Map f g').
+        exists (fmap_raw_context_map f g).
+        exists (fmap_raw_context_map f g').
         exists hjf.
         exact (fmap_hypothetical_judgement f hjfi).
       + admit.

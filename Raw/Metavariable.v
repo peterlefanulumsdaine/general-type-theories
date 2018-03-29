@@ -1,3 +1,4 @@
+Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
@@ -27,7 +28,7 @@ Section AlgebraicExtension.
 
   Context {σ : shape_system}.
 
-  Local Definition extend (Σ : signature σ) (a : @arity σ) : signature σ.
+  Local Definition extend (Σ : signature σ) (a : arity σ) : signature σ.
   Proof.
     refine (Family.sum Σ _).
     refine (Family.fmap _ a).
@@ -35,13 +36,20 @@ Section AlgebraicExtension.
     exact (fst cl_γ, simple_arity (snd cl_γ)).
   Defined.
 
-  Definition include_metavariable {Σ : signature σ} {a : @arity σ}
+  Definition include_metavariable {Σ : signature σ} {a : arity σ}
     : a -> extend Σ a
   := inr.
 
-  Definition include_symbol {Σ : signature σ} {a : @arity σ}
+  Local Definition include_symbol_carrier {Σ : signature σ} {a : arity σ}
     : Σ -> extend Σ a
   := inl.
+
+  Definition include_symbol {Σ : signature σ} {a : arity σ}
+     : (Signature.map Σ (extend Σ a)).
+  Proof.
+    exists include_symbol_carrier.
+    intros; apply idpath.
+  Defined.
 
   (* To use rules, one *instantiates* their metavariables, as raw syntax of the ambient
      signature, over some context. *)
@@ -201,3 +209,4 @@ Section Signature_Maps.
   := fmap (Family.idmap _) f.
 
 End Signature_Maps.
+

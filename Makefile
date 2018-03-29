@@ -24,11 +24,14 @@ MODULES := \
 	Raw/FlatRule \
 	Raw/Syntax \
 	Raw/SubstitutionFacts \
-	Raw/Derivation \
 	Raw/StructuralRule \
 	Raw/Rule \
 	Raw/TypeTheory \
-	Typed/TypeTheory
+	Typed/Derivation \
+	Typed/TypeTheory \
+	Metatheorems/Presuppositions \
+	Metatheorems/CutElimination \
+	Metatheorems/UniqueTyping
 
 VS      := $(MODULES:%=%.v)
 
