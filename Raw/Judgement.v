@@ -84,9 +84,9 @@ Section Judgement.
          { Γ : raw_context Σ & hypothetical_judgement hjf Γ }
        end.
 
-  (** I know the name [judgement_total] is ugly, but I do not want to introduce "instance" all over the place.
+  (* NOTE [AB]: I know the name [judgement_total] is ugly, but I do not want to introduce "instance" all over the place.
       Will first check to see which types are most frequently mentioned in the rest of the code. *)
-    (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly. *)
+  (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly (among many other things). *)
   Definition judgement_total
     := { jf : form & judgement jf }.
 
@@ -105,9 +105,23 @@ Section Judgement.
       apply bdry.
   Defined.
 
+  Definition boundary_of_judgement
+      {jf} (j : judgement jf)
+    : boundary jf.
+  Proof.
+    destruct jf as [ | hjf].
+    - constructor. (* context judgement: no boundary *)
+    - (* hyp judgement *)
+      cbn in j. exists (pr1 j). intros i.
+      destruct hjf as [ ob_hjf | eq_hjf ].
+      + exact (pr2 j (Some i)).
+      + exact (pr2 j i).
+  Defined.
+
 End Judgement.
 
 Arguments hypothetical_boundary : simpl nomatch.
+Arguments boundary_of_judgement {_ _ _} _ : simpl nomatch.
 
 Section Judgement_Notations.
 
@@ -252,24 +266,10 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
         exact (pr1 jbi).
   Defined.
 
-  (* TODO: move up in this file *)
-  Definition boundary_of_judgement
-      {Σ : signature σ} {jf} (j : judgement Σ jf)
-    : boundary Σ jf.
-  Proof.
-    destruct jf as [ | hjf].
-    - constructor. (* context judgement: no boundary *)
-    - (* hyp judgement *)
-      cbn in j. exists (pr1 j). intros i.
-      destruct hjf as [ ob_hjf | eq_hjf ].
-      + exact (pr2 j (Some i)).
-      + exact (pr2 j i).
-  Defined.
-
   Definition presupposition
-      {Σ : signature σ} {jf} (ji : judgement Σ jf)
+      {Σ : signature σ} (j : judgement_total Σ)
     : family (judgement_total Σ)
-  := presupposition_of_boundary (boundary_of_judgement ji).
+  := presupposition_of_boundary (boundary_of_judgement (pr2 j)).
   
 End Presuppositions.
 

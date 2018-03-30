@@ -13,8 +13,8 @@ Require Import Typed.Derivation.
 Theorem closed_presupposition_derivation {σ} {T : Type_Theory σ}
      {j : judgement_total (Signature_of_Type_Theory T)}
      (dj : Derivation_from_Type_Theory T [<>] j)
-     {p : presupposition (pr2 j) }
-  : Derivation_from_Type_Theory T [<>] (presupposition (pr2 j) p).
+     {p : presupposition j }
+  : Derivation_from_Type_Theory T [<>] (presupposition j p).
 Abort.
 (** In order to establish this, we require a few bits of background machinery:
   - for the high level structure of the proof, abstractions of the notions of “closed under presuppositions” to flat type theories and closure systems;
@@ -50,8 +50,8 @@ Section Derivability_Under_Instantiation.
       {Σ : signature σ}
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
       (j : judgement_total _)
-    : presupposition (pr2 (Metavariable.instantiate_judgement I j))
-      = Family.fmap (Metavariable.instantiate_judgement I) (presupposition (pr2 j)).
+    : presupposition (Metavariable.instantiate_judgement I j)
+      = Family.fmap (Metavariable.instantiate_judgement I) (presupposition j).
   Proof.
     destruct j as [[ | hjf] j].
     - simple refine (Family.eq _ _); try apply idpath.
@@ -83,7 +83,7 @@ Module Closure.
 (* TODO: all of this could be upstreamed to [Closure].  Should it be?  Or is it too localised in motivation to make sense there?  *)
 
   (* TODO: consider whether this can be better named *)
-  (* This condition abstracts  presupposition-closedness of a flat type theory:
+  (* This condition abstracts presupposition-closedness of a flat type theory:
    here [P] should be thought of as the presuppositions of a judgement. *)
   Definition presupposition_closed {X : Type}
       (P : X -> family X) (C : Closure.system X)
@@ -119,10 +119,10 @@ Section Presuppositions_Derivable.
   Context {σ : shape_system} `{Funext}.
 
   Definition presupposition_closed_structural_closure_system {Σ : signature σ}
-      (P := fun (j : judgement_total Σ) => presupposition (pr2 j))
+      (P := fun (j : judgement_total Σ) => presupposition j)
     : Closure.presupposition_closed P (StructuralRule.Structural_CCs _).
   Proof.
-  Admitted.    
+  Admitted.
  
   (* TODO: make Σ implicit in fields of [flat_rule] *)
   Definition presupposition_closed
@@ -140,7 +140,7 @@ Section Presuppositions_Derivable.
   Theorem closure_system_of_presupposition_closed_flat_type_theory
       {Σ : signature σ} {T : flat_type_theory Σ}
       (T_presup_closed : presupposition_closed T)
-      (P := fun (j : judgement_total Σ) => presupposition (pr2 j))
+      (P := fun (j : judgement_total Σ) => presupposition j)
     : Closure.presupposition_closed P (CCs_of_Flat_Type_Theory T).
   Proof.
     intros [r_str | r_log ].
@@ -156,7 +156,7 @@ Section Presuppositions_Derivable.
                                              (flat_rule_conclusion _ (T r)))).
       assert (H_presup_inst : Pr =
           Family.fmap (Metavariable.instantiate_judgement r_args)
-                      (presupposition (pr2 (flat_rule_conclusion _ (T r))))).
+                      (presupposition (flat_rule_conclusion _ (T r)))).
       { apply presupposition_instantiate. }
       clearbody Pr. destruct H_presup_inst^.
       intros p. apply instantiate_derivation, T_presup_closed.
@@ -171,12 +171,12 @@ Section Presuppositions_Derivable.
       {j : judgement_total Σ} {hyps : family _}
       (d_j : Derivation_from_Flat_Type_Theory T hyps j)
       (d_hyp_presups :
-         forall (h : hyps) (p : presupposition (pr2 (hyps h))),
+         forall (h : hyps) (p : presupposition (hyps h)),
            Derivation_from_Flat_Type_Theory T hyps (presupposition _ p))
-      {p : presupposition (pr2 j) }
+      {p : presupposition j }
     : Derivation_from_Flat_Type_Theory T hyps (presupposition _ p).
   Proof.
-    refine (Closure.presupposition_derivation (fun j => presupposition j.2) _ _ _ _).
+    refine (Closure.presupposition_derivation (fun j => presupposition j) _ _ _ _).
     - apply closure_system_of_presupposition_closed_flat_type_theory.
       apply T_presup_closed.
     - apply d_hyp_presups.
@@ -194,10 +194,10 @@ Section Presuppositions_Derivable.
       {hyps : family _}    
       (dj : Derivation_from_Type_Theory T hyps j)
       (d_hyp_presups :
-         forall (h : hyps) (p : presupposition (pr2 (hyps h))),
+         forall (h : hyps) (p : presupposition (hyps h)),
            Derivation_from_Type_Theory T hyps (presupposition _ p))
-      {p : presupposition (pr2 j) }
-    : Derivation_from_Type_Theory T hyps (presupposition (pr2 j) p).
+      {p : presupposition j }
+    : Derivation_from_Type_Theory T hyps (presupposition j p).
   Proof.
     apply presupposition_derivation_from_flat; try assumption.
     apply presupposition_closed_flatten.
@@ -206,18 +206,11 @@ Section Presuppositions_Derivable.
   Corollary closed_presupposition_derivation {T : Type_Theory σ}
       {j : judgement_total (Signature_of_Type_Theory T)}
       (dj : Derivation_from_Type_Theory T [<>] j)
-      {p : presupposition (pr2 j) }
-    : Derivation_from_Type_Theory T [<>] (presupposition (pr2 j) p).
+      {p : presupposition j }
+    : Derivation_from_Type_Theory T [<>] (presupposition j p).
   Proof.
     apply presupposition_derivation; try assumption.
     intros [].
   Defined.
 
-  (* Sketch proof:
-
-  - this should hold for flat type theories, provided their flat rules have the property that all the presuppositions of the conclusion are derivable assuming the premises
-  - then, all flat rules produced from real rules should have that property.
-  *)
-
 End Presuppositions_Derivable.
-  
