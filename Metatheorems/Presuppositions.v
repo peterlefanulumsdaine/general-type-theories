@@ -44,6 +44,18 @@ Section Derivability_Under_Instantiation.
   Arguments Metavariable.instantiate_expression : simpl nomatch.
   Arguments Metavariable.instantiate_context : simpl nomatch.
 
+
+Local Ltac recursive_destruct x :=
+    cbn in x;
+    try match type of x with
+    | hypothetical_form => destruct x as [ cl | cl ]; recursive_destruct cl  
+    | syntactic_class => destruct x as [ | ]
+    | option _ => destruct x as [ y | ]; [recursive_destruct y | idtac ] 
+    | Empty => destruct x
+    | Unit => destruct x as []
+    | _ => idtac
+    end.
+
   (* TODO: upstream, but to where? *)
   (* TODO consider whether [presupposition] could be refactored to make this easier. *)
   Definition presupposition_instantiate `{Funext}
@@ -67,12 +79,10 @@ Section Derivability_Under_Instantiation.
         simple refine (path_sigma _ _ _ _ _); try apply idpath.
         simple refine (path_sigma _ _ _ _ _); try apply idpath.
         apply path_forall; intros k.
-        repeat destruct hjf as [hjf | hjf];
-          repeat destruct i as [i | i];
-          try destruct i;
-          repeat destruct k as [k | k];
-          try destruct k;
-          try apply idpath.
+        recursive_destruct hjf;
+        recursive_destruct i;
+        recursive_destruct k;
+        try apply idpath.
       + (* raw context *)
         apply idpath.
   Defined.
