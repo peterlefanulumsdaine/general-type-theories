@@ -6,6 +6,7 @@ Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 Require Import Raw.Rule.
 Require Import Raw.TypeTheory.
+Require Import Raw.StructuralRule.
 Require Import Typed.Closure.
 Require Import Typed.Derivation.
 Require Import Typed.StructuralRule.
@@ -97,7 +98,7 @@ Section Presuppositions_Derivable.
 
   Definition presupposition_closed_structural_closure_system {Σ : signature σ}
       (P := fun (j : judgement_total Σ) => presupposition j)
-    : Closure.presupposition_closed P (StructuralRule.Structural_CCs _).
+    : Closure.presupposition_closed P (structural_rule _).
   Proof.
     apply Closure.well_typed_implies_presupposition_closed.
     apply StructuralRule.well_typed.

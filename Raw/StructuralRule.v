@@ -6,7 +6,6 @@ Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 
 (**
-
   This module defines the “standard rules” — the rules which are not explicitly specified
   in a type theory, but are always assumed to be present. These fall into several groups.
 
@@ -22,6 +21,17 @@ Require Import Raw.Syntax.
   All of the above are then collected as a single family [Structural_CCs].
 *)
 
+(** Naming convention for rule names: we prefix a rule name with a keyword, depending on
+    what kind of rule it is:
+
+    -- [ctx_XYZ] for context rule
+    -- [term_XYZ] for term formation
+    -- [type_XYZ] for type formation
+    -- [tmeq_XYZ] for term equality
+    -- [tyeq_XYZ] for type equality
+    -- [subst_XYZ] for substitution rules
+*)
+
 Section StructuralRules.
 
 Context {σ : shape_system}.
@@ -29,7 +39,7 @@ Context (Σ : @signature σ).
 
 Section Context.
 
-Local Definition context_empty : Closure.rule (judgement_total Σ).
+Local Definition ctx_empty : Closure.rule (judgement_total Σ).
 Proof.
   split.
   (* No premises: *)
@@ -38,7 +48,7 @@ Proof.
   - exact [Cxt! |- [::] !].
 Defined.
 
-Local Definition context_extend : Closure.system (judgement_total Σ).
+Local Definition ctx_extend : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ & raw_type Σ Γ }.
   intros [ Γ A ]; split.
@@ -51,7 +61,7 @@ Proof.
 Defined.
 
 Local Definition context : Closure.system (judgement_total Σ)
-  := Family.adjoin context_extend context_empty.
+  := Family.adjoin ctx_extend ctx_empty.
 
 (**
 
@@ -86,7 +96,7 @@ Section Substitution.
 
 (** General substitution along context maps. *)
 
-Local Definition substitution_apply : Closure.system (judgement_total Σ).
+Local Definition subst_apply : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ
     & { Γ' : raw_context Σ
@@ -113,7 +123,7 @@ Proof.
 Defined.
 
 (** Substitution respects *equality* of context morphisms *)
-Local Definition substitution_equality : Closure.system (judgement_total Σ).
+Local Definition subst_equal : Closure.system (judgement_total Σ).
 Proof.
   exists {   Γ : raw_context Σ
     & { Γ' : raw_context Σ
@@ -158,7 +168,7 @@ Proof.
 Defined.
 
 Local Definition substitution : Closure.system (judgement_total Σ)
-  := substitution_apply + substitution_equality.
+  := subst_apply + subst_equal.
 
 End Substitution.
 
@@ -179,8 +189,9 @@ Section HypotheticalStructuralRules.
 
 *)
 
-Definition var_flat_rule : flat_rule Σ.
+Local Definition variable : Closure.system (judgement_total Σ).
 Proof.
+  apply FlatRule.closure_system.
   (* arity/metavariables of rule *)
   pose (Metas := [<
       (class_type , shape_empty σ )    (* [ A ] *)
@@ -200,15 +211,16 @@ Proof.
     + exact [M/ A /].
 Defined.
 
-Section EqualityRules.
 
-(* rule REFL_TyEq
+Section Equality.
+
+(* rule tyeq_refl
     ⊢ A type
 -----------------
     ⊢ A ≡ A
 *)
 
-Definition refl_ty_eq_flat_rule : flat_rule Σ.
+Local Definition tyeq_refl : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -230,13 +242,13 @@ Proof.
     + exact [M/ A /].
 Defined.
 
-(* rule SYMM_TyEq
+(* rule tyeq_sym
    ⊢ A ≡ B
 --------------
    ⊢ B ≡ A
 *)
 
-Definition symm_ty_eq_flat_rule : flat_rule Σ.
+Local Definition tyeq_sym : flat_rule Σ.
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
@@ -261,13 +273,13 @@ Proof.
     + exact [M/ A /].
 Defined.
 
-(* rule TRANS_TyEq
+(* rule tyeq_tran
   ⊢ A ≡ B     ⊢ B ≡ C
 -----------------------
        ⊢ A ≡ C
 *)
 
-Definition trans_ty_eq_flat_rule : flat_rule Σ.
+Local Definition tyeq_tran : flat_rule Σ.
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
@@ -299,13 +311,13 @@ Proof.
     + exact [M/ C /].
 Defined.
 
-(* rule REFL_TmEq
+(* rule tmeq_refl
   ⊢ u : A
 -----------
 ⊢ u ≡ u : A
 *)
 
-Definition refl_tm_eq_flat_rule : flat_rule Σ.
+Local Definition tmeq_refl : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -331,13 +343,13 @@ Proof.
     + exact [M/ u /].
 Defined.
 
-(* rule SYMM_TmEq
+(* rule tmeq_sym
    ⊢ u ≡ v : A
 ----------------
    ⊢ v ≡ u : A
 *)
 
-Definition symm_tm_eq_flat_rule : flat_rule Σ.
+Local Definition tmeq_sym : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -366,13 +378,13 @@ Proof.
     + exact [M/ u /].
 Defined.
 
-(* rule TRANS_TmEq
+(* rule tmeq_tran
   ⊢ u ≡ v : A     ⊢ v ≡ w : A
 -------------------------------
          ⊢ u ≡ w : A
 *)
 
-Definition trans_tm_eq_flat_rule : flat_rule Σ.
+Local Definition tmeq_tran : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -409,7 +421,7 @@ Proof.
     + exact [M/ w /].
 Defined.
 
-(* rule COERCE_Tm
+(* rule term_convert
 
  ⊢ A, B type
  ⊢ A ≡ B type
@@ -418,7 +430,7 @@ Defined.
  ⊢ u : B
 *)
 
-Definition coerce_tm_flat_rule : flat_rule Σ.
+Local Definition term_convert : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -458,7 +470,7 @@ Proof.
     + exact [M/ B /].
 Defined.
 
-(* rule COERCE_TmEq
+(* rule tmeq_convert
 
  ⊢ A, B type
  ⊢ A ≡ B type
@@ -468,7 +480,7 @@ Defined.
  ⊢ u = u' : B
 *)
 
-Definition coerce_tmeq_flat_rule : flat_rule Σ.
+Local Definition tmeq_convert : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -501,26 +513,25 @@ Proof.
   - exact [TmEq! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ B /] !].
 Defined.
 
-Definition Equality_Flat_Rules : family (flat_rule Σ)
-:= [< refl_ty_eq_flat_rule
-    ; symm_ty_eq_flat_rule
-    ; trans_ty_eq_flat_rule
-    ; refl_tm_eq_flat_rule
-    ; symm_tm_eq_flat_rule
-    ; trans_tm_eq_flat_rule
-    ; coerce_tm_flat_rule
-    ; coerce_tmeq_flat_rule
-  >].
+Local Definition equality : family (rule (judgement_total Σ)) :=
+  Family.bind
+    [< tyeq_refl
+    ; tyeq_sym
+    ; tyeq_tran
+    ; tmeq_refl
+    ; tmeq_sym
+    ; tmeq_tran
+    ; term_convert
+    ; tmeq_convert
+    >]
+    FlatRule.closure_system.
 
-End EqualityRules.
+End Equality.
 
 End HypotheticalStructuralRules.
 
-Definition Structural_CCs : Closure.system (judgement_total Σ)
-:= context
-  + substitution
-  + FlatRule.closure_system var_flat_rule
-  + Family.bind Equality_Flat_Rules FlatRule.closure_system.
+Definition structural_rule : Closure.system (judgement_total Σ)
+  := context + substitution + variable + equality.
 
 (* TODO: add Haskell-style >= notation for bind? *)
 

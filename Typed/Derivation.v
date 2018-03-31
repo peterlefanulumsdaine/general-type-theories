@@ -16,7 +16,7 @@ Section Derivation.
   Definition CCs_of_Flat_Type_Theory
       {Σ : signature σ} (T : flat_type_theory Σ)
     : Closure.system (judgement_total Σ)
-  := Structural_CCs Σ + Family.bind T FlatRule.closure_system.
+  := structural_rule Σ + Family.bind T FlatRule.closure_system.
 
   Definition Derivation_from_Flat_Type_Theory
       {Σ : signature σ} (T : flat_type_theory Σ) H
@@ -91,8 +91,8 @@ Section TT_Maps.
       {Σ Σ' : signature σ}
       (f : Signature.map Σ Σ')
     : Family.map
-        (Family.fmap (Closure.fmap (fmap_judgement_total f)) (Structural_CCs Σ))
-        (Structural_CCs Σ').
+        (Family.fmap (Closure.fmap (fmap_judgement_total f)) (structural_rule Σ))
+        (structural_rule Σ').
   Proof.
     (* TODO: possible better approach:
        - [Fmap_Family] of families commutes with sums;
