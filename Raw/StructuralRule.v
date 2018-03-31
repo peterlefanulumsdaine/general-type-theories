@@ -29,7 +29,7 @@ Context (Σ : @signature σ).
 
 Section ContextFormation.
 
-Definition empty_context_cc : Closure.rule (judgement_total Σ).
+Local Definition context_empty : Closure.rule (judgement_total Σ).
 Proof.
   split.
   (* No premises: *)
@@ -38,7 +38,7 @@ Proof.
   - exact [Cxt! |- [::] !].
 Defined.
 
-Definition context_extension_cc : Closure.system (judgement_total Σ).
+Local Definition context_extend : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ & raw_type Σ Γ }.
   intros [ Γ A ]; split.
@@ -50,8 +50,8 @@ Proof.
   - exact [Cxt! |- (Context.extend Γ A) !].
 Defined.
 
-Definition context_ccs : Closure.system (judgement_total Σ)
-  := Family.adjoin context_extension_cc empty_context_cc.
+Local Definition context_rule : Closure.system (judgement_total Σ)
+  := Family.adjoin context_extend context_empty.
 
 (**
 
@@ -517,11 +517,11 @@ End EqualityRules.
 End HypotheticalStructuralRules.
 
 Definition Structural_CCs : Closure.system (judgement_total Σ)
-:= context_ccs
+:= context_rule
   + subst_ccs
   + FlatRule.closure_system var_flat_rule
   + Family.bind Equality_Flat_Rules FlatRule.closure_system.
+
 (* TODO: add Haskell-style >= notation for bind? *)
-(* TODO: capitalise naming in [Context_CCs], etc. *)
 
 End StructuralRules.

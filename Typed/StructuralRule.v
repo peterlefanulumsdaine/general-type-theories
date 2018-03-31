@@ -32,8 +32,8 @@ Section Welltypedness.
     Family.bind (Equality_Flat_Rules Σ) FlatRule.closure_system.
 
   Lemma context_ccs_well_typed
-    : forall r : context_ccs Σ,
-      Closure.rule_well_typed presupposition C (context_ccs _ r).
+    : forall r : StructuralRule.context_rule Σ,
+      Closure.rule_well_typed presupposition C (StructuralRule.context_rule _ r).
   Proof.
     intros r. destruct r as [  [Γ A] | ].
     - split. (* context extension *)
