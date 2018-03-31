@@ -8,10 +8,10 @@ Definition is_well_founded {X : Type} (R : relation X)
 Record well_founded_order {X : Type}
 := { well_founded_order_lt :> relation X
    ; well_founded : is_well_founded well_founded_order_lt
-   ; transitive : Transitive well_founded_order_lt
+   ; transitive : Transitive well_founded_order_lt (* TODO: rename this *)
  }.
 
-Arguments well_founded_order _ : clear implicits.
+Arguments well_founded_order : clear implicits.
 
 Identity Coercion id_relation : relation >-> Funclass.
 (* Required in order to apply [well_founded_order] (or other things coercing to [relation]) to arguments *)
@@ -80,6 +80,128 @@ Proof.
       cbn in *. exists (idpath _).
       apply (transitive (lt_Y x) _ y'); assumption.
 Defined.
+
+(* If [f : X -> Y] from a well-ordered [X] to a [Y] with a relation reflects order then
+   a predicate of the form [P o f] is hereditary. *)
+Lemma push_along_embedding {X Y}
+      (lt_X : well_founded_order X) (lt_Y : relation Y) (f : X -> Y) (P : Y -> Type) :
+  (forall x x', lt_Y (f x) (f x') -> lt_X x x') ->
+  (forall x : X, (forall x', lt_Y (f x') (f x) -> P (f x')) -> P (f x)) ->
+  (forall x : X, P (f x)).
+Proof.
+  intro f_embeds.
+  intros p x.
+  apply (well_founded lt_X (fun x => P (f x))).
+  intros y H.
+  apply p.
+  intros ? ?.
+  apply H.
+  now apply f_embeds.
+Defined.
+
+Local Definition sum {X Y} :
+  well_founded_order X -> well_founded_order Y -> well_founded_order (X + Y).
+Proof.
+  intros lt_X lt_Y.
+  pose (lt := fun (u v : X + Y) =>
+                match u, v with
+                | inl x, inl x' => lt_X x x'
+                | inr y, inr y' => lt_Y y y'
+                | _, _ => False
+                end).
+  exists lt.
+  - intros P f [x | y].
+    + apply (push_along_embedding lt_X lt inl P) ; auto.
+      intros ? H.
+      apply f.
+      intros [? ? | _ []].
+      now apply H.
+    + apply (push_along_embedding lt_Y lt inr P) ; auto.
+      intros ? H.
+      apply f.
+      intros [_ [] | ? ?].
+      now apply H.
+  - intros [x1|y1] [x2|y2] [x3|y3] H1 H2 ; try (now destruct H1 || now destruct H2).
+    + now apply (transitive _ _ x2).
+    + now apply (transitive _ _ y2).
+Defined.
+
+Local Definition empty : well_founded_order Empty.
+Proof.
+  refine {| well_founded_order_lt := (fun _ _ => True) |}.
+  - intros _ _ [].
+  - intros [].
+Defined.
+
+(** Well-founded order on an option type where [None] is the last element. *)
+Local Definition linear_option {X} (lt_X : well_founded_order X)
+  : well_founded_order (option X).
+Proof.
+  pose (lt := fun (x y : option X) =>
+                       match x, y with
+                       | None, _ => False
+                       | Some _, None  => True
+                       | Some u, Some v => lt_X u v
+                       end).
+  simple refine {| well_founded_order_lt := lt |}.
+  - intros P f [x|].
+    + apply (well_founded lt_X (fun z => P (Some z))).
+      intros ? H.
+      apply f.
+      intros [?  ? | []].
+      now apply H.
+    + apply f.
+      intros [y _|[]].
+      apply (well_founded lt_X (fun z => P (Some z))).
+      intros ? H.
+      apply f.
+      intros [?  ? | []].
+      now apply H.
+  - intros [x|] [y|] [z|] lt_x_y lt_y_z ; try now destruct lt_x_y.
+    + now apply (transitive lt_X _ y).
+    + constructor.
+Defined.
+
+(** Well-founded order on an option type where [None] is incomparable to [Some _]. *)
+Local Definition flat_option {X} {lt_X : well_founded_order X}
+  : well_founded_order (option X).
+Proof.
+  pose (lt := fun (x y : option X) =>
+                match x, y with
+                | None, _ => False
+                | _, None => False
+                | Some u, Some v => lt_X u v
+                end).
+  simple refine {| well_founded_order_lt := lt |}.
+  - intros P f [x|].
+    + apply (well_founded lt_X (fun z => P (Some z))).
+      intros ? H.
+      apply f.
+      intros [?  ? | []].
+      now apply H.
+    + apply f.
+      intros [y|] [].
+  - intros [x|] [y|] [z|] lt_x_y lt_y_z ; try now destruct lt_x_y.
+    + now apply (transitive lt_X _ y).
+    + destruct lt_y_z.
+Defined.
+
+(** A tactic that genereates a well-order on the type [option (option (.... empty))]. *)
+Ltac use_linear_order :=
+  match goal with
+  | |- well_founded_order Empty => exact empty
+  | |- well_founded_order (option ?T) => apply linear_option ; use_linear_order
+  | _ => fail
+  end.
+
+(** A tactic that genereates a flat well-order on a combination of +, option and Empty. *)
+Ltac use_flat_order :=
+  match goal with
+  | |- well_founded_order Empty => exact empty
+  | |- well_founded_order (option _) => apply linear_option ; use_flat_order
+  | |- well_founded_order (Datatypes.sum _ _) => apply sum ; use_flat_order
+  | _ => fail
+  end.
 
 Local Definition lex_product {X Y}
     (lt_X : well_founded_order X) (lt_Y : well_founded_order Y)
