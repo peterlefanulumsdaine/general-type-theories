@@ -27,7 +27,7 @@ Section StructuralRules.
 Context {σ : shape_system}.
 Context (Σ : @signature σ).
 
-Section ContextFormation.
+Section Context.
 
 Local Definition context_empty : Closure.rule (judgement_total Σ).
 Proof.
@@ -50,7 +50,7 @@ Proof.
   - exact [Cxt! |- (Context.extend Γ A) !].
 Defined.
 
-Local Definition context_rule : Closure.system (judgement_total Σ)
+Local Definition context : Closure.system (judgement_total Σ)
   := Family.adjoin context_extend context_empty.
 
 (**
@@ -80,15 +80,15 @@ Local Definition context_rule : Closure.system (judgement_total Σ)
     allow derivations to take place over not-yet-well-typed contexts)?
 *)
 
-End ContextFormation.
+End Context.
 
 Section Substitution.
 
 (** General substitution along context maps. *)
 
-Definition subst_cc : Closure.system (judgement_total Σ).
+Local Definition substitution_apply : Closure.system (judgement_total Σ).
 Proof.
-  exists {   Γ : raw_context Σ
+  exists { Γ : raw_context Σ
     & { Γ' : raw_context Σ
     & { f : Context.map Σ Γ' Γ
     & { hjf : Judgement.hypothetical_form
@@ -113,7 +113,7 @@ Proof.
 Defined.
 
 (** Substitution respects *equality* of context morphisms *)
-Definition subst_eq_cc : Closure.system (judgement_total Σ).
+Local Definition substitution_equality : Closure.system (judgement_total Σ).
 Proof.
   exists {   Γ : raw_context Σ
     & { Γ' : raw_context Σ
@@ -157,8 +157,8 @@ Proof.
       exact (substitute f' (hjfi None)).
 Defined.
 
-Definition subst_ccs : Closure.system (judgement_total Σ)
-  := subst_cc + subst_eq_cc.
+Local Definition substitution : Closure.system (judgement_total Σ)
+  := substitution_apply + substitution_equality.
 
 End Substitution.
 
@@ -517,8 +517,8 @@ End EqualityRules.
 End HypotheticalStructuralRules.
 
 Definition Structural_CCs : Closure.system (judgement_total Σ)
-:= context_rule
-  + subst_ccs
+:= context
+  + substitution
   + FlatRule.closure_system var_flat_rule
   + Family.bind Equality_Flat_Rules FlatRule.closure_system.
 
