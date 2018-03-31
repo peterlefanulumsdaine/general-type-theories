@@ -401,7 +401,7 @@ Section Flattening.
       {Σ'} (f : Signature.map (ae_signature_for_premise _ i) Σ')
       (Sr : Judgement.is_object (ae_hjf_of_premise _ i)
            -> { S : Σ'
-             & (symbol_arity S = simple_arity (ae_proto_cxt_of_premise _ i))
+             & (symbol_arity S = Arity.simple (ae_proto_cxt_of_premise _ i))
              * (symbol_class S = Judgement.class_of (ae_hjf_of_premise _ i))})
    : judgement_total Σ'.
   Proof.

@@ -15,15 +15,17 @@ MODULES := \
 	Auxiliary/Closure \
 	Proto/ShapeSystem \
 	Proto/ShapeSystemExamples \
-	Raw/Signature \
-	Raw/Expression \
-	Raw/Substitution \
-	Raw/Context \
-	Raw/Judgement \
-	Raw/Metavariable \
-	Raw/FlatRule \
+	Raw/Syntax/SyntacticClass \
+	Raw/Syntax/Arity \
+	Raw/Syntax/Signature \
+	Raw/Syntax/Expression \
+	Raw/Syntax/Substitution \
+	Raw/Syntax/Context \
+	Raw/Syntax/Judgement \
+	Raw/Syntax/Metavariable \
+	Raw/Syntax/FlatRule \
 	Raw/Syntax \
-	Raw/SubstitutionFacts \
+	Raw/Substitution \
 	Raw/StructuralRule \
 	Raw/Rule \
 	Raw/TypeTheory \
@@ -91,6 +93,9 @@ clean:: Makefile.coq
 	$(MAKE) -f Makefile.coq clean
 	rm -f Makefile*.coq
 	rm -f html
+
+cleaner:
+	rm -f **/*.glob **/*.vo **/*.v.d **/*~
 
 html: all
 	mkdir -p html

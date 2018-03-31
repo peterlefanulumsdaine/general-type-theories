@@ -1,10 +1,11 @@
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Signature.
-Require Import Raw.Context.
-Require Import Raw.Judgement.
-Require Import Raw.Metavariable.
+Require Import Raw.Syntax.Arity.
+Require Import Raw.Syntax.Signature.
+Require Import Raw.Syntax.Context.
+Require Import Raw.Syntax.Judgement.
+Require Import Raw.Syntax.Metavariable.
 
 Section FlatRule.
 
@@ -36,19 +37,19 @@ Section FlatRule.
 
 End FlatRule.
 
-Section Flat_Type_Theory.
+Section FlatTypeTheory.
 
   Context {σ : shape_system}.
 
   Definition flat_type_theory (Σ : signature σ) : Type
      := family (flat_rule Σ).
 
-End Flat_Type_Theory.
+End FlatTypeTheory.
 
 Arguments closure_system {_ _} _.
 
 
-Section Signature_Maps.
+Section SignatureMaps.
 
   Context {σ : shape_system}.
 
@@ -70,7 +71,7 @@ Section Signature_Maps.
     apply Family.fmap, fmap, f.
   Defined.
   
-End Signature_Maps.
+End SignatureMaps.
 
   
 

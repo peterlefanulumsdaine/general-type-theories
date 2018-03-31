@@ -1,8 +1,8 @@
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Signature.
-Require Import Raw.Expression.
-Require Import Raw.Substitution.
+Require Import Raw.Syntax.Signature.
+Require Import Raw.Syntax.Expression.
+Require Import Raw.Syntax.Substitution.
 
 Section RawContext.
 

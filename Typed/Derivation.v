@@ -4,7 +4,7 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
-Require Import Raw.SubstitutionFacts.
+Require Import Raw.Substitution.
 Require Import Raw.StructuralRule.
 Require Import Raw.TypeTheory.
 

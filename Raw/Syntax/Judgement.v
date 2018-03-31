@@ -1,9 +1,11 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Signature.
-Require Import Raw.Expression.
-Require Import Raw.Context.
+Require Import Raw.Syntax.SyntacticClass.
+Require Import Raw.Syntax.Arity.
+Require Import Raw.Syntax.Signature.
+Require Import Raw.Syntax.Expression.
+Require Import Raw.Syntax.Context.
 
 Section Judgement.
   Context {σ : shape_system}.

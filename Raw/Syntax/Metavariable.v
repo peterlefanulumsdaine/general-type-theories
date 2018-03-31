@@ -2,11 +2,13 @@ Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Signature.
-Require Import Raw.Expression.
-Require Import Raw.Context.
-Require Import Raw.Substitution.
-Require Import Raw.Judgement.
+Require Import Raw.Syntax.SyntacticClass.
+Require Import Raw.Syntax.Arity.
+Require Import Raw.Syntax.Signature.
+Require Import Raw.Syntax.Expression.
+Require Import Raw.Syntax.Context.
+Require Import Raw.Syntax.Substitution.
+Require Import Raw.Syntax.Judgement.
 
 Section AlgebraicExtension.
 
@@ -33,7 +35,7 @@ Section AlgebraicExtension.
     refine (Family.sum Σ _).
     refine (Family.fmap _ a).
     intros cl_γ.
-    exact (fst cl_γ, simple_arity (snd cl_γ)).
+    exact (fst cl_γ, Arity.simple (snd cl_γ)).
   Defined.
 
   Definition include_metavariable {Σ : signature σ} {a : arity σ}
@@ -156,13 +158,13 @@ Context {σ : shape_system}.
 Context {Σ : signature σ}.
 
 Local Definition empty_args {γ}
-  : arguments Σ (simple_arity (shape_empty _)) γ
+  : arguments Σ (Arity.simple (shape_empty _)) γ
   := empty_rect _ shape_is_empty _.
 
 Local Definition extend_args {γ δ : σ}
-  : arguments Σ (simple_arity δ) γ
+  : arguments Σ (Arity.simple δ) γ
     -> raw_term Σ γ
-    -> arguments Σ (simple_arity (shape_extend _ δ)) γ.
+    -> arguments Σ (Arity.simple (shape_extend _ δ)) γ.
 Proof.
   intros ts t.
   simple refine (plusone_rect _ _ (shape_is_extend _ δ) _ _ _); cbn.
