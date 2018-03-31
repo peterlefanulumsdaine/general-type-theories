@@ -6,9 +6,10 @@ Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 Require Import Raw.Rule.
 Require Import Raw.TypeTheory.
+Require Import Typed.Closure.
 Require Import Typed.Derivation.
-
-
+Require Import Typed.StructuralRule.
+ 
 (** The goal of this file is the theorem that presuppositions of a derivable judgement are derivable, over any type theory: *)
 Theorem closed_presupposition_derivation {σ} {T : Type_Theory σ}
      {j : judgement_total (Signature_of_Type_Theory T)}
@@ -89,40 +90,6 @@ Local Ltac recursive_destruct x :=
 
 End Derivability_Under_Instantiation.
 
-Module Closure.
-(* TODO: all of this could be upstreamed to [Closure].  Should it be?  Or is it too localised in motivation to make sense there?  *)
-
-  (* TODO: consider whether this can be better named *)
-  (* This condition abstracts presupposition-closedness of a flat type theory:
-   here [P] should be thought of as the presuppositions of a judgement. *)
-  Definition presupposition_closed {X : Type}
-      (P : X -> family X) (C : Closure.system X)
-    : Type
-  := forall (r : C) (p : P (Closure.rule_conclusion (C r))),
-          Closure.derivation C (Closure.rule_premises (C r)) (P _ p).
-
-  Theorem presupposition_derivation
-      {X : Type} (P : X -> family X)
-      {C : Closure.system X}
-      (C_P_closed : presupposition_closed P C)
-      {H : family X}
-      (H_P_closed : forall (h : H) (p : P (H h)),
-          Closure.derivation C H (P _ p))
-      {x : X} (d_x : Closure.derivation C H x) (p : P x)
-    : Closure.derivation C H (P _ p).
-  Proof.
-    destruct d_x as [ x_hyp | r d_r_prems].
-    - (* case: derivqtion was just finding [j] as a hypothesis *)
-      apply H_P_closed.
-    - (* case: derivation ended with a rule of [T] *)
-      simple refine (Closure.graft _ _ _).
-      + exact (Closure.rule_premises (C r)).
-      + apply C_P_closed.
-      + apply d_r_prems.
-  Defined.
-
-End Closure.
-
 (** Main theorem: [presupposition_derivable]: the presuppositions of any derivable judgement are again derivable. *)
 Section Presuppositions_Derivable.
 
@@ -132,7 +99,9 @@ Section Presuppositions_Derivable.
       (P := fun (j : judgement_total Σ) => presupposition j)
     : Closure.presupposition_closed P (StructuralRule.Structural_CCs _).
   Proof.
-  Admitted.
+    apply Closure.well_typed_implies_presupposition_closed.
+    apply StructuralRule.well_typed.
+  Defined.
  
   (* TODO: make Σ implicit in fields of [flat_rule] *)
   Definition presupposition_closed
@@ -146,7 +115,6 @@ Section Presuppositions_Derivable.
     - exact (pr2 (flat_rule_conclusion _ r)).
   Defined.
 
-  (* TODO: change [presupposition] to be defined on [judgement_total] instead of [judgement] *)
   Theorem closure_system_of_presupposition_closed_flat_type_theory
       {Σ : signature σ} {T : flat_type_theory Σ}
       (T_presup_closed : presupposition_closed T)
@@ -172,8 +140,8 @@ Section Presuppositions_Derivable.
       intros p. apply instantiate_derivation, T_presup_closed.
   Defined.
 
-   (* if a flat type theory T is presup-closed, then so is its associated closure system. *)
 
+   (** If a flat type theory T is presup-closed, then so is its associated closure system. *)
   (* TODO: perhaps change def of flat rules to allow only _hypothetical_ judgements? *)
   Theorem presupposition_derivation_from_flat
       {Σ : signature σ}

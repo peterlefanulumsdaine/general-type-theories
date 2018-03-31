@@ -27,8 +27,12 @@ MODULES := \
 	Raw/StructuralRule \
 	Raw/Rule \
 	Raw/TypeTheory \
+	Typed/Closure \
 	Typed/Derivation \
+	Typed/FlatRule \
+	Typed/Rule \
 	Typed/TypeTheory \
+	Typed/StructuralRule \
 	Metatheorems/Presuppositions \
 	Metatheorems/CutElimination \
 	Metatheorems/UniqueTyping
