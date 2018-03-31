@@ -5,24 +5,29 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 
-(** This module defines the “standard rules” — the rules which are not explicitly specified in a type theory, but are always assumed to be present.  These fall into several groups.
+(**
 
-- context formation
-- substitution rules
-- variable rule
-- equality rules
+  This module defines the “standard rules” — the rules which are not explicitly specified
+  in a type theory, but are always assumed to be present. These fall into several groups.
 
-Since “rule” in our terminology always mean _hypothetical_ rules, the structural rules that don’t fit this form (context formation and substitution) have to be given directly as families of closure conditions.
+  - context formation
+  - substitution rules
+  - variable rule
+  - equality rules
 
-All of the above are then collected as a single family [Structural_CCs].
+  Since “rule” in our terminology always mean _hypothetical_ rules, the structural rules
+  that don’t fit this form (context formation and substitution) have to be given directly
+  as families of closure conditions.
+
+  All of the above are then collected as a single family [Structural_CCs].
 *)
 
-Section Structural_Rules.
+Section StructuralRules.
 
 Context {σ : shape_system}.
 Context (Σ : @signature σ).
 
-Section Context_Formation.
+Section ContextFormation.
 
 Definition empty_context_cc : Closure.rule (judgement_total Σ).
 Proof.
@@ -48,21 +53,38 @@ Defined.
 Definition context_ccs : Closure.system (judgement_total Σ)
   := Family.adjoin context_extension_cc empty_context_cc.
 
-(* NOTE: an issue arising from the present approach to shapes/proto-contexts: if the context extension rule is formulated just with [shape_extend] as above, then it will give no way to ever prove well-typedness of contexts with other shapes; in particular, of contexts using [shape_coproduct], which will arise in the premises of logical rules.
+(**
+
+  NOTE: an issue arising from the present approach to shapes/proto-contexts: if the
+  context extension rule is formulated just with [shape_extend] as above, then it will
+  give no way to ever prove well-typedness of contexts with other shapes; in particular,
+  of contexts using [shape_coproduct], which will arise in the premises of logical rules.
 
   Possible solutions (without entirely changing the proto-context approach):
 
-  - for now, we just aim to work over the de Bruijn shape-system, in which case the standard rules as currently given are enough;
-  - to give the standard rules in named-variable case, formulate the context-extension rule in more general way: for *any* (γ+1) coproduct, … (again, should be enough in finitary shape systems)
-  - add a closure condition for the context judgements under “renaming variables” along isomorphisms of proto-contexts?  (should again suffice in enough in “finitary” shape systems, i.e. where all shapes finite, and is a nice derived rule to have anyway)
-  - for eventual generalisation to infinitary settings, is there some more uniform way of setting this up that would give the standard rules as derived rules?  e.g. (a) put well-orderings on (proto-)contexts, and say: a context is well-typed if each type is well-typed under earlier parts? (b) similar, but without well-orderings (and then allow derivations to take place over not-yet-well-typed contexts)?
+  - for now, we just aim to work over the de Bruijn shape-system, in which case the
+    standard rules as currently given are enough;
+
+  - to give the standard rules in named-variable case, formulate the context-extension
+    rule in more general way: for *any* (γ+1) coproduct, … (again, should be enough in
+    finitary shape systems)
+
+  - add a closure condition for the context judgements under “renaming variables” along
+    isomorphisms of proto-contexts? (should again suffice in enough in “finitary” shape
+    systems, i.e. where all shapes finite, and is a nice derived rule to have anyway)
+
+  - for eventual generalisation to infinitary settings, is there some more uniform way of
+    setting this up that would give the standard rules as derived rules? e.g. (a) put
+    well-orderings on (proto-)contexts, and say: a context is well-typed if each type is
+    well-typed under earlier parts? (b) similar, but without well-orderings (and then
+    allow derivations to take place over not-yet-well-typed contexts)?
 *)
 
-End Context_Formation.
+End ContextFormation.
 
 Section Substitution.
 
-(* General substitution along context maps. *)
+(** General substitution along context maps. *)
 
 Definition subst_cc : Closure.system (judgement_total Σ).
 Proof.
@@ -90,7 +112,7 @@ Proof.
     intros i. exact (substitute f (hjfi i)).
 Defined.
 
-(* Substitution respects *equality* of context morphisms *)
+(** Substitution respects *equality* of context morphisms *)
 Definition subst_eq_cc : Closure.system (judgement_total Σ).
 Proof.
   exists {   Γ : raw_context Σ
@@ -116,7 +138,8 @@ Proof.
     (* f ≡ f' *)
     + exists Γ.
       intros i. refine [TmEq! Γ' |- _ ≡ _ ; _ !].
-    (* TODO: note inconsistent ordering of arguments in [give_Tm_ji] compared to other [give_Foo_ji].  Consider, consistentise? *)
+    (* TODO: note inconsistent ordering of arguments in [give_Tm_ji] compared to other
+       [give_Foo_ji]. Consider, consistentise? *)
       * exact (substitute f (Γ i)).
       * exact (f i).
       * exact (f' i).
@@ -139,7 +162,7 @@ Definition subst_ccs : Closure.system (judgement_total Σ)
 
 End Substitution.
 
-Section Hyp_Structural_Rules.
+Section HypotheticalStructuralRules.
 
 (* Hypothetical structural rules:
 
@@ -148,11 +171,11 @@ Section Hyp_Structural_Rules.
 
 *)
 
-(* The var rule:
+(* The variable rule:
 
   |– A type
------------
-x:A |– x:A
+  -----------
+  x:A |– x:A
 
 *)
 
@@ -177,7 +200,7 @@ Proof.
     + exact [M/ A /].
 Defined.
 
-Section Equality_Rules.
+Section EqualityRules.
 
 (* rule REFL_TyEq
     ⊢ A type
@@ -489,9 +512,9 @@ Definition Equality_Flat_Rules : family (flat_rule Σ)
     ; coerce_tmeq_flat_rule
   >].
 
-End Equality_Rules.
+End EqualityRules.
 
-End Hyp_Structural_Rules.
+End HypotheticalStructuralRules.
 
 Definition Structural_CCs : Closure.system (judgement_total Σ)
 := context_ccs
@@ -501,4 +524,4 @@ Definition Structural_CCs : Closure.system (judgement_total Σ)
 (* TODO: add Haskell-style >= notation for bind? *)
 (* TODO: capitalise naming in [Context_CCs], etc. *)
 
-End Structural_Rules.
+End StructuralRules.
