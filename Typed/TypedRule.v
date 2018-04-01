@@ -21,7 +21,7 @@ Section WellTypedRule.
     : Type.
   Proof.
     refine (forall r : A, _).
-    refine (FlatTypeTheory.Derivation_Judgt_Bdry_Instance _ (AlgebraicExtension.judgement_boundary r) _).
+    refine (FlatTypeTheory.presupposition_derivation _ (AlgebraicExtension.judgement_boundary r) _).
     - (* ambient type theory to typecheck premise [p] in *)
       simple refine (FlatTypeTheory.fmap _ T).
       apply include_symbol.
@@ -64,7 +64,7 @@ Section WellTypedRule.
   Proof.
     refine (is_well_typed_algebraic_extension T (rule_premise R) * _).
     (* well-typedness of conclusion *)
-    refine (FlatTypeTheory.Derivation_Judgt_Bdry_Instance _ (RawRule.conclusion_boundary R) _).
+    refine (FlatTypeTheory.presupposition_derivation _ (RawRule.conclusion_boundary R) _).
     - (* ambient type theory to typecheck premise [p] in *)
       simple refine (FlatTypeTheory.fmap _ T).
       apply include_symbol.

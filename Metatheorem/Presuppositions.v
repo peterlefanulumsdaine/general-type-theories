@@ -113,7 +113,7 @@ Section Presuppositions_Derivable.
     : Type.
   Proof.
     refine (forall r : T, _ (T r)). clear r; intros r.
-    refine (FlatTypeTheory.Derivation_Judgt_Bdry_Instance _
+    refine (FlatTypeTheory.presupposition_derivation _
               (boundary_of_judgement _) (flat_rule_premises _ r)).
     - exact (FlatTypeTheory.fmap include_symbol T). 
     - exact (pr2 (flat_rule_conclusion _ r)).

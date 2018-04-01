@@ -25,7 +25,7 @@ Section TT_Maps.
     {Σ' : signature σ} (T' : flat_type_theory Σ')
   := { Signature_map_of_TT_Map :> Signature.map Σ Σ'
      ; rule_derivation_of_TT_Map
-       : forall R : T, FlatTypeTheory.Derivation_Flat_Rule_from_Flat_Type_Theory
+       : forall R : T, FlatTypeTheory.flat_rule_derivation
                          (FlatRule.fmap Signature_map_of_TT_Map (T R))
                          T'
      }.
@@ -153,7 +153,7 @@ Section TT_Maps.
     (*   set (fc := rule_derivation_of_TT_Map _ _ f i). (* TODO: implicits! *) *)
     (*   set (c := T i) in *. *)
     (*   set (a := flat_rule_metas Σ c) in *. *)
-    (*   unfold Derivation_Flat_Rule_from_Flat_Type_Theory in fc. cbn in fc. *)
+    (*   unfold flat_rule_derivation in fc. cbn in fc. *)
     (*   transparent assert (f_a : (Signature.map *)
     (*         (Metavariable.extend Σ a) (Metavariable.extend Σ' a))). *)
     (*     apply Metavariable.fmap1, f. *)

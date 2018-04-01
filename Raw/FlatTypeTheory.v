@@ -17,15 +17,32 @@ Section FlatTypeTheory.
     : Closure.system (judgement_total Σ)
     := structural_rule Σ + Family.bind T FlatRule.closure_system.
 
-  (** A derivation in the given flat type theory [T] from hypothesis [H],
-      with structural rules included. *)
+  (** A derivation of a total judgement in the given flat type theory [T] from
+      hypothesis [H], with structural rules included. *)
   Local Definition derivation {Σ : signature σ} (T : flat_type_theory Σ) H
     : judgement_total Σ -> Type
     := Closure.derivation (closure_system T) H.
 
-  (** For a given judgment boundary [jbi],  *)
-  Local Definition Derivation_Judgt_Bdry_Instance
-      {Σ : signature σ} (T : flat_type_theory Σ)
+End FlatTypeTheory.
+
+Local Definition fmap {σ : shape_system}
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+  : flat_type_theory Σ -> flat_type_theory Σ'.
+Proof.
+  apply Family.fmap, FlatRule.fmap, f.
+Defined.
+
+Section FlatTypeTheoryDerivations.
+(** *** Auxiliary functions for generating various derivations. *)
+
+Context {σ : shape_system}.
+Context {Σ : signature σ}.
+
+
+(** For each presupposition of the given judgement boundary [jbi], a derivation
+    of the presupposition in flat type theory [T] from hypotheses [H]. *)
+Local Definition presupposition_derivation
+      (T : flat_type_theory Σ)
       {jf} (jbi : Judgement.boundary Σ jf)
       (H : family (judgement_total Σ))
   : Type
@@ -33,18 +50,9 @@ Section FlatTypeTheory.
     forall (i : Judgement.presupposition_of_boundary jbi),
       derivation T H (Judgement.presupposition_of_boundary _ i).
 
-End FlatTypeTheory.
-
-Local Definition fmap {σ : shape_system} 
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-  : flat_type_theory Σ -> flat_type_theory Σ'.
-Proof.
-  apply Family.fmap, FlatRule.fmap, f.
-Defined.
-
-Local Definition Derivation_Flat_Rule_from_Flat_Type_Theory
-      {σ : shape_system} 
-      {Σ : signature σ}
+(** The derivation of the conclusion of rule [R] from its premises
+    in flat type theroy [T], with given hypotheses. *)
+Local Definition flat_rule_derivation
       (R : flat_rule Σ) (T : flat_type_theory Σ)
   : Type.
 Proof.
@@ -55,3 +63,5 @@ Proof.
                             so it’s more findable using “SearchAbout” etc *)
 Defined.
 
+
+End FlatTypeTheoryDerivations.

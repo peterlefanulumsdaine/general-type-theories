@@ -16,11 +16,11 @@ Section WellTypedFlatRule.
   Proof.
     refine (_ * _).
     - exact (forall p : flat_rule_premises _ r,
-        FlatTypeTheory.Derivation_Judgt_Bdry_Instance
+        FlatTypeTheory.presupposition_derivation
           (FlatTypeTheory.fmap include_symbol T)
           (boundary_of_judgement (projT2 (flat_rule_premises _ _ p)))
           (flat_rule_premises _ r)).
-    - exact (FlatTypeTheory.Derivation_Judgt_Bdry_Instance
+    - exact (FlatTypeTheory.presupposition_derivation
           (FlatTypeTheory.fmap include_symbol T)
           (boundary_of_judgement (projT2 (flat_rule_conclusion _ r)))
           (flat_rule_premises _ r)).
