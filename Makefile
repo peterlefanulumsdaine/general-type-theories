@@ -35,7 +35,6 @@ MODULES := \
 	Raw/RawTypeTheory \
 	Typed/TypedClosure \
 	Typed/FlatRule \
-	Typed/TypedAlgebraicExtension \
 	Typed/TypedRule \
 	Typed/TypeTheory \
 	Typed/TypedStructuralRule \
