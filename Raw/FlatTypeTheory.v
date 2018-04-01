@@ -32,36 +32,44 @@ Proof.
   apply Family.fmap, FlatRule.fmap, f.
 Defined.
 
-Section FlatTypeTheoryDerivations.
-(** *** Auxiliary functions for generating various derivations. *)
+Section FlatTypeTheoryDerivation.
+  Context {σ : shape_system}.
+  Context {Σ : signature σ}.
 
-Context {σ : shape_system}.
-Context {Σ : signature σ}.
-
-
-(** For each presupposition of the given judgement boundary [jbi], a derivation
+  (** For each presupposition of the given judgement boundary [jbi], a derivation
     of the presupposition in flat type theory [T] from hypotheses [H]. *)
-Local Definition presupposition_derivation
-      (T : flat_type_theory Σ)
-      {jf} (jbi : Judgement.boundary Σ jf)
-      (H : family (judgement_total Σ))
-  : Type
-  :=
-    forall (i : Judgement.presupposition_of_boundary jbi),
-      derivation T H (Judgement.presupposition_of_boundary _ i).
+  Local Definition presupposition_derivation
+        (T : flat_type_theory Σ)
+        {jf} (jbi : Judgement.boundary Σ jf)
+        (H : family (judgement_total Σ))
+    : Type
+    :=
+      forall (i : Judgement.presupposition_of_boundary jbi),
+        derivation T H (Judgement.presupposition_of_boundary _ i).
 
-(** The derivation of the conclusion of rule [R] from its premises
+  (** The derivation of the conclusion of rule [R] from its premises
     in flat type theroy [T], with given hypotheses. *)
-Local Definition flat_rule_derivation
-      (R : flat_rule Σ) (T : flat_type_theory Σ)
-  : Type.
-Proof.
-  simple refine (Closure.derivation _ (flat_rule_premises _ R) (flat_rule_conclusion _ R)).
-  apply closure_system.
-  simple refine (fmap _ T).
-  apply Family.map_inl. (* TODO: make this a lemma about signature maps,
+  Local Definition flat_rule_derivation
+        (R : flat_rule Σ) (T : flat_type_theory Σ)
+    : Type.
+  Proof.
+    simple refine (Closure.derivation _ (flat_rule_premises _ R) (flat_rule_conclusion _ R)).
+    apply closure_system.
+    simple refine (fmap _ T).
+    apply Family.map_inl. (* TODO: make this a lemma about signature maps,
                             so it’s more findable using “SearchAbout” etc *)
-Defined.
+  Defined.
+
+  (** Instantiate derivation [d] with metavariable instantiation [I]. *)
+  Local Definition instantiate_derivation
+             (T : flat_type_theory Σ)
+             {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
+             {hyps : family _} (j : judgement_total (Metavariable.extend Σ a))
+             (d : derivation (fmap include_symbol T) hyps j)
+    : derivation T (Family.fmap (Metavariable.instantiate_judgement I) hyps)
+                   (Metavariable.instantiate_judgement I j).
+  Proof.
+  Admitted.
 
 
-End FlatTypeTheoryDerivations.
+End FlatTypeTheoryDerivation.

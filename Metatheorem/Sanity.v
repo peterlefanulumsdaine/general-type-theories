@@ -14,13 +14,14 @@ Require Import Raw.FlatTypeTheoryMap.
 Require Import Typed.TypedStructuralRule.
 Require Import Typed.TypeTheory.
  
-(** The goal of this file is the theorem that presuppositions of a derivable judgement are derivable, over any type theory: *)
-Theorem closed_presupposition_derivation {σ} {T : raw_type_theory σ}
+(** Presuppositions of a derivable judgement are derivable, over any type theory. *)
+Local Definition derive_presupposition {σ} {T : raw_type_theory σ}
      {j : judgement_total (RawTypeTheory.signature T)}
      (dj : RawTypeTheory.derivation T [<>] j)
      {p : Judgement.presupposition j }
   : RawTypeTheory.derivation T [<>] (Judgement.presupposition j p).
 Abort.
+
 (** In order to establish this, we require a few bits of background machinery:
   - for the high level structure of the proof, abstractions of the notions of “closed under presuppositions” to flat type theories and closure systems;
   - for the lower level details, some lemmas on the interaction of derivations/presuppositions with translation under metavariable instantiations. *)
@@ -28,23 +29,11 @@ Abort.
 (** General background: establish some properties of how the syntactic translation given by metavariable instantiation preserves typing derivations.
 
   TODO: probably factor this out into a separate file. *)
-Section Derivability_Under_Instantiation.
+Section DerivabilityUnderInstantiation.
 
   Context {σ : shape_system}.
 
-  Definition instantiate_derivation
-      {Σ : signature σ} (T : flat_type_theory Σ)
-      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
-      (hyps : family _) (j : judgement_total (Metavariable.extend Σ a))
-      (d : FlatTypeTheory.derivation
-             (FlatTypeTheory.fmap include_symbol T)
-             hyps j)
-    : FlatTypeTheory.derivation T
-           (Family.fmap (Metavariable.instantiate_judgement I) hyps)
-           (Metavariable.instantiate_judgement I j).
-  Proof.
-  Admitted.
-
+  (* TODO: Why is this here, should it go to [Metavariable]? *)
   Arguments Metavariable.instantiate_judgement : simpl nomatch.
   Arguments Metavariable.instantiate_expression : simpl nomatch.
   Arguments Metavariable.instantiate_context : simpl nomatch.
@@ -63,7 +52,7 @@ Local Ltac recursive_destruct x :=
 
   (* TODO: upstream, but to where? *)
   (* TODO consider whether [presupposition] could be refactored to make this easier. *)
-  Definition presupposition_instantiate `{Funext}
+  Local Definition presupposition_instantiate `{Funext}
       {Σ : signature σ}
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
       (j : judgement_total _)
@@ -92,10 +81,10 @@ Local Ltac recursive_destruct x :=
         apply idpath.
   Defined.
 
-End Derivability_Under_Instantiation.
+End DerivabilityUnderInstantiation.
 
 (** Main theorem: [presupposition_derivable]: the presuppositions of any derivable judgement are again derivable. *)
-Section Presuppositions_Derivable.
+Section PresuppositionsDerivable.
 
   Context {σ : shape_system} `{Funext}.
 
@@ -141,11 +130,11 @@ Section Presuppositions_Derivable.
                       (Judgement.presupposition (flat_rule_conclusion _ (T r)))).
       { apply presupposition_instantiate. }
       clearbody Pr. destruct H_presup_inst^.
-      intros p. apply instantiate_derivation, T_presup_closed.
+      intros p. apply FlatTypeTheory.instantiate_derivation, T_presup_closed.
   Defined.
 
 
-   (** If a flat type theory T is presup-closed, then so is its associated closure system. *)
+  (** If a flat type theory T is presup-closed, then so is its associated closure system. *)
   (* TODO: perhaps change def of flat rules to allow only _hypothetical_ judgements? *)
   Theorem presupposition_derivation_from_flat
       {Σ : signature σ}
@@ -195,4 +184,4 @@ Section Presuppositions_Derivable.
     intros [].
   Defined.
 
-End Presuppositions_Derivable.
+End PresuppositionsDerivable.
