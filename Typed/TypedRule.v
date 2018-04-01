@@ -28,7 +28,7 @@ Section Welltypedness.
     - (* open hypotheses to allow in the derivation *)
       exists {i : ae_premise A & ae_lt _ i r }.
       intros [i lt_i_r].
-      apply (judgement_of_premise i).
+      apply (Rule.judgement_of_premise i).
       + apply Metavariable.fmap2.
         simple refine (_;_).
         * intros [j lt_j_i].
@@ -70,7 +70,7 @@ Section Welltypedness.
       apply include_symbol.
     - (* open hypotheses to allow in the derivation *)
       exists (rule_premise R).
-      intros i. apply (judgement_of_premise i).
+      intros i. apply (Rule.judgement_of_premise i).
       + apply Metavariable.fmap2.
         apply Family.inclusion.
       + intros H_i_obj.

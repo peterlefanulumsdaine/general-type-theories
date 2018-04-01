@@ -164,7 +164,7 @@ Section Flattening.
 
    We need to do this into several different signatures, so in this lemma, we isolate exactly what is required: a map from the signature of this premise, plus (in case the premise is an object premise) a symbol to use as the head of the judgement, i.e. the metavariable introduced by the premise. *)
   (* TODO: consider whether the flattening of the conclusion can also be covered by this. *)
-  Lemma judgement_of_premise
+  Local Definition judgement_of_premise
       {a} {A : algebraic_extension Σ a} (i : A)
       {Σ'} (f : Signature.map (ae_signature _ i) Σ')
       (Sr : Judgement.is_object (ae_form _ i)
@@ -194,7 +194,7 @@ Section Flattening.
   (* Flattening a rule requires no extra information in the case of an
   equality-rule; in the case of an object-rule, it requires a symbol of
   appropriate arity to give the object introduced. *)
-  Definition flatten
+  Local Definition flatten
     {a} {hjf_concl}
     (R : rule Σ a hjf_concl)
     (Sr : Judgement.is_object hjf_concl
