@@ -61,7 +61,7 @@ pullback
      + admit.
   Admitted.
 
-  Theorem is_well_typed : is_well_typed_type_theory theory.
+  Theorem is_well_typed : TypeTheory.is_well_typed theory.
   Proof.
     admit.
   Admitted.

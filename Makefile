@@ -36,8 +36,8 @@ MODULES := \
 	Typed/TypedClosure \
 	Typed/FlatRule \
 	Typed/TypedRule \
-	Typed/TypeTheory \
 	Typed/TypedStructuralRule \
+	Typed/TypeTheory \
 	Metatheorem/Presuppositions \
 	Metatheorem/CutElimination \
 	Metatheorem/UniqueTyping

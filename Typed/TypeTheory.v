@@ -15,7 +15,7 @@ Section WellTypedTypeTheory.
 
   Context {σ : shape_system}.
 
-  Definition is_well_typed_type_theory (T : raw_type_theory σ) : Type.
+  Local Definition is_well_typed (T : raw_type_theory σ) : Type.
   Proof.
     simple refine (forall R : T, TypedRule.is_well_typed_rule _ (tt_rule R)).
     refine (FlatTypeTheory.fmap _ _).
@@ -26,6 +26,5 @@ Section WellTypedTypeTheory.
 End WellTypedTypeTheory.
 
 Record type_theory {σ : shape_system} : Type
-  := { raw_type_theory_of_well_typed :> raw_type_theory σ
-       ; is_well_typed : is_well_typed_type_theory
-                           raw_type_theory_of_well_typed }.
+  := { tt_raw_type_theory :> raw_type_theory σ
+     ; tt_well_typed : is_well_typed tt_raw_type_theory }.
