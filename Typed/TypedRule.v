@@ -4,6 +4,7 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
+Require Import Raw.AlgebraicExtension.
 Require Import Raw.Rule.
 Require Import Raw.TypeTheory.
 Require Import Typed.Derivation.
@@ -20,7 +21,7 @@ Section Welltypedness.
     : Type.
   Proof.
     refine (forall r : A, _).
-    refine (Derivation_Judgt_Bdry_Instance _ (ae_judgt_bdry_of_premise r) _).
+    refine (Derivation_Judgt_Bdry_Instance _ (AlgebraicExtension.judgement_boundary r) _).
     - (* ambient type theory to typecheck premise [p] in *)
       simple refine (fmap_flat_type_theory _ T).
       apply include_symbol.
@@ -61,14 +62,14 @@ Section Welltypedness.
       (R : rule Σ a hjf_concl)
     : Type.
   Proof.
-    refine (is_well_typed_algebraic_extension T (premise R) * _).
+    refine (is_well_typed_algebraic_extension T (rule_premise R) * _).
     (* well-typedness of conclusion *)
     refine (Derivation_Judgt_Bdry_Instance _ (judgt_bdry_of_conclusion R) _).
     - (* ambient type theory to typecheck premise [p] in *)
       simple refine (fmap_flat_type_theory _ T).
       apply include_symbol.
     - (* open hypotheses to allow in the derivation *)
-      exists (premise R).
+      exists (rule_premise R).
       intros i. apply (judgement_of_premise i).
       + apply Metavariable.fmap2.
         apply Family.inclusion.
