@@ -4,6 +4,7 @@ Require Import Auxiliary.Closure.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
+Require Import Raw.Substitution.
 Require Import Raw.FlatRule.
 
 (**
@@ -537,3 +538,109 @@ Definition structural_rule : Closure.system (judgement_total Σ)
 (* TODO: add Haskell-style >= notation for bind? *)
 
 End StructuralRules.
+
+Section StructuralRuleMap.
+
+  Context `{H : Funext}.
+  Context {σ : shape_system}.
+
+  (* TODO: perhaps abstract [Family_Map_over] or something, i.e. a displayed-category version of family maps, for use in definitions like this? *)
+
+  (** For a given signature map [f] from [Σ] to [Σ'], give a family map from
+     the structural rules of [Σ] to structural rules of [Σ']. *)
+  Local Definition fmap
+      {Σ Σ' : signature σ}
+      (f : Signature.map Σ Σ')
+    : Family.map
+        (Family.fmap (Closure.fmap (Judgement.fmap_judgement_total f)) (structural_rule Σ))
+        (structural_rule Σ').
+  Proof.
+    (* TODO: possible better approach:
+       - [Fmap_Family] of families commutes with sums;
+       - then use [repeat apply Fmap_Family_Sum.] or similar.  *)
+    (* TODO: intermediate approach: at least allow family map to be constructed as a single function, to avoid duplicated destructing. *)
+    apply Family.Build_map'.
+    intros [ [ [ [ c1 | ] | [c2 | c3] ] | c4 ]  | c5 ].
+    (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
+    - (* context extension *)
+      simple refine (_;_).
+      + rename c1 into ΓA.
+        refine (inl (inl (inl (Some _)))).
+        exists (Context.fmap f ΓA.1).
+        exact (Expression.fmap f ΓA.2).
+      + cbn. apply Closure.rule_eq.
+        * simple refine (Family.eq _ _). { apply idpath. }
+          cbn. intros [ [ [] | ] | ].
+          -- apply idpath.
+          -- apply (ap (fun x => (_; x))).
+             apply (ap (fun x => (_; x))).
+             apply path_forall. intros [ [] | ];
+             apply idpath.
+        * cbn. apply (ap (fun x => (_; x))).
+          apply (ap (Build_raw_context _)).
+          apply path_forall.
+          refine (plusone_rect _ _ (shape_is_extend _ _) _ _ _).
+          -- eapply concat. { refine (plusone_comp_one _ _ _ _ _ _). }
+             eapply concat. Focus 2.
+               { apply ap. refine (plusone_comp_one _ _ _ _ _ _)^. } Unfocus.
+             apply inverse. apply Substitution.fmap_rename.
+          -- intros x. cbn in x.
+             eapply concat. { refine (plusone_comp_inj _ _ _ _ _ _ _). }
+             eapply concat. Focus 2.
+               { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. } Unfocus.
+             apply inverse. apply Substitution.fmap_rename.
+    - (* empty context *)
+      exists (inl (inl (inl None))).
+      cbn. apply Closure.rule_eq.
+      * simple refine (Family.eq _ _). { apply idpath. }
+        intros [].
+      * cbn. apply (ap (fun x => (_; x))).
+        apply (ap (Build_raw_context _)).
+        apply path_forall. refine (empty_rect _ shape_is_empty _).
+    - (* substitution *)
+      destruct c2 as [ Γ [Γ' [g [hjf hjfi]]]].
+      simple refine (_;_).
+      + refine (inl (inl (inr (inl _)))).
+        exists (Context.fmap f Γ).
+        exists (Context.fmap f Γ').
+        exists (fmap_raw_context_map f g).
+        exists hjf.
+        exact (Judgement.fmap_hypothetical_judgement f hjfi).
+      + cbn. apply Closure.rule_eq; cbn.
+        * apply inverse.
+          eapply concat. { apply Family.map_adjoin. }
+          apply ap011.
+          -- unfold Family.fmap.
+            apply ap, path_forall; intros i.
+            apply (ap (fun x => (_; x))).
+            apply (ap (fun x => (_; x))).
+            apply path_forall. intros [ [ [] | ] | ].
+            ++ refine (fmap_substitute _ _ _).
+            ++ apply idpath.
+          -- apply idpath.
+          (* Family_fmap_adjoin *)
+        * apply (ap (fun x => (_; x))). cbn.
+          apply (ap (fun x => (_; x))).
+          apply path_forall. intros i.
+          unfold Judgement.fmap_hypothetical_judgement.
+          refine (fmap_substitute _ _ _)^.
+    - (* substitution equality *)
+      destruct c3 as [ Γ [Γ' [g [g' [hjf hjfi]]]]].
+      simple refine (_;_).
+      + refine (inl (inl (inr (inr _)))).
+        exists (Context.fmap f Γ).
+        exists (Context.fmap f Γ').
+        exists (fmap_raw_context_map f g).
+        exists (fmap_raw_context_map f g').
+        exists hjf.
+        exact (Judgement.fmap_hypothetical_judgement f hjfi).
+      + admit.
+    - (* var rule *)
+      simple refine (inl (inr _) ; _); admit.
+    - (* equality rules *)
+      simple refine (inr _; _); admit.
+      (* Thest last two should be doable cleanly by the same lemmas
+      used for logical rules in [fmap] below, once that’s done. *)
+  Admitted.
+
+End StructuralRuleMap.
