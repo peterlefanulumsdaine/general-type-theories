@@ -6,10 +6,11 @@ Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
 Require Import Raw.Rule.
+Require Import Raw.CongruenceRule.
 
 (** Main definition in this file: [Type_Theory], the data one gives to specify a type theory (but before typechecking it) *)
 
-Section Type_Theories.
+Section TypeTheory.
 
   Context {σ : shape_system}.
 
@@ -78,7 +79,7 @@ Section Type_Theories.
     - refine (WellFounded.pullback _ (TT_lt T)).
       exact (projT1).
     - cbn. intros [j lt_j_i].
-      refine (Fmap_rule _ (TT_rule _ j)).
+      refine (Rule.fmap _ (TT_rule _ j)).
       apply Family.map_fmap.
       simple refine (_;_).
       + intros [k [k_obj lt_k_j]].
@@ -99,7 +100,7 @@ Section Type_Theories.
     - intros ?; apply idpath.
   Defined.
 
-End Type_Theories.
+End TypeTheory.
 
 Arguments Type_Theory _ : clear implicits.
 Arguments TT_rule_index {_} _.
@@ -123,7 +124,7 @@ Section Flattening.
       intros r.
       refine (flatten _ _).
       + (* translate rules up to the full signature *)
-        refine (Fmap_rule _ (TT_rule r)).
+        refine (Rule.fmap _ (TT_rule r)).
         apply Type_Theory_signature_inclusion_of_rule.
       + (* pick their symbol in the full signature, if applicable *)
         intros r_obj.
@@ -134,8 +135,8 @@ Section Flattening.
       intros [r Hr].
       refine (flatten _ _).
       + simple refine
-        (associated_congruence_rule
-           (Fmap_rule _ (TT_rule r)) _ _ _ _).
+        (CongruenceRule.associated_congruence_rule
+           (Rule.fmap _ (TT_rule r)) _ _ _ _).
         * apply Type_Theory_signature_inclusion_of_rule.
         * exact Hr.
         * exact (r;Hr). (* head symbol of original rule *)

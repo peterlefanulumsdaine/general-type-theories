@@ -45,8 +45,7 @@ Record rule
 :=
   {
     rule_premise : algebraic_extension Σ a
-    (* hyp judgement boundary instance of conclusion: *)
-  ; rule_conclusion_boundary
+  ; rule_conclusion_hypothetical_boundary
       : Judgement.hypothetical_boundary
           (Metavariable.extend Σ a)
           hjf_conclusion
@@ -75,14 +74,14 @@ Record rule
   (*   - admit. (* ae_lt *) *)
   (*   - admit. (* ae_raw_context_type *) *)
   (*   - admit. (* ae_hypothetical_boundary *) *)
-  (*   - admit. (* rule_conclusion_boundary *) *)
+  (*   - admit. (* rule_conclusion_hypothetical_boundary *) *)
   (* Abort. *)
 
-  Definition judgt_bdry_of_conclusion {Σ} {a} {hjf} (R : rule Σ a hjf)
+  Local Definition conclusion_boundary {Σ} {a} {hjf} (R : rule Σ a hjf)
     : Judgement.boundary (Metavariable.extend Σ a) (form_hypothetical hjf)
-  := ([::]; rule_conclusion_boundary R).
+  := ([::]; rule_conclusion_hypothetical_boundary R).
 
-  Definition Fmap_rule
+  Local Definition fmap
       {Σ} {Σ'} (f : Signature.map Σ Σ')
       {a} {hjf_concl}
       (R : rule Σ a hjf_concl)
@@ -101,10 +100,10 @@ Record rule
         (fmap_hypothetical_boundary
           _ (ae_hypothetical_boundary _ i)).
       apply Metavariable.fmap1, f.
-    - (* rule_conclusion_boundary *)
+    - (* rule_conclusion_hypothetical_boundary *)
       simple refine
         (fmap_hypothetical_boundary
-          _ (rule_conclusion_boundary R)).
+          _ (rule_conclusion_hypothetical_boundary R)).
       apply Metavariable.fmap1, f.
   Defined.
 
@@ -152,199 +151,9 @@ Module Span.
 
 End Span.
 
-Section Associated_Congruence_Rules.
 
-  Context {σ : shape_system}.
-  Context {Σ : signature σ}.
-
-  Definition associated_original_premise {obs eqs : arity σ}
-    : (obs + obs) + (eqs + eqs + obs) -> (obs + eqs).
-  Proof.
-    intros p ; repeat destruct p as [p | p];
-      try exact (inl p); exact (inr p).
-  Defined.
-
-  Arguments associated_original_premise : simpl nomatch.
-
-  (* The ordering of premises of the congruence rule associated to an object rule. *)
-  Definition associated_congruence_rule_lt
-      {obs eqs : Type} (lt : well_founded_order (obs + eqs))
-    : well_founded_order ((obs + obs) + (eqs + eqs + obs)).
-  Proof.
-    refine (WellFounded.pullback _ (semi_reflexive_product lt Span.lt)).
-    intros [ [ ob_l | ob_r ] | [ [ eq_l | eq_r ] | eq_new ] ].
-    + exact (inl ob_l, Span.left).
-    + exact (inl ob_r, Span.right).
-    + exact (inr eq_l, Span.left).
-    + exact (inr eq_r, Span.right).
-    + exact (inl eq_new, Span.top).
-  Defined.
-
-  Arguments associated_congruence_rule_lt : simpl nomatch.
-
-  (*  Unwinding this definition, the relation is be defined as follows:
-
-           ob_l j   ob_r j   eq_l j   eq_r j   eq_new j
-
-ob_l i     i < j    0        i < j    0        i ≤ j
-
-ob_r i     0        i < j    0        i < j    i ≤ j
-
-eq_l i     i < j    0        i < j    0        i < j
-
-eq_r i     0        i < j    0        i < j    i < j
-
-eq_new i   0        0        0        0        i < j
-
-*)
-
-  Definition associated_congruence_rule_original_constructor_translation
-    {a} {hjf_concl} (R : rule Σ a hjf_concl)
-    (p : (a + a) +
-         (ae_equality_premise (rule_premise R) + ae_equality_premise (rule_premise R) + a))
-    : Signature.map
-        (ae_signature (rule_premise R) (associated_original_premise p))
-        (Metavariable.extend Σ (Family.subfamily (a + a)
-           (fun j => associated_congruence_rule_lt (ae_lt _) (inl j) p))).
-  Proof.
-    (* In case [p] is one of the 2 copies of the original premises, there is a single canonical choice for this definition.
-
-    In case [p] is one of the new equality premises (between the 2 copies of the old equality premises), there are in principle 2 possibilities; it should make no difference which one chooses. *)
-    apply Metavariable.fmap2.
-    simple refine (_;_).
-    - intros q.
-      destruct p as [ [ pob_l | pob_r ] | [ [ peq_l | peq_r ] | peq_new ] ].
-      + (* pob_l *)
-        exists (inl (pr1 q)).
-        apply inr; cbn. split; try apply idpath. exact (pr2 q).
-      + (* pob_r *)
-        exists (inr (pr1 q)).
-        apply inr; cbn. split; try apply idpath. exact (pr2 q).
-      + (* peq_l *)
-        exists (inl (pr1 q)).
-        apply inr; cbn. split; try apply idpath. exact (pr2 q).
-      + (* peq_r *)
-        exists (inr (pr1 q)).
-        apply inr; cbn. split; try apply idpath. exact (pr2 q).
-      + (* peq_new *)
-        exists (inr (pr1 q)). (* note both [inl], [inr] make this work *)
-        apply inl, inl; cbn. split; try constructor. exact (pr2 q).
-    - intros q.
-      repeat destruct p as [ p | p ]; apply idpath.
-  Defined.
-
-  Definition associated_congruence_rule
-    {a} {hjf_concl} (R : rule Σ a hjf_concl)
-    (H : Judgement.is_object hjf_concl)
-    (S : Σ)
-    (e_a : symbol_arity S = a)
-    (e_cl : symbol_class S = Judgement.class_of hjf_concl)
-    : (rule Σ (Family.sum a a)
-                 (form_equality (Judgement.class_of hjf_concl))).
-  Proof.
-    simple refine (Build_rule _ _ _ _ _).
-    simple refine
-           {| ae_equality_premise :=
-                ((ae_equality_premise (rule_premise R)) +
-                 (ae_equality_premise (rule_premise R))) + a ;
-              |}.
-    - (* ae_lt *)
-      exact (associated_congruence_rule_lt (ae_lt _)).
-    - (* ae_raw_context_type *)
-      intros p i.
-      refine (Expression.fmap
-        (associated_congruence_rule_original_constructor_translation _ _) _).
-      set (p_orig := associated_original_premise p).
-      destruct p as [ [ ? | ? ] | [ [ ? | ? ] | ? ] ];
-      refine (ae_raw_context_type _ p_orig i).
-      (* alternatively, instead of destructing [p], could use equality reasoning
-      on the type of [i]. *)
-    - (* ae_hypothetical_boundary *)
-      intros p.
-      set (p_orig := associated_original_premise p).
-      destruct p as [ [ ? | ? ] | [ [ ? | ? ] | p ] ];
-      try (refine (fmap_hypothetical_boundary
-        (associated_congruence_rule_original_constructor_translation _ _) _);
-           refine (ae_hypothetical_boundary _ p_orig)).
-      (* The cases where [p] is a copy of an original premise are all just translation,
-      leaving just the new equality premises to give. *)
-      intros i; simpl Judgement.boundary_slot in i.
-      destruct i as [ [ i | ] | ]; [ idtac | simpl | simpl].
-      + (* boundary of the corresponding original premise *)
-        refine (Expression.fmap
-          (associated_congruence_rule_original_constructor_translation _ _) _).
-        apply (ae_hypothetical_boundary _ p_orig).
-      + (* LHS of new equality premise *)
-        cbn. simple refine (raw_symbol' _ _ _).
-        * apply Metavariable.include_metavariable.
-          refine (inl p; _).
-          cbn. apply inl, inr; split; constructor.
-        * apply idpath.
-        * intros i.
-          apply raw_variable, (coproduct_inj1 shape_is_sum), i.
-      + (* RHS of new equality premise *)
-        cbn. simple refine (raw_symbol' _ _ _).
-        * apply Metavariable.include_metavariable.
-          refine (inr p; _).
-          cbn. apply inl, inr; split; constructor.
-        * apply idpath.
-        * intros i.
-          apply raw_variable, (coproduct_inj1 shape_is_sum), i.
-    - (* rule_conclusion_boundary *)
-      intros [ [ i | ] | ]; simpl.
-      + (* boundary of original conclusion *)
-        refine (Expression.fmap _ _).
-        * apply Metavariable.fmap2, Family.map_inl.
-        * destruct hjf_concl as [cl | ?].
-          -- exact (rule_conclusion_boundary R i).
-          -- destruct H. (* [hjf_concl] can’t be an equality judgement *)
-      + (* LHS of new conclusion *)
-        cbn. simple refine (raw_symbol' _ _ _).
-        * apply Metavariable.include_symbol, S.
-        * apply e_cl.
-        * simpl symbol_arity.
-          change (symbol_arity (Metavariable.include_symbol_carrier S))
-            with (symbol_arity S).
-          destruct (e_a^); clear e_a.
-          intros p.
-          simple refine (raw_symbol' _ _ _).
-          -- apply Metavariable.include_metavariable.
-             exact (inl p).
-          -- apply idpath.
-          -- cbn. intros i.
-             apply raw_variable.
-             apply (coproduct_inj1 shape_is_sum).
-             apply (coproduct_inj2 shape_is_sum).
-             exact i.
-      + (* RHS of new conclusion *)
-        cbn. simple refine (raw_symbol' _ _ _).
-        * apply Metavariable.include_symbol, S.
-        * apply e_cl.
-        * simpl symbol_arity.
-          change (symbol_arity (Metavariable.include_symbol_carrier S))
-            with (symbol_arity S).
-          destruct (e_a^); clear e_a.
-          intros p.
-          simple refine (raw_symbol' _ _ _).
-          -- apply Metavariable.include_metavariable.
-             exact (inr p).
-          -- apply idpath.
-          -- cbn. intros i.
-             apply raw_variable.
-             apply (coproduct_inj1 shape_is_sum).
-             apply (coproduct_inj2 shape_is_sum).
-             exact i.
-  Defined.
-  (* TODO: the above is a bit unreadable.  An alternative approach that might be clearer and more robust:
-   - factor out the constructions of the head terms of conclusions and premises from [flatten], if doable.
-   - here, invoke those, but (for the LHS/RHS of the new equalities), translate them under appropriate context morphisms “inl”, “inr”. *)
-
-(* A good test proposition will be the following: whenever a rule is well-typed, then so is its associated congruence rule. *)
-
-End Associated_Congruence_Rules.
-
-
-(* Each (ordered) rule induces one or two flat rules: the logical rule itself, and (if it was an object rule) its associated congruence rule.*)
+(* Each (ordered) rule induces one or two flat rules: the logical rule itself,
+   and (if it was an object rule) its associated congruence rule.*)
 
 Section Flattening.
 
@@ -382,7 +191,9 @@ Section Flattening.
         destruct H_obj. (* ruled out by assumption *)
   Defined.
 
-  (* Flattening a rule requires no extra information in the case of an equality-rule; in the case of an object-rule, it requires a symbol of appropriate arity to give the object introduced. *)
+  (* Flattening a rule requires no extra information in the case of an
+  equality-rule; in the case of an object-rule, it requires a symbol of
+  appropriate arity to give the object introduced. *)
   Definition flatten
     {a} {hjf_concl}
     (R : rule Σ a hjf_concl)
@@ -390,8 +201,11 @@ Section Flattening.
         -> { S : Σ & (symbol_arity S = a) * (symbol_class S = Judgement.class_of hjf_concl) })
   : flat_rule Σ.
   (* This construction involves essentially two aspects:
-  - translate the syntax of each expression in the rule from its “local” signatures to the overall signature;
-  - reconstruct the head terms of the object premises and the conclusion *)
+
+     - translate the syntax of each expression in the rule from its “local”
+       signatures to the overall signature;
+
+     - reconstruct the head terms of the object premises and the conclusion *)
   Proof.
     refine (Build_flat_rule _ a _ _).
     - (* premises *)
@@ -412,9 +226,9 @@ Section Flattening.
      (* TODO: consider whether this can be unified with [judgement_of_premise] *)
       exists (form_hypothetical hjf_concl).
       simpl.
-      exists (pr1 (judgt_bdry_of_conclusion R)).
+      exists (pr1 (conclusion_boundary R)).
       apply Judgement.hypothetical_instance_from_boundary_and_head.
-      + exact (pr2 (judgt_bdry_of_conclusion R)).
+      + exact (pr2 (conclusion_boundary R)).
       + intros H_obj.
         destruct hjf_concl as [ ocl | ecl ]; simpl in *.
         * (* case: R an object rule *)

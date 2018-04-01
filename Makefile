@@ -28,6 +28,7 @@ MODULES := \
 	Raw/Substitution \
 	Raw/StructuralRule \
 	Raw/AlgebraicExtension \
+	Raw/CongruenceRule \
 	Raw/Rule \
 	Raw/TypeTheory \
 	Typed/TypedClosure \

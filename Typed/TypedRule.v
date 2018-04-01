@@ -64,7 +64,7 @@ Section Welltypedness.
   Proof.
     refine (is_well_typed_algebraic_extension T (rule_premise R) * _).
     (* well-typedness of conclusion *)
-    refine (Derivation_Judgt_Bdry_Instance _ (judgt_bdry_of_conclusion R) _).
+    refine (Derivation_Judgt_Bdry_Instance _ (Rule.conclusion_boundary R) _).
     - (* ambient type theory to typecheck premise [p] in *)
       simple refine (fmap_flat_type_theory _ T).
       apply include_symbol.
