@@ -38,7 +38,7 @@ MODULES := \
 	Typed/TypedRule \
 	Typed/TypedStructuralRule \
 	Typed/TypeTheory \
-	Metatheorem/Presuppositions \
+	Metatheorem/Sanity \
 	Metatheorem/CutElimination \
 	Metatheorem/UniqueTyping
 
