@@ -1,3 +1,5 @@
+(** * Well-shaped rules *)
+
 Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
@@ -6,23 +8,30 @@ Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
 
-(** In this file:
+(** A well-shaped rule is given by the following data:
 
-- [rule]: the data one gives to specify a logical rule (before any typechecking)
-- [associated_congruence_rule]
-- [flatten]
+   - [rule]: the data one gives to specify a logical rule (before any typechecking)
+   - [associated_congruence_rule]
+   - [flatten]
 *)
 
-(** Specification of “well-shaped” rules *)
+(** Specification of well-shaped rules *)
 Section Rule.
 
 Context {σ : shape_system}.
 
-(* An (ordered, raw) rule consists of premises and a conclusion.  For various reasons, we abstract the form of the premises as an _algebraic extension_.
+(** An (ordered, raw) rule consists of premises and a conclusion. For various reasons, we
+    abstract the form of the premises as an _algebraic extension_.
 
-Such an extension can add both object premises (introducing type/term premises) and equality premises.
+    Such an extension can add both object premises (introducing type/term premises) and
+    equality premises.
 
-Besides being viewed as the premises of a rule, the premises can be seen as particularly simple rules themselves for extending a type theory.  Viewed this way, they are _algebraic_ in the sense that it does not introduce any new binders, and only take term arguments (no type arguments). This is the raw-syntax analogue of an arity seen as specifying the metavariable-extension of a signature. *)
+    Besides being viewed as the premises of a rule, the premises can be seen as
+    particularly simple rules themselves for extending a type theory. Viewed this way,
+    they are _algebraic_ in the sense that it does not introduce any new binders, and only
+    take term arguments (no type arguments). This is the raw-syntax analogue of an arity
+    seen as specifying the metavariable-extension of a signature.
+*)
 Record algebraic_extension
   {Σ : signature σ}
   {a : arity σ} (* arity listing the _object_ premises of the extension *)
@@ -44,7 +53,9 @@ Record algebraic_extension
     := fun i => snd (ae_premise i)
   (* the ordering relation on the premises *)
   ; ae_lt : well_founded_order ae_premise
-  (* for each premise, the arity specifying what metavariables are available in the syntax for this premise; i.e., the family of type/term arguments already introduced by earlier premises *)
+  (* for each premise, the arity specifying what metavariables are available in the syntax
+     for this premise; i.e., the family of type/term arguments already introduced by earlier
+     premises *)
   ; ae_arity_for_premise : ae_premise -> arity _
     := fun i => Family.subfamily a (fun j => ae_lt (inl j) i)
   ; ae_signature_for_premise : ae_premise -> signature _
@@ -162,7 +173,8 @@ Arguments rule {_} _ _ _.
 
 
 Module Span.
-(* Some auxiliary constructions for defining the ordering of the premises in the associated congruence rule of a constructor. *)
+(** Some auxiliary constructions for defining the ordering of the premises in the
+    associated congruence rule of a constructor. *)
 
   Local Inductive span : Type := l | r | t.
 

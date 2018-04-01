@@ -95,8 +95,7 @@ clean:: Makefile.coq
 	rm -f html
 
 cleaner:
-	rm -f **/*.glob **/*.vo **/*.v.d **/*~
+	rm -f **/*.glob **/*.vo **/*.v.d **/*~ **/.*.aux
 
-html: all
-	mkdir -p html
-	$(COQDOC) -toc $(COQDOCFLAGS) -utf8 -html $(COQDOCLIBS) -d html $(VS)
+html:: Makefile.coq
+	$(MAKE) -f Makefile.coq html
