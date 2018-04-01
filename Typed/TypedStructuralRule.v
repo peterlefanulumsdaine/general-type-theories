@@ -15,7 +15,7 @@ Require Import Typed.FlatRule.
    premises and conclusion hold.
 *)
 
-Section WellTypedRules.
+Section TypedStructuralRule.
 
   Context {σ : shape_system} {Σ : signature σ}.
 
@@ -31,7 +31,7 @@ Section WellTypedRules.
 
   Lemma context_ccs_well_typed
     : forall r : StructuralRule.context Σ,
-      TypedClosure.rule_well_typed presupposition C (StructuralRule.context _ r).
+      TypedClosure.well_typed_rule presupposition C (StructuralRule.context _ r).
   Proof.
     intros r. destruct r as [  [Γ A] | ].
     - split. (* context extension *)
@@ -50,19 +50,19 @@ Section WellTypedRules.
 
   Lemma subst_ccs_well_typed
     : forall r : StructuralRule.substitution Σ,
-      TypedClosure.rule_well_typed presupposition C (StructuralRule.substitution _ r).
+      TypedClosure.well_typed_rule presupposition C (StructuralRule.substitution _ r).
   Admitted.
 
   Lemma var_rule_ccs_well_typed
     : forall r : StructuralRule.variable Σ,
-      TypedClosure.rule_well_typed presupposition C (StructuralRule.variable _ r).
+      TypedClosure.well_typed_rule presupposition C (StructuralRule.variable _ r).
   Proof.
     (* deduce from showing this is well-typed as flat rule *)
   Admitted.
 
   Lemma equality_rule_ccs_well_typed
     : forall r : StructuralRule.equality Σ,
-      TypedClosure.rule_well_typed presupposition C (StructuralRule.equality _ r).
+      TypedClosure.well_typed_rule presupposition C (StructuralRule.equality _ r).
   Proof.
     (* deduce from showing these are well-typed as flat rules *)
   Admitted.
@@ -79,4 +79,4 @@ Section WellTypedRules.
     - apply equality_rule_ccs_well_typed.
   Defined.
 
-End WellTypedRules.
+End TypedStructuralRule.
