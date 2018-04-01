@@ -5,7 +5,7 @@ Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
 Require Import Raw.RawRule.
 Require Import Raw.FlatTypeTheory.
-Require Import Typed.Derivation.
+Require Import Raw.FlatTypeTheoryMap.
 
 (* TODO: upstream to [Closure]?  Perhaps make some names local? *)
 Section Derivation_Step.

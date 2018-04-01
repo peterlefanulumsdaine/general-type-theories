@@ -6,7 +6,7 @@ Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 Require Import Raw.RawRule.
 Require Import Raw.RawTypeTheory.
-Require Import Typed.Derivation.
+Require Import Raw.FlatTypeTheoryMap.
 Require Import Typed.TypedRule.
 
 (** In this file: definition of well-typedness of a type-theory. *)

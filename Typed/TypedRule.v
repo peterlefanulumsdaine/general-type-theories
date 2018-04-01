@@ -7,7 +7,7 @@ Require Import Raw.Syntax.
 Require Import Raw.AlgebraicExtension.
 Require Import Raw.RawRule.
 Require Import Raw.FlatTypeTheory.
-Require Import Typed.Derivation.
+Require Import Raw.FlatTypeTheoryMap.
 
 (** In this file: definition of well-typedness of an algebraic extension, and a (well-presented) rule. *)
 

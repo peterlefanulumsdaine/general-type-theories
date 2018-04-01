@@ -11,7 +11,7 @@ Require Import Raw.FlatTypeTheory.
 Require Import Raw.RawTypeTheory.
 
 (* TODO: probably this section should be broken out to a separate file. *)
-Section TT_Maps.
+Section FlatTypeTheoryMap.
 
   Context `{H : Funext}.
   Context {σ : shape_system}.
@@ -176,4 +176,4 @@ Section TT_Maps.
   *)
 
   (* TODO: maps of type theories preserve derivability. *)
-End TT_Maps.
+End FlatTypeTheoryMap.

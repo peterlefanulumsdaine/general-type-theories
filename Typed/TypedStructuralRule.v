@@ -5,7 +5,7 @@ Require Import Raw.Syntax.
 Require Import Raw.RawRule.
 Require Import Raw.RawStructuralRule.
 Require Import Typed.TypedClosure.
-Require Import Typed.Derivation.
+Require Import Raw.FlatTypeTheoryMap.
 Require Import Typed.FlatRule.
 
 (** Main goal for this file: show all the structural rules are well-typed.

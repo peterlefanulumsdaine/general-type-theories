@@ -5,7 +5,7 @@ Require Import Auxiliary.Family.
 Require Import Raw.Syntax.
 Require Import Raw.FlatRule.
 Require Import Raw.FlatTypeTheory.
-Require Import Typed.Derivation.
+Require Import Raw.FlatTypeTheoryMap.
 
 Section WellTypedFlatRule.
 

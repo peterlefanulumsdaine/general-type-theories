@@ -3,7 +3,7 @@ Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
 Require Import Raw.Syntax.
 Require Import Raw.RawTypeTheory.
-Require Import Typed.Derivation.
+Require Import Raw.FlatTypeTheoryMap.
 Require Import Typed.TypeTheory.
 
 (* Main goal of this file: theorem stating unique typing, for any (fully typed) type theory. *)
