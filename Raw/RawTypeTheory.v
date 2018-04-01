@@ -5,8 +5,9 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
-Require Import Raw.Rule.
+Require Import Raw.RawRule.
 Require Import Raw.CongruenceRule.
+Require Import Raw.FlatTypeTheory.
 
 (** Main definition in this file: [raw_type_theory], the data one gives to specify a type theory (but before typechecking it) *)
 
@@ -79,7 +80,7 @@ Section TypeTheory.
     - refine (WellFounded.pullback _ (tt_lt T)).
       exact (projT1).
     - cbn. intros [j lt_j_i].
-      refine (Rule.fmap _ (tt_rule _ j)).
+      refine (RawRule.fmap _ (tt_rule _ j)).
       apply Family.map_fmap.
       simple refine (_;_).
       + intros [k [k_obj lt_k_j]].
@@ -122,9 +123,9 @@ Section Flattening.
     (* First: the explicitly-given logical rules *)
     - exists (tt_rule_data T).
       intros r.
-      refine (Rule.flatten _ _).
+      refine (RawRule.flatten _ _).
       + (* translate rules up to the full signature *)
-        refine (Rule.fmap _ (tt_rule r)).
+        refine (RawRule.fmap _ (tt_rule r)).
         apply include_rule_signature.
       + (* pick their symbol in the full signature, if applicable *)
         intros r_obj.
@@ -133,10 +134,10 @@ Section Flattening.
     (* Second: associated congruence rules for the object-judgement logical rules. *)
     - exists { r : T & Judgement.is_object (tt_rule_form r) }.
       intros [r Hr].
-      refine (Rule.flatten _ _).
+      refine (RawRule.flatten _ _).
       + simple refine
         (CongruenceRule.associated
-           (Rule.fmap _ (tt_rule r)) _ _ _ _).
+           (RawRule.fmap _ (tt_rule r)) _ _ _ _).
         * apply include_rule_signature.
         * exact Hr.
         * exact (r;Hr). (* head symbol of original rule *)
@@ -146,3 +147,8 @@ Section Flattening.
   Defined.
 
 End Flattening.
+
+Local Definition derivation {σ : shape_system} (T : raw_type_theory σ) H
+  : judgement_total (signature T) -> Type
+  := FlatTypeTheory.derivation (flatten T) H.
+

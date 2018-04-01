@@ -9,4 +9,3 @@ Require Export Raw.Syntax.Substitution.
 Require Export Raw.Syntax.Context.
 Require Export Raw.Syntax.Judgement.
 Require Export Raw.Syntax.Metavariable.
-Require Export Raw.Syntax.FlatRule.

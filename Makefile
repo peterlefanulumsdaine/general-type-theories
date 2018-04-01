@@ -23,17 +23,19 @@ MODULES := \
 	Raw/Syntax/Context \
 	Raw/Syntax/Judgement \
 	Raw/Syntax/Metavariable \
-	Raw/Syntax/FlatRule \
 	Raw/Syntax \
 	Raw/Substitution \
-	Raw/StructuralRule \
+	Raw/RawStructuralRule \
 	Raw/AlgebraicExtension \
 	Raw/CongruenceRule \
-	Raw/Rule \
-	Raw/TypeTheory \
+	Raw/FlatRule \
+	Raw/FlatTypeTheory \
+	Raw/RawRule \
+	Raw/RawTypeTheory \
 	Typed/TypedClosure \
 	Typed/Derivation \
 	Typed/FlatRule \
+	Typed/TypedAlgebraicExtension \
 	Typed/TypedRule \
 	Typed/TypeTheory \
 	Typed/TypedStructuralRule \

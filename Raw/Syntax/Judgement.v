@@ -7,7 +7,7 @@ Require Import Raw.Syntax.Signature.
 Require Import Raw.Syntax.Expression.
 Require Import Raw.Syntax.Context.
 
-Section Judgement.
+Section JudgementDefinitions.
   Context {σ : shape_system}.
   Context (Σ : signature σ).
 
@@ -120,12 +120,12 @@ Section Judgement.
       + exact (pr2 j i).
   Defined.
 
-End Judgement.
+End JudgementDefinitions.
 
 Arguments hypothetical_boundary : simpl nomatch.
 Arguments boundary_of_judgement {_ _ _} _ : simpl nomatch.
 
-Section Judgement_Notations.
+Section JudgementNotations.
 
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
@@ -183,7 +183,7 @@ Section Judgement_Notations.
     exact a'.
   Defined.
 
-End Judgement_Notations.
+End JudgementNotations.
 
 Notation "'[Cxt!' |- Γ !]" := (make_context_ji Γ) : judgement_scope.
 Notation "'[Ty!' Γ |- A !]" := (make_type_ji Γ A) : judgement_scope.
@@ -200,7 +200,7 @@ Section Presuppositions.
 NOTE. This is a special case of [presup_slots_from_boundary] below. It is abstracted out because it’s used twice: directly for object judgements, and as part of the case for equality judgements.
 
 In fact it’s almost trivial, so could easily be inlined; but conceptually it is the same thing both times, and in type theory with more judgements, it would be less trivial, so we keep it factored out. *)
-  Definition object_boundary_from_boundary_slots
+  Local Definition object_boundary_from_boundary_slots
     {cl : syntactic_class} (i : object_boundary_slot cl)
     : Family.map
         (object_boundary_slot (object_boundary_slot cl i))
@@ -216,7 +216,7 @@ In fact it’s almost trivial, so could easily be inlined; but conceptually it i
 
 (** Wherever an judgement [I] occurs as a presupposition of a judgement [J],
 there is a canonical embedding of the slots of [I] into the slots of [J]. *)
-  Definition presupposition_from_boundary_slots
+  Local Definition presupposition_from_boundary_slots
     {hjf : hypothetical_form} (i : boundary_slot hjf)
     : Family.map
         (slot (form_object (boundary_slot hjf i)))
@@ -245,7 +245,7 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
 
   Context {σ : shape_system}.
   
-  Definition presupposition_of_boundary
+  Local Definition presupposition_of_boundary
       {Σ : signature σ} {jf} (jbi : boundary Σ jf)
     : family (judgement_total Σ).
   Proof.
@@ -268,7 +268,7 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
         exact (pr1 jbi).
   Defined.
 
-  Definition presupposition
+  Local Definition presupposition
       {Σ : signature σ} (j : judgement_total Σ)
     : family (judgement_total Σ)
   := presupposition_of_boundary (boundary_of_judgement (pr2 j)).
@@ -279,7 +279,7 @@ Section Signature_Maps.
 
   Context {σ : shape_system}.
 
-  Definition fmap_hypothetical_boundary
+  Local Definition fmap_hypothetical_boundary
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {hjf} {γ}
     : hypothetical_boundary Σ hjf γ -> hypothetical_boundary Σ' hjf γ.
@@ -288,7 +288,7 @@ Section Signature_Maps.
     apply (Expression.fmap f), hjbi.
   Defined.
 
-  Definition fmap_hypothetical_judgement
+  Local Definition fmap_hypothetical_judgement
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {hjf} {γ}
     : hypothetical_judgement Σ hjf γ -> hypothetical_judgement Σ' hjf γ.
@@ -310,7 +310,7 @@ Section Signature_Maps.
   Defined.
 
   (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly. *)
-  Definition fmap_judgement_total {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+  Local Definition fmap_judgement_total {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
     : judgement_total Σ -> judgement_total Σ'.
   Proof.
     intros jf_jfi.

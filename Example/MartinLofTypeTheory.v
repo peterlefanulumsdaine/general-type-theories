@@ -4,9 +4,9 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
-Require Import Raw.TypeTheory.
+Require Import Raw.RawTypeTheory.
 Require Import Raw.SignatureMap.
-Require Import Raw.Rule.
+Require Import Raw.RawRule.
 Require Import WellTyped.TypeTheory.
 
 Section MartinLöfTypeTheory.

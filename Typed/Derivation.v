@@ -5,44 +5,15 @@ Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
 Require Import Raw.Substitution.
-Require Import Raw.StructuralRule.
-Require Import Raw.TypeTheory.
-
-(** Typing derivations over type theories *)
-Section Derivation.
-
-  Context {σ : shape_system}.
-
-  Definition CCs_of_Flat_Type_Theory
-      {Σ : signature σ} (T : flat_type_theory Σ)
-    : Closure.system (judgement_total Σ)
-  := structural_rule Σ + Family.bind T FlatRule.closure_system.
-
-  Definition Derivation_from_Flat_Type_Theory
-      {Σ : signature σ} (T : flat_type_theory Σ) H
-    : judgement_total Σ -> Type
-  := Closure.derivation (CCs_of_Flat_Type_Theory T) H.
-
-  Definition Derivation_from_Type_Theory (T : raw_type_theory σ) H
-    : judgement_total (TypeTheory.signature T) -> Type
-  := Derivation_from_Flat_Type_Theory (TypeTheory.flatten T) H.
-
-End Derivation.
+Require Import Raw.FlatRule.
+Require Import Raw.RawStructuralRule.
+Require Import Raw.FlatTypeTheory.
+Require Import Raw.RawTypeTheory.
 
 Section Boundary_Derivations.
 
   Context {σ : shape_system}
           {Σ : signature σ}.
-
-  (* TODO: consider naming conventions for types of the form “derivation of X from Y” *)
-  Definition Derivation_Judgt_Bdry_Instance
-      {Σ : signature σ} (T : flat_type_theory Σ)
-      {jf} (jbi : Judgement.boundary Σ jf)
-      (H : family (judgement_total Σ))
-    : Type
-  :=
-    forall (i : presupposition_of_boundary jbi),
-      Derivation_from_Flat_Type_Theory T H (presupposition_of_boundary _ i).
 
 End Boundary_Derivations.
 
@@ -53,13 +24,13 @@ Section Derivable_Rules.
   Context {σ : shape_system}
           {Σ : signature σ}.
 
-  Definition Derivation_Flat_Rule_from_Flat_Type_Theory
+  Local Definition Derivation_Flat_Rule_from_Flat_Type_Theory
       (R : flat_rule Σ) (T : flat_type_theory Σ)
     : Type.
   Proof.
     refine (Closure.derivation _ (flat_rule_premises _ R) (flat_rule_conclusion _ R)).
-    apply CCs_of_Flat_Type_Theory.
-    refine (fmap_flat_type_theory _ T).
+    apply FlatTypeTheory.closure_system.
+    refine (FlatTypeTheory.fmap _ T).
     apply Family.map_inl. (* TODO: make this a lemma about signature maps,
                             so it’s more findable using “SearchAbout” etc *)
   Defined.
@@ -87,11 +58,11 @@ Section TT_Maps.
      }.
 
   (* TODO: perhaps abstract [Family_Map_over] or something, i.e. a displayed-category version of family maps, for use in definitions like this? *)
-  Definition Fmap_Structural_CCs
+  Local Definition Fmap_Structural_CCs
       {Σ Σ' : signature σ}
       (f : Signature.map Σ Σ')
     : Family.map
-        (Family.fmap (Closure.fmap (fmap_judgement_total f)) (structural_rule Σ))
+        (Family.fmap (Closure.fmap (Judgement.fmap_judgement_total f)) (structural_rule Σ))
         (structural_rule Σ').
   Proof.
     (* TODO: possible better approach:
@@ -144,7 +115,7 @@ Section TT_Maps.
         exists (Context.fmap f Γ').
         exists (fmap_raw_context_map f g).
         exists hjf.
-        exact (fmap_hypothetical_judgement f hjfi).
+        exact (Judgement.fmap_hypothetical_judgement f hjfi).
       + cbn. apply Closure.rule_eq; cbn.
         * apply inverse.
           eapply concat. { apply Family.map_adjoin. }
@@ -161,7 +132,7 @@ Section TT_Maps.
         * apply (ap (fun x => (_; x))). cbn.
           apply (ap (fun x => (_; x))).
           apply path_forall. intros i.
-          unfold fmap_hypothetical_judgement.
+          unfold Judgement.fmap_hypothetical_judgement.
           refine (fmap_substitute _ _ _)^.
     - (* substitution equality *)
       destruct c3 as [ Γ [Γ' [g [g' [hjf hjfi]]]]].
@@ -172,26 +143,26 @@ Section TT_Maps.
         exists (fmap_raw_context_map f g).
         exists (fmap_raw_context_map f g').
         exists hjf.
-        exact (fmap_hypothetical_judgement f hjfi).
+        exact (Judgement.fmap_hypothetical_judgement f hjfi).
       + admit.
     - (* var rule *)
       simple refine (inl (inr _) ; _); admit.
     - (* equality rules *)
       simple refine (inr _; _); admit.
       (* Thest last two should be doable cleanly by the same lemmas
-      used for logical rules in [Fmap_CCs_of_Flat_Type_Theory] below, once that’s done. *)
+      used for logical rules in [fmap] below, once that’s done. *)
   Admitted.
 
-  Definition Fmap_CCs_of_Flat_Type_Theory
+  Local Definition fmap
     {Σ : signature σ} (T : flat_type_theory Σ)
     {Σ' : signature σ} (T' : flat_type_theory Σ')
     (f : TT_Map T T')
   : Closure.map
-      (Family.fmap (Closure.fmap (fmap_judgement_total f)) (CCs_of_Flat_Type_Theory T))
-      (CCs_of_Flat_Type_Theory T').
+      (Family.fmap (Closure.fmap (Judgement.fmap_judgement_total f)) (FlatTypeTheory.closure_system T))
+      (FlatTypeTheory.closure_system T').
   Proof.
     intros c. (* We need to unfold [c] a bit here, bit not too much. *)
-    unfold Family.fmap, family_index, CCs_of_Flat_Type_Theory in c.
+    unfold Family.fmap, family_index, FlatTypeTheory.closure_system in c.
     destruct c as [ c_str | c_from_rr ].
     - (* Structural rules *)
       (* an instance of a structural rule is translated to an instance of the same structural rule *)

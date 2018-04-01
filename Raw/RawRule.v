@@ -8,6 +8,7 @@ Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
 Require Import Raw.AlgebraicExtension.
+Require Import Raw.FlatRule.
 
 (** A well-shaped rule is given by the following data:
 
@@ -97,12 +98,12 @@ Record rule
     - (* ae_hypothetical_boundary *)
       intros i.
       simple refine
-        (fmap_hypothetical_boundary
+        (Judgement.fmap_hypothetical_boundary
           _ (ae_hypothetical_boundary _ i)).
       apply Metavariable.fmap1, f.
     - (* rule_conclusion_hypothetical_boundary *)
       simple refine
-        (fmap_hypothetical_boundary
+        (Judgement.fmap_hypothetical_boundary
           _ (rule_conclusion_hypothetical_boundary R)).
       apply Metavariable.fmap1, f.
   Defined.
@@ -176,7 +177,7 @@ Section Flattening.
     exists (form_hypothetical (ae_form _ i)).
     exists (Context.fmap f (ae_raw_context _ i)).
     apply Judgement.hypothetical_instance_from_boundary_and_head.
-    - refine (fmap_hypothetical_boundary f _).
+    - refine (Judgement.fmap_hypothetical_boundary f _).
       apply ae_hypothetical_boundary.
     - intro H_obj.
       destruct i as [ i_obj | i_eq ]; simpl in *.

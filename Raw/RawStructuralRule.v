@@ -4,6 +4,7 @@ Require Import Auxiliary.Closure.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
+Require Import Raw.FlatRule.
 
 (**
   This module defines the “standard rules” — the rules which are not explicitly specified

@@ -5,13 +5,13 @@ Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 Require Import Raw.AlgebraicExtension.
-Require Import Raw.Rule.
-Require Import Raw.TypeTheory.
+Require Import Raw.RawRule.
+Require Import Raw.FlatTypeTheory.
 Require Import Typed.Derivation.
 
 (** In this file: definition of well-typedness of an algebraic extension, and a (well-presented) rule. *)
 
-Section Welltypedness.
+Section WellTypedRule.
 
   Context {σ : shape_system}.
 
@@ -21,14 +21,14 @@ Section Welltypedness.
     : Type.
   Proof.
     refine (forall r : A, _).
-    refine (Derivation_Judgt_Bdry_Instance _ (AlgebraicExtension.judgement_boundary r) _).
+    refine (FlatTypeTheory.Derivation_Judgt_Bdry_Instance _ (AlgebraicExtension.judgement_boundary r) _).
     - (* ambient type theory to typecheck premise [p] in *)
-      simple refine (fmap_flat_type_theory _ T).
+      simple refine (FlatTypeTheory.fmap _ T).
       apply include_symbol.
     - (* open hypotheses to allow in the derivation *)
       exists {i : ae_premise A & ae_lt _ i r }.
       intros [i lt_i_r].
-      apply (Rule.judgement_of_premise i).
+      apply (RawRule.judgement_of_premise i).
       + apply Metavariable.fmap2.
         simple refine (_;_).
         * intros [j lt_j_i].
@@ -64,13 +64,13 @@ Section Welltypedness.
   Proof.
     refine (is_well_typed_algebraic_extension T (rule_premise R) * _).
     (* well-typedness of conclusion *)
-    refine (Derivation_Judgt_Bdry_Instance _ (Rule.conclusion_boundary R) _).
+    refine (FlatTypeTheory.Derivation_Judgt_Bdry_Instance _ (RawRule.conclusion_boundary R) _).
     - (* ambient type theory to typecheck premise [p] in *)
-      simple refine (fmap_flat_type_theory _ T).
+      simple refine (FlatTypeTheory.fmap _ T).
       apply include_symbol.
     - (* open hypotheses to allow in the derivation *)
       exists (rule_premise R).
-      intros i. apply (Rule.judgement_of_premise i).
+      intros i. apply (RawRule.judgement_of_premise i).
       + apply Metavariable.fmap2.
         apply Family.inclusion.
       + intros H_i_obj.
@@ -83,4 +83,4 @@ Section Welltypedness.
           destruct H_i_obj. (* ruled out by assumption *)
   Defined.
 
-End Welltypedness.
+End WellTypedRule.

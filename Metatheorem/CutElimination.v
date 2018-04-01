@@ -3,7 +3,8 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
 Require Import Raw.Syntax.
-Require Import Raw.Rule.
+Require Import Raw.RawRule.
+Require Import Raw.FlatTypeTheory.
 Require Import Typed.Derivation.
 
 (* TODO: upstream to [Closure]?  Perhaps make some names local? *)
@@ -103,13 +104,13 @@ Section Cut_Freeness.
 
   (* Is a rule an instance of [cut] ? *)
   Definition is_cut {Σ : signature σ}
-      {T : flat_type_theory Σ} (r : CCs_of_Flat_Type_Theory T)
+      {T : flat_type_theory Σ} (r : FlatTypeTheory.closure_system T)
     : Type.
   Admitted.
 
   (* NOTE: “occurrence” is included because “cut_main_premise” would more naturally refer to the judgement that’s the main premise in the rule (independent of any particular derivation). *)
   Definition cut_occurrence_main_premise {Σ} {T : flat_type_theory Σ}
-       {j} {H} {d : Derivation_from_Flat_Type_Theory T H j}
+       {j} {H} {d : FlatTypeTheory.derivation T H j}
        (r : rule_occurrence d) (r_cut : is_cut (rule_occurrence d r))
     : step d.
   Admitted.
@@ -120,7 +121,7 @@ Section Cut_Freeness.
 
   For derivations with arbitrary hypotheses, completely cut-free would be too strong a property to require; so in general we allow cut, but only directly into hypotheses. *)
   Definition cut_free {Σ : signature σ} {T : flat_type_theory Σ}
-      {j} {H} (d : Derivation_from_Flat_Type_Theory T H j)
+      {j} {H} (d : FlatTypeTheory.derivation T H j)
     : Type
   := (forall (r : rule_occurrence d) (r_cut : is_cut (rule_occurrence d r)),
          is_hypothesis (cut_occurrence_main_premise _ r_cut)).
@@ -132,8 +133,8 @@ Section Cut_Elimination.
   Context {σ : shape_system}.
 
   Theorem cut_elimination {Σ : signature σ} {T : flat_type_theory Σ}
-      {j} {H} (d : Derivation_from_Flat_Type_Theory T H j)
-    : { d' : Derivation_from_Flat_Type_Theory T H j & cut_free d' }.
+      {j} {H} (d : FlatTypeTheory.derivation T H j)
+    : { d' : FlatTypeTheory.derivation T H j & cut_free d' }.
   Proof.
 (* Sketch proof: start by roughly paralleling our definition of substitution, then do the main induction.  In detail,
 

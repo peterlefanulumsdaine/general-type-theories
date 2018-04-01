@@ -7,7 +7,7 @@ Require Import Auxiliary.WellFounded.
 Require Import Proto.ShapeSystem.
 Require Import Raw.Syntax.
 Require Import Raw.AlgebraicExtension.
-Require Import Raw.Rule.
+Require Import Raw.RawRule.
 
 Section CongruenceRule.
 
@@ -119,10 +119,10 @@ eq_new i   0        0        0        0        i < j
     - (* ae_hypothetical_boundary *)
       intros p.
       set (p_orig := original_premise p).
-      destruct p as [ [ ? | ? ] | [ [ ? | ? ] | p ] ];
-      try (refine (fmap_hypothetical_boundary
-        (original_constructor_translation _ _) _);
-           refine (ae_hypothetical_boundary _ p_orig)).
+      destruct p as [ [ ? | ? ] | [ [ ? | ? ] | p ] ] ;
+        try (refine (Judgement.fmap_hypothetical_boundary
+          (original_constructor_translation _ _) _) ;
+             refine (ae_hypothetical_boundary _ p_orig)).
       (* The cases where [p] is a copy of an original premise are all just translation,
       leaving just the new equality premises to give. *)
       intros i; simpl Judgement.boundary_slot in i.
