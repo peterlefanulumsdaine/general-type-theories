@@ -1,9 +1,8 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Syntax.SyntacticClass.
-Require Import Raw.Syntax.Arity.
 Require Import Raw.Syntax.Signature.
+Require Import Raw.Syntax.SyntacticClass.
 Require Import Raw.Syntax.Expression.
 Require Import Raw.Syntax.Context.
 
@@ -125,6 +124,51 @@ End JudgementDefinitions.
 Arguments hypothetical_boundary : simpl nomatch.
 Arguments boundary_of_judgement {_ _ _} _ : simpl nomatch.
 
+Section JudgementFmap.
+
+  Context {σ : shape_system}.
+
+  Local Definition fmap_hypothetical_boundary
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {hjf} {γ}
+    : hypothetical_boundary Σ hjf γ -> hypothetical_boundary Σ' hjf γ.
+  Proof.
+    intros hjbi i.
+    apply (Expression.fmap f), hjbi.
+  Defined.
+
+  Local Definition fmap_hypothetical_judgement
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {hjf} {γ}
+    : hypothetical_judgement Σ hjf γ -> hypothetical_judgement Σ' hjf γ.
+  Proof.
+    intros hjbi i.
+    apply (Expression.fmap f), hjbi.
+  Defined.
+
+  (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly. *)
+  Local Definition fmap {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {jf}
+    : judgement Σ jf -> judgement Σ' jf.
+  Proof.
+    destruct jf as [ | hjf].
+    - apply Context.fmap, f.
+    - cbn. intros Γ_hjfi.
+      exists (Context.fmap f Γ_hjfi.1).
+      exact (fmap_hypothetical_judgement f Γ_hjfi.2).
+  Defined.
+
+  (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly. *)
+  Local Definition fmap_judgement_total {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+    : judgement_total Σ -> judgement_total Σ'.
+  Proof.
+    intros jf_jfi.
+    exists jf_jfi.1.
+    exact (fmap f jf_jfi.2).
+  Defined.
+
+End JudgementFmap.
+
 Section JudgementNotations.
 
   Context {σ : shape_system}.
@@ -193,13 +237,20 @@ Notation "'[TmEq!' Γ |- a ≡ a' ; A !]" := (make_term_equality_ji Γ A a a') :
 
 Open Scope judgement_scope.
 
-Section Presuppositions.
+Section Presupposition.
+(** TODO: the naming in this section seems a bit ugly. *)
 
-(** Whenever an object appears in the boundary of an object judgement, then its boundary embeds into that boundary.
+(** Whenever an object appears in the boundary of an object judgement, then its
+    boundary embeds into that boundary.
 
-NOTE. This is a special case of [presup_slots_from_boundary] below. It is abstracted out because it’s used twice: directly for object judgements, and as part of the case for equality judgements.
+    NOTE. This is a special case of [presup_slots_from_boundary] below. It is
+    abstracted out because it’s used twice: directly for object judgements, and
+    as part of the case for equality judgements.
 
-In fact it’s almost trivial, so could easily be inlined; but conceptually it is the same thing both times, and in type theory with more judgements, it would be less trivial, so we keep it factored out. *)
+    In fact it’s almost trivial, so could easily be inlined; but conceptually it
+    is the same thing both times, and in type theory with more judgements, it
+    would be less trivial, so we keep it factored out. *)
+
   Local Definition object_boundary_from_boundary_slots
     {cl : syntactic_class} (i : object_boundary_slot cl)
     : Family.map
@@ -244,7 +295,8 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
   Defined.
 
   Context {σ : shape_system}.
-  
+
+  (** The presuppositions of judgment boundary [jbi] *)
   Local Definition presupposition_of_boundary
       {Σ : signature σ} {jf} (jbi : boundary Σ jf)
     : family (judgement_total Σ).
@@ -268,55 +320,10 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
         exact (pr1 jbi).
   Defined.
 
+  (** The presuppositions of judgement [j]. *)
   Local Definition presupposition
       {Σ : signature σ} (j : judgement_total Σ)
     : family (judgement_total Σ)
   := presupposition_of_boundary (boundary_of_judgement (pr2 j)).
-  
-End Presuppositions.
 
-Section Signature_Maps.
-
-  Context {σ : shape_system}.
-
-  Local Definition fmap_hypothetical_boundary
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {hjf} {γ}
-    : hypothetical_boundary Σ hjf γ -> hypothetical_boundary Σ' hjf γ.
-  Proof.
-    intros hjbi i.
-    apply (Expression.fmap f), hjbi.
-  Defined.
-
-  Local Definition fmap_hypothetical_judgement
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {hjf} {γ}
-    : hypothetical_judgement Σ hjf γ -> hypothetical_judgement Σ' hjf γ.
-  Proof.
-    intros hjbi i.
-    apply (Expression.fmap f), hjbi.
-  Defined.
-
-  (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly. *)
-  Local Definition fmap {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {jf}
-    : judgement Σ jf -> judgement Σ' jf.
-  Proof.
-    destruct jf as [ | hjf].
-    - apply Context.fmap, f.
-    - cbn. intros Γ_hjfi.
-      exists (Context.fmap f Γ_hjfi.1).
-      exact (fmap_hypothetical_judgement f Γ_hjfi.2).
-  Defined.
-
-  (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly. *)
-  Local Definition fmap_judgement_total {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-    : judgement_total Σ -> judgement_total Σ'.
-  Proof.
-    intros jf_jfi.
-    exists jf_jfi.1.
-    exact (fmap f jf_jfi.2).
-  Defined.
-
-
-End Signature_Maps.
+End Presupposition.

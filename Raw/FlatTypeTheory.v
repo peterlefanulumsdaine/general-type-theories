@@ -41,3 +41,17 @@ Local Definition fmap {σ : shape_system}
 Proof.
   apply Family.fmap, FlatRule.fmap, f.
 Defined.
+
+Local Definition Derivation_Flat_Rule_from_Flat_Type_Theory
+      {σ : shape_system} 
+      {Σ : signature σ}
+      (R : flat_rule Σ) (T : flat_type_theory Σ)
+  : Type.
+Proof.
+  simple refine (Closure.derivation _ (flat_rule_premises _ R) (flat_rule_conclusion _ R)).
+  apply closure_system.
+  simple refine (fmap _ T).
+  apply Family.map_inl. (* TODO: make this a lemma about signature maps,
+                            so it’s more findable using “SearchAbout” etc *)
+Defined.
+

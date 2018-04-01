@@ -10,33 +10,6 @@ Require Import Raw.RawStructuralRule.
 Require Import Raw.FlatTypeTheory.
 Require Import Raw.RawTypeTheory.
 
-Section Boundary_Derivations.
-
-  Context {σ : shape_system}
-          {Σ : signature σ}.
-
-End Boundary_Derivations.
-
-(** “Derivable rules” over a type theory;
-or, to be precise, _derivations_ of flat rules over a flat type theory. *)
-Section Derivable_Rules.
-
-  Context {σ : shape_system}
-          {Σ : signature σ}.
-
-  Local Definition Derivation_Flat_Rule_from_Flat_Type_Theory
-      (R : flat_rule Σ) (T : flat_type_theory Σ)
-    : Type.
-  Proof.
-    refine (Closure.derivation _ (flat_rule_premises _ R) (flat_rule_conclusion _ R)).
-    apply FlatTypeTheory.closure_system.
-    refine (FlatTypeTheory.fmap _ T).
-    apply Family.map_inl. (* TODO: make this a lemma about signature maps,
-                            so it’s more findable using “SearchAbout” etc *)
-  Defined.
-
-End Derivable_Rules.
-
 (* TODO: probably this section should be broken out to a separate file. *)
 Section TT_Maps.
 
@@ -52,7 +25,7 @@ Section TT_Maps.
     {Σ' : signature σ} (T' : flat_type_theory Σ')
   := { Signature_map_of_TT_Map :> Signature.map Σ Σ'
      ; rule_derivation_of_TT_Map
-       : forall R : T, Derivation_Flat_Rule_from_Flat_Type_Theory
+       : forall R : T, FlatTypeTheory.Derivation_Flat_Rule_from_Flat_Type_Theory
                          (FlatRule.fmap Signature_map_of_TT_Map (T R))
                          T'
      }.
