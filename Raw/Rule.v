@@ -16,7 +16,7 @@ Require Import Raw.Syntax.
 *)
 
 (** Specification of well-shaped rules *)
-Section Rule.
+Section WellShapedRule.
 
 Context {σ : shape_system}.
 
@@ -46,39 +46,39 @@ Record algebraic_extension
          (Family.fmap (fun cl_γ => (form_object (fst cl_γ), snd cl_γ)) a)
          (Family.fmap (fun cl_γ => (form_equality (fst cl_γ), snd cl_γ)) ae_equality_premise)
   (* - the judgement form of each premise, e.g. “term” or “type equality” *)
-  ; ae_hjf_of_premise : ae_premise -> Judgement.hypothetical_form
+  ; ae_form : ae_premise -> Judgement.hypothetical_form
     := fun i => fst (ae_premise i)
   (* - the proto-context of each premise *)
-  ; ae_proto_cxt_of_premise : ae_premise -> σ
+  ; ae_shape : ae_premise -> σ
     := fun i => snd (ae_premise i)
   (* the ordering relation on the premises *)
   ; ae_lt : well_founded_order ae_premise
   (* for each premise, the arity specifying what metavariables are available in the syntax
      for this premise; i.e., the family of type/term arguments already introduced by earlier
      premises *)
-  ; ae_arity_for_premise : ae_premise -> arity _
+  ; ae_metas : ae_premise -> arity _
     := fun i => Family.subfamily a (fun j => ae_lt (inl j) i)
-  ; ae_signature_for_premise : ae_premise -> signature _
-    := fun i => Metavariable.extend Σ (ae_arity_for_premise i)
+  ; ae_signature : ae_premise -> signature _
+    := fun i => Metavariable.extend Σ (ae_metas i)
   (* syntactic part of context of premise *)
-  (* NOTE: this should never be used directly, always through [ae_raw_context_of_premise] *)
-  ; ae_context_expr_of_premise
-    : forall (i : ae_premise) (v : ae_proto_cxt_of_premise i),
+  (* NOTE: this should never be used directly, always through [ae_raw_context] *)
+  ; ae_raw_context_type
+    : forall (i : ae_premise) (v : ae_shape i),
         raw_type
-          (ae_signature_for_premise i)
-          (ae_proto_cxt_of_premise i)
+          (ae_signature i)
+          (ae_shape i)
   (* raw context of each premise *)
-  ; ae_raw_context_of_premise
+  ; ae_raw_context
     : forall i : ae_premise,
-        raw_context (ae_signature_for_premise i)
-    := fun i => Build_raw_context _ (ae_context_expr_of_premise i)
+        raw_context (ae_signature i)
+    := fun i => Build_raw_context _ (ae_raw_context_type i)
   (* hypothetical judgement boundary instance for each premise *)
-  ; ae_hyp_bdry_of_premise
+  ; ae_hypothetical_boundary
     : forall i : ae_premise,
         Judgement.hypothetical_boundary
-          (ae_signature_for_premise i)
-          (ae_hjf_of_premise i)
-          (ae_proto_cxt_of_premise i)
+          (ae_signature i)
+          (ae_form i)
+          (ae_shape i)
   }.
 
 Arguments algebraic_extension _ _ : clear implicits.
@@ -87,11 +87,11 @@ Arguments algebraic_extension _ _ : clear implicits.
 Definition ae_judgt_bdry_of_premise
     {Σ : signature σ} {a}
     {A : algebraic_extension Σ a} (r : A)
-  : Judgement.boundary (ae_signature_for_premise _ r)
-                       (form_hypothetical (ae_hjf_of_premise _ r)).
+  : Judgement.boundary (ae_signature _ r)
+                       (form_hypothetical (ae_form _ r)).
 Proof.
-  exists (ae_raw_context_of_premise _ r).
-  apply (ae_hyp_bdry_of_premise).
+  exists (ae_raw_context _ r).
+  apply (ae_hypothetical_boundary).
 Defined.
 
 (* The parameters of a rule, beyond its ambient signature, may be a little counter-intuitive.  The point is that they are just what is required to determine the arity of the symbol introduced by the rule (if it’s an object rule), and in any case the arity of its associated flat rule. *)
@@ -129,8 +129,8 @@ Record rule
     simple refine (Build_algebraic_extension _ _ _ _ _ _).
     - admit. (* ae_equality_premise: arity specifying equality premises *)
     - admit. (* ae_lt *)
-    - admit. (* ae_context_expr_of_premise *)
-    - admit. (* ae_hyp_bdry_of_premise *)
+    - admit. (* ae_raw_context_type *)
+    - admit. (* ae_hypothetical_boundary *)
     - admit. (* hyp_judgt_bdry_of_conclusion *)
   Abort.
 
@@ -148,15 +148,15 @@ Record rule
     simple refine (Build_algebraic_extension _ _ _ _ _ _).
     - exact (ae_equality_premise (premise R)).
     - exact (ae_lt (premise R)).
-    - (* ae_context_expr_of_premise *)
+    - (* ae_raw_context_type *)
       intros i v.
-      refine (_ (ae_context_expr_of_premise _ i v)).
+      refine (_ (ae_raw_context_type _ i v)).
       apply Expression.fmap, Metavariable.fmap1, f.
-    - (* ae_hyp_bdry_of_premise *)
+    - (* ae_hypothetical_boundary *)
       intros i.
       simple refine
         (fmap_hypothetical_boundary
-          _ (ae_hyp_bdry_of_premise _ i)).
+          _ (ae_hypothetical_boundary _ i)).
       apply Metavariable.fmap1, f.
     - (* hyp_judgt_bdry_of_conclusion *)
       simple refine
@@ -165,7 +165,7 @@ Record rule
       apply Metavariable.fmap1, f.
   Defined.
 
-End Rule.
+End WellShapedRule.
 
 (* globalise argument declarations *)
 Arguments algebraic_extension {_} _ _.
@@ -176,22 +176,23 @@ Module Span.
 (** Some auxiliary constructions for defining the ordering of the premises in the
     associated congruence rule of a constructor. *)
 
-  Local Inductive span : Type := l | r | t.
+  Local Inductive span : Type :=
+    left | right | top.
 
   Local Definition lt_relation : relation span
   := fun x y => match x, y with
-                | l, t => True
-                | r, t => True
+                | left, top => True
+                | right, top => True
                 | x, y => False
   end.
 
   Definition lt_well_founded : is_well_founded lt_relation.
   Proof.
     intros P P_hereditary.
-    assert (Pl : P l). { apply P_hereditary. intros [ | | ] []. }
-    assert (Pr : P r). { apply P_hereditary. intros [ | | ] []. }
+    assert (Pl : P left). { apply P_hereditary. intros [ | | ] []. }
+    assert (Pr : P right). { apply P_hereditary. intros [ | | ] []. }
     intros [ | | ]; try assumption.
-    apply P_hereditary. intros [ | | ] l; try assumption; destruct l.
+    apply P_hereditary. intros [ | | ] left; try assumption; destruct left.
   Defined.
 
   Definition lt_transitive : Transitive lt_relation.
@@ -229,11 +230,11 @@ Section Associated_Congruence_Rules.
   Proof.
     refine (WellFounded.pullback _ (semi_reflexive_product lt Span.lt)).
     intros [ [ ob_l | ob_r ] | [ [ eq_l | eq_r ] | eq_new ] ].
-    + exact (inl ob_l, Span.l).
-    + exact (inl ob_r, Span.r).
-    + exact (inr eq_l, Span.l).
-    + exact (inr eq_r, Span.r).
-    + exact (inl eq_new, Span.t).
+    + exact (inl ob_l, Span.left).
+    + exact (inl ob_r, Span.right).
+    + exact (inr eq_l, Span.left).
+    + exact (inr eq_r, Span.right).
+    + exact (inl eq_new, Span.top).
   Defined.
 
   Arguments associated_congruence_rule_lt : simpl nomatch.
@@ -259,7 +260,7 @@ eq_new i   0        0        0        0        i < j
     (p : (a + a) +
          (ae_equality_premise (premise R) + ae_equality_premise (premise R) + a))
     : Signature.map
-        (ae_signature_for_premise (premise R) (associated_original_premise p))
+        (ae_signature (premise R) (associated_original_premise p))
         (Metavariable.extend Σ (Family.subfamily (a + a)
            (fun j => associated_congruence_rule_lt (ae_lt _) (inl j) p))).
   Proof.
@@ -304,21 +305,21 @@ eq_new i   0        0        0        0        i < j
       exact (((ae_equality_premise (premise R)) + (ae_equality_premise (premise R))) + a).
     - (* ae_lt *)
       exact (associated_congruence_rule_lt (ae_lt _)).
-    - (* ae_context_expr_of_premise *)
+    - (* ae_raw_context_type *)
       intros p i.
       refine (Expression.fmap
         (associated_congruence_rule_original_constructor_translation _ _) _).
       set (p_orig := associated_original_premise p).
       destruct p as [ [ ? | ? ] | [ [ ? | ? ] | ? ] ];
-      refine (ae_context_expr_of_premise _ p_orig i).
+      refine (ae_raw_context_type _ p_orig i).
       (* alternatively, instead of destructing [p], could use equality reasoning on the type of [i]. *)
-    - (* ae_hyp_bdry_of_premise *)
+    - (* ae_hypothetical_boundary *)
       intros p.
       set (p_orig := associated_original_premise p).
       destruct p as [ [ ? | ? ] | [ [ ? | ? ] | p ] ];
       try (refine (fmap_hypothetical_boundary
         (associated_congruence_rule_original_constructor_translation _ _) _);
-           refine (ae_hyp_bdry_of_premise _ p_orig)).
+           refine (ae_hypothetical_boundary _ p_orig)).
       (* The cases where [p] is a copy of an original premise are all just translation,
       leaving just the new equality premises to give. *)
       intros i; simpl Judgement.boundary_slot in i.
@@ -326,7 +327,7 @@ eq_new i   0        0        0        0        i < j
       + (* boundary of the corresponding original premise *)
         refine (Expression.fmap
           (associated_congruence_rule_original_constructor_translation _ _) _).
-        apply (ae_hyp_bdry_of_premise _ p_orig).
+        apply (ae_hypothetical_boundary _ p_orig).
       + (* LHS of new equality premise *)
         cbn. simple refine (raw_symbol' _ _ _).
         * apply Metavariable.include_metavariable.
@@ -410,18 +411,18 @@ Section Flattening.
   (* TODO: consider whether the flattening of the conclusion can also be covered by this. *)
   Lemma judgement_of_premise
       {a} {A : algebraic_extension Σ a} (i : A)
-      {Σ'} (f : Signature.map (ae_signature_for_premise _ i) Σ')
-      (Sr : Judgement.is_object (ae_hjf_of_premise _ i)
+      {Σ'} (f : Signature.map (ae_signature _ i) Σ')
+      (Sr : Judgement.is_object (ae_form _ i)
            -> { S : Σ'
-             & (symbol_arity S = Arity.simple (ae_proto_cxt_of_premise _ i))
-             * (symbol_class S = Judgement.class_of (ae_hjf_of_premise _ i))})
+             & (symbol_arity S = Arity.simple (ae_shape _ i))
+             * (symbol_class S = Judgement.class_of (ae_form _ i))})
    : judgement_total Σ'.
   Proof.
-    exists (form_hypothetical (ae_hjf_of_premise _ i)).
-    exists (Context.fmap f (ae_raw_context_of_premise _ i)).
+    exists (form_hypothetical (ae_form _ i)).
+    exists (Context.fmap f (ae_raw_context _ i)).
     apply Judgement.hypothetical_instance_from_boundary_and_head.
     - refine (fmap_hypothetical_boundary f _).
-      apply ae_hyp_bdry_of_premise.
+      apply ae_hypothetical_boundary.
     - intro H_obj.
       destruct i as [ i_obj | i_eq ]; simpl in *.
       + (* case: i an object rule *)
