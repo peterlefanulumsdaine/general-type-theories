@@ -14,7 +14,6 @@ MODULES := \
 	Auxiliary/Coproduct \
 	Auxiliary/Closure \
 	Proto/ShapeSystem \
-	Proto/ShapeSystemExamples \
 	Raw/Syntax/SyntacticClass \
 	Raw/Syntax/Arity \
 	Raw/Syntax/Signature \
@@ -40,7 +39,8 @@ MODULES := \
 	Typed/TypeTheory \
 	Metatheorem/Sanity \
 	Metatheorem/CutElimination \
-	Metatheorem/UniqueTyping
+	Metatheorem/UniqueTyping \
+	Example/ShapeSystemExamples
 
 VS      := $(MODULES:%=%.v)
 
