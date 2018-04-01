@@ -23,11 +23,10 @@ MODULES := \
 	Raw/Syntax/Judgement \
 	Raw/Syntax/Metavariable \
 	Raw/Syntax \
-	Raw/Substitution \
+	Raw/RawSubstitution \
 	Raw/RawStructuralRule \
 	Raw/AlgebraicExtension \
 	Raw/CongruenceRule \
-	Raw/FlatRule \
 	Raw/FlatTypeTheory \
 	Raw/FlatTypeTheoryMap \
 	Raw/RawRule \

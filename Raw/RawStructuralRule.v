@@ -4,7 +4,7 @@ Require Import Auxiliary.Closure.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
-Require Import Raw.Substitution.
+Require Import Raw.RawSubstitution.
 Require Import Raw.FlatRule.
 
 (**
@@ -39,7 +39,7 @@ Section StructuralRules.
 Context {σ : shape_system}.
 Context (Σ : @signature σ).
 
-Section Context.
+Section ContextRules.
 
 Local Definition ctx_empty : Closure.rule (judgement_total Σ).
 Proof.
@@ -92,9 +92,9 @@ Local Definition context : Closure.system (judgement_total Σ)
     allow derivations to take place over not-yet-well-typed contexts)?
 *)
 
-End Context.
+End ContextRules.
 
-Section Substitution.
+Section SubstitutionRules.
 
 (** General substitution along context maps. *)
 
@@ -172,7 +172,7 @@ Defined.
 Local Definition substitution : Closure.system (judgement_total Σ)
   := subst_apply + subst_equal.
 
-End Substitution.
+End SubstitutionRules.
 
 Section HypotheticalStructuralRules.
 
@@ -583,12 +583,12 @@ Section StructuralRuleMap.
           -- eapply concat. { refine (plusone_comp_one _ _ _ _ _ _). }
              eapply concat. Focus 2.
                { apply ap. refine (plusone_comp_one _ _ _ _ _ _)^. } Unfocus.
-             apply inverse. apply Substitution.fmap_rename.
+             apply inverse. apply RawSubstitution.fmap_rename.
           -- intros x. cbn in x.
              eapply concat. { refine (plusone_comp_inj _ _ _ _ _ _ _). }
              eapply concat. Focus 2.
                { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. } Unfocus.
-             apply inverse. apply Substitution.fmap_rename.
+             apply inverse. apply RawSubstitution.fmap_rename.
     - (* empty context *)
       exists (inl (inl (inl None))).
       cbn. apply Closure.rule_eq.
