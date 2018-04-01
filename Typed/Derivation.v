@@ -23,8 +23,8 @@ Section Derivation.
     : judgement_total Σ -> Type
   := Closure.derivation (CCs_of_Flat_Type_Theory T) H.
 
-  Definition Derivation_from_Type_Theory (T : Type_Theory σ) H
-    : judgement_total (Signature_of_Type_Theory T) -> Type
+  Definition Derivation_from_Type_Theory (T : raw_type_theory σ) H
+    : judgement_total (TypeTheory.signature T) -> Type
   := Derivation_from_Flat_Type_Theory (TypeTheory.flatten T) H.
 
 End Derivation.

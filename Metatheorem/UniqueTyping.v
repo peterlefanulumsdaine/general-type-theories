@@ -9,8 +9,8 @@ Require Import Typed.TypeTheory.
 
 (* Main goal of this file: theorem stating unique typing, for any (fully typed) type theory. *)
 
-Theorem unique_typing {σ : shape_system} (T : Type_Theory σ)
-    (Σ := Signature_of_Type_Theory T)
+Theorem unique_typing {σ : shape_system} (T : raw_type_theory σ)
+    (Σ := TypeTheory.signature T)
     (Γ : raw_context Σ) (a : raw_term Σ Γ) (A A' : raw_type Σ Γ)
     (d : Derivation_from_Type_Theory T [<>] [Tm! Γ |- a ; A !])
     (d' : Derivation_from_Type_Theory T [<>] [Tm! Γ |- a ; A' !])

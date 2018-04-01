@@ -12,8 +12,8 @@ Require Import Typed.Derivation.
 Require Import Typed.TypedStructuralRule.
  
 (** The goal of this file is the theorem that presuppositions of a derivable judgement are derivable, over any type theory: *)
-Theorem closed_presupposition_derivation {σ} {T : Type_Theory σ}
-     {j : judgement_total (Signature_of_Type_Theory T)}
+Theorem closed_presupposition_derivation {σ} {T : raw_type_theory σ}
+     {j : judgement_total (TypeTheory.signature T)}
      (dj : Derivation_from_Type_Theory T [<>] j)
      {p : presupposition j }
   : Derivation_from_Type_Theory T [<>] (presupposition j p).
@@ -162,14 +162,14 @@ Section Presuppositions_Derivable.
     - apply d_j.
   Defined.
 
-  Lemma presupposition_closed_flatten {T : Type_Theory σ}
+  Lemma presupposition_closed_flatten {T : raw_type_theory σ}
     : presupposition_closed (TypeTheory.flatten T).
   Proof.
   Admitted.
 
   (* TODO: at least make access function between [judgment] and [judgement_total]; perhaps make it a coercion? *)
-  Theorem presupposition_derivation {T : Type_Theory σ}
-      {j : judgement_total (Signature_of_Type_Theory T)}
+  Theorem presupposition_derivation {T : raw_type_theory σ}
+      {j : judgement_total (TypeTheory.signature T)}
       {hyps : family _}    
       (dj : Derivation_from_Type_Theory T hyps j)
       (d_hyp_presups :
@@ -182,8 +182,8 @@ Section Presuppositions_Derivable.
     apply presupposition_closed_flatten.
   Defined.
 
-  Corollary closed_presupposition_derivation {T : Type_Theory σ}
-      {j : judgement_total (Signature_of_Type_Theory T)}
+  Corollary closed_presupposition_derivation {T : raw_type_theory σ}
+      {j : judgement_total (TypeTheory.signature T)}
       (dj : Derivation_from_Type_Theory T [<>] j)
       {p : presupposition j }
     : Derivation_from_Type_Theory T [<>] (presupposition j p).
