@@ -135,7 +135,7 @@ Section Flattening.
       intros [r Hr].
       refine (flatten _ _).
       + simple refine
-        (CongruenceRule.associated_congruence_rule
+        (CongruenceRule.associated
            (Rule.fmap _ (TT_rule r)) _ _ _ _).
         * apply Type_Theory_signature_inclusion_of_rule.
         * exact Hr.

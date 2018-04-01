@@ -14,17 +14,17 @@ Section CongruenceRule.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  Local Definition associated_original_premise {obs eqs : arity σ}
+  Local Definition original_premise {obs eqs : arity σ}
     : (obs + obs) + (eqs + eqs + obs) -> (obs + eqs).
   Proof.
     intros p ; repeat destruct p as [p | p];
       try exact (inl p); exact (inr p).
   Defined.
 
-  Arguments associated_original_premise : simpl nomatch.
+  Arguments original_premise : simpl nomatch.
 
   (* The ordering of premises of the congruence rule associated to an object rule. *)
-  Local Definition associated_congruence_rule_lt
+  Local Definition lt
       {obs eqs : Type} (lt : well_founded_order (obs + eqs))
     : well_founded_order ((obs + obs) + (eqs + eqs + obs)).
   Proof.
@@ -37,7 +37,7 @@ Section CongruenceRule.
     + exact (inl eq_new, Span.top).
   Defined.
 
-  Local Arguments associated_congruence_rule_lt : simpl nomatch.
+  Local Arguments lt : simpl nomatch.
 
   (*  Unwinding this definition, the relation is be defined as follows:
 
@@ -55,14 +55,14 @@ eq_new i   0        0        0        0        i < j
 
 *)
 
-  Local Definition associated_congruence_rule_original_constructor_translation
+  Local Definition original_constructor_translation
     {a} {hjf_concl} (R : rule Σ a hjf_concl)
     (p : (a + a) +
          (ae_equality_premise (rule_premise R) + ae_equality_premise (rule_premise R) + a))
     : Signature.map
-        (ae_signature (rule_premise R) (associated_original_premise p))
+        (ae_signature (rule_premise R) (original_premise p))
         (Metavariable.extend Σ (Family.subfamily (a + a)
-           (fun j => associated_congruence_rule_lt (ae_lt _) (inl j) p))).
+           (fun j => lt (ae_lt _) (inl j) p))).
   Proof.
     (* In case [p] is one of the 2 copies of the original premises, there is a single canonical choice for this definition.
 
@@ -90,7 +90,7 @@ eq_new i   0        0        0        0        i < j
       repeat destruct p as [ p | p ]; apply idpath.
   Defined.
 
-  Local Definition associated_congruence_rule
+  Local Definition associated
     {a} {hjf_concl} (R : rule Σ a hjf_concl)
     (H : Judgement.is_object hjf_concl)
     (S : Σ)
@@ -106,22 +106,22 @@ eq_new i   0        0        0        0        i < j
                  (ae_equality_premise (rule_premise R))) + a ;
               |}.
     - (* ae_lt *)
-      exact (associated_congruence_rule_lt (ae_lt _)).
+      exact (lt (ae_lt _)).
     - (* ae_raw_context_type *)
       intros p i.
       refine (Expression.fmap
-        (associated_congruence_rule_original_constructor_translation _ _) _).
-      set (p_orig := associated_original_premise p).
+        (original_constructor_translation _ _) _).
+      set (p_orig := original_premise p).
       destruct p as [ [ ? | ? ] | [ [ ? | ? ] | ? ] ];
       refine (ae_raw_context_type _ p_orig i).
       (* alternatively, instead of destructing [p], could use equality reasoning
       on the type of [i]. *)
     - (* ae_hypothetical_boundary *)
       intros p.
-      set (p_orig := associated_original_premise p).
+      set (p_orig := original_premise p).
       destruct p as [ [ ? | ? ] | [ [ ? | ? ] | p ] ];
       try (refine (fmap_hypothetical_boundary
-        (associated_congruence_rule_original_constructor_translation _ _) _);
+        (original_constructor_translation _ _) _);
            refine (ae_hypothetical_boundary _ p_orig)).
       (* The cases where [p] is a copy of an original premise are all just translation,
       leaving just the new equality premises to give. *)
@@ -129,7 +129,7 @@ eq_new i   0        0        0        0        i < j
       destruct i as [ [ i | ] | ]; [ idtac | simpl | simpl].
       + (* boundary of the corresponding original premise *)
         refine (Expression.fmap
-          (associated_congruence_rule_original_constructor_translation _ _) _).
+          (original_constructor_translation _ _) _).
         apply (ae_hypothetical_boundary _ p_orig).
       + (* LHS of new equality premise *)
         cbn. simple refine (raw_symbol' _ _ _).
