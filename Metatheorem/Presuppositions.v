@@ -7,9 +7,9 @@ Require Import Raw.Syntax.
 Require Import Raw.Rule.
 Require Import Raw.TypeTheory.
 Require Import Raw.StructuralRule.
-Require Import Typed.Closure.
+Require Import Typed.TypedClosure.
 Require Import Typed.Derivation.
-Require Import Typed.StructuralRule.
+Require Import Typed.TypedStructuralRule.
  
 (** The goal of this file is the theorem that presuppositions of a derivable judgement are derivable, over any type theory: *)
 Theorem closed_presupposition_derivation {σ} {T : Type_Theory σ}
@@ -98,10 +98,10 @@ Section Presuppositions_Derivable.
 
   Definition presupposition_closed_structural_closure_system {Σ : signature σ}
       (P := fun (j : judgement_total Σ) => presupposition j)
-    : Closure.presupposition_closed P (structural_rule _).
+    : TypedClosure.presupposition_closed P (structural_rule _).
   Proof.
-    apply Closure.well_typed_implies_presupposition_closed.
-    apply StructuralRule.well_typed.
+    apply TypedClosure.well_typed_implies_presupposition_closed.
+    apply TypedStructuralRule.well_typed.
   Defined.
  
   (* TODO: make Σ implicit in fields of [flat_rule] *)
@@ -120,7 +120,7 @@ Section Presuppositions_Derivable.
       {Σ : signature σ} {T : flat_type_theory Σ}
       (T_presup_closed : presupposition_closed T)
       (P := fun (j : judgement_total Σ) => presupposition j)
-    : Closure.presupposition_closed P (CCs_of_Flat_Type_Theory T).
+    : TypedClosure.presupposition_closed P (CCs_of_Flat_Type_Theory T).
   Proof.
     intros [r_str | r_log ].
     - intros p. 
@@ -155,7 +155,7 @@ Section Presuppositions_Derivable.
       {p : presupposition j }
     : Derivation_from_Flat_Type_Theory T hyps (presupposition _ p).
   Proof.
-    refine (Closure.presupposition_derivation (fun j => presupposition j) _ _ _ _).
+    refine (TypedClosure.presupposition_derivation (fun j => presupposition j) _ _ _ _).
     - apply closure_system_of_presupposition_closed_flat_type_theory.
       apply T_presup_closed.
     - apply d_hyp_presups.

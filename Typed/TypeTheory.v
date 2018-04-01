@@ -7,7 +7,7 @@ Require Import Raw.Syntax.
 Require Import Raw.Rule.
 Require Import Raw.TypeTheory.
 Require Import Typed.Derivation.
-Require Import Typed.Rule.
+Require Import Typed.TypedRule.
 
 (** In this file: definition of well-typedness of a type-theory. *)
 

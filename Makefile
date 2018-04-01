@@ -29,15 +29,15 @@ MODULES := \
 	Raw/StructuralRule \
 	Raw/Rule \
 	Raw/TypeTheory \
-	Typed/Closure \
+	Typed/TypedClosure \
 	Typed/Derivation \
 	Typed/FlatRule \
-	Typed/Rule \
+	Typed/TypedRule \
 	Typed/TypeTheory \
-	Typed/StructuralRule \
-	Metatheorems/Presuppositions \
-	Metatheorems/CutElimination \
-	Metatheorems/UniqueTyping
+	Typed/TypedStructuralRule \
+	Metatheorem/Presuppositions \
+	Metatheorem/CutElimination \
+	Metatheorem/UniqueTyping
 
 VS      := $(MODULES:%=%.v)
 
@@ -84,7 +84,7 @@ coq: Makefile.coq
 	$(MAKE) -f Makefile.coq
 
 Makefile.coq: Makefile $(VS)
-	$(COQMAKEFILE) -R . "''" COQC = "$(COQC)" COQDEP = "$(COQDEP)" $(VS) -o Makefile.coq
+	$(COQMAKEFILE) -Q . "''" COQC = "$(COQC)" COQDEP = "$(COQDEP)" $(VS) -o Makefile.coq
 
 install: Makefile.coq
 	$(MAKE) -f Makefile.coq install
