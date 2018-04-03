@@ -191,7 +191,13 @@ Section HypotheticalStructuralRules.
 
 *)
 
-Local Definition variable : Closure.system (judgement_total Σ).
+  Local Definition variable : Closure.system (judgement_total Σ).
+  (* TODO: this form is not sufficient — we want the version for an arbitrary variable in the context, i.e.
+  
+  Γ |- A type
+  ------------- (x in Γ, A := type of x in Γ)
+  Γ |- x : A 
+   *)
 Proof.
   apply FlatRule.closure_system.
   (* arity/metavariables of rule *)

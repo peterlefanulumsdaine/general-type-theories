@@ -25,13 +25,12 @@ Section TypedStructuralRule.
 
   (** Is a given closure rule arising from a total judgement well-typed in the sense
       that its presuppositions are derivable using structural rules? *)
-  Local Definition is_well_typed : Closure.rule (judgement_total Σ) -> Type :=
-    TypedClosure.well_typed_rule Judgement.presupposition (structural_rule Σ).
-
+  Local Definition is_well_typed : Closure.rule (judgement_total Σ) -> Type
+  := TypedClosure.well_typed_rule Judgement.presupposition (structural_rule Σ).
 
   (** Context rules are well typed. *)
-  Local Definition ctx_is_well_typed (r : RawStructuralRule.context Σ) :
-      is_well_typed (RawStructuralRule.context _ r).
+  Local Definition ctx_is_well_typed (r : RawStructuralRule.context Σ)
+    : is_well_typed (RawStructuralRule.context _ r).
   Proof.
     destruct r as [  [Γ A] | ].
     - split. (* context extension *)
@@ -49,20 +48,30 @@ Section TypedStructuralRule.
   Defined.
 
   (** Substitution rules are well typed *)
-  Local Definition subst_is_well_typed (r : RawStructuralRule.substitution Σ) :
-      is_well_typed (RawStructuralRule.substitution _ r).
+  Local Definition subst_is_well_typed (r : RawStructuralRule.substitution Σ)
+    : is_well_typed (RawStructuralRule.substitution _ r).
+  Proof.
+    cbn in r.
+    destruct r as [Γ [ Γ' [ f [ hjf J]]] | Γ [Γ' [f [f' [cl j]]]]].
+    - admit. (* substituting into a judgment *)
+    - admit. (* comparing substitutions along equal context maps *)
+  (* NOTE: this is not currently true, since premises of subst rules are NOT presupposition-closed!
+           
+  They satisfy instead a weaker property, which suffices for the presupposition-closure metatheorem: assuming all premises *and their presuppositions*, then all premises of the conclusion are derivable.
+
+  TODO: should we change the statement of the substitution rules to explicitly include presuppositions? *)
   Admitted.
 
   (** Variable rules are well typed *)
-  Local Definition variable_is_well_typed (r : RawStructuralRule.variable Σ) :
-      is_well_typed (RawStructuralRule.variable _ r).
+  Local Definition variable_is_well_typed (r : RawStructuralRule.variable Σ)
+    : is_well_typed (RawStructuralRule.variable _ r).
   Proof.
     (* deduce from showing this is well-typed as flat rule *)
   Admitted.
 
   (** Equality rules are well typed *)
-  Local Definition equality_is_well_typed (r : RawStructuralRule.equality Σ) :
-      is_well_typed (RawStructuralRule.equality _ r).
+  Local Definition equality_is_well_typed (r : RawStructuralRule.equality Σ)
+    : is_well_typed (RawStructuralRule.equality _ r).
   Proof.
     (* deduce from showing these are well-typed as flat rules *)
   Admitted.
