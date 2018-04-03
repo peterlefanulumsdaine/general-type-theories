@@ -6,7 +6,7 @@ Require Import Raw.RawRule.
 Require Import Raw.RawStructuralRule.
 Require Import Typed.TypedClosure.
 Require Import Raw.FlatTypeTheoryMap.
-Require Import Typed.FlatRule.
+Require Import Raw.FlatRule.
 
 (** We show that all the structural rules are well-typed.
 
