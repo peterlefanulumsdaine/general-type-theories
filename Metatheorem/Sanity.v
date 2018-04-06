@@ -13,7 +13,7 @@ Require Import Typed.TypedClosure.
 Require Import Raw.FlatTypeTheoryMap.
 Require Import Typed.TypedStructuralRule.
 Require Import Typed.TypeTheory.
- 
+
 (** Presuppositions of a derivable judgement are derivable, over any type theory. *)
 Local Definition derive_presupposition {σ} {T : raw_type_theory σ}
      {j : judgement_total (RawTypeTheory.signature T)}
@@ -42,9 +42,9 @@ Section DerivabilityUnderInstantiation.
 Local Ltac recursive_destruct x :=
     cbn in x;
     try match type of x with
-    | hypothetical_form => destruct x as [ cl | cl ]; recursive_destruct cl  
+    | hypothetical_form => destruct x as [ cl | cl ]; recursive_destruct cl
     | syntactic_class => destruct x as [ | ]
-    | option _ => destruct x as [ y | ]; [recursive_destruct y | idtac ] 
+    | option _ => destruct x as [ y | ]; [recursive_destruct y | idtac ]
     | Empty => destruct x
     | Unit => destruct x as []
     | _ => idtac
@@ -95,7 +95,7 @@ Section PresuppositionsDerivable.
     apply TypedClosure.well_typed_has_well_typed_boundary.
     apply TypedStructuralRule.well_typed.
   Defined.
- 
+
   (* TODO: make Σ implicit in fields of [flat_rule] *)
   Definition presupposition_closed
       {Σ : signature σ} (T : flat_type_theory Σ)
@@ -104,7 +104,7 @@ Section PresuppositionsDerivable.
     refine (forall r : T, _ (T r)). clear r; intros r.
     refine (FlatTypeTheory.presupposition_derivation _
               (boundary_of_judgement _) (flat_rule_premises _ r)).
-    - exact (FlatTypeTheory.fmap include_symbol T). 
+    - exact (FlatTypeTheory.fmap include_symbol T).
     - exact (pr2 (flat_rule_conclusion _ r)).
   Defined.
 
@@ -115,12 +115,12 @@ Section PresuppositionsDerivable.
     : TypedClosure.well_typed_boundary P (FlatTypeTheory.closure_system T).
   Proof.
     intros [r_str | r_log ].
-    - intros p. 
+    - intros p.
       refine (Closure.map_derivation _ _).
       Focus 2. { apply presupposition_closed_structural_closure_system. } Unfocus.
       apply Closure.map_from_family_map, Family.map_inl.
-    (* abstract out presup-closure of structural cc’s *) 
-    - destruct r_log as [r r_inst]. cbn in r_inst. 
+    (* abstract out presup-closure of structural cc’s *)
+    - destruct r_log as [r r_inst]. cbn in r_inst.
       destruct r_inst as [Γ r_args].
       cbn.
       set (Pr := P (Metavariable.instantiate_judgement r_args
