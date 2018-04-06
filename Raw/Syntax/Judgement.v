@@ -32,13 +32,17 @@ Section JudgementDefinitions.
     | form_context
     | form_hypothetical (hjf : hypothetical_form).
 
+  Local Definition type_object_boundary : family syntactic_class := [< >].
+
+  Local Definition term_object_boundary := [< class_type >].
+
   (* The boundary of a term or a type. *)
   Local Definition object_boundary_slot (cl : syntactic_class) : family syntactic_class
   := match cl with
        (* No hypothetical part in boundary of a type judgement *)
-       | class_type => [< >]
+       | class_type => type_object_boundary
        (* Boundary of a term judgement: the type of the term *)
-       | class_term => [< class_type >]
+       | class_term => term_object_boundary
      end.
 
   (* Syntactic classes of the slots in the boundary of a hypothetical judgement *)
@@ -107,16 +111,18 @@ Section JudgementDefinitions.
   Defined.
 
   Definition boundary_of_judgement
-      {jf} (j : judgement jf)
+      {jf} (hj : judgement jf)
     : boundary jf.
   Proof.
-    destruct jf as [ | hjf].
-    - constructor. (* context judgement: no boundary *)
-    - (* hyp judgement *)
-      cbn in j. exists (pr1 j). intros i.
-      destruct hjf as [ ob_hjf | eq_hjf ].
-      + exact (pr2 j (Some i)).
-      + exact (pr2 j i).
+    destruct jf as [ | [ ob_hjf | eq_hjf ]].
+    - (* context judgement: no boundary *)
+      constructor.
+    - (* object judgement *)
+      destruct hj as [Γ j].
+      exists Γ ; intro slot ; exact (j (Some slot)).
+    - (* equality judgement *)
+      destruct hj as [Γ j].
+      exists Γ ; intro slot ; exact (j slot).
   Defined.
 
 End JudgementDefinitions.

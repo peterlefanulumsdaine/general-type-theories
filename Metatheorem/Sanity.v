@@ -52,6 +52,8 @@ Local Ltac recursive_destruct x :=
 
   (* TODO: upstream, but to where? *)
   (* TODO consider whether [presupposition] could be refactored to make this easier. *)
+  (** The presuppositions of a judgement [j] instantiated by the instantiation [I]
+      are equal to mapping the instantiation [I] over all presuppositions of [j]. *)
   Local Definition presupposition_instantiate `{Funext}
       {Σ : signature σ}
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
@@ -83,8 +85,8 @@ Local Ltac recursive_destruct x :=
 
 End DerivabilityUnderInstantiation.
 
-(** Main theorem: [presupposition_derivable]: the presuppositions of any derivable judgement are again derivable. *)
 Section PresuppositionsDerivable.
+  (** Main theorem: [presupposition_derivable]: the presuppositions of any derivable judgement are again derivable. *)
 
   Context {σ : shape_system} `{Funext}.
 
@@ -154,26 +156,52 @@ Section PresuppositionsDerivable.
     - apply d_j.
   Defined.
 
+  (** For any raw type theory [T] and a rule [r] of the flattened [T], every
+      presupposition in the boundary of the conclusion of [r] can be derived. *)
   Lemma presupposition_closed_flatten {T : raw_type_theory σ}
     : presupposition_closed (RawTypeTheory.flatten T).
   Proof.
-  Admitted.
+    (* The flattened [T] has logical and congruence rules, two cases to consider. *)
+    intros [r|r].
+    - {
+        (* [r] is a logical rule, we consider one of the presuppositions [p] of the conclusion. *)
+        intros p.
+        (* We must show that [p] has a derivation. *)
+        destruct (flat_rule_conclusion _ ((RawTypeTheory.flatten T) (inl r))) as [[|hjf] j].
+        - (* [p] is in the boundary of the presupposition that the context of the conclusion
+            is well -formed, whose boundary is empty. There is no such [p]. *)
+            elim p.
+        - { destruct hjf as [[|]|eq].
+            + (* p is a position in the boundary of "is a type" judgement.
+                There is one position, namely the context. *)
+              destruct p as [[]|].
+              (* We need to show that the context of the conclusion is well-formed. *)
+              destruct j as [j_ctx j_jdg].
+
+
+      }
 
   (* TODO: at least make access function between [judgment] and [judgement_total]; perhaps make it a coercion? *)
+  (** Working in a type theory [T], given a judgement [j] which is derivable
+      from hypotheses [hyps], suppose every presupposition [q] of every hypothesis [h : hyps]
+      is derivable from [hyps], then every presuppsition [p] of [j] is derivable from
+      [hyps]. *)
   Theorem presupposition_derivation {T : raw_type_theory σ}
       {j : judgement_total (RawTypeTheory.signature T)}
       {hyps : family _}
       (dj : RawTypeTheory.derivation T hyps j)
       (d_hyp_presups :
-         forall (h : hyps) (p : Judgement.presupposition (hyps h)),
-           RawTypeTheory.derivation T hyps (Judgement.presupposition _ p))
+         forall (h : hyps) (q : Judgement.presupposition (hyps h)),
+           RawTypeTheory.derivation T hyps (Judgement.presupposition _ q))
       {p : Judgement.presupposition j }
-    : RawTypeTheory.derivation T hyps (Judgement.presupposition j p).
+    : RawTypeTheory.derivation T hyps (Judgement.presupposition _ p).
   Proof.
     apply presupposition_derivation_from_flat; try assumption.
     apply presupposition_closed_flatten.
   Defined.
 
+  (** Working in a type theory [T], given a judgment [j] which is derivable
+      without hypotheses, ever presupposition of [j] is derivable. *)
   Corollary closed_presupposition_derivation {T : raw_type_theory σ}
       {j : judgement_total (RawTypeTheory.signature T)}
       (dj : RawTypeTheory.derivation T [<>] j)
