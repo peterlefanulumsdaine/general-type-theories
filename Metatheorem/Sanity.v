@@ -26,20 +26,6 @@ Abort.
   - for the high level structure of the proof, abstractions of the notions of “closed under presuppositions” to flat type theories and closure systems;
   - for the lower level details, some lemmas on the interaction of derivations/presuppositions with translation under metavariable instantiations. *)
 
-(** A tactic that will be handy throughout the file. *)
-Local Ltac recursive_destruct x :=
-    cbn in x;
-    try match type of x with
-    | hypothetical_form => destruct x as [ cl | cl ]; recursive_destruct cl
-    | syntactic_class => destruct x as [ | ]
-    | option _ => destruct x as [ y | ]; [recursive_destruct y | idtac ]
-    | Empty => destruct x
-    | Unit => destruct x as []
-    | sum _ _ => destruct x as [ y | y ]; recursive_destruct y
-    | sig _ => destruct x as [ x1 x2 ]; recursive_destruct x1; recursive_destruct x2
-    | _ => idtac
-    end.
-
 (** General background: establish some properties of how the syntactic translation given by metavariable instantiation preserves typing derivations.
 
   TODO: probably factor this out into a separate file. *)

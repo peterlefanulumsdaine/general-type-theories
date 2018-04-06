@@ -21,6 +21,12 @@ Proof.
   apply path_forall; intros i; apply e'.
 Defined.
 
+Local Definition fmap {X Y} (f : X -> Y) (K : family X) : family Y.
+Proof.
+  exists K.
+  exact (fun i => f (K i)).
+Defined.
+
 (** The empty family. *)
 Local Definition empty (X : Type) : family X.
 Proof.
@@ -32,10 +38,14 @@ Local Definition sum {X} (Y1 Y2 : family X) : family X
   := {| family_index := Y1 + Y2
       ; family_element y := match y with inl y => Y1 y | inr y => Y2 y end |}.
 
-Local Definition fmap {X Y} (f : X -> Y) (K : family X) : family Y.
+Local Lemma fmap_sum `{Funext}
+    {X Y} (f : X -> Y)
+     (K1 K2 : family X)
+  : fmap f (sum K1 K2) = sum (fmap f K1) (fmap f K2).
 Proof.
-  exists K.
-  exact (fun i => f (K i)).
+  simple refine (eq _ _).
+  - apply idpath.
+  - intros [? | ?]; apply idpath.
 Defined.
 
 Local Definition singleton {X} (x:X) : family X.
@@ -51,6 +61,17 @@ Proof.
   - exact (K i).
   - exact x.
 Defined.
+
+Local Lemma fmap_adjoin `{Funext}
+    {X Y} (f : X -> Y)
+    (K : family X) (x : X)
+  : fmap f (adjoin K x) = adjoin (fmap f K) (f x).
+Proof.
+  simple refine (eq _ _).
+  - apply idpath.
+  - intros [? | ]; apply idpath.
+Defined.
+
 
 Notation "Y1 + Y2" := (sum Y1 Y2) : family_scope.
 Open Scope family_scope.
@@ -104,7 +125,6 @@ Section FamilyMap.
     intros i. exact (pr2 (f i)).
   Defined.
 
-
   Local Definition map_index_action {A} {K L : family A}
     : map K L -> (K -> L)
   := pr1.
@@ -120,6 +140,13 @@ Section FamilyMap.
   Proof.
     econstructor.
     intro; constructor.
+  Defined.
+
+  Local Definition compose {X} {K L M : family X} (g : map L M) (f : map K L)
+    : map K M.
+  Proof.
+    exists (compose g f).
+    intros. refine (_ @ _); apply map_commutes.
   Defined.
 
   Local Definition map_sum {X}
@@ -164,16 +191,6 @@ Section FamilyMap.
   Proof.
     exists pr1.
     intros; apply idpath.
-  Defined.
-
-  Local Lemma map_adjoin `{Funext}
-      {X Y} (f : X -> Y)
-      (K : family X) (x : X)
-    : fmap f (adjoin K x) = adjoin (fmap f K) (f x).
-  Proof.
-    simple refine (eq _ _).
-    - apply idpath.
-    - intros [? | ]; apply idpath.
   Defined.
 
 End FamilyMap.

@@ -127,13 +127,15 @@ Proof.
   intros [Γ [Γ' [f [hjf hjfi]]]].
   split.
   (* premises: *)
-  - apply Family.adjoin.
-    (* f is a context morphism *)
+  - refine (Family.adjoin (Family.adjoin _ _) _).
+    (* all components of [f] are suitably typed: *)
     + exists Γ.
       intros i. refine [Tm! Γ' |- _ ; _ !].
       * exact (f i).
       * exact (substitute f (Γ i)).
-    (* the judgement holds over Γ *)
+    (* [Γ'] is a valid context: *)
+    + exact [Cxt! |- Γ' !]. 
+    (* the target judgement holds over Γ *)
     + exists (Judgement.form_hypothetical hjf).
       exists Γ.
       exact hjfi.
@@ -161,7 +163,7 @@ Proof.
   intros [Γ [Γ' [f [f' [cl hjfi]]]]].
   split.
   (* premises: *)
-  - refine (Family.adjoin (_ + _ + _) _).
+  - refine (Family.adjoin (Family.adjoin (_ + _ + _) _) _).
     (* f is a context morphism *)
     + exists Γ.
       intros i. refine [Tm! Γ' |- _ ; _ !].
@@ -180,11 +182,13 @@ Proof.
       * exact (substitute f (Γ i)).
       * exact (f i).
       * exact (f' i).
-    (* the judgement holds over Γ *)
+    (* [Γ'] is a valid context: *)
+    + exact [Cxt! |- Γ' !]. 
+    (* the target judgement holds over Γ *)
     + exists (Judgement.form_hypothetical (form_object cl)).
       exists Γ.
       exact hjfi.
- (* conclusion: *)
+  (* conclusion: *)
   - exists (Judgement.form_hypothetical (form_equality cl)).
     exists Γ'.
     cbn. intros [i | ].
@@ -636,18 +640,17 @@ Section StructuralRuleMap.
         exact (Judgement.fmap_hypothetical_judgement f hjfi).
       + cbn. apply Closure.rule_eq; cbn.
         * apply inverse.
-          eapply concat. { apply Family.map_adjoin. }
-          apply ap011.
-          -- unfold Family.fmap.
-            apply ap, path_forall; intros i.
-            apply (ap (fun x => (_; x))).
-            apply (ap (fun x => (_; x))).
-            apply path_forall. intros [ [ [] | ] | ].
-            ++ refine (fmap_substitute _ _ _).
-            ++ apply idpath.
-          -- apply idpath.
-          (* Family_fmap_adjoin *)
-        * apply (ap (fun x => (_; x))). cbn.
+          eapply concat. { apply Family.fmap_adjoin. }
+          apply ap011; try apply idpath.
+          eapply concat. { apply Family.fmap_adjoin. }
+          apply ap011; try apply idpath.
+          unfold Family.fmap.
+          apply ap, path_forall; intros i.
+          apply (ap (fun x => (_; x))).
+          apply (ap (fun x => (_; x))).
+          apply path_forall. intros [ [ [] | ] | ]; try apply idpath.
+          refine (fmap_substitute _ _ _).
+        * apply (ap (fun x => (_; x))).
           apply (ap (fun x => (_; x))).
           apply path_forall. intros i.
           unfold Judgement.fmap_hypothetical_judgement.
@@ -662,7 +665,36 @@ Section StructuralRuleMap.
         exists (fmap_raw_context_map f g').
         exists hjf.
         exact (Judgement.fmap_hypothetical_judgement f hjfi).
-      + admit.
+      + cbn. apply Closure.rule_eq; cbn.
+        * apply inverse.
+          eapply concat. { apply Family.fmap_adjoin. }
+          apply ap011; try apply idpath.
+          eapply concat. { apply Family.fmap_adjoin. }
+          apply ap011; try apply idpath.
+          eapply concat. { apply Family.fmap_sum. }
+          eapply concat. { eapply (ap (fun K => K + _)), Family.fmap_sum. }
+          apply ap2; try apply ap2; unfold Family.fmap.
+          -- apply ap, path_forall; intros i.
+             apply (ap (fun x => (_; x))).
+             apply (ap (fun x => (_; x))).
+             apply path_forall. intros [ [ [] | ] | ]; try apply idpath.
+             refine (fmap_substitute _ _ _).
+          -- apply ap, path_forall; intros i.
+             apply (ap (fun x => (_; x))).
+             apply (ap (fun x => (_; x))).
+             apply path_forall. intros [ [ [] | ] | ]; try apply idpath.
+             refine (fmap_substitute _ _ _).
+          -- apply ap, path_forall; intros i.
+             apply (ap (fun x => (_; x))).
+             apply (ap (fun x => (_; x))).
+             apply path_forall. intros j.
+             destruct j as [ [ [ [] | ] | ] | ]; try apply idpath.
+             refine (fmap_substitute _ _ _).
+        * apply (ap (fun x => (_; x))).
+          apply (ap (fun x => (_; x))).
+          apply path_forall. intros i.
+          unfold Judgement.fmap_hypothetical_judgement.
+          destruct i; refine (fmap_substitute _ _ _)^.
     - (* var rule *)
       simple refine (inl (inr _) ; _); admit.
     - (* equality rules *)

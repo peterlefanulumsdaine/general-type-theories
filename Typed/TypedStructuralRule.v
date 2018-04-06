@@ -17,7 +17,7 @@ Require Import Raw.FlatRule.
 
 Section TypedStructuralRule.
 
-  Context {σ : shape_system} {Σ : signature σ}.
+  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
 
   (** In this section we show that all structural rules are well-typed, in the
   sense that whenever their premises are derivable, all the presuppositions of their
@@ -48,20 +48,110 @@ Section TypedStructuralRule.
       + intros []. (* no presups for conclusion *)
   Defined.
 
-  (** Substitution rules are well typed *)
+  (* TODO: upstream to [Family] *)
+  Definition family_some {X} (K : family X) (x : X)
+    : Family.map K (Family.adjoin K x).
+  Proof.
+    exists (@Some _).
+    intros i; apply idpath.
+  Defined.
+             
+  (* TODO: upstream to [Raw.Syntax.Judgement]. *)
+  Definition judgement_slot_from_boundary
+    {hjf : hypothetical_form}
+    : Family.map
+        (Judgement.boundary_slot hjf)
+        (Judgement.slot hjf).
+  Proof.
+    destruct hjf as [ hjf_obj | hjf_eq ].
+    - apply family_some.
+    - apply Family.idmap.
+  Defined.
+
+  (* TODO: upstream to [Raw.Syntax.Judgement]. *)
+  Definition judgement_slot_from_presupposition
+    {hjf : hypothetical_form} (i : Judgement.boundary_slot hjf)
+    : Family.map
+        (Judgement.slot (form_object (Judgement.boundary_slot _ i)))
+        (Judgement.slot hjf).
+  Proof.
+    eapply Family.compose.
+    - apply judgement_slot_from_boundary.
+    - apply Judgement.presupposition_from_boundary_slots.
+  Defined.
+
+  (** Substitution-application rules are well typed *)
+  Local Definition subst_apply_is_well_typed
+        (r : RawStructuralRule.subst_apply Σ)
+    : is_well_typed (RawStructuralRule.subst_apply _ r).
+  Proof.
+    destruct r as [Γ [ Γ' [ f [ hjf J]]]].
+    intros p.
+    transparent assert (j : (judgement_total Σ)).
+      { exists (form_hypothetical hjf). refine (Γ;J). }
+    transparent assert (p' : (presupposition j)).
+      { exact p. }
+    destruct p as [ p | ].
+    - (* [p] a hypothetical presupposition *)
+      refine (transport _ _ _).
+      Focus 2. {
+        simple refine (Closure.deduce _ _ _ _).
+        (* Aim here: apply the same substitution rule, with the same substition,
+           but with target the presupposition [p] of the original target. *)
+        + refine (inl (inl (inr _))).
+          (* TODO: give access functions for locating the structural rules! *)
+          apply inl. exists Γ, Γ', f.
+          exists (form_object (Judgement.boundary_slot _ p)).
+          exact (pr2 (pr2 (presupposition _ p'))).
+        + intros [ q | ].
+          -- (* premises: show the substitution OK. *)
+            refine (transport _ _ _).
+            Focus 2. {
+              refine (Closure.hypothesis _ _ _).
+              exact (inl (Some q)).
+            } Unfocus.
+            apply idpath.
+          -- (* premises: new presupposition *)
+            refine (transport _ _ _).
+            Focus 2. {
+              refine (Closure.hypothesis _ _ _).
+              exact (inr (None; p')).
+            } Unfocus.
+            apply idpath.
+      } Unfocus.
+      simple refine (path_sigma _ _ _ _ _).
+      { apply idpath. } (* judgement form of new conclusion is same as old *)
+      simple refine (path_sigma _ _ _ _ _).
+      { apply idpath. } (* context of new conclusion also the same *)
+      refine (path_forall _ _ _).
+      intros i.
+      recursive_destruct hjf; recursive_destruct p; recursive_destruct i;
+        apply idpath.
+    - (* [p] the context presupposition [Γ'] *)
+      refine (transport _ _ _).
+      Focus 2. {
+        refine (Closure.hypothesis _ _ _).
+        exact (inl (Some None)).
+      } Unfocus.
+      apply idpath.
+  Defined.
+
+  (** Substitution-equality rules are well typed *)
+  Local Definition subst_equal_is_well_typed
+        (r : RawStructuralRule.subst_equal Σ)
+    : is_well_typed (RawStructuralRule.subst_equal _ r).
+  Proof.
+    destruct r as [Γ [ Γ' [ f [ f' [cl J]]]]].
+  Admitted.
+
+  (** All substitution rules are well typed *)
   Local Definition subst_is_well_typed (r : RawStructuralRule.substitution Σ)
     : is_well_typed (RawStructuralRule.substitution _ r).
   Proof.
-    cbn in r.
-    destruct r as [Γ [ Γ' [ f [ hjf J]]] | Γ [Γ' [f [f' [cl j]]]]].
-    - admit. (* substituting into a judgment *)
-    - admit. (* comparing substitutions along equal context maps *)
-  (* NOTE: this is not currently true, since premises of subst rules are NOT presupposition-closed!
-           
-  They satisfy instead a weaker property, which suffices for the presupposition-closure metatheorem: assuming all premises *and their presuppositions*, then all premises of the conclusion are derivable.
-
-  TODO: should we change the statement of the substitution rules to explicitly include presuppositions? *)
-  Admitted.
+    destruct r as [ r_apply | r_equal ].
+    - apply subst_apply_is_well_typed.
+    - apply subst_equal_is_well_typed.
+  Defined.
 
   (** Variable rules are well typed *)
   Local Definition variable_is_well_typed (r : RawStructuralRule.variable Σ)

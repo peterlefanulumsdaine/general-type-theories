@@ -320,9 +320,9 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
         exists (form_hypothetical (form_object ((boundary_slot hjf) i))).
         exists (pr1 jbi).
         intros j.
-        set (p := Family.map_commutes (presupposition_from_boundary_slots i) j).
+        set (e := Family.map_commutes (presupposition_from_boundary_slots i) j).
         set (j' := presupposition_from_boundary_slots i j) in *.
-        destruct p.
+        refine (transport (fun cl => raw_expression _ cl _) e _).
         exact (pr2 jbi j').
       + exists (form_context).
         exact (pr1 jbi).
@@ -335,3 +335,23 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
   := presupposition_of_boundary (boundary_of_judgement (pr2 j)).
 
 End Presupposition.
+
+
+(** A tactic that is often handy working with syntax, especially slots:
+recursively destruct some object of an iterated inductive type. 
+
+Currently only supports specific inductive types hand-coded here. *)
+(* TODO: can this be generalised to work for arbitrary inductive types? *)
+Ltac recursive_destruct x :=
+    cbn in x;
+    try match type of x with
+    | hypothetical_form => destruct x as [ cl | cl ]; recursive_destruct cl
+    | syntactic_class => destruct x as [ | ]
+    | option _ => destruct x as [ y | ]; [recursive_destruct y | idtac ]
+    | Empty => destruct x
+    | Unit => destruct x as []
+    | sum _ _ => destruct x as [ y | y ]; recursive_destruct y
+    | sig _ => destruct x as [ x1 x2 ];
+       recursive_destruct x1; recursive_destruct x2
+    | _ => idtac
+    end.
