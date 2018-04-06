@@ -26,7 +26,7 @@ Section TypedStructuralRule.
   (** Is a given closure rule arising from a total judgement well-typed in the sense
       that its presuppositions are derivable using structural rules? *)
   Local Definition is_well_typed : Closure.rule (judgement_total Σ) -> Type
-  := TypedClosure.weakly_well_typed_rule Judgement.presupposition (structural_rule Σ).
+  := TypedClosure.weakly_well_typed_rule presupposition (structural_rule Σ).
 
   (** Context rules are well typed. *)
   Local Definition ctx_is_well_typed (r : RawStructuralRule.context Σ)
@@ -80,7 +80,7 @@ Section TypedStructuralRule.
   (** Putting the above components together, we obtain the main result:
       all structural rules are well-typed. *)
   Local Definition well_typed
-    : TypedClosure.weakly_well_typed_system Judgement.presupposition (structural_rule Σ).
+    : TypedClosure.weakly_well_typed_system presupposition (structural_rule Σ).
   Proof.
     intros [ [ [ r_cxt | r_subst ] | r_var ] | r_eq ].
     - apply ctx_is_well_typed.

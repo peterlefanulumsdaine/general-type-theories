@@ -151,7 +151,7 @@ eq_new i   0        0        0        0        i < j
       intros [ [ i | ] | ]; simpl.
       + (* boundary of original conclusion *)
         refine (Expression.fmap _ _).
-        * apply Metavariable.fmap2, Family.map_inl.
+        * apply Metavariable.fmap2, Family.inl.
         * destruct hjf_concl as [cl | ?].
           -- exact (rule_conclusion_hypothetical_boundary R i).
           -- destruct H. (* [hjf_concl] can’t be an equality judgement *)

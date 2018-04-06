@@ -44,8 +44,8 @@ Section FlatTypeTheoryDerivation.
         (H : family (judgement_total Σ))
     : Type
     :=
-      forall (i : Judgement.presupposition_of_boundary jbi),
-        derivation T H (Judgement.presupposition_of_boundary _ i).
+      forall (i : presupposition_of_boundary jbi),
+        derivation T H (presupposition_of_boundary _ i).
 
   (** The derivation of the conclusion of rule [R] from its premises
     in flat type theroy [T], with given hypotheses. *)
@@ -56,7 +56,7 @@ Section FlatTypeTheoryDerivation.
     simple refine (Closure.derivation _ (flat_rule_premises _ R) (flat_rule_conclusion _ R)).
     apply closure_system.
     simple refine (fmap _ T).
-    apply Family.map_inl. (* TODO: make this a lemma about signature maps,
+    apply Family.inl. (* TODO: make this a lemma about signature maps,
                             so it’s more findable using “SearchAbout” etc *)
   Defined.
 

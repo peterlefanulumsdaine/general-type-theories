@@ -135,14 +135,14 @@ Section FamilyMap.
       simpl; apply map_commutes.
   Defined.
 
-  Local Definition map_inl {X} {K K' : family X}
+  Local Definition inl {X} {K K' : family X}
     : map K (K + K').
   Proof.
     exists inl.
     intro; apply idpath.
   Defined.
 
-  Local Definition map_inr {X} {K K' : family X}
+  Local Definition inr {X} {K K' : family X}
     : map K' (K + K').
   Proof.
     exists inr.

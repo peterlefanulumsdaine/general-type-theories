@@ -305,7 +305,7 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
   Context {σ : shape_system}.
 
   (** The presuppositions of judgment boundary [jbi] *)
-  Local Definition presupposition_of_boundary
+  Definition presupposition_of_boundary
       {Σ : signature σ} {jf} (jbi : boundary Σ jf)
     : family (judgement_total Σ).
   Proof.
@@ -329,7 +329,7 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
   Defined.
 
   (** The presuppositions of judgement [j]. *)
-  Local Definition presupposition
+  Definition presupposition
       {Σ : signature σ} (j : judgement_total Σ)
     : family (judgement_total Σ)
   := presupposition_of_boundary (boundary_of_judgement (pr2 j)).
