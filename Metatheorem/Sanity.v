@@ -26,19 +26,7 @@ Abort.
   - for the high level structure of the proof, abstractions of the notions of “closed under presuppositions” to flat type theories and closure systems;
   - for the lower level details, some lemmas on the interaction of derivations/presuppositions with translation under metavariable instantiations. *)
 
-(** General background: establish some properties of how the syntactic translation given by metavariable instantiation preserves typing derivations.
-
-  TODO: probably factor this out into a separate file. *)
-Section DerivabilityUnderInstantiation.
-
-  Context {σ : shape_system}.
-
-  (* TODO: Why is this here, should it go to [Metavariable]? *)
-  Arguments Metavariable.instantiate_judgement : simpl nomatch.
-  Arguments Metavariable.instantiate_expression : simpl nomatch.
-  Arguments Metavariable.instantiate_context : simpl nomatch.
-
-
+(** A tactic that will be handy throughout the file. *)
 Local Ltac recursive_destruct x :=
     cbn in x;
     try match type of x with
@@ -47,13 +35,28 @@ Local Ltac recursive_destruct x :=
     | option _ => destruct x as [ y | ]; [recursive_destruct y | idtac ]
     | Empty => destruct x
     | Unit => destruct x as []
+    | sum _ _ => destruct x as [ y | y ]; recursive_destruct y
+    | sig _ => destruct x as [ x1 x2 ]; recursive_destruct x1; recursive_destruct x2
     | _ => idtac
     end.
 
-  (* TODO: upstream, but to where? *)
-  (* TODO consider whether [presupposition] could be refactored to make this easier. *)
+(** General background: establish some properties of how the syntactic translation given by metavariable instantiation preserves typing derivations.
+
+  TODO: probably factor this out into a separate file. *)
+Section DerivabilityUnderInstantiation.
+
+  Context {σ : shape_system}.
+
+  (* TODO: Perhaps upstream to [Metavariable]. *)
+  Arguments Metavariable.instantiate_judgement : simpl nomatch.
+  Arguments Metavariable.instantiate_expression : simpl nomatch.
+  Arguments Metavariable.instantiate_context : simpl nomatch.
+
   (** The presuppositions of a judgement [j] instantiated by the instantiation [I]
       are equal to mapping the instantiation [I] over all presuppositions of [j]. *)
+  (* TODO: upstream, but to where? *)
+  (* TODO maybe attempt to refactor [presupposition] to make this easier.
+   (Note: that refactoring has already been tried at least once, and seems difficult.) *)
   Local Definition presupposition_instantiate `{Funext}
       {Σ : signature σ}
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
@@ -90,76 +93,104 @@ Section PresuppositionsDerivable.
 
   Context {σ : shape_system} `{Funext}.
 
-  Definition presupposition_closed_structural_closure_system {Σ : signature σ}
-      (P := fun (j : judgement_total Σ) => Judgement.presupposition j)
-    : TypedClosure.weakly_well_typed P (structural_rule _).
-  Proof.
-    apply TypedClosure.weakly_from_strongly_well_typed.
-    apply TypedStructuralRule.well_typed.
-  Defined.
-
   (* TODO: make Σ implicit in fields of [flat_rule] *)
-  Definition presupposition_closed
-      {Σ : signature σ} (T : flat_type_theory Σ)
-    : Type.
-  Proof.
-    refine (forall r : T, _ (T r)). clear r; intros r.
-    refine (FlatTypeTheory.presupposition_derivation _
-              (boundary_of_judgement _) (flat_rule_premises _ r)).
-    - exact (FlatTypeTheory.fmap include_symbol T).
-    - exact (pr2 (flat_rule_conclusion _ r)).
-  Defined.
+  (** A flat rule is presupposition-closed, over an ambient flat theory [R],
+     if all presuppositions of its conclusion are derivable from
+     the premises together with their presuppositions,
+     over [T] (translated up to the metavariable-extension signature) *)
+  Definition presupposition_closed_flat_rule {Σ : signature σ}
+      (T : flat_type_theory Σ) (r : flat_rule Σ)
+    : Type
+  := forall i : Judgement.presupposition (flat_rule_conclusion _ r), 
+      FlatTypeTheory.derivation
+        (FlatTypeTheory.fmap include_symbol T)
+        (flat_rule_premises _ r + (Family.bind (flat_rule_premises _ r) Judgement.presupposition))
+        (Judgement.presupposition _ i).
 
+  (** A flat type theory is presupposition-closed if all its rules are. *)
+  Definition presupposition_closed_flat_type_theory
+      {Σ : signature σ} (T : flat_type_theory Σ)
+    : Type
+  := forall r : T, presupposition_closed_flat_rule T (T r).
+
+  (** If a flat type theory T is presup-closed, then so is its associated closure system. *)
   Theorem closure_system_of_presupposition_closed_flat_type_theory
       {Σ : signature σ} {T : flat_type_theory Σ}
-      (T_presup_closed : presupposition_closed T)
-      (P := fun (j : judgement_total Σ) => Judgement.presupposition j)
-    : TypedClosure.weakly_well_typed P (FlatTypeTheory.closure_system T).
+      (T_presup_closed : presupposition_closed_flat_type_theory T)
+    : TypedClosure.weakly_well_typed_system Judgement.presupposition (FlatTypeTheory.closure_system T).
   Proof.
     intros [r_str | r_log ].
     - intros p.
       refine (Closure.map_derivation _ _).
-      Focus 2. { apply presupposition_closed_structural_closure_system. } Unfocus.
+      Focus 2. { apply TypedStructuralRule.well_typed. } Unfocus.
       apply Closure.map_from_family_map, Family.map_inl.
-    (* abstract out presup-closure of structural cc’s *)
     - destruct r_log as [r r_inst]. cbn in r_inst.
       destruct r_inst as [Γ r_args].
+      unfold TypedClosure.weakly_well_typed_rule.
       cbn.
-      set (Pr := P (Metavariable.instantiate_judgement r_args
+      set (Pr := Judgement.presupposition (Metavariable.instantiate_judgement r_args
                                              (flat_rule_conclusion _ (T r)))).
       assert (H_presup_inst : Pr =
           Family.fmap (Metavariable.instantiate_judgement r_args)
                       (Judgement.presupposition (flat_rule_conclusion _ (T r)))).
       { apply presupposition_instantiate. }
       clearbody Pr. destruct H_presup_inst^.
-      intros p. apply FlatTypeTheory.instantiate_derivation, T_presup_closed.
+      intros p.
+      refine (Closure.graft _ _ _).
+      + refine (FlatTypeTheory.instantiate_derivation _ _ _ _).
+        apply T_presup_closed.
+      + intros [ i | [ i i_presup]]. 
+        * refine (transport _ _ _).
+          Focus 2. { refine (Closure.hypothesis _ _ _). exact (inl i). } Unfocus.
+          apply idpath.
+        * assert (ip'_e :
+            { ip' : Judgement.presupposition
+                      (Metavariable.instantiate_judgement r_args
+                        (flat_rule_premises _ (T r) i))
+            & Judgement.presupposition _ ip'
+              = Metavariable.instantiate_judgement r_args
+                  (Judgement.presupposition _ i_presup)}).
+          { 
+            set (Pr := Judgement.presupposition (Metavariable.instantiate_judgement r_args
+                                             (flat_rule_premises _ (T r) i))).
+            assert (H' : Pr =
+                                    Family.fmap (Metavariable.instantiate_judgement r_args)
+                      (Judgement.presupposition (flat_rule_premises _ (T r) i))).
+            { apply presupposition_instantiate. }
+            clearbody Pr. destruct H'^. 
+            exists i_presup. apply idpath.
+          }
+          destruct ip'_e as [i_presup' e].
+          refine (transport _ _ _).
+          Focus 2. { refine (Closure.hypothesis _ _ _). refine (inr (i;_)).
+                     exact i_presup'. } Unfocus.
+          apply e.
+  (* TODO: this whole proof is quite painful.  Can it be cleaned up somehow?
+     E.g. would it be easier if [presupposition_instantiate] were given as a
+     family map instead of an equality? *)
   Defined.
 
-
-  (** If a flat type theory T is presup-closed, then so is its associated closure system. *)
   (* TODO: perhaps change def of flat rules to allow only _hypothetical_ judgements? *)
   Theorem presupposition_derivation_from_flat
       {Σ : signature σ}
-      {T : flat_type_theory Σ} (T_presup_closed : presupposition_closed T)
+      {T : flat_type_theory Σ} (H_T : presupposition_closed_flat_type_theory T)
       {j : judgement_total Σ} {hyps : family _}
       (d_j : FlatTypeTheory.derivation T hyps j)
-      (d_hyp_presups :
-         forall (h : hyps) (p : Judgement.presupposition (hyps h)),
-           FlatTypeTheory.derivation T hyps (Judgement.presupposition _ p))
       {p : Judgement.presupposition j }
-    : FlatTypeTheory.derivation T hyps (Judgement.presupposition _ p).
+    : FlatTypeTheory.derivation T
+        (hyps + Family.bind hyps Judgement.presupposition)
+        (Judgement.presupposition _ p).
   Proof.
-    refine (TypedClosure.presupposition_derivation (fun j => Judgement.presupposition j) _ _ _ _).
-    - apply closure_system_of_presupposition_closed_flat_type_theory.
-      apply T_presup_closed.
-    - apply d_hyp_presups.
-    - apply d_j.
+    simple refine
+      (TypedClosure.presupposition_derivation Judgement.presupposition _ d_j _).
+    apply closure_system_of_presupposition_closed_flat_type_theory.
+    apply H_T.
   Defined.
 
   (** For any raw type theory [T] and a rule [r] of the flattened [T], every
       presupposition in the boundary of the conclusion of [r] can be derived. *)
   Lemma presupposition_closed_flatten {T : raw_type_theory σ}
-    : presupposition_closed (RawTypeTheory.flatten T).
+    : presupposition_closed_flat_type_theory (RawTypeTheory.flatten T).
   Proof.
     (* The flattened [T] has logical and congruence rules, two cases to consider. *)
     intros [r|r].
@@ -193,11 +224,10 @@ Section PresuppositionsDerivable.
       {j : judgement_total (RawTypeTheory.signature T)}
       {hyps : family _}
       (dj : RawTypeTheory.derivation T hyps j)
-      (d_hyp_presups :
-         forall (h : hyps) (q : Judgement.presupposition (hyps h)),
-           RawTypeTheory.derivation T hyps (Judgement.presupposition _ q))
       {p : Judgement.presupposition j }
-    : RawTypeTheory.derivation T hyps (Judgement.presupposition _ p).
+    : RawTypeTheory.derivation T
+        (hyps + Family.bind hyps Judgement.presupposition)
+        (Judgement.presupposition _ p).
   Proof.
     apply presupposition_derivation_from_flat; try assumption.
     apply presupposition_closed_flatten.
@@ -211,8 +241,9 @@ Section PresuppositionsDerivable.
       {p : Judgement.presupposition j }
     : RawTypeTheory.derivation T [<>] (Judgement.presupposition j p).
   Proof.
-    apply presupposition_derivation; try assumption.
-    intros [].
+    refine (Closure.graft _ _ _).
+    - refine (presupposition_derivation dj).
+    - intros i. recursive_destruct i.
   Defined.
 
 End PresuppositionsDerivable.
