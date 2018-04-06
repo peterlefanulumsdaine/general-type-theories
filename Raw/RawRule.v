@@ -65,19 +65,6 @@ Record rule
 
   Arguments rule _ _ _ : clear implicits.
 
-  (* This does not seem to be needed, and in any case has a silly name. *)
-  (* (* Template for defining rules: *) *)
-  (* Definition Example {Σ} {a} {hjf} : rule Σ a hjf. *)
-  (* Proof. *)
-  (*   simple refine (Build_rule _ _ _ _ _). *)
-  (*   simple refine (Build_algebraic_extension _ _ _ _ _ _). *)
-  (*   - admit. (* ae_equality_premise: arity specifying equality premises *) *)
-  (*   - admit. (* ae_lt *) *)
-  (*   - admit. (* ae_raw_context_type *) *)
-  (*   - admit. (* ae_hypothetical_boundary *) *)
-  (*   - admit. (* rule_conclusion_hypothetical_boundary *) *)
-  (* Abort. *)
-
   Local Definition conclusion_boundary {Σ} {a} {hjf} (R : rule Σ a hjf)
     : Judgement.boundary (Metavariable.extend Σ a) (form_hypothetical hjf)
   := ([::]; rule_conclusion_hypothetical_boundary R).
