@@ -92,9 +92,9 @@ Section PresuppositionsDerivable.
 
   Definition presupposition_closed_structural_closure_system {Σ : signature σ}
       (P := fun (j : judgement_total Σ) => Judgement.presupposition j)
-    : TypedClosure.well_typed_boundary P (structural_rule _).
+    : TypedClosure.weakly_well_typed P (structural_rule _).
   Proof.
-    apply TypedClosure.well_typed_has_well_typed_boundary.
+    apply TypedClosure.weakly_from_strongly_well_typed.
     apply TypedStructuralRule.well_typed.
   Defined.
 
@@ -114,7 +114,7 @@ Section PresuppositionsDerivable.
       {Σ : signature σ} {T : flat_type_theory Σ}
       (T_presup_closed : presupposition_closed T)
       (P := fun (j : judgement_total Σ) => Judgement.presupposition j)
-    : TypedClosure.well_typed_boundary P (FlatTypeTheory.closure_system T).
+    : TypedClosure.weakly_well_typed P (FlatTypeTheory.closure_system T).
   Proof.
     intros [r_str | r_log ].
     - intros p.
