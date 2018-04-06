@@ -111,18 +111,20 @@ Section JudgementDefinitions.
   Defined.
 
   Definition boundary_of_judgement
-      {jf} (hj : judgement jf)
+      {jf} (j : judgement jf)
     : boundary jf.
   Proof.
-    destruct jf as [ | [ ob_hjf | eq_hjf ]].
+    destruct jf as [ | hjf ].
     - (* context judgement: no boundary *)
       constructor.
-    - (* object judgement *)
-      destruct hj as [Γ j].
-      exists Γ ; intro slot ; exact (j (Some slot)).
-    - (* equality judgement *)
-      destruct hj as [Γ j].
-      exists Γ ; intro slot ; exact (j slot).
+    - (* hypothetical judgement *)
+      exists (pr1 j). (* the context of the boundary is the context of the
+                         original judgement *)
+      destruct hjf as [ ob_hjf | eq_hjf ].
+      + (* object judgement *)
+        intro slot ; exact (pr2 j (Some slot)).
+      + (* equality judgement *)
+        intro slot ; exact (pr2 j slot).
   Defined.
 
 End JudgementDefinitions.

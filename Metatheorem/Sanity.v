@@ -177,9 +177,12 @@ Section PresuppositionsDerivable.
               destruct p as [[]|].
               (* We need to show that the context of the conclusion is well-formed. *)
               destruct j as [j_ctx j_jdg].
-
-
+              admit.
+            + admit.
+            + admit.
+          }
       }
+  Admitted.
 
   (* TODO: at least make access function between [judgment] and [judgement_total]; perhaps make it a coercion? *)
   (** Working in a type theory [T], given a judgement [j] which is derivable
