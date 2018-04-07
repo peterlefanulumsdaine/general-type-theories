@@ -1,5 +1,6 @@
 Require Import HoTT.
 Require Import Proto.ShapeSystem.
+Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
@@ -126,8 +127,8 @@ Section PresuppositionsDerivable.
       + refine (FlatTypeTheory.instantiate_derivation _ _ _ _).
         apply T_presup_closed.
       + intros [ i | [ i i_presup]]. 
-        * refine (transport _ _ _).
-          Focus 2. { refine (Closure.hypothesis _ _ _). exact (inl i). } Unfocus.
+        * eapply (flip (transport _)).
+          { refine (Closure.hypothesis _ _ _). exact (inl i). }
           apply idpath.
         * assert (ip'_e :
             { ip' : presupposition
@@ -147,9 +148,9 @@ Section PresuppositionsDerivable.
             exists i_presup. apply idpath.
           }
           destruct ip'_e as [i_presup' e].
-          refine (transport _ _ _).
-          Focus 2. { refine (Closure.hypothesis _ _ _). refine (inr (i;_)).
-                     exact i_presup'. } Unfocus.
+          eapply (flip (transport _)).
+          { refine (Closure.hypothesis _ _ _). refine (inr (i;_)).
+            exact i_presup'. }
           apply e.
   (* TODO: this whole proof is quite painful.  Can it be cleaned up somehow?
      E.g. would it be easier if [presupposition_instantiate] were given as a

@@ -1,4 +1,5 @@
 Require Import HoTT.
+Require Import Auxiliary.General.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Raw.Syntax.
@@ -38,9 +39,9 @@ Section TypedStructuralRule.
       + intros [ [ [] | ] | ]. (* two premises *)
         * intros []. (* context hypothesis: no presups *)
         * intros [ [] | ]. (* type hypothesis: one presup *)
-          eapply transport. 
-          Focus 2. { refine (Closure.hypothesis _ _ _). 
-            cbn. apply (Some (None)). } Unfocus.
+          eapply (flip (transport _)). 
+          { refine (Closure.hypothesis _ _ _). 
+            cbn. apply (Some (None)). }
           apply idpath.
       + intros []. (* conclusion: no presups *)
     - split. (* empty context rule *)
@@ -93,46 +94,35 @@ Section TypedStructuralRule.
       { exact p. }
     destruct p as [ p | ].
     - (* [p] a hypothetical presupposition *)
-      refine (transport _ _ _).
-      Focus 2. {
-        simple refine (Closure.deduce _ _ _ _).
+      eapply (flip (transport _)).
+      + simple refine (Closure.deduce _ _ _ _).
         (* Aim here: apply the same substitution rule, with the same substition,
            but with target the presupposition [p] of the original target. *)
-        + refine (inl (inl (inr _))).
+        * refine (inl (inl (inr _))).
           (* TODO: give access functions for locating the structural rules! *)
           apply inl. exists Γ, Γ', f.
           exists (form_object (Judgement.boundary_slot _ p)).
           exact (pr2 (pr2 (presupposition _ p'))).
-        + intros [ q | ].
+        * intros [ q | ].
           -- (* premises: show the substitution OK. *)
-            refine (transport _ _ _).
-            Focus 2. {
-              refine (Closure.hypothesis _ _ _).
-              exact (inl (Some q)).
-            } Unfocus.
-            apply idpath.
+            eapply (flip (transport _)).
+            ++ refine (Closure.hypothesis _ _ _). exact (inl (Some q)).
+            ++ apply idpath.
           -- (* premises: new presupposition *)
-            refine (transport _ _ _).
-            Focus 2. {
-              refine (Closure.hypothesis _ _ _).
-              exact (inr (None; p')).
-            } Unfocus.
-            apply idpath.
-      } Unfocus.
-      simple refine (path_sigma _ _ _ _ _).
-      { apply idpath. } (* judgement form of new conclusion is same as old *)
-      simple refine (path_sigma _ _ _ _ _).
-      { apply idpath. } (* context of new conclusion also the same *)
-      refine (path_forall _ _ _).
-      intros i.
-      recursive_destruct hjf; recursive_destruct p; recursive_destruct i;
-        apply idpath.
+            eapply (flip (transport _)).
+            ++ refine (Closure.hypothesis _ _ _). exact (inr (None; p')).
+            ++ apply idpath.
+      + simple refine (path_sigma _ _ _ _ _).
+        { apply idpath. } (* judgement form of new conclusion is same as old *)
+        simple refine (path_sigma _ _ _ _ _).
+        { apply idpath. } (* context of new conclusion also the same *)
+        refine (path_forall _ _ _).
+        intros i.
+        recursive_destruct hjf; recursive_destruct p; recursive_destruct i;
+          apply idpath.
     - (* [p] the context presupposition [Γ'] *)
-      refine (transport _ _ _).
-      Focus 2. {
-        refine (Closure.hypothesis _ _ _).
-        exact (inl (Some None)).
-      } Unfocus.
+      eapply (flip (transport _)).
+      { refine (Closure.hypothesis _ _ _). exact (inl (Some None)). }
       apply idpath.
   Defined.
 
