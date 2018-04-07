@@ -15,61 +15,21 @@ Require Import Raw.FlatTypeTheoryMap.
 Require Import Typed.TypedStructuralRule.
 Require Import Typed.TypeTheory.
 
-(** Presuppositions of a derivable judgement are derivable, over any type theory. *)
-Local Definition derive_presupposition {σ} {T : raw_type_theory σ}
+(** The main goal of this file is the metatheorem that all presuppositions
+    of a derivable judgement are derivable, over any type theory: *)
+Theorem derive_presupposition_closed {σ} {T : raw_type_theory σ}
      {j : judgement_total (RawTypeTheory.signature T)}
      (dj : RawTypeTheory.derivation T [<>] j)
      {p : presupposition j }
   : RawTypeTheory.derivation T [<>] (presupposition j p).
 Abort.
+(** In outline, the high level structure of the proof consists of giving analogues of the notions of “closed under presuppositions” for flat rules/flat type theories and closure rules/closure systems, and then doing the main inductive construction purely in terms of closure systems.
 
-(** In order to establish this, we require a few bits of background machinery:
-  - for the high level structure of the proof, abstractions of the notions of “closed under presuppositions” to flat type theories and closure systems;
-  - for the lower level details, some lemmas on the interaction of derivations/presuppositions with translation under metavariable instantiations. *)
+The low-level hard work is showing that the flat rules / closure conditions arising from type theories really are presupposition-closed in the appropriate sense. *)
 
-(** General background: establish some properties of how the syntactic translation given by metavariable instantiation preserves typing derivations.
 
-  TODO: probably factor this out into a separate file. *)
-Section DerivabilityUnderInstantiation.
-
-  Context {σ : shape_system}.
-
-  (* TODO: Perhaps upstream to [Metavariable]. *)
-  Arguments Metavariable.instantiate_judgement : simpl nomatch.
-  Arguments Metavariable.instantiate_expression : simpl nomatch.
-  Arguments Metavariable.instantiate_context : simpl nomatch.
-
-  (** Each presupposition of an instantiation [I] of a judgement [j]
-      is equal to the the instantiation under [I] of the corresponding
-      presupposition of [j] itself. *)
-  Local Definition presupposition_instantiate `{Funext}
-      {Σ : signature σ}
-      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
-      (j : judgement_total _)
-      (i : presupposition (Metavariable.instantiate_judgement I j))
-    : presupposition (Metavariable.instantiate_judgement I j) i
-    = Metavariable.instantiate_judgement I (presupposition j i).
-  Proof.
-    apply (ap (fun ji => (_;ji))). (* judgement form of presup unchanged *)
-    destruct j as [[ | hjf] j].
-    - destruct i. (* [j] is context judgement: no presuppositions. *)
-    - (* [j] is a hypothetical judgement *)
-      destruct i as [ i | ].
-      + (* judgement form and context of presup are unchanged: *)
-        simple refine (path_sigma _ _ _ _ _); try apply idpath.
-        apply path_forall; intros k.
-        recursive_destruct hjf;
-        recursive_destruct i;
-        recursive_destruct k;
-        try apply idpath.
-      + (* raw context *)
-        apply idpath.
-  Defined.
-
-End DerivabilityUnderInstantiation.
-
-Section PresuppositionsDerivable.
-  (** Main theorem: [presupposition_derivable]: the presuppositions of any derivable judgement are again derivable. *)
+Section PresuppositionClosureFlat.
+(** In this section, we show how “presupposition-closedness” transfers between the flat world and the closure-system world. *)
 
   Context {σ : shape_system} `{Funext}.
 
@@ -109,7 +69,7 @@ Section PresuppositionsDerivable.
       unfold TypedClosure.weakly_well_typed_rule.
       intros p.
       eapply transport. 
-      { refine (presupposition_instantiate _ _ p)^. }
+      { apply instantiate_presupposition. }
       refine (Closure.graft _ _ _).
       + refine (FlatTypeTheory.instantiate_derivation _ _ _ _).
         apply T_presup_closed.
@@ -120,11 +80,13 @@ Section PresuppositionsDerivable.
         * eapply (flip (transport _)).
           { refine (Closure.hypothesis _ _ _). refine (inr (i;_)).
             exact i_presup. }
-          apply presupposition_instantiate.
+          apply inverse, instantiate_presupposition.
   Defined.
 
-  (* TODO: perhaps change def of flat rules to allow only _hypothetical_ judgements? *)
-  Theorem presupposition_derivation_from_flat
+  (** Putting the above together: all presuppositions of a derivable judgement
+      over a presupposition-closed flat tpye theory are again derivable,
+      assuming additionally all presuppositions of the original hypotheses. *)
+  Theorem derive_presupposition_from_flat
       {Σ : signature σ}
       {T : flat_type_theory Σ} (H_T : presupposition_closed_flat_type_theory T)
       {j : judgement_total Σ} {hyps : family _}
@@ -139,6 +101,12 @@ Section PresuppositionsDerivable.
     apply closure_system_of_presupposition_closed_flat_type_theory.
     apply H_T.
   Defined.
+
+End PresuppositionClosureFlat.
+
+Section PresuppositionClosure.
+
+  Context {σ : shape_system} `{Funext}.
 
   (** For any raw type theory [T] and a rule [r] of the flattened [T], every
       presupposition in the boundary of the conclusion of [r] can be derived. *)
@@ -173,7 +141,7 @@ Section PresuppositionsDerivable.
       from hypotheses [hyps], suppose every presupposition [q] of every hypothesis [h : hyps]
       is derivable from [hyps], then every presuppsition [p] of [j] is derivable from
       [hyps]. *)
-  Theorem presupposition_derivation {T : raw_type_theory σ}
+  Theorem derive_presupposition {T : raw_type_theory σ}
       {j : judgement_total (RawTypeTheory.signature T)}
       {hyps : family _}
       (dj : RawTypeTheory.derivation T hyps j)
@@ -182,21 +150,21 @@ Section PresuppositionsDerivable.
         (hyps + Family.bind hyps presupposition)
         (presupposition _ p).
   Proof.
-    apply presupposition_derivation_from_flat; try assumption.
+    apply derive_presupposition_from_flat; try assumption.
     apply presupposition_closed_flatten.
   Defined.
 
   (** Working in a type theory [T], given a judgment [j] which is derivable
       without hypotheses, ever presupposition of [j] is derivable. *)
-  Corollary closed_presupposition_derivation {T : raw_type_theory σ}
+  Corollary derive_presupposition_closed {T : raw_type_theory σ}
       {j : judgement_total (RawTypeTheory.signature T)}
       (dj : RawTypeTheory.derivation T [<>] j)
       {p : presupposition j }
     : RawTypeTheory.derivation T [<>] (presupposition j p).
   Proof.
     refine (Closure.graft _ _ _).
-    - refine (presupposition_derivation dj).
+    - refine (derive_presupposition dj).
     - intros i. recursive_destruct i.
   Defined.
 
-End PresuppositionsDerivable.
+End PresuppositionClosure.

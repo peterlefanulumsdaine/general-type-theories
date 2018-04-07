@@ -8,6 +8,8 @@ Section FlatRule.
   Context {σ : shape_system}.
   Context (Σ : signature σ).
 
+  (* TODO: Is it right that we allow arbitrary judgements, or should we allow
+     only _hypothetical_ judgements? *)
   Record flat_rule
   :=
     { flat_rule_metas : arity _

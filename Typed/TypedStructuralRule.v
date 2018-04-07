@@ -49,38 +49,6 @@ Section TypedStructuralRule.
       + intros []. (* no presups for conclusion *)
   Defined.
 
-  (* TODO: upstream to [Family] *)
-  Definition family_some {X} (K : family X) (x : X)
-    : Family.map K (Family.adjoin K x).
-  Proof.
-    exists (@Some _).
-    intros i; apply idpath.
-  Defined.
-             
-  (* TODO: upstream to [Raw.Syntax.Judgement]. *)
-  Definition judgement_slot_from_boundary
-    {hjf : hypothetical_form}
-    : Family.map
-        (Judgement.boundary_slot hjf)
-        (Judgement.slot hjf).
-  Proof.
-    destruct hjf as [ hjf_obj | hjf_eq ].
-    - apply family_some.
-    - apply Family.idmap.
-  Defined.
-
-  (* TODO: upstream to [Raw.Syntax.Judgement]. *)
-  Definition judgement_slot_from_presupposition
-    {hjf : hypothetical_form} (i : Judgement.boundary_slot hjf)
-    : Family.map
-        (Judgement.slot (form_object (Judgement.boundary_slot _ i)))
-        (Judgement.slot hjf).
-  Proof.
-    eapply Family.compose.
-    - apply judgement_slot_from_boundary.
-    - apply Judgement.presupposition_from_boundary_slots.
-  Defined.
-
   (** Substitution-application rules are well typed *)
   Local Definition subst_apply_is_well_typed
         (r : RawStructuralRule.subst_apply Σ)

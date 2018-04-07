@@ -251,7 +251,7 @@ Section Presupposition.
 (** Whenever an object appears in the boundary of an object judgement, then its
     boundary embeds into that boundary.
 
-    NOTE. This is a special case of [presup_slots_from_boundary] below. It is
+    NOTE. This is a special case of [boundary_slot_from_presupposition] below. It is
     abstracted out because it’s used twice: directly for object judgements, and
     as part of the case for equality judgements.
 
@@ -275,7 +275,7 @@ Section Presupposition.
 
 (** Wherever an judgement [I] occurs as a presupposition of a judgement [J],
 there is a canonical embedding of the slots of [I] into the slots of [J]. *)
-  Local Definition presupposition_from_boundary_slots
+  Local Definition boundary_slot_from_presupposition
     {hjf : hypothetical_form} (i : boundary_slot hjf)
     : Family.map
         (slot (form_object (boundary_slot hjf i)))
@@ -300,6 +300,26 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
           exists (Some (Some j)). apply idpath.
     - (* case: j is head of presupposition *)
       exists i. apply idpath.
+  Defined.
+
+  Local Definition slot_from_boundary
+    {hjf : hypothetical_form}
+    : Family.map (boundary_slot hjf) (slot hjf).
+  Proof.
+    destruct hjf as [ hjf_obj | hjf_eq ].
+    - apply Family.some.
+    - apply Family.idmap.
+  Defined.
+
+  Local Definition slot_from_presupposition
+    {hjf : hypothetical_form} (i : boundary_slot hjf)
+    : Family.map
+        (slot (form_object (boundary_slot _ i)))
+        (slot hjf).
+  Proof.
+    eapply Family.compose.
+    - apply slot_from_boundary.
+    - apply boundary_slot_from_presupposition.
   Defined.
 
   Context {σ : shape_system}.
@@ -333,8 +353,8 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
            -- exists (pr1 jb).
               intros j.
               refine (transport (fun cl => raw_expression _ cl _) _ _).
-              ++ exact (Family.map_commutes (presupposition_from_boundary_slots i) j).
-              ++ exact (pr2 jb (presupposition_from_boundary_slots i j)).
+              ++ exact (Family.map_commutes (boundary_slot_from_presupposition i) j).
+              ++ exact (pr2 jb (boundary_slot_from_presupposition i j)).
            -- exact (pr1 jb).
   Defined.
 

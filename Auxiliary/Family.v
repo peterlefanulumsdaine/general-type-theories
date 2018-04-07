@@ -176,6 +176,13 @@ Section FamilyMap.
     intro; apply idpath.
   Defined.
 
+  Local Definition some {X} (K : family X) (x : X)
+    : map K (adjoin K x).
+  Proof.
+    exists (@Some _).
+    intros i; apply idpath.
+  Defined.
+
   Local Definition map_fmap
       {X Y} (f : X -> Y)
       {K K' : family X} (g : map K K')
