@@ -304,28 +304,38 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
 
   Context {σ : shape_system}.
 
-  (** The presuppositions of judgment boundary [jbi] *)
+  (** The presuppositions of a judgment boundary [jb] *)
   Definition presupposition_of_boundary
-      {Σ : signature σ} {jf} (jbi : boundary Σ jf)
+      {Σ : signature σ} {jf} (jb : boundary Σ jf)
     : family (judgement_total Σ).
   Proof.
-    destruct jf as [ | hjf].
-    - (* context judgement: no boundary *)
-      apply Family.empty.
-    - (* hyp judgement: presups are the context,
+  (* Note: destructing [jf] once early makes this definition look cleaner.
+
+   However, destructing [jf] as late as possible, and clearing [jb] when
+   possible, gives stronger computational behaviour:
+   it keeps the index set and judgement forms independent of [Σ], [jb]. *)
+    simple refine (Build_family _ _ _).
+    - clear jb. destruct jf as [ | hjf].
+      + (* context judgement: no boundary *)
+        exact Empty.
+      + (* hyp judgement: presups are the context,
                         plus the slots of the hyp boundary *)
-      apply Family.adjoin.
-      + exists (boundary_slot hjf).
-        intros i.
-        exists (form_hypothetical (form_object ((boundary_slot hjf) i))).
-        exists (pr1 jbi).
-        intros j.
-        set (e := Family.map_commutes (presupposition_from_boundary_slots i) j).
-        set (j' := presupposition_from_boundary_slots i j) in *.
-        refine (transport (fun cl => raw_expression _ cl _) e _).
-        exact (pr2 jbi j').
-      + exists (form_context).
-        exact (pr1 jbi).
+        exact (option (boundary_slot hjf)).
+    - intros i; simple refine (_;_).
+      + clear jb. destruct jf as [ | hjf].
+        * destruct i as [].
+        * destruct i as [ i | ].
+          -- exact (form_hypothetical (form_object ((boundary_slot hjf) i))).
+          -- exact form_context.
+      +  destruct jf as [ | hjf].
+         * destruct i as [].
+         * destruct i as [ i | ].
+           -- exists (pr1 jb).
+              intros j.
+              refine (transport (fun cl => raw_expression _ cl _) _ _).
+              ++ exact (Family.map_commutes (presupposition_from_boundary_slots i) j).
+              ++ exact (pr2 jb (presupposition_from_boundary_slots i j)).
+           -- exact (pr1 jb).
   Defined.
 
   (** The presuppositions of judgement [j]. *)

@@ -39,30 +39,23 @@ Section DerivabilityUnderInstantiation.
   Arguments Metavariable.instantiate_expression : simpl nomatch.
   Arguments Metavariable.instantiate_context : simpl nomatch.
 
-  (** The presuppositions of a judgement [j] instantiated by the instantiation [I]
-      are equal to mapping the instantiation [I] over all presuppositions of [j]. *)
-  (* TODO: upstream, but to where? *)
-  (* TODO maybe attempt to refactor [presupposition] to make this easier.
-   (Note: that refactoring has already been tried at least once, and seems difficult.) *)
+  (** Each presupposition of an instantiation [I] of a judgement [j]
+      is equal to the the instantiation under [I] of the corresponding
+      presupposition of [j] itself. *)
   Local Definition presupposition_instantiate `{Funext}
       {Σ : signature σ}
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
       (j : judgement_total _)
-    : presupposition (Metavariable.instantiate_judgement I j)
-      = Family.fmap (Metavariable.instantiate_judgement I) (presupposition j).
+      (i : presupposition (Metavariable.instantiate_judgement I j))
+    : presupposition (Metavariable.instantiate_judgement I j) i
+    = Metavariable.instantiate_judgement I (presupposition j i).
   Proof.
+    apply (ap (fun ji => (_;ji))). (* judgement form of presup unchanged *)
     destruct j as [[ | hjf] j].
-    - simple refine (Family.eq _ _); try apply idpath.
-      intros [].
-    - simple refine (Family.eq _ _); try apply idpath.
-      intros i. cbn in i. destruct i as [ i | ].
-      + (* slots *)
-        (* Do some computation by hand: *)
-        simpl (equiv_path _ _ 1).
-        eapply concat.
-        Focus 2. { apply ap. exact (idpath (Some i)). } Unfocus.
-        (* The judgement and context parts are judgementally equal: *)
-        simple refine (path_sigma _ _ _ _ _); try apply idpath.
+    - destruct i. (* [j] is context judgement: no presuppositions. *)
+    - (* [j] is a hypothetical judgement *)
+      destruct i as [ i | ].
+      + (* judgement form and context of presup are unchanged: *)
         simple refine (path_sigma _ _ _ _ _); try apply idpath.
         apply path_forall; intros k.
         recursive_destruct hjf;
@@ -114,15 +107,9 @@ Section PresuppositionsDerivable.
     - destruct r_log as [r r_inst]. cbn in r_inst.
       destruct r_inst as [Γ r_args].
       unfold TypedClosure.weakly_well_typed_rule.
-      cbn.
-      set (Pr := presupposition (Metavariable.instantiate_judgement r_args
-                                             (flat_rule_conclusion _ (T r)))).
-      assert (H_presup_inst : Pr =
-          Family.fmap (Metavariable.instantiate_judgement r_args)
-                      (presupposition (flat_rule_conclusion _ (T r)))).
-      { apply presupposition_instantiate. }
-      clearbody Pr. destruct H_presup_inst^.
       intros p.
+      eapply transport. 
+      { refine (presupposition_instantiate _ _ p)^. }
       refine (Closure.graft _ _ _).
       + refine (FlatTypeTheory.instantiate_derivation _ _ _ _).
         apply T_presup_closed.
@@ -130,31 +117,10 @@ Section PresuppositionsDerivable.
         * eapply (flip (transport _)).
           { refine (Closure.hypothesis _ _ _). exact (inl i). }
           apply idpath.
-        * assert (ip'_e :
-            { ip' : presupposition
-                      (Metavariable.instantiate_judgement r_args
-                        (flat_rule_premises _ (T r) i))
-            & presupposition _ ip'
-              = Metavariable.instantiate_judgement r_args
-                  (presupposition _ i_presup)}).
-          { 
-            set (Pr := presupposition (Metavariable.instantiate_judgement r_args
-                                             (flat_rule_premises _ (T r) i))).
-            assert (H' : Pr =
-                                    Family.fmap (Metavariable.instantiate_judgement r_args)
-                      (presupposition (flat_rule_premises _ (T r) i))).
-            { apply presupposition_instantiate. }
-            clearbody Pr. destruct H'^. 
-            exists i_presup. apply idpath.
-          }
-          destruct ip'_e as [i_presup' e].
-          eapply (flip (transport _)).
+        * eapply (flip (transport _)).
           { refine (Closure.hypothesis _ _ _). refine (inr (i;_)).
-            exact i_presup'. }
-          apply e.
-  (* TODO: this whole proof is quite painful.  Can it be cleaned up somehow?
-     E.g. would it be easier if [presupposition_instantiate] were given as a
-     family map instead of an equality? *)
+            exact i_presup. }
+          apply presupposition_instantiate.
   Defined.
 
   (* TODO: perhaps change def of flat rules to allow only _hypothetical_ judgements? *)
