@@ -56,7 +56,7 @@ Notation "Y1 + Y2" := (sum Y1 Y2) : family_scope.
 Open Scope family_scope.
 Notation " [< >] " := (empty _) (format "[< >]") : family_scope.
 Notation " [< x >] " := (singleton x) : family_scope.
-Notation " [< x ; .. ; z >] " := (adjoin .. (adjoin (empty _) x) .. z) : family_scope.
+Notation " [< x ; y ; .. ; z >] " := (adjoin .. (adjoin (singleton x) y) .. z) : family_scope.
 
 Delimit Scope family_scope with family.
 

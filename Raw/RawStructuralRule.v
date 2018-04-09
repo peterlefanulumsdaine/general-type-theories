@@ -199,7 +199,7 @@ Proof.
       (class_type , shape_empty σ )    (* [ A ] *)
     >] : arity _).
   (* Name the symbols. *)
-  pose (A := None : Metas).
+  pose (A := tt : Metas).
   exists Metas.
   (* single premise:  |— A type *)
   - simple refine [< [Ty! _ |- _ !] >].
@@ -229,7 +229,7 @@ Proof.
       (class_type, shape_empty σ )    (* [ A ] *)
     >] : arity _).
   (* Name the symbols. *)
-  pose (A := None : Metas).
+  pose (A := tt : Metas).
   exists Metas.
   (* Premise *)
   - refine [< _ >].
@@ -259,7 +259,7 @@ Proof.
     >] : arity _).
   (* Name the symbols. *)
   pose (B := None : Metas).
-  pose (A := Some None : Metas).
+  pose (A := Some tt : Metas).
   exists Metas.
   (* Premise *)
   - refine [< _ >].
@@ -292,7 +292,7 @@ Proof.
   (* Name the symbols. *)
   pose (C := None : Metas).
   pose (B := Some None : Metas).
-  pose (A := Some (Some None) : Metas).
+  pose (A := Some (Some tt) : Metas).
   exists Metas.
   (* Premise *)
   - refine [< _ ; _ >].
@@ -328,7 +328,7 @@ Proof.
     >] : arity _).
   (* Name the symbols. *)
   pose (u := None : Metas).
-  pose (A := Some None : Metas).
+  pose (A := Some tt : Metas).
   exists Metas.
   (* Premise *)
   - refine [< _ >].
@@ -362,7 +362,7 @@ Proof.
   (* Name the symbols. *)
   pose (v := None : Metas).
   pose (u := Some None : Metas).
-  pose (A := Some (Some None) : Metas).
+  pose (A := Some (Some tt) : Metas).
   exists Metas.
   (* Premise *)
   - refine [< _ >].
@@ -399,7 +399,7 @@ Proof.
   pose (w := None : Metas).
   pose (v := Some None : Metas).
   pose (u := Some (Some None) : Metas).
-  pose (A := Some (Some (Some None)) : Metas).
+  pose (A := Some (Some (Some tt)) : Metas).
   exists Metas.
   (* Premise *)
   - refine [< _ ; _ >].
@@ -443,7 +443,7 @@ Proof.
   (* Name the symbols. *)
   pose (u := None : Metas).
   pose (B := Some None : Metas).
-  pose (A := Some (Some None) : Metas).
+  pose (A := Some (Some tt) : Metas).
   exists Metas.
   (* Premise *)
   - refine [< _ ; _ ; _ ; _ >].
@@ -492,7 +492,7 @@ Proof.
     ; (class_term, shape_empty σ)    (* [ u' ] *)
     >] : arity _).
   (* Name the symbols. *)
-  pose (A := Some (Some (Some None)) : Metas).
+  pose (A := Some (Some (Some tt)) : Metas).
   pose (B := Some (Some None) : Metas).
   pose (u := Some None : Metas).
   pose (u' := None : Metas).
@@ -570,7 +570,7 @@ Section StructuralRuleMap.
         exact (Expression.fmap f ΓA.2).
       + cbn. apply Closure.rule_eq.
         * simple refine (Family.eq _ _). { apply idpath. }
-          cbn. intros [ [ [] | ] | ].
+          cbn. intros [ [] | ].
           -- apply idpath.
           -- apply (ap (fun x => (_; x))).
              apply (ap (fun x => (_; x))).
@@ -614,7 +614,7 @@ Section StructuralRuleMap.
             apply ap, path_forall; intros i.
             apply (ap (fun x => (_; x))).
             apply (ap (fun x => (_; x))).
-            apply path_forall. intros [ [ [] | ] | ].
+            apply path_forall. intros [ [] | ].
             ++ refine (fmap_substitute _ _ _).
             ++ apply idpath.
           -- apply idpath.

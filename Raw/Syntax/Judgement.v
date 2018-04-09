@@ -209,7 +209,7 @@ Section JudgementNotations.
   Proof.
     exists (form_hypothetical (form_object class_term)).
     exists Γ.
-    intros [ [ [] | ] | ].
+    intros [ [] | ].
     exact A.
     exact a.
   Defined.
@@ -221,7 +221,7 @@ Section JudgementNotations.
   Proof.
     exists (form_hypothetical (form_equality class_term)).
     exists Γ.
-    intros [ [ [ [] | ] | ] | ].
+    intros [ [ [] | ] | ].
     exact A.
     exact a.
     exact a'.
@@ -262,7 +262,7 @@ Section Presupposition.
     (* Ty: nothing to do, no objects in boundary *)
     - destruct i.
     (* Tm: i must be type, so again nothing left, no j in its boundary *)
-    - destruct i as [[] |]; destruct j.
+    - destruct i as []; destruct j.
   Defined.
 
 (** Wherever an judgement [I] occurs as a presupposition of a judgement [J],

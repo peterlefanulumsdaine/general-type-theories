@@ -35,12 +35,12 @@ Section TypedStructuralRule.
   Proof.
     destruct r as [  [Γ A] | ].
     - split. (* context extension *)
-      + intros [ [ [] | ] | ]. (* two premises *)
+      + intros [ [] | ]. (* two premises *)
         * intros []. (* context hypothesis: no presups *)
         * intros [ [] | ]. (* type hypothesis: one presup *)
           eapply transport. 
           Focus 2. { refine (Closure.hypothesis _ _ _). 
-            cbn. apply (Some (None)). } Unfocus.
+            cbn. apply (Some tt). } Unfocus.
           apply idpath.
       + intros []. (* conclusion: no presups *)
     - split. (* empty context rule *)
