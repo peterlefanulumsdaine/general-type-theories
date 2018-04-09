@@ -63,6 +63,20 @@ Section JudgementDefinitions.
        | form_equality cl  => Family.adjoin (Family.adjoin (object_boundary_slot cl) cl) cl
      end.
 
+  Inductive object_slot_index cl :=
+  | the_boundary : object_boundary_slot cl -> object_slot_index cl
+  | the_head : object_slot_index cl.
+
+  Local Definition object_slot cl :=
+    {| family_index := object_slot_index cl ;
+       family_element :=
+         (fun slot =>
+            match slot with
+            | the_boundary slot' => object_boundary_slot cl slot'
+            | the_head => cl
+            end)
+    |}.
+
   (* Syntactic classes of the slots in a hypothetical judgement *)
   Local Definition slot (hjf : hypothetical_form)
     : family syntactic_class
@@ -72,7 +86,7 @@ Section JudgementDefinitions.
            boundary_slot (form_equality cl)
        (* Object case: add the head slot *)
        | form_object cl =>
-           Family.adjoin (boundary_slot (form_object cl)) cl
+           object_slot cl
      end.
   (* NOTE: the order of slots for term judgements follows “dependency order” — later slots are (morally) dependent on earlier ones, so the type comes before the term.  However, the functions in section [Judgement_Notations] below follow standard written order, so the term comes before the type. *)
 
@@ -126,7 +140,7 @@ Section JudgementDefinitions.
     - (* hyp judgement *)
       cbn in j. exists (pr1 j). intros i.
       destruct hjf as [ ob_hjf | eq_hjf ].
-      + exact (pr2 j (Some i)).
+      + exact (pr2 j (the_boundary _ i)).
       + exact (pr2 j i).
   Defined.
 

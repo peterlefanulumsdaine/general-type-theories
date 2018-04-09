@@ -42,12 +42,13 @@ Section DerivabilityUnderInstantiation.
 Local Ltac recursive_destruct x :=
     cbn in x;
     try match type of x with
-    | hypothetical_form => destruct x as [ cl | cl ]; recursive_destruct cl  
+    | hypothetical_form => destruct x as [ cl | cl ]; recursive_destruct cl
     | syntactic_class => destruct x as [ | ]
-    | option _ => destruct x as [ y | ]; [recursive_destruct y | idtac ] 
+    | option _ => destruct x as [ y | ]; [recursive_destruct y | idtac ]
     | Empty => destruct x
     | Unit => destruct x as []
     | term_boundary_slot_index => destruct x as []
+    | object_slot_index _ => destruct x as [ slot | ] ; [ recursive_destruct slot | idtac ]
     | _ => idtac
     end.
 
@@ -78,7 +79,7 @@ Local Ltac recursive_destruct x :=
         recursive_destruct i;
         recursive_destruct k;
         try apply idpath.
-        
+
       + (* raw context *)
         apply idpath.
   Defined.

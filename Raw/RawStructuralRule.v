@@ -162,11 +162,13 @@ Proof.
  (* conclusion: *)
   - exists (Judgement.form_hypothetical (form_equality cl)).
     exists Γ'.
-    cbn. intros [i | ].
-    + (* boundry and LHS *)
-      exact (substitute f (hjfi i)).
+    intros [[i | ] | ].
+    + (* boundary *)
+      exact (substitute f (hjfi (the_boundary _ i))).
+    + (* LHS *)
+      exact (substitute f (hjfi (the_head _))).
     + (* RHS *)
-      exact (substitute f' (hjfi None)).
+      exact (substitute f' (hjfi (the_head _))).
 Defined.
 
 Local Definition substitution : Closure.system (judgement_total Σ)
