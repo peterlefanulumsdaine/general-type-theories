@@ -52,6 +52,22 @@ Section JudgementDefinitions.
        | class_term => term_boundary_slot
      end.
 
+  Inductive equality_boundary_slot_index cl :=
+  | the_equality_sort : family_index (object_boundary_slot cl) -> equality_boundary_slot_index cl
+  | the_equality_lhs
+  | the_equality_rhs.
+
+  Local Definition equality_boundary_slot (cl : syntactic_class) :=
+    {| family_index := equality_boundary_slot_index cl ;
+       family_element :=
+         (fun slot =>
+            match slot with
+            | the_equality_sort slot' => object_boundary_slot cl slot'
+            | the_equality_lhs => cl
+            | the_equality_rhs => cl
+            end)
+    |}.
+
   (* Syntactic classes of the slots in the boundary of a hypothetical judgement *)
   Local Definition boundary_slot (hjf : hypothetical_form)
     : family syntactic_class
@@ -60,7 +76,7 @@ Section JudgementDefinitions.
        | form_object cl => object_boundary_slot cl
        (* equality judgement boundary: a boundary of the corresponding object-judgement,
           together with two objects of the given class *)
-       | form_equality cl  => Family.adjoin (Family.adjoin (object_boundary_slot cl) cl) cl
+       | form_equality cl  => equality_boundary_slot cl
      end.
 
   Inductive object_slot_index cl :=
@@ -223,7 +239,7 @@ Section JudgementNotations.
   Proof.
     exists (form_hypothetical (form_equality class_type)).
     exists Γ.
-    intros [ [ [] | ] | ].
+    intros [ [] |  | ].
     exact A.
     exact A'.
   Defined.
@@ -246,7 +262,7 @@ Section JudgementNotations.
   Proof.
     exists (form_hypothetical (form_equality class_term)).
     exists Γ.
-    intros [ [ [] | ] | ].
+    intros [ [] | | ].
     exact A.
     exact a.
     exact a'.
@@ -306,15 +322,15 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
         exists (object_boundary_from_boundary_slots i j).
         apply (Family.map_commutes _ j).
       + (* original hjf is equality judgement *)
-        destruct i as [ [i' | ] | ].
+        destruct i as [ i' |  | ].
         * (* i is in shared bdry of LHS/RHS *)
           cbn in j.
-          exists (Some (Some (object_boundary_from_boundary_slots i' j))).
+          exists (the_equality_sort _ (object_boundary_from_boundary_slots i' j)).
           apply (Family.map_commutes _ j).
         * (* i is RHS *)
-          exists (Some (Some j)). apply idpath.
+          exists (the_equality_sort _ j). apply idpath.
         * (* i is LHS *)
-          exists (Some (Some j)). apply idpath.
+          exists (the_equality_sort _ j). apply idpath.
     - (* case: j is head of presupposition *)
       exists i. apply idpath.
   Defined.

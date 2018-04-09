@@ -126,7 +126,7 @@ eq_new i   0        0        0        0        i < j
       (* The cases where [p] is a copy of an original premise are all just translation,
       leaving just the new equality premises to give. *)
       intros i; simpl Judgement.boundary_slot in i.
-      destruct i as [ [ i | ] | ]; [ idtac | simpl | simpl].
+      destruct i as [ i | | ]; [ idtac | simpl | simpl].
       + (* boundary of the corresponding original premise *)
         refine (Expression.fmap
           (original_constructor_translation _ _) _).
@@ -148,7 +148,7 @@ eq_new i   0        0        0        0        i < j
         * intros i.
           apply raw_variable, (coproduct_inj1 shape_is_sum), i.
     - (* rule_conclusion_hypothetical_boundary *)
-      intros [ [ i | ] | ]; simpl.
+      intros [ i | | ]; simpl.
       + (* boundary of original conclusion *)
         refine (Expression.fmap _ _).
         * apply Metavariable.fmap2, Family.map_inl.

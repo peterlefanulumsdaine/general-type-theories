@@ -162,7 +162,7 @@ Proof.
  (* conclusion: *)
   - exists (Judgement.form_hypothetical (form_equality cl)).
     exists Γ'.
-    intros [[i | ] | ].
+    intros [i | | ].
     + (* boundary *)
       exact (substitute f (hjfi (the_boundary _ i))).
     + (* LHS *)

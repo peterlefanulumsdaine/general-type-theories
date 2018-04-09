@@ -48,7 +48,12 @@ Local Ltac recursive_destruct x :=
     | Empty => destruct x
     | Unit => destruct x as []
     | term_boundary_slot_index => destruct x as []
-    | object_slot_index _ => destruct x as [ slot | ] ; [ recursive_destruct slot | idtac ]
+    | object_slot_index _ =>
+      let slot := fresh "slot" in
+      destruct x as [ slot | ] ; [ recursive_destruct slot | idtac ]
+    | equality_boundary_slot_index _ =>
+      let slot := fresh "slot" in
+      destruct x as [ slot | | ] ; [ recursive_destruct slot | idtac | idtac ]
     | _ => idtac
     end.
 
