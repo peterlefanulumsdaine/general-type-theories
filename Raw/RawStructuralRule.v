@@ -216,37 +216,24 @@ Section HypotheticalStructuralRules.
 
 (* The general variable rule:
 
+  |- Γ cxt
   Γ |- A type
   ------------- (x in Γ, A := type of x in Γ)
   Γ |- x : A 
 
 *)
 
-  Local Definition variable : Closure.system (judgement_total Σ).
-  (* TODO: this form is not sufficient — we want the version for an arbitrary variable in the context, i.e.
-  
-   *)
+Local Definition variable : Closure.system (judgement_total Σ).
 Proof.
-  apply FlatRule.closure_system.
-  (* arity/metavariables of rule *)
-  pose (Metas := [<
-      (class_type , shape_empty σ )    (* [ A ] *)
-    >] : arity _).
-  (* Name the symbols. *)
-  pose (A := tt : Metas).
-  exists Metas.
-  (* single premise:  |— A type *)
-  - simple refine [< [Ty! _ |- _ !] >].
-    + exact [: :].
-    + exact [M/ A /].
-  (* conclusion:  x:A |- x:A *)
-  - simple refine [Tm! _ |- _ ; _ !].
-    + exact [: [M/ A /] :].
-    + refine (raw_variable _).
-      apply (plusone_one _ _ (shape_is_extend _ _)).
-    + exact [M/ A /].
+  exists { Γ : raw_context Σ & Γ }.
+  intros [Γ x]. set (A := Γ x). split.
+  (* premises *)
+  - exact [< [Cxt! |- Γ !]
+           ; [Ty! Γ |- A !]
+          >].
+  (*conclusion *)
+  - exact [Tm! Γ |- (raw_variable x) ; A !].
 Defined.
-
 
 Section Equality.
 

@@ -235,8 +235,24 @@ Section TypedStructuralRule.
   Local Definition variable_is_well_typed (r : RawStructuralRule.variable Σ)
     : is_well_typed (RawStructuralRule.variable _ r).
   Proof.
-    (* deduce from showing this is well-typed as flat rule *)
-  Admitted.
+    destruct r as [Γ x].
+    intros i; recursive_destruct i.
+    (* type presupposition *)
+    - eapply (flip (transport _)). 
+      + refine (Closure.hypothesis _ _ _).
+        cbn.
+        apply inl, None.
+      + cbn.
+        apply (ap (fun x => (_;x))).
+        apply (ap (fun x => (_;x))).
+        apply path_forall; intros i.
+        recursive_destruct i; apply idpath.
+    (* context presupposition *)
+    - eapply (flip (transport _)). 
+      + refine (Closure.hypothesis _ _ _).
+        cbn. apply inl, Some, tt.
+      + cbn. apply idpath.
+  Defined.
 
   (** Equality rules are well typed *)
   Local Definition equality_is_well_typed (r : RawStructuralRule.equality Σ)
