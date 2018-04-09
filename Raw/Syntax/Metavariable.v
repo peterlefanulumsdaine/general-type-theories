@@ -127,7 +127,38 @@ Section AlgebraicExtension.
         apply (instantiate_expression I (hjfi i)).
   Defined.
 
+  (** The instantiation under [I] of any presupposition of a judgement [j]
+      is equal to the corresponding presupposition of the instantiation of [j]
+      itself under [I]. *)
+  Definition instantiate_presupposition `{Funext}
+      {Σ : signature σ}
+      {Γ : raw_context Σ} {a : arity σ} (I : instantiation a Σ Γ)
+      (j : judgement_total _)
+      (i : presupposition (instantiate_judgement I j))
+    : instantiate_judgement I (presupposition j i)
+      = presupposition (instantiate_judgement I j) i.
+  Proof.
+    apply (ap (fun ji => (_;ji))). (* judgement form of presup unchanged *)
+    destruct j as [[ | hjf] j].
+    - destruct i. (* [j] is context judgement: no presuppositions. *)
+    - (* [j] is a hypothetical judgement *)
+      destruct i as [ i | ].
+      + (* judgement form and context of presup are unchanged: *)
+        simple refine (path_sigma _ _ _ _ _); try apply idpath.
+        apply path_forall; intros k.
+        recursive_destruct hjf;
+        recursive_destruct i;
+        recursive_destruct k;
+        try apply idpath.
+      + (* raw context *)
+        apply idpath.
+  Defined.
+
 End AlgebraicExtension.
+
+Arguments instantiate_judgement : simpl nomatch.
+Arguments instantiate_expression : simpl nomatch.
+Arguments instantiate_context : simpl nomatch.
 
 Section MetavariableNotations.
 

@@ -41,6 +41,12 @@ Context (Σ : @signature σ).
 
 Section ContextRules.
 
+(* The empty context rule:
+
+  ---------------
+  |-  .   cxt
+
+*)
 Local Definition ctx_empty : Closure.rule (judgement_total Σ).
 Proof.
   split.
@@ -50,6 +56,14 @@ Proof.
   - exact [Cxt! |- [::] !].
 Defined.
 
+(* The context extension rule:
+
+   |- Γ cxt
+   Γ |- A type
+   ----------------
+   |- Γ, x:A cxt
+
+*)
 Local Definition ctx_extend : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ & raw_type Σ Γ }.
@@ -96,8 +110,13 @@ End ContextRules.
 
 Section SubstitutionRules.
 
-(** General substitution along context maps. *)
+(** General substitution along context maps:
 
+  Γ' |- f(x) : A   [for each x in Γ, A := type of x in Γ]
+  Γ |- J   [for J any hypothetical judgement]
+  --------------------
+  Γ' |- f^*J
+*)
 Local Definition subst_apply : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ
@@ -108,13 +127,15 @@ Proof.
   intros [Γ [Γ' [f [hjf hjfi]]]].
   split.
   (* premises: *)
-  - apply Family.adjoin.
-    (* f is a context morphism *)
+  - refine (Family.adjoin (Family.adjoin _ _) _).
+    (* all components of [f] are suitably typed: *)
     + exists Γ.
       intros i. refine [Tm! Γ' |- _ ; _ !].
       * exact (f i).
       * exact (substitute f (Γ i)).
-    (* the judgement holds over Γ *)
+    (* [Γ'] is a valid context: *)
+    + exact [Cxt! |- Γ' !]. 
+    (* the target judgement holds over Γ *)
     + exists (Judgement.form_hypothetical hjf).
       exists Γ.
       exact hjfi.
@@ -124,7 +145,13 @@ Proof.
     intros i. exact (substitute f (hjfi i)).
 Defined.
 
-(** Substitution respects *equality* of context morphisms *)
+(** Substitution respects *equality* of context morphisms:
+
+  Γ' |- f(x) = g(x) : A   [for each x in Γ, A := type of x in Γ]
+  Γ |- J   [for J any hypothetical judgement]
+  --------------------
+  Γ' |- f^*J = g^*J  [ for J any object judgement ]
+ *)
 Local Definition subst_equal : Closure.system (judgement_total Σ).
 Proof.
   exists {   Γ : raw_context Σ
@@ -136,7 +163,7 @@ Proof.
   intros [Γ [Γ' [f [f' [cl hjfi]]]]].
   split.
   (* premises: *)
-  - refine (Family.adjoin (_ + _ + _) _).
+  - refine (Family.adjoin (Family.adjoin (_ + _ + _) _) _).
     (* f is a context morphism *)
     + exists Γ.
       intros i. refine [Tm! Γ' |- _ ; _ !].
@@ -155,11 +182,13 @@ Proof.
       * exact (substitute f (Γ i)).
       * exact (f i).
       * exact (f' i).
-    (* the judgement holds over Γ *)
+    (* [Γ'] is a valid context: *)
+    + exact [Cxt! |- Γ' !]. 
+    (* the target judgement holds over Γ *)
     + exists (Judgement.form_hypothetical (form_object cl)).
       exists Γ.
       exact hjfi.
- (* conclusion: *)
+  (* conclusion: *)
   - exists (Judgement.form_hypothetical (form_equality cl)).
     exists Γ'.
     intros [i | | ].
@@ -185,15 +214,18 @@ Section HypotheticalStructuralRules.
 
 *)
 
-(* The variable rule:
+(* The general variable rule:
 
-  |– A type
-  -----------
-  x:A |– x:A
+  Γ |- A type
+  ------------- (x in Γ, A := type of x in Γ)
+  Γ |- x : A 
 
 *)
 
-Local Definition variable : Closure.system (judgement_total Σ).
+  Local Definition variable : Closure.system (judgement_total Σ).
+  (* TODO: this form is not sufficient — we want the version for an arbitrary variable in the context, i.e.
+  
+   *)
 Proof.
   apply FlatRule.closure_system.
   (* arity/metavariables of rule *)
@@ -610,18 +642,17 @@ Section StructuralRuleMap.
         exact (Judgement.fmap_hypothetical_judgement f hjfi).
       + cbn. apply Closure.rule_eq; cbn.
         * apply inverse.
-          eapply concat. { apply Family.map_adjoin. }
-          apply ap011.
-          -- unfold Family.fmap.
-            apply ap, path_forall; intros i.
-            apply (ap (fun x => (_; x))).
-            apply (ap (fun x => (_; x))).
-            apply path_forall. intros [ [] | ].
-            ++ refine (fmap_substitute _ _ _).
-            ++ apply idpath.
-          -- apply idpath.
-          (* Family_fmap_adjoin *)
-        * apply (ap (fun x => (_; x))). cbn.
+          eapply concat. { apply Family.fmap_adjoin. }
+          apply ap011; try apply idpath.
+          eapply concat. { apply Family.fmap_adjoin. }
+          apply ap011; try apply idpath.
+          unfold Family.fmap.
+          apply ap, path_forall; intros i.
+          apply (ap (fun x => (_; x))).
+          apply (ap (fun x => (_; x))).
+          apply path_forall. intros [ [] | ]; try apply idpath.
+          refine (fmap_substitute _ _ _).
+        * apply (ap (fun x => (_; x))).
           apply (ap (fun x => (_; x))).
           apply path_forall. intros i.
           unfold Judgement.fmap_hypothetical_judgement.
@@ -636,7 +667,36 @@ Section StructuralRuleMap.
         exists (fmap_raw_context_map f g').
         exists hjf.
         exact (Judgement.fmap_hypothetical_judgement f hjfi).
-      + admit.
+      + cbn. apply Closure.rule_eq; cbn.
+        * apply inverse.
+          eapply concat. { apply Family.fmap_adjoin. }
+          apply ap011; try apply idpath.
+          eapply concat. { apply Family.fmap_adjoin. }
+          apply ap011; try apply idpath.
+          eapply concat. { apply Family.fmap_sum. }
+          eapply concat. { eapply (ap (fun K => K + _)), Family.fmap_sum. }
+          apply ap2; try apply ap2; unfold Family.fmap.
+          -- apply ap, path_forall; intros i.
+             apply (ap (fun x => (_; x))).
+             apply (ap (fun x => (_; x))).
+             apply path_forall. intros [ [] | ]; try apply idpath.
+             refine (fmap_substitute _ _ _).
+          -- apply ap, path_forall; intros i.
+             apply (ap (fun x => (_; x))).
+             apply (ap (fun x => (_; x))).
+             apply path_forall. intros [ [] | ]; try apply idpath.
+             refine (fmap_substitute _ _ _).
+          -- apply ap, path_forall; intros i.
+             apply (ap (fun x => (_; x))).
+             apply (ap (fun x => (_; x))).
+             apply path_forall. intros j.
+             destruct j as [ [] | | ]; try apply idpath.
+             refine (fmap_substitute _ _ _).
+        * apply (ap (fun x => (_; x))).
+          apply (ap (fun x => (_; x))).
+          apply path_forall. intros i.
+          unfold Judgement.fmap_hypothetical_judgement.
+          destruct i; refine (fmap_substitute _ _ _)^.
     - (* var rule *)
       simple refine (inl (inr _) ; _); admit.
     - (* equality rules *)

@@ -46,7 +46,7 @@ Section FlatTypeTheoryMap.
       admit. (* temporarily giving up on this, it seems unfinished anyhow. *)
       (* eapply paths_rew. *)
       (* + refine (Simple_Derivation_of_CC _). *)
-      (*   refine (Family.map_inl _). *)
+      (*   refine (Family.inl _). *)
       (*   exact (Fmap_Structural_CCs f c_str). *)
       (* + eapply concat. { apply Family.map_commutes. } *)
       (*   refine (Family.map_commutes _ _).  *)

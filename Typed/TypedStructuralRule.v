@@ -1,4 +1,5 @@
 Require Import HoTT.
+Require Import Auxiliary.General.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Raw.Syntax.
@@ -17,7 +18,7 @@ Require Import Raw.FlatRule.
 
 Section TypedStructuralRule.
 
-  Context {σ : shape_system} {Σ : signature σ}.
+  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
 
   (** In this section we show that all structural rules are well-typed, in the
   sense that whenever their premises are derivable, all the presuppositions of their
@@ -25,22 +26,22 @@ Section TypedStructuralRule.
 
   (** Is a given closure rule arising from a total judgement well-typed in the sense
       that its presuppositions are derivable using structural rules? *)
-  Local Definition is_well_typed : Closure.rule (judgement_total Σ) -> Type :=
-    TypedClosure.well_typed_rule Judgement.presupposition (structural_rule Σ).
-
+  Local Definition is_well_typed : Closure.rule (judgement_total Σ) -> Type
+  := TypedClosure.weakly_well_typed_rule presupposition (structural_rule Σ).
 
   (** Context rules are well typed. *)
-  Local Definition ctx_is_well_typed (r : RawStructuralRule.context Σ) :
-      is_well_typed (RawStructuralRule.context _ r).
+  Local Definition ctx_is_well_typed (r : RawStructuralRule.context Σ)
+    : is_well_typed (RawStructuralRule.context _ r).
   Proof.
+    apply TypedClosure.weakly_from_strongly_well_typed_rule.
     destruct r as [  [Γ A] | ].
     - split. (* context extension *)
       + intros [ [] | ]. (* two premises *)
         * intros []. (* context hypothesis: no presups *)
         * intros [ [] | ]. (* type hypothesis: one presup *)
-          eapply transport. 
-          Focus 2. { refine (Closure.hypothesis _ _ _). 
-            cbn. apply (Some tt). } Unfocus.
+          eapply (flip (transport _)).
+          { refine (Closure.hypothesis _ _ _).
+            cbn. apply (Some tt). }
           apply idpath.
       + intros []. (* conclusion: no presups *)
     - split. (* empty context rule *)
@@ -48,21 +49,198 @@ Section TypedStructuralRule.
       + intros []. (* no presups for conclusion *)
   Defined.
 
-  (** Substitution rules are well typed *)
-  Local Definition subst_is_well_typed (r : RawStructuralRule.substitution Σ) :
-      is_well_typed (RawStructuralRule.substitution _ r).
+  (** Substitution-application rules are well typed *)
+  Local Definition subst_apply_is_well_typed
+        (r : RawStructuralRule.subst_apply Σ)
+    : is_well_typed (RawStructuralRule.subst_apply _ r).
+  Proof.
+    destruct r as [Γ [ Γ' [ f [ hjf J]]]].
+    intros p.
+    transparent assert (j : (judgement_total Σ)).
+      { exists (form_hypothetical hjf). refine (Γ;J). }
+    transparent assert (p' : (presupposition j)).
+      { exact p. }
+    destruct p as [ p | ].
+    - (* [p] a hypothetical presupposition *)
+      eapply (flip (transport _)).
+      + simple refine (Closure.deduce _ _ _ _).
+        (* Aim here: apply the same substitution rule, with the same substition,
+           but with target the presupposition [p] of the original target. *)
+        * apply inl, inl, inr, inl.
+          (* TODO: give access functions for locating the structural rules! *)
+          exists Γ, Γ', f.
+          exists (form_object (Judgement.boundary_slot _ p)).
+          exact (pr2 (pr2 (presupposition _ p'))).
+        * intros [ q | ].
+          -- (* premises: show the substitution OK. *)
+            eapply (flip (transport _)).
+            ++ refine (Closure.hypothesis _ _ _). exact (inl (Some q)).
+            ++ apply idpath.
+          -- (* premises: new presupposition *)
+            eapply (flip (transport _)).
+            ++ refine (Closure.hypothesis _ _ _). exact (inr (None; p')).
+            ++ apply idpath.
+      + simple refine (path_sigma _ _ _ _ _).
+        { apply idpath. } (* judgement form of new conclusion is same as old *)
+        simple refine (path_sigma _ _ _ _ _).
+        { apply idpath. } (* context of new conclusion also the same *)
+        refine (path_forall _ _ _).
+        intros i.
+        recursive_destruct hjf; recursive_destruct p; recursive_destruct i;
+          apply idpath.
+    - (* [p] the context presupposition [Γ'] *)
+      eapply (flip (transport _)).
+      { refine (Closure.hypothesis _ _ _). exact (inl (Some None)). }
+      apply idpath.
+  Defined.
+
+  (** Substitution-equality rules are well typed *)
+  Local Definition subst_equal_is_well_typed
+        (r : RawStructuralRule.subst_equal Σ)
+    : is_well_typed (RawStructuralRule.subst_equal _ r).
+  Proof.
+    destruct r as [Γ [ Γ' [ f [ g [cl J]]]]].
+    intros p.
+    transparent assert (j : (judgement_total Σ)).
+      { exists (form_hypothetical (form_object cl)). refine (Γ;J). }
+    destruct p as [ p | ].
+    - (* [p] a hypothetical presupposition *)
+      (* What we do here genuinely depends on [cl]. *)
+      destruct cl as [ | ].
+      (* Case 1: substitutions are into a type judgement.
+         Then the presups of [ Γ |- f^*A = g^*A ] are just
+         [ Γ |- f^*A type ] and [ Γ |- g^*A type ].
+         In each case, we get them by the [substitution_apply] rule. *)
+      + eapply (flip (transport _)).
+        { simple refine (Closure.deduce _ _ _ _).
+          * apply inl, inl, inr, inl.
+            exists Γ, Γ'. refine (_;(form_object class_type; J)).
+            destruct p as [ [] | | ].
+            -- exact f.
+            -- exact g.
+          * intros h; cbn in h.
+            destruct h as [ [ x | ] | ].
+            -- (* premise: [f] / [g] is a context map *)
+              destruct p as [ [] | | ].
+              ++ eapply (flip (transport _)).
+                 { refine (Closure.hypothesis _ _ _).
+                   apply inl, Some, Some, inl, inl, x. }
+                 apply idpath.
+              ++ eapply (flip (transport _)).
+                 { refine (Closure.hypothesis _ _ _).
+                   apply inl, Some, Some, inl, inr, x. }
+                 apply idpath.
+            -- (* premise: [Γ'] is a context *)
+              eapply (flip (transport _)).
+              { refine (Closure.hypothesis _ _ _). exact (inl (Some None)). }
+              apply idpath.
+            -- (* premise: [Γ |- J]  *)
+              eapply (flip (transport _)).
+              { refine (Closure.hypothesis _ _ _). exact (inl None). }
+              apply idpath.
+        }
+        recursive_destruct p;
+          apply (ap (fun ji => (_;ji))), (ap (fun J => (_;J)));
+          apply path_forall; intros i; recursive_destruct i; apply idpath.
+      (* Case 2: substitutions are into a term judgement [ Γ |- a : A].
+         Then the presups of [ Γ |- f^*a = g^*a : f^* A] are
+         [ Γ |- f^*A type ], [ Γ |- f^*a : f^*A ], and [ Γ |- g^*A : f^*A ].
+         The first two, we get by the [substitution_apply] rule; the third 
+         additionally requires the [term_convert] and [substitution_equal]
+         rules. *)
+   (* TODO: to make the following clearer, and reduce use of [transport], consider giving lemmas that “standardise” the hypothetical part of a judgement, in the conclusion of a derivation. *)
+      + recursive_destruct p.
+        * (* presup [ Γ |- f^*A type ] *)
+          eapply (flip (transport _)).
+          { simple refine (Closure.deduce _ _ _ _).
+            -- apply inl, inl, inr, inl.
+               exists Γ, Γ', f. refine (form_object class_type; _).
+               intros [[] | ].
+               exact (J (the_boundary class_term the_term_type)).
+            -- intros [ [ x | ] | ].
+               ++ (* premise: [f] is a context map *)
+                 eapply (flip (transport _)).
+                 { refine (Closure.hypothesis _ _ _).
+                   apply inl, Some, Some, inl, inl, x. }
+                 apply idpath.
+               ++ (* premise: [Γ'] is a context *)
+                 eapply (flip (transport _)).
+                 { refine (Closure.hypothesis _ _ _). exact (inl (Some None)). }
+                 apply idpath.
+               ++ (* premise: [Γ |- A type ]  *)
+                 eapply (flip (transport _)).
+                 { refine (Closure.hypothesis _ _ _).
+                 apply inr. exists None. exact (Some the_term_type). }
+                 apply (ap (fun ji => (_;ji))), (ap (fun J => (_;J)));
+                 apply path_forall; intros i; recursive_destruct i; apply idpath.
+          }
+          apply (ap (fun ji => (_;ji))), (ap (fun J => (_;J)));
+            apply path_forall; intros i; recursive_destruct i; apply idpath.
+        * (* presup [ Γ |- f^*a : f^*A ] *)
+          eapply (flip (transport _)).
+          { simple refine (Closure.deduce _ _ _ _).
+            -- apply inl, inl, inr, inl.
+               exists Γ, Γ', f. refine (form_object class_term; _).
+               exact J.
+            -- intros [ [ x | ] | ].
+               ++ (* premise: [f] is a context map *)
+                 eapply (flip (transport _)).
+                 { refine (Closure.hypothesis _ _ _).
+                   apply inl, Some, Some, inl, inl, x. }
+                 apply idpath.
+               ++ (* premise: [Γ'] is a context *)
+                 eapply (flip (transport _)).
+                 { refine (Closure.hypothesis _ _ _). exact (inl (Some None)). }
+                 apply idpath.
+               ++ (* premise: [Γ |- a : A type ]  *)
+                 eapply (flip (transport _)).
+                 { refine (Closure.hypothesis _ _ _). exact (inl None). }
+                 apply idpath.
+          }
+          apply (ap (fun ji => (_;ji))), (ap (fun J => (_;J)));
+            apply path_forall; intros i; recursive_destruct i; apply idpath.
+        * (* presup [ Γ |- f^*a : g^*A ] *)
+          eapply (flip (transport _)).
+          { simple refine (Closure.deduce _ _ _ _).
+            -- apply inr. cbn. exists (Some None). (* term_convert rule *)
+               exists Γ'. cbn.
+               intros i; recursive_destruct i; cbn.
+               ++ refine (rename _ (substitute f (J (the_boundary class_term the_term_type)))). (* [f^*A] *)
+                  admit. (* oh god! *)
+               ++ refine (rename _ (substitute g (J (the_boundary class_term the_term_type)))). (* [g^*A] *)
+                  admit. (* oh jesus! *)
+               ++ refine (rename _ (substitute f (J (the_head _)))). (* [f^*a] *)
+                  admit. (* oh holy spirit! *)
+   (* TODO: all the above three are the same problem: renaming between a proto-context and its sum with the empty shape.  Think about how to make a utility lemma to deal with this situation!
+   E.g. given an “algebraic” flat rule, can get a derivable equivallent that doesn’t add this damn thing to the context? *)
+            -- admit. (* depends on same problem described above. *)
+          }
+          admit. (* same problem again *)
+    - (* [p] the context presupposition [Γ'] *)
+      eapply (flip (transport _)).
+      { refine (Closure.hypothesis _ _ _). exact (inl (Some None)). }
+      apply idpath.
   Admitted.
 
+  (** All substitution rules are well typed *)
+  Local Definition subst_is_well_typed (r : RawStructuralRule.substitution Σ)
+    : is_well_typed (RawStructuralRule.substitution _ r).
+  Proof.
+    destruct r as [ r_apply | r_equal ].
+    - apply subst_apply_is_well_typed.
+    - apply subst_equal_is_well_typed.
+  Defined.
+
   (** Variable rules are well typed *)
-  Local Definition variable_is_well_typed (r : RawStructuralRule.variable Σ) :
-      is_well_typed (RawStructuralRule.variable _ r).
+  Local Definition variable_is_well_typed (r : RawStructuralRule.variable Σ)
+    : is_well_typed (RawStructuralRule.variable _ r).
   Proof.
     (* deduce from showing this is well-typed as flat rule *)
   Admitted.
 
   (** Equality rules are well typed *)
-  Local Definition equality_is_well_typed (r : RawStructuralRule.equality Σ) :
-      is_well_typed (RawStructuralRule.equality _ r).
+  Local Definition equality_is_well_typed (r : RawStructuralRule.equality Σ)
+    : is_well_typed (RawStructuralRule.equality _ r).
   Proof.
     (* deduce from showing these are well-typed as flat rules *)
   Admitted.
@@ -70,7 +248,7 @@ Section TypedStructuralRule.
   (** Putting the above components together, we obtain the main result:
       all structural rules are well-typed. *)
   Local Definition well_typed
-    : TypedClosure.well_typed Judgement.presupposition (structural_rule Σ).
+    : TypedClosure.weakly_well_typed_system presupposition (structural_rule Σ).
   Proof.
     intros [ [ [ r_cxt | r_subst ] | r_var ] | r_eq ].
     - apply ctx_is_well_typed.

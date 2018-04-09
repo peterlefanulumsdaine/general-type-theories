@@ -32,6 +32,8 @@ Section JudgementDefinitions.
     | form_context
     | form_hypothetical (hjf : hypothetical_form).
 
+  Local Definition type_object_boundary := Family.empty syntactic_class.
+
   Inductive term_boundary_slot_index := the_term_type.
 
   Definition term_boundary_slot :=
@@ -47,7 +49,7 @@ Section JudgementDefinitions.
   Local Definition object_boundary_slot (cl : syntactic_class) : family syntactic_class
   := match cl with
        (* No hypothetical part in boundary of a type judgement *)
-       | class_type => [< >]
+       | class_type => type_object_boundary
        (* Boundary of a term judgement: the type of the term *)
        | class_term => term_boundary_slot
      end.
@@ -151,7 +153,7 @@ Section JudgementDefinitions.
       {jf} (j : judgement jf)
     : boundary jf.
   Proof.
-    destruct jf as [ | hjf].
+  destruct jf as [ | hjf].
     - constructor. (* context judgement: no boundary *)
     - (* hyp judgement *)
       cbn in j. exists (pr1 j). intros i.
@@ -284,7 +286,7 @@ Section Presupposition.
 (** Whenever an object appears in the boundary of an object judgement, then its
     boundary embeds into that boundary.
 
-    NOTE. This is a special case of [presup_slots_from_boundary] below. It is
+    NOTE. This is a special case of [boundary_slot_from_presupposition] below. It is
     abstracted out because it’s used twice: directly for object judgements, and
     as part of the case for equality judgements.
 
@@ -308,7 +310,7 @@ Section Presupposition.
 
 (** Wherever an judgement [I] occurs as a presupposition of a judgement [J],
 there is a canonical embedding of the slots of [I] into the slots of [J]. *)
-  Local Definition presupposition_from_boundary_slots
+  Local Definition boundary_slot_from_presupposition
     {hjf : hypothetical_form} (i : boundary_slot hjf)
     : Family.map
         (slot (form_object (boundary_slot hjf i)))
@@ -335,36 +337,102 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
       exists i. apply idpath.
   Defined.
 
+  Local Definition slot_from_boundary
+    {hjf : hypothetical_form}
+    : Family.map (boundary_slot hjf) (slot hjf).
+  Proof.
+    destruct hjf as [ obj_cl | eq_cl ].
+    - exists (the_boundary obj_cl).
+      intros ; apply idpath.
+    - apply Family.idmap.
+  Defined.
+
+  Local Definition slot_from_presupposition
+    {hjf : hypothetical_form} (i : boundary_slot hjf)
+    : Family.map
+        (slot (form_object (boundary_slot _ i)))
+        (slot hjf).
+  Proof.
+    eapply Family.compose.
+    - apply slot_from_boundary.
+    - apply boundary_slot_from_presupposition.
+  Defined.
+
   Context {σ : shape_system}.
 
-  (** The presuppositions of judgment boundary [jbi] *)
-  Local Definition presupposition_of_boundary
-      {Σ : signature σ} {jf} (jbi : boundary Σ jf)
+  (** The presuppositions of a judgment boundary [jb] *)
+  Definition presupposition_of_boundary
+      {Σ : signature σ} {jf} (jb : boundary Σ jf)
     : family (judgement_total Σ).
   Proof.
-    destruct jf as [ | hjf].
-    - (* context judgement: no boundary *)
-      apply Family.empty.
-    - (* hyp judgement: presups are the context,
+  (* Note: destructing [jf] once early makes this definition look cleaner.
+
+   However, destructing [jf] as late as possible, and clearing [jb] when
+   possible, gives stronger computational behaviour:
+   it keeps the index set and judgement forms independent of [Σ], [jb]. *)
+    simple refine (Build_family _ _ _).
+    - clear jb. destruct jf as [ | hjf].
+      + (* context judgement: no boundary *)
+        exact Empty.
+      + (* hyp judgement: presups are the context,
                         plus the slots of the hyp boundary *)
-      apply Family.adjoin.
-      + exists (boundary_slot hjf).
-        intros i.
-        exists (form_hypothetical (form_object ((boundary_slot hjf) i))).
-        exists (pr1 jbi).
-        intros j.
-        set (p := Family.map_commutes (presupposition_from_boundary_slots i) j).
-        set (j' := presupposition_from_boundary_slots i j) in *.
-        destruct p.
-        exact (pr2 jbi j').
-      + exists (form_context).
-        exact (pr1 jbi).
+        exact (option (boundary_slot hjf)).
+    - intros i; simple refine (_;_).
+      + clear jb. destruct jf as [ | hjf].
+        * destruct i as [].
+        * destruct i as [ i | ].
+          -- exact (form_hypothetical (form_object ((boundary_slot hjf) i))).
+          -- exact form_context.
+      +  destruct jf as [ | hjf].
+         * destruct i as [].
+         * destruct i as [ i | ].
+           -- exists (pr1 jb).
+              intros j.
+              refine (transport (fun cl => raw_expression _ cl _) _ _).
+              ++ exact (Family.map_commutes (boundary_slot_from_presupposition i) j).
+              ++ exact (pr2 jb (boundary_slot_from_presupposition i j)).
+           -- exact (pr1 jb).
   Defined.
 
   (** The presuppositions of judgement [j]. *)
-  Local Definition presupposition
+  Definition presupposition
       {Σ : signature σ} (j : judgement_total Σ)
     : family (judgement_total Σ)
   := presupposition_of_boundary (boundary_of_judgement (pr2 j)).
 
 End Presupposition.
+
+
+(** A tactic that is often handy working with syntax, especially slots:
+recursively destruct some object of an iterated inductive type.
+
+Currently only supports specific inductive types hand-coded here. *)
+(* TODO: can this be generalised to work for arbitrary inductive types? *)
+Ltac recursive_destruct x :=
+    cbn in x;
+    try match type of x with
+    | hypothetical_form =>
+      let cl := fresh "cl" in
+      destruct x as [ cl | cl ]; recursive_destruct cl
+    | syntactic_class => destruct x as [ | ]
+    | option _ =>
+      let y := fresh "y" in
+      destruct x as [ y | ]; [recursive_destruct y | idtac ]
+    | Empty => destruct x
+    | Unit => destruct x as []
+    | sum _ _ =>
+      let y := fresh "y" in
+      destruct x as [ y | y ]; recursive_destruct y
+    | sig _ =>
+      let x1 := fresh "x1" in
+      let x2 := fresh "x2" in
+      destruct x as [ x1 x2 ]; recursive_destruct x1; recursive_destruct x2
+    | term_boundary_slot_index => destruct x as []
+    | object_slot_index _ =>
+      let slot := fresh "slot" in
+      destruct x as [ slot | ] ; [ recursive_destruct slot | idtac ]
+    | equality_boundary_slot_index _ =>
+      let slot := fresh "slot" in
+      destruct x as [ slot | | ] ; [ recursive_destruct slot | idtac | idtac ]
+    | _ => idtac
+    end.

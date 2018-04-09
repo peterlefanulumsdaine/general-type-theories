@@ -9,6 +9,7 @@
 
 # Modules to be included in the main build:
 MODULES := \
+	Auxiliary/General \
 	Auxiliary/WellFounded \
 	Auxiliary/Family \
 	Auxiliary/Coproduct \
