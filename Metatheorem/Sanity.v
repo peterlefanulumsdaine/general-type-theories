@@ -47,6 +47,7 @@ Local Ltac recursive_destruct x :=
     | option _ => destruct x as [ y | ]; [recursive_destruct y | idtac ] 
     | Empty => destruct x
     | Unit => destruct x as []
+    | term_boundary_slot_index => destruct x as []
     | _ => idtac
     end.
 
@@ -77,6 +78,7 @@ Local Ltac recursive_destruct x :=
         recursive_destruct i;
         recursive_destruct k;
         try apply idpath.
+        
       + (* raw context *)
         apply idpath.
   Defined.

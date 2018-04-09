@@ -32,13 +32,24 @@ Section JudgementDefinitions.
     | form_context
     | form_hypothetical (hjf : hypothetical_form).
 
+  Inductive term_boundary_slot_index := the_term_type.
+
+  Definition term_boundary_slot :=
+    {| family_index := term_boundary_slot_index ;
+       family_element :=
+         (fun slot =>
+            match slot with
+            | the_term_type => class_type
+            end)
+    |}.
+
   (* The boundary of a term or a type. *)
   Local Definition object_boundary_slot (cl : syntactic_class) : family syntactic_class
   := match cl with
        (* No hypothetical part in boundary of a type judgement *)
        | class_type => [< >]
        (* Boundary of a term judgement: the type of the term *)
-       | class_term => [< class_type >]
+       | class_term => term_boundary_slot
      end.
 
   (* Syntactic classes of the slots in the boundary of a hypothetical judgement *)
