@@ -44,8 +44,8 @@ Proof.
   intros R.
   exists (flat_rule_metas _ R).
   - refine (Family.fmap _ (flat_rule_premises _ R)).
-    apply Judgement.fmap_judgement_total.
+    apply fmap_judgement_total.
     apply Metavariable.fmap1, f.
-  - refine (Judgement.fmap_judgement_total _ (flat_rule_conclusion _ R)).
+  - refine (fmap_judgement_total _ (flat_rule_conclusion _ R)).
     apply Metavariable.fmap1, f.
 Defined.

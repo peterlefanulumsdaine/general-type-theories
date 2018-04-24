@@ -573,7 +573,7 @@ Section StructuralRuleMap.
       {Σ Σ' : signature σ}
       (f : Signature.map Σ Σ')
     : Family.map
-        (Family.fmap (Closure.fmap (Judgement.fmap_judgement_total f)) (structural_rule Σ))
+        (Family.fmap (Closure.fmap (fmap_judgement_total f)) (structural_rule Σ))
         (structural_rule Σ').
   Proof.
     (* TODO: possible better approach:
@@ -685,10 +685,19 @@ Section StructuralRuleMap.
           unfold Judgement.fmap_hypothetical_judgement.
           destruct i; refine (fmap_substitute _ _ _)^.
     - (* var rule *)
-      simple refine (inl (inr _) ; _); admit.
+      destruct c4 as [Γ x].
+      simple refine (inl (inr _) ; _).
+      + exists (Context.fmap f Γ); exact x.
+      + cbn. apply Closure.rule_eq; cbn.
+        * apply inverse.
+          eapply concat. { apply Family.fmap_adjoin. }
+          apply ap011; try apply idpath.
+          apply Judgement.eq_by_eta, idpath.
+        * apply Judgement.eq_by_eta, idpath.
     - (* equality rules *)
       simple refine (inr _; _); admit.
-      (* Thest last two should be doable cleanly by the same lemmas
+      (* This should be do-able cleanly going via a lemma about
+      naturality of translation of flat rules into closure rules,
       used for logical rules in [fmap] below, once that’s done. *)
   Admitted.
 

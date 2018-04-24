@@ -202,7 +202,7 @@ Section JudgementFmap.
   Defined.
 
   (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly. *)
-  Local Definition fmap_judgement_total {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+  Definition fmap_judgement_total {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
     : judgement_total Σ -> judgement_total Σ'.
   Proof.
     intros jf_jfi.
@@ -402,7 +402,6 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
 
 End Presupposition.
 
-
 (** A tactic that is often handy working with syntax, especially slots:
 recursively destruct some object of an iterated inductive type.
 
@@ -411,6 +410,9 @@ Currently only supports specific inductive types hand-coded here. *)
 Ltac recursive_destruct x :=
     cbn in x;
     try match type of x with
+    | form =>
+      let hf := fresh "hf" in
+      destruct x as [ | hf ]; [idtac | recursive_destruct hf]
     | hypothetical_form =>
       let cl := fresh "cl" in
       destruct x as [ cl | cl ]; recursive_destruct cl
@@ -436,3 +438,60 @@ Ltac recursive_destruct x :=
       destruct x as [ slot | | ] ; [ recursive_destruct slot | idtac | idtac ]
     | _ => idtac
     end.
+
+Section Canonicalisation.
+(** If judgements were record types, rather than function types over their finite set of slots, they would have judgemental eta, which would be very convenient.
+
+In lieu of that, we give explicit lemmas analogous to eta-expansion and the eta rule: we call this the “canonicalisation” of a judgement. *)
+  
+  Context {σ : shape_system} {Σ : signature σ} `{Funext}.
+
+  Local Definition eta_expand (j : judgement_total Σ)
+    : judgement_total Σ.
+  Proof.
+    destruct j as [jf j].
+    exists jf.
+    destruct jf as [ | hf].
+    - exact j.
+    - exists (j.1).
+      intros i.
+      set (i_keep := i).
+      recursive_destruct hf;
+        recursive_destruct i;
+        exact (j.2 i_keep).
+  Defined.
+
+  Local Definition eta (j : judgement_total Σ)
+    : eta_expand j = j.
+  Proof.
+    apply (ap (fun j => (_;j))).
+    destruct j as [jf j].
+    destruct jf as [ | hf]; try apply idpath.
+    destruct j as [Γ hj]. 
+    apply (ap (fun hj' => (_;hj'))).
+    apply path_forall; intros i.
+    recursive_destruct hf;
+      recursive_destruct i;
+      apply idpath.
+  Defined.
+
+  (** To give something for a judgement (e.g. to derive it), one can always eta-expand the judgement first. *)
+  Local Definition canonicalise
+      (P : judgement_total Σ -> Type)
+      (j : judgement_total Σ)
+    : P (eta_expand j) -> P j.
+  Proof.
+    apply transport, eta.
+  Defined.
+
+  (* TODO: consider naming *)
+  (** To check two judgements are equal, it’s enough to check their eta-expansions. *)
+  Local Definition eq_by_eta
+      (j j' : judgement_total Σ)
+    : eta_expand j = eta_expand j' -> j = j'.
+  Proof.
+    intros e.
+    exact ((eta j)^ @ e @ eta j').
+  Defined.
+
+End Canonicalisation.

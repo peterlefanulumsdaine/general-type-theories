@@ -35,7 +35,7 @@ Section FlatTypeTheoryMap.
     {Σ' : signature σ} (T' : flat_type_theory Σ')
     (f : flat_type_theory_map T T')
   : Closure.map
-      (Family.fmap (Closure.fmap (Judgement.fmap_judgement_total f)) (FlatTypeTheory.closure_system T))
+      (Family.fmap (Closure.fmap (fmap_judgement_total f)) (FlatTypeTheory.closure_system T))
       (FlatTypeTheory.closure_system T').
   Proof.
     intros c. (* We need to unfold [c] a bit here, bit not too much. *)
