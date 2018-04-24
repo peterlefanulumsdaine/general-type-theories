@@ -80,14 +80,8 @@ Section TypedStructuralRule.
             eapply (flip (transport _)).
             ++ refine (Closure.hypothesis _ _ _). exact (inr (None; p')).
             ++ apply idpath.
-      + simple refine (path_sigma _ _ _ _ _).
-        { apply idpath. } (* judgement form of new conclusion is same as old *)
-        simple refine (path_sigma _ _ _ _ _).
-        { apply idpath. } (* context of new conclusion also the same *)
-        refine (path_forall _ _ _).
-        intros i.
-        recursive_destruct hjf; recursive_destruct p; recursive_destruct i;
-          apply idpath.
+      + recursive_destruct hjf; recursive_destruct p;
+          apply Judgement.eq_by_eta; apply idpath.
     - (* [p] the context presupposition [Γ'] *)
       eapply (flip (transport _)).
       { refine (Closure.hypothesis _ _ _). exact (inl (Some None)). }
@@ -140,8 +134,7 @@ Section TypedStructuralRule.
               apply idpath.
         }
         recursive_destruct p;
-          apply (ap (fun ji => (_;ji))), (ap (fun J => (_;J)));
-          apply path_forall; intros i; recursive_destruct i; apply idpath.
+          apply Judgement.eq_by_eta; apply idpath.
       (* Case 2: substitutions are into a term judgement [ Γ |- a : A].
          Then the presups of [ Γ |- f^*a = g^*a : f^* A] are
          [ Γ |- f^*A type ], [ Γ |- f^*a : f^*A ], and [ Γ |- g^*A : f^*A ].
@@ -171,11 +164,9 @@ Section TypedStructuralRule.
                  eapply (flip (transport _)).
                  { refine (Closure.hypothesis _ _ _).
                  apply inr. exists None. exact (Some the_term_type). }
-                 apply (ap (fun ji => (_;ji))), (ap (fun J => (_;J)));
-                 apply path_forall; intros i; recursive_destruct i; apply idpath.
+                 apply Judgement.eq_by_eta; apply idpath.
           }
-          apply (ap (fun ji => (_;ji))), (ap (fun J => (_;J)));
-            apply path_forall; intros i; recursive_destruct i; apply idpath.
+          apply Judgement.eq_by_eta; apply idpath.
         * (* presup [ Γ |- f^*a : f^*A ] *)
           eapply (flip (transport _)).
           { simple refine (Closure.deduce _ _ _ _).
@@ -197,8 +188,7 @@ Section TypedStructuralRule.
                  { refine (Closure.hypothesis _ _ _). exact (inl None). }
                  apply idpath.
           }
-          apply (ap (fun ji => (_;ji))), (ap (fun J => (_;J)));
-            apply path_forall; intros i; recursive_destruct i; apply idpath.
+          apply Judgement.eq_by_eta; apply idpath.
         * (* presup [ Γ |- f^*a : g^*A ] *)
           eapply (flip (transport _)).
           { simple refine (Closure.deduce _ _ _ _).
@@ -242,11 +232,7 @@ Section TypedStructuralRule.
       + refine (Closure.hypothesis _ _ _).
         cbn.
         apply inl, None.
-      + cbn.
-        apply (ap (fun x => (_;x))).
-        apply (ap (fun x => (_;x))).
-        apply path_forall; intros i.
-        recursive_destruct i; apply idpath.
+      + apply Judgement.eq_by_eta; apply idpath.
     (* context presupposition *)
     - eapply (flip (transport _)). 
       + refine (Closure.hypothesis _ _ _).
