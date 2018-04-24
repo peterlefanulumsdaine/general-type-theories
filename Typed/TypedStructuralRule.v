@@ -15,7 +15,92 @@ Require Import Raw.FlatRule.
    For the ones stated as flat rules, this means showing they’re well-typed as such: i.e.
    showing that whenever their premises hold, then all the presuppositions of both their
    premises and conclusion hold.
-*)
+ *)
+
+
+(** The following section provides infrastructure to deal with a problem
+arising with instantiations of flat rules: their conclusion is typically
+over a context whose shape is [ shape_sum Γ (shape_empty σ) ], not just [ Γ ]
+as one would expect. 
+
+  So we give here derivations going between a general judgement [ Γ |- J ] and
+its reindexing to [ shape_sum Γ (shape_empty σ) ]. 
+
+  It would be good to have some infrastructure (tactics or lemmas?) making
+applications of this less intrusive: i.e. to allow one to use instantiations
+of flat rules as the closure conditions one expects them to be, with just [Γ]
+instead of [ shape_sum Γ (shape_empty σ) ]. *)
+(* TODO: upstream the entire section; but to where? *)
+Section Sum_Shape_Empty.
+
+  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
+
+  (* TODO: upstream *)
+  Definition shape_sum_empty (γ : σ) : σ
+  := shape_sum γ (shape_empty σ).
+
+  (* TODO: upstream *)
+  Definition raw_context_sum_empty_inl (γ : σ)
+    : Context.map Σ (shape_sum_empty γ) γ.
+  Proof.
+    intros x. apply raw_variable, (coproduct_inj1 shape_is_sum), x.
+  Defined.    
+
+  (* TODO: upstream *)
+  Definition raw_context_sum_empty (Γ : raw_context Σ)
+    : raw_context Σ.
+  Proof.
+    exists (shape_sum_empty Γ).
+    apply (coproduct_rect shape_is_sum).
+    - intros i; refine (substitute _ (Γ i)).
+      apply raw_context_sum_empty_inl.
+    - apply (empty_rect _ shape_is_empty).
+  Defined.
+
+  (* TODO: upstream *)
+  Definition reindexing_to_empty_sum
+      {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
+      (J : hypothetical_judgement Σ hjf Γ)
+    : judgement_total Σ.
+  Proof.
+    exists (form_hypothetical hjf).
+    exists (raw_context_sum_empty Γ).
+    intros i. exact (substitute (raw_context_sum_empty_inl _) (J i)).
+  Defined.
+
+  (** From any judgement [ Γ |- J ],
+      one can derive [ Γ+0 |- r^* J ],
+   where [Γ+0] is the sum of Γ with the empty shape,
+   and r^*J is the reindexing of [J] to [Γ+0]. *)
+  Definition derive_reindexing_to_empty_sum
+      {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
+      (J : hypothetical_judgement Σ hjf Γ)
+    : Closure.derivation (structural_rule Σ)
+        [< (form_hypothetical hjf ; (Γ ; J)) >] 
+        (reindexing_to_empty_sum J).
+  Proof.
+    (* substitution rule, along the context morphism
+       [raw_context_sum_empty_inl]. *)
+  Admitted.
+
+  (* TODO: upstream *)
+  (** To derive a judgement [ Γ |- J ],
+      it’s sufficient to derive [ Γ+0 |- r^* J ],
+   where [Γ+0] is the sum of Γ with the empty shape,
+   and r^*J is the reindexing of [J] to [Γ+0]. *)
+  Definition derive_from_reindexing_to_empty_sum
+      {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
+      (J : hypothetical_judgement Σ hjf Γ)
+    : Closure.derivation (structural_rule Σ)
+        [< reindexing_to_empty_sum J >] 
+        (form_hypothetical hjf ; (Γ ; J)).
+  Proof.
+    (* substitution rule, along the _inverse_ context morphism of
+       [raw_context_sum_empty_inl], plus substitution functoriality lemma
+       to show that the conclusion of that is the original judgement. *)
+  Admitted.
+
+End Sum_Shape_Empty.
 
 Section TypedStructuralRule.
 
@@ -89,55 +174,6 @@ Section TypedStructuralRule.
       apply idpath.
   Defined.
 
-  (* TODO: upstream *)
-  Definition shape_sum_empty (γ : σ) : σ
-  := shape_sum γ (shape_empty σ).
-
-  (* TODO: upstream *)
-  Definition raw_context_sum_empty_inl (γ : σ)
-    : Context.map Σ (shape_sum_empty γ) γ.
-  Proof.
-    intros x. apply raw_variable, (coproduct_inj1 shape_is_sum), x.
-  Defined.    
-
-  (* TODO: upstream *)
-  Definition raw_context_sum_empty (Γ : raw_context Σ)
-    : raw_context Σ.
-  Proof.
-    exists (shape_sum_empty Γ).
-    apply (coproduct_rect shape_is_sum).
-    - intros i; refine (substitute _ (Γ i)).
-      apply raw_context_sum_empty_inl.
-    - apply (empty_rect _ shape_is_empty).
-  Defined.
-
-  (* TODO: upstream *)
-  Definition reindexing_to_empty_sum
-      {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
-      (J : hypothetical_judgement Σ hjf Γ)
-    : judgement_total Σ.
-  Proof.
-    exists (form_hypothetical hjf).
-    exists (raw_context_sum_empty Γ).
-    intros i. exact (substitute (raw_context_sum_empty_inl _) (J i)).
-  Defined.
-
-  (* TODO: upstream *)
-  (** To derive a judgement [ Γ |- J ],
-      it’s sufficient to derive [ Γ;[] |- r^* J ],
-   where [Γ;[]] is the sum of Γ with the empty shape,
-   and r^*J is the reindexing of [J] to that context. *)
-  Definition derive_from_reindexing_to_empty_sum
-      {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
-      (J : hypothetical_judgement Σ hjf Γ)
-    : Closure.derivation (structural_rule Σ)
-        [< reindexing_to_empty_sum J >] 
-        (form_hypothetical hjf ; (Γ ; J)).
-  Proof.
-    (* substitution rule, along the _inverse_ context morphism of
-       [raw_context_sum_empty_inl], plus substitution functoriality lemma
-       to show that the conclusion of that is the original judgement. *)
-  Admitted.
 
   (** Substitution-equality rules are well typed *)
   Local Definition subst_equal_is_well_typed
