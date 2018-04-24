@@ -1,5 +1,6 @@
 Require Import HoTT.
 Require Import Auxiliary.General.
+Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Raw.Syntax.
@@ -88,6 +89,56 @@ Section TypedStructuralRule.
       apply idpath.
   Defined.
 
+  (* TODO: upstream *)
+  Definition shape_sum_empty (γ : σ) : σ
+  := shape_sum γ (shape_empty σ).
+
+  (* TODO: upstream *)
+  Definition raw_context_sum_empty_inl (γ : σ)
+    : Context.map Σ (shape_sum_empty γ) γ.
+  Proof.
+    intros x. apply raw_variable, (coproduct_inj1 shape_is_sum), x.
+  Defined.    
+
+  (* TODO: upstream *)
+  Definition raw_context_sum_empty (Γ : raw_context Σ)
+    : raw_context Σ.
+  Proof.
+    exists (shape_sum_empty Γ).
+    apply (coproduct_rect shape_is_sum).
+    - intros i; refine (substitute _ (Γ i)).
+      apply raw_context_sum_empty_inl.
+    - apply (empty_rect _ shape_is_empty).
+  Defined.
+
+  (* TODO: upstream *)
+  Definition reindexing_to_empty_sum
+      {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
+      (J : hypothetical_judgement Σ hjf Γ)
+    : judgement_total Σ.
+  Proof.
+    exists (form_hypothetical hjf).
+    exists (raw_context_sum_empty Γ).
+    intros i. exact (substitute (raw_context_sum_empty_inl _) (J i)).
+  Defined.
+
+  (* TODO: upstream *)
+  (** To derive a judgement [ Γ |- J ],
+      it’s sufficient to derive [ Γ;[] |- r^* J ],
+   where [Γ;[]] is the sum of Γ with the empty shape,
+   and r^*J is the reindexing of [J] to that context. *)
+  Definition derive_from_reindexing_to_empty_sum
+      {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
+      (J : hypothetical_judgement Σ hjf Γ)
+    : Closure.derivation (structural_rule Σ)
+        [< reindexing_to_empty_sum J >] 
+        (form_hypothetical hjf ; (Γ ; J)).
+  Proof.
+    (* substitution rule, along the _inverse_ context morphism of
+       [raw_context_sum_empty_inl], plus substitution functoriality lemma
+       to show that the conclusion of that is the original judgement. *)
+  Admitted.
+
   (** Substitution-equality rules are well typed *)
   Local Definition subst_equal_is_well_typed
         (r : RawStructuralRule.subst_equal Σ)
@@ -167,10 +218,11 @@ Section TypedStructuralRule.
                  apply Judgement.eq_by_eta; apply idpath.
           }
           apply Judgement.eq_by_eta; apply idpath.
-        * (* presup [ Γ |- f^*a : f^*A ] *)
+        * (* presup [ Γ' |- f^*a : f^*A ] *)
           eapply (flip (transport _)).
           { simple refine (Closure.deduce _ _ _ _).
-            -- apply inl, inl, inr, inl.
+            -- apply inl, inl, inr, inl. (* apply substitution rule:
+                                            substitute f into Γ |- a : A *)
                exists Γ, Γ', f. refine (form_object class_term; _).
                exact J.
             -- intros [ [ x | ] | ].
@@ -189,23 +241,40 @@ Section TypedStructuralRule.
                  apply idpath.
           }
           apply Judgement.eq_by_eta; apply idpath.
-        * (* presup [ Γ |- f^*a : g^*A ] *)
+        * (* presup [ Γ' |- g^*a : f^*A ] *)
+          apply Judgement.canonicalise. unfold Judgement.eta_expand; cbn.
           eapply (flip (transport _)).
-          { simple refine (Closure.deduce _ _ _ _).
-            -- apply inr. cbn. exists (Some None). (* term_convert rule *)
-               exists Γ'. cbn.
-               intros i; recursive_destruct i; cbn.
-               ++ refine (rename _ (substitute f (J (the_boundary class_term the_term_type)))). (* [f^*A] *)
-                  admit. (* oh god! *)
-               ++ refine (rename _ (substitute g (J (the_boundary class_term the_term_type)))). (* [g^*A] *)
-                  admit. (* oh jesus! *)
-               ++ refine (rename _ (substitute f (J (the_head _)))). (* [f^*a] *)
-                  admit. (* oh holy spirit! *)
+          { refine (Closure.graft _ _ _).
+            -- simple refine (derive_from_reindexing_to_empty_sum _).
+               exact Γ'. exact (form_object class_term).
+               intros i; recursive_destruct i.
+               ++ exact (substitute f (J (the_boundary class_term the_term_type))).
+               ++ exact (substitute g (J (the_head class_term))).
+            -- intros [].
+               eapply (flip (transport _)).
+               { simple refine (Closure.deduce _ _ _ _).
+                 ++ apply inr. cbn. exists (Some None). (* term_convert rule *)
+                    exists Γ'. cbn.
+                    intros i; recursive_destruct i; cbn.
+                    ** refine (substitute _ (substitute f
+                         (J (the_boundary class_term the_term_type)))). (* [f^*A] *)
+                       apply raw_context_sum_empty_inl.
+                    ** refine (substitute _ (substitute g
+                         (J (the_boundary class_term the_term_type)))). (* [g^*A] *)
+                       apply raw_context_sum_empty_inl.
+                    ** refine (substitute _ (substitute g
+                         (J (the_head _)))). (* [g^*a] *)
+                       apply raw_context_sum_empty_inl.
    (* TODO: all the above three are the same problem: renaming between a proto-context and its sum with the empty shape.  Think about how to make a utility lemma to deal with this situation!
    E.g. given an “algebraic” flat rule, can get a derivable equivallent that doesn’t add this damn thing to the context? *)
-            -- admit. (* depends on same problem described above. *)
+                 ++ admit. (* from hypotheses, via an inverse to
+                              [derive_from_reindexing_to_empty_sum]. *)
+               }
+               apply Judgement.eq_by_eta.
+               apply ap.
+               admit. (*functoriality of substitution *)
           }
-          admit. (* same problem again *)
+          apply idpath.
     - (* [p] the context presupposition [Γ'] *)
       eapply (flip (transport _)).
       { refine (Closure.hypothesis _ _ _). exact (inl (Some None)). }
