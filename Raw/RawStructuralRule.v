@@ -32,7 +32,7 @@ Require Import Raw.FlatRule.
   We use [context_extend] for the access function, and call the family
   [context_extend_instance], since an element of the family is a specific instance
   of the rule.  So when using this rule in a derivation, one will first say
-  [apply cxt_extend] to select the context extension rule, and then specify
+  [apply context_extend] to select the context extension rule, and then specify
   the particular instance desired, i.e. the earlier context and the type to
   extend by.
 

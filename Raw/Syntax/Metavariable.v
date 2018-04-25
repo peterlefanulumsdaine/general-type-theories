@@ -170,7 +170,7 @@ Section MetavariableNotations.
 
   2. Arities of metavariables, from [Metavariable.extend].
 
-    These will have only (Ty, shape_empty) arguments, and be indexed by the positions of some protocxt, which will itself probably be built up by [shape_extend].
+    These will have only (Ty, shape_empty) arguments, and be indexed by the positions of some proto-context, which will itself probably be built up by [shape_extend].
 
   So we give functions/notations for giving arguments for each of these forms.
 
