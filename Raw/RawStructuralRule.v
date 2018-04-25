@@ -602,13 +602,13 @@ Section StructuralRuleMap.
           apply path_forall.
           refine (plusone_rect _ _ (shape_is_extend _ _) _ _ _).
           -- eapply concat. { refine (plusone_comp_one _ _ _ _ _ _). }
-             eapply concat. Focus 2.
-               { apply ap. refine (plusone_comp_one _ _ _ _ _ _)^. } Unfocus.
+             eapply concat.
+               2: { apply ap. refine (plusone_comp_one _ _ _ _ _ _)^. }
              apply inverse. apply RawSubstitution.fmap_rename.
           -- intros x. cbn in x.
              eapply concat. { refine (plusone_comp_inj _ _ _ _ _ _ _). }
-             eapply concat. Focus 2.
-               { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. } Unfocus.
+             eapply concat.
+               2: { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. }
              apply inverse. apply RawSubstitution.fmap_rename.
     - (* empty context *)
       exists (inl (inl (inl None))).

@@ -47,8 +47,8 @@ Section RawWeakenFunctoriality.
     destruct e as [ γ i | γ S args ].
   - reflexivity.
   - cbn. apply ap. apply path_forall; intros i.
-    refine (_ @ _). Focus 2.
-    + apply comp_Raw_Weaken.
+    refine (_ @ _).
+    2: { apply comp_Raw_Weaken. }
     + apply ap10. refine (apD10 _ _). apply ap.
       apply path_arrow.
       refine (coproduct_rect _ _ _ _); intros x.
@@ -193,14 +193,17 @@ Section Raw_Subst_Assoc.
     (* TODO: break out the following as a lemma about [Raw_Context_Map_Extending]? *)
     simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
-      refine (_ @ _^). Focus 2. refine (coproduct_comp_inj1 _).
-      eapply concat. { apply Raw_Subst_Raw_Weaken. }
-      eapply concat. Focus 2. { eapply inverse, Raw_Weaken_Raw_Subst. } Unfocus.
-      apply ap10. refine (apD10 _ _). apply ap. apply path_arrow. intros ?.
-      refine (coproduct_comp_inj1 _).
+      refine (_ @ _^).
+      2 : { refine (coproduct_comp_inj1 _). }
+      + eapply concat. { apply Raw_Subst_Raw_Weaken. }
+        eapply concat.
+        2: { eapply inverse, Raw_Weaken_Raw_Subst. }
+        * apply ap10. refine (apD10 _ _). apply ap. apply path_arrow. intros ?.
+          refine (coproduct_comp_inj1 _).
     - eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
-      refine (_ @ _^). Focus 2. refine (coproduct_comp_inj2 _).
-      cbn. refine (coproduct_comp_inj2 _).
+      refine (_ @ _^).
+      2: { refine (coproduct_comp_inj2 _). }
+      + cbn. refine (coproduct_comp_inj2 _).
   Defined.
 
 End Raw_Subst_Assoc.
@@ -258,13 +261,14 @@ Section Naturality.
   - simpl.
     eapply concat.
     { apply ap, ap, ap. apply path_forall; intros i. apply fmap_rename. }
-    eapply concat. Focus 2. { apply transport_rename. } Unfocus.
-    apply ap. cbn. apply ap.
-    set (ΣfS := Σ' (f S)). change (symbol_arity (f S)) with (snd ΣfS).
-    set (p := Family.map_commutes f S : ΣfS = _). clearbody p ΣfS.
-    rewrite <- (inv_V p).
-    set (p' := p^); clearbody p'; clear p.
-    destruct p'; apply idpath.
+    eapply concat.
+    2: { apply transport_rename. }
+    + apply ap. cbn. apply ap.
+      set (ΣfS := Σ' (f S)). change (symbol_arity (f S)) with (snd ΣfS).
+      set (p := Family.map_commutes f S : ΣfS = _). clearbody p ΣfS.
+      rewrite <- (inv_V p).
+      set (p' := p^); clearbody p'; clear p.
+      destruct p'; apply idpath.
   Defined.
   (* NOTE: this proof was surprisingly difficult to write; it shows the kind of headaches caused by the appearance of equality in maps of signatures. *)
   
@@ -295,16 +299,16 @@ Section Naturality.
     - simpl.
       eapply concat.
       { apply ap, ap, ap. apply path_forall; intros i. apply fmap_substitute. }
-      eapply concat. Focus 2. { apply transport_substitute. } Unfocus.
-      apply ap. cbn. apply ap.
-      set (ΣfS := Σ' (f S)). change (symbol_arity (f S)) with (snd ΣfS).
-      set (p := Family.map_commutes f S : ΣfS = _). clearbody p ΣfS.
-      rewrite <- (inv_V p).
-      set (p' := p^); clearbody p'; clear p.
-      destruct p'. cbn.
-      apply path_forall; intros i.
-      apply ap10. refine (apD10 _ _). apply ap.
-      apply fmap_extend.
+      eapply concat. 2: { apply transport_substitute. }
+      + apply ap. cbn. apply ap.
+        set (ΣfS := Σ' (f S)). change (symbol_arity (f S)) with (snd ΣfS).
+        set (p := Family.map_commutes f S : ΣfS = _). clearbody p ΣfS.
+        rewrite <- (inv_V p).
+        set (p' := p^); clearbody p'; clear p.
+        destruct p'. cbn.
+        apply path_forall; intros i.
+        apply ap10. refine (apD10 _ _). apply ap.
+        apply fmap_extend.
   Defined.
 
 End Naturality.
