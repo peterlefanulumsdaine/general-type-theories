@@ -53,7 +53,7 @@ Section Derivation_Step.
     destruct d as [ h | r ? ].
     - exact (H h).
     - destruct i as [ | p j].
-      + exact (rule_conclusion (C r)).
+      + exact (conclusion (C r)).
       + exact (step_label _ _ _ _ _ j).
   Defined.
 

@@ -8,17 +8,17 @@ Require Import Auxiliary.Family.
    abstract inference rule. *)
 Local Record rule (X : Type) :=
   {
-    rule_premises : family X ;
-    rule_conclusion : X
+    premises : family X ;
+    conclusion : X
   }.
 
-Arguments rule_premises [_] _.
-Arguments rule_conclusion [_] _.
+Arguments premises [_] _.
+Arguments conclusion [_] _.
 
 (* TODO: consider naming conventions for such lemmas. *)
 Local Definition rule_eq {X} {c c' : rule X}
-  : rule_premises c = rule_premises c'
-  -> rule_conclusion c = rule_conclusion c'
+  : premises c = premises c'
+  -> conclusion c = conclusion c'
   -> c = c'.
 Proof.
   destruct c, c'; cbn.
@@ -30,7 +30,7 @@ Defined.
 Local Definition fmap {X Y} (f : X -> Y) : rule X -> rule Y.
 Proof.
   intros [ps c].
-  exact {| rule_premises := Family.fmap f ps ; rule_conclusion := f c |}.
+  exact {| premises := Family.fmap f ps ; conclusion := f c |}.
 Defined.
 
 (** A closure system is a family of rules. *)
@@ -40,8 +40,8 @@ Local Definition system (X : Type) := family (rule X).
 Local Inductive derivation {X} (C : system X) (H : family X) : X -> Type :=
   | hypothesis : forall (i : H), derivation C H (H i)
   | deduce (r : C) :
-      (forall (p : rule_premises (C r)), derivation C H (rule_premises (C r) p))
-      -> derivation C H (rule_conclusion (C r)).
+      (forall (p : premises (C r)), derivation C H (premises (C r) p))
+      -> derivation C H (conclusion (C r)).
 
 (** Due to the dependency in conclusions, it is often tricky to give derivations
 in tactic proofs: [apply hypothesis], [apply deduce] often fail to unify.
@@ -58,8 +58,8 @@ The following lemmas allow one to write e.g.:
     - (show it has the right conclusion; often just [apply idpath])
 *)
 Local Definition deduce' {X} {C : system X} {H : family X}
-  {x : X} (r : C) (e : rule_conclusion (C r) = x)
-  (d_prems : forall p : rule_premises (C r), derivation C H (rule_premises (C r) p))
+  {x : X} (r : C) (e : conclusion (C r) = x)
+  (d_prems : forall p : premises (C r), derivation C H (premises (C r) p))
   : derivation C H x
 := transport _ e (deduce C H r d_prems).
 
@@ -102,7 +102,7 @@ Local Definition graft' {X} {C : system X}
     rule [C i] in [C i] in [C], a derivation in [D] of the conclusion of [C i]
     from the premises of [C i]. *)
 Local Definition map {X} (C D : system X) : Type
-  := forall i : C, derivation D (rule_premises (C i)) (rule_conclusion (C i)).
+  := forall i : C, derivation D (premises (C i)) (conclusion (C i)).
 
 (** We can of always map a closure system to itself by deducing the
     conclusion of every rule by simply applying the rule. *)
@@ -124,7 +124,7 @@ Proof.
   intro i.
   eapply paths_rew.
   - apply (deduce _ _ (f i)).
-    set (Df := rule_premises (D (f i))) in *.
+    set (Df := premises (D (f i))) in *.
     set (e := ap _ (Family.map_commutes f i)^ : _ = Df).
     destruct e.
     intro p. apply hypothesis.
@@ -138,7 +138,7 @@ Local Fixpoint map_derivation {X} {C D : system X} (f : map C D) {H} {x} (d : de
 Proof.
   destruct d.
   - now apply hypothesis.
-  - apply (@graft X D (rule_premises (C r))).
+  - apply (@graft X D (premises (C r))).
     + now apply f.
     + intro i.
       now apply (map_derivation _ C _ f).

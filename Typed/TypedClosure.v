@@ -31,11 +31,11 @@ Section WellTypedClosureSystem.
   *)
   Local Definition strongly_well_typed_rule (C : Closure.system X) (r : Closure.rule X)
     : Type
-  := (forall (p : Closure.rule_premises r) (p_presup : presup (Closure.rule_premises r p)),
-      Closure.derivation C (Closure.rule_premises r) (presup _ p_presup))
+  := (forall (p : Closure.premises r) (p_presup : presup (Closure.premises r p)),
+      Closure.derivation C (Closure.premises r) (presup _ p_presup))
      *
-     (forall (c_presup : presup (Closure.rule_conclusion r)),
-       Closure.derivation C (Closure.rule_premises r) (presup _ c_presup)).
+     (forall (c_presup : presup (Closure.conclusion r)),
+       Closure.derivation C (Closure.premises r) (presup _ c_presup)).
 
   (** A closure rule [r] is weakly well-typed over a closure system [C] if
       all presuppositions of the conclusion are derivable over [C] from 
@@ -47,9 +47,9 @@ Section WellTypedClosureSystem.
    *)
   Local Definition weakly_well_typed_rule (C : Closure.system X) (r : Closure.rule X)
     : Type
-  := (forall (c_presup : presup (Closure.rule_conclusion r)),
+  := (forall (c_presup : presup (Closure.conclusion r)),
          Closure.derivation C
-           (Closure.rule_premises r + (Family.bind (Closure.rule_premises r) presup))
+           (Closure.premises r + (Family.bind (Closure.premises r) presup))
            (presup _ c_presup)).
 
   (** Strongly well-typed implies weakly well-typed. *)
