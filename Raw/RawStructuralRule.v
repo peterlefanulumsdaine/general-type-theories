@@ -9,29 +9,35 @@ Require Import Raw.FlatRule.
 
 (**
   This module defines the “standard rules” — the rules which are not explicitly specified
-  in a type theory, but are always assumed to be present. These fall into several groups.
+  in a type theory, but are always assumed to be present. These fall into several groups:
 
-  - context formation
-  - substitution rules
-  - variable rule
-  - equality rules
+  - context formation: [ctx_extend], [ctx_empty]
+  - variable-renaming rules: [rename_context], [rename_hypothetical]
+  - substitution rules: [subst_apply], [subst_equal]
+  - variable rule: [variable]
+  - equality rules:
+      [tyeq_refl, tyeq_sym, tyeq_tran,
+      tmeq_refl, tmeq_sym, tmeq_tran,
+      term_convert, tmeq_convert].
 
-  Since “rule” in our terminology always mean _hypothetical_ rules, the structural rules
-  that don’t fit this form (context formation and substitution) have to be given directly
-  as families of closure conditions.
+  All of the above are then collected as a single family [structural_rule].
 
-  All of the above are then collected as a single family [Structural_CCs].
-*)
+  Each rule, e.g. [ctx_extend] — which formally is not just a single rule,
+  but a family of rules, one for each raw context [Γ] and type [A] — has two
+  things one might want to call [ctx_extend]:
 
-(** Naming convention for rule names: we prefix a rule name with a keyword, depending on
-    what kind of rule it is:
+  - the definition of it as a family of rules;
+  - the access function picking it out in the family [structural_rule].
 
-    -- [ctx_XYZ] for context rule
-    -- [term_XYZ] for term formation
-    -- [type_XYZ] for type formation
-    -- [tmeq_XYZ] for term equality
-    -- [tyeq_XYZ] for type equality
-    -- [subst_XYZ] for substitution rules
+  We use [ctx_extend] for the access function, and call the family 
+  [ctx_extend_instance], since an element of the family is a specific instance
+  of the rule.  So when using this rule in a derivation, one will first say
+  [apply cxt_extend] to select the context extension rule, and then specify
+  the particular instance desired, i.e. the earlier context and the type to
+  extend by.
+
+  (An alternative convention could be to use [ctx_extend] for the family, and
+  [select_ctx_extend] or similar for the access function.)
 *)
 
 Section StructuralRules.
