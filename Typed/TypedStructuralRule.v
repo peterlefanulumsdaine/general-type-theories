@@ -407,10 +407,10 @@ Section TypedStructuralRule.
           -- apply idpath.
           -- intros [].
             simple refine (Closure.deduce' _ _ _).
-            ++ apply term_convert.
          (*      Γ' |- g^*a : g^*A    Γ' |- g^*A = f^*A  
                ------------------------------------------ 
                         Γ' |- g^*a : f^*A                    *)
+            ++ apply term_convert.
               exists Γ'. cbn.
               intros i; recursive_destruct i; cbn.
               ** refine (rename _ (substitute g A)). (* [g^*A] *)
@@ -445,10 +445,60 @@ Section TypedStructuralRule.
    (* TODO: all the above gunk is from a single problem: the instantiation of a rule with empty local contexts doesn’t give you quite what you think it should!
    [derive_from_reindexing_to_empty_sum] and [derive_reindexing_to_empty_sum] help a bit, but still it’s pretty nasty.  How can we improve this?? *)
             ++ intros i; recursive_destruct i.
-              ** admit. (* unnecessary paranoia: perhaps remove? *)
-              ** admit. (* unnecessary paranoia: perhaps remove? *)
-              ** (* Γ' |- g^*A = f^*A *)
+              ** (* [ Γ' |- g^*A type ] *)
+                refine (Closure.graft' _ _ _).
+                { simple refine (derive_reindexing_to_empty_sum _).
+                  - exact Γ'.
+                  - apply form_object, class_type.
+                  - intros i; recursive_destruct i.
+                    exact (substitute g A). }
+                { apply Judgement.eq_by_expressions.
+                  - refine (coproduct_rect shape_is_sum _ _ _).
+                    2: { refine (empty_rect _ shape_is_empty _). }
+                    intros i. apply inverse.
+                    eapply concat. { refine (coproduct_comp_inj1 _). }
+                    apply ap, ap, inverse. refine (coproduct_comp_inj1 _).
+                  - intros i; recursive_destruct i.
+                    cbn. apply inverse.
+                    eapply concat.
+                    2: { apply substitute_idmap. }
+                    apply ap10; refine (apD10 _ _); apply ap.
+                    apply path_forall.
+                    refine (coproduct_rect shape_is_sum _ _ _).
+                    2: { refine (empty_rect _ shape_is_empty _). }
+                    intros i. refine (coproduct_comp_inj1 _).
+                }
+                intros [].
+                simple refine (Closure.deduce' _ _ _).
+                { apply subst_apply.
+                  exists Γ, Γ', g, (form_object class_type).
+                  intros [ [] | ]. exact A.
+                }
+                { apply Judgement.eq_by_eta, idpath. }
+                intros [ [ x | ] | ].
+                --- (* premise: [g] is a context map *)
+                  simple refine (Closure.hypothesis' _ _).
+                  +++ cbn. apply inl, Some, Some, inl, inr, x.
+                  +++ apply idpath.
+                --- (* premise: [Γ'] is a context *)
+                  simple refine (Closure.hypothesis' _ _).
+                  +++ exact (inl (Some None)).
+                  +++ apply idpath.
+                --- (* premise: [Γ |- a : A type ]  *)
+                  simple refine (Closure.hypothesis' _ _).
+                  +++ apply inr. (* use a presupposition… *)
+                      exists None. (* …of the original target judgement… *)
+                      apply Some, the_term_type. 
+                  +++ apply Judgement.eq_by_eta, idpath.
+              ** (* [ Γ' |- f^*A type ] *)
                 admit.
+  (* This should be almost identical to the preceding derivation of
+     [ Γ' |- f^*A type ]. *)
+              ** (* [ Γ' |- g^*A = f^*A ] *)
+                admit.
+  (* This should be quite similar to the derivation of [ Γ' |- g^*A = f^*A ]
+   that follows it: essentially two steps, first using
+   [derive_reindexing_to_empty_sum], and then using [subst_equal]. *)
               ** (* Γ' |- g^*a : g^*A *)
                 refine (Closure.graft' _ _ _).
                 { simple refine (derive_reindexing_to_empty_sum _).
@@ -458,6 +508,8 @@ Section TypedStructuralRule.
                     + exact (substitute g A).
                     + exact (substitute g a). }
                 { apply Judgement.eq_by_expressions.
+                  (* TODO: can we find lemmas/tactics that simplify
+                     something like this? *)
                   - refine (coproduct_rect shape_is_sum _ _ _).
                     2: { refine (empty_rect _ shape_is_empty _). }
                     intros i. apply inverse.
@@ -501,7 +553,6 @@ Section TypedStructuralRule.
                     simple refine (Closure.hypothesis' _ _).
                     *** exact (inl None).
                     *** apply idpath.
-    (* from hypotheses, via [derive_reindexing_to_empty_sum]. *)
     - (* [p] the context presupposition [Γ'] *)
       simple refine (Closure.hypothesis' _ _).
       + exact (inl (Some None)).
