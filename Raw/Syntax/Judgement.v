@@ -439,10 +439,12 @@ Ltac recursive_destruct x :=
     | _ => idtac
     end.
 
-Section Canonicalisation.
+Section Equality_Lemmas.
 (** If judgements were record types, rather than function types over their finite set of slots, they would have judgemental eta, which would be very convenient.
 
-In lieu of that, we give explicit lemmas analogous to eta-expansion and the eta rule: we call this the “canonicalisation” of a judgement. *)
+In lieu of that, we give explicit lemmas for judgement equality:
+- one [eq_by_eta] analogous to eta-expansion and the eta rule,
+- one [eq_by_expressions] analogous to general function extensionality. *)
 
   Context {σ : shape_system} {Σ : signature σ} `{Funext}.
 
@@ -485,7 +487,11 @@ In lieu of that, we give explicit lemmas analogous to eta-expansion and the eta 
   Defined.
 
   (* TODO: consider naming *)
-  (** To check two judgements are equal, it’s enough to check their eta-expansions. *)
+  (** To check two judgements are equal, it’s enough to check their eta-expansions.
+   Convenient for when modulo eta expansion, judgements are literally equal:
+   [apply Judgement.eq_by_eta, idpath.] 
+
+   For other cases, [eq_by_expressions] may be clearer. *)
   Local Definition eq_by_eta
       (j j' : judgement_total Σ)
     : eta_expand j = eta_expand j' -> j = j'.
@@ -494,4 +500,34 @@ In lieu of that, we give explicit lemmas analogous to eta-expansion and the eta 
     exact ((eta j)^ @ e @ eta j').
   Defined.
 
-End Canonicalisation.
+  (** When two judgements have the same form and are over the same shape, 
+  then they are equal if all expressions involved (in both the context and
+  the hypothetical part) are equal.
+
+  Often useful in cases where the equality of expressions is for a uniform
+  reason, such as functoriality/naturality lemmas. 
+
+  For cases where the specific form of the judgement is involved in the 
+  difference, [eq_by_eta] may be cleaner. *)
+  Local Definition eq_by_expressions
+      {hjf : hypothetical_form}
+      {γ : σ} {Γ Γ' : γ -> raw_type Σ γ}
+      {J J' : hypothetical_judgement Σ hjf γ}
+      (e_Γ : forall i, Γ i = Γ' i)
+      (e_J : forall i, J i = J' i)
+    : ((form_hypothetical hjf ; (Build_raw_context γ Γ ; J)) : judgement_total Σ)
+    = (form_hypothetical hjf ; (Build_raw_context γ Γ' ; J')).
+  Proof.
+    apply (ap (fun x => (_;x))).
+    refine (@ap _ _
+                (fun ΓJ : (_ * hypothetical_judgement _ _ γ)
+                 => (Build_raw_context γ (fst ΓJ) ; snd ΓJ))
+            (_,_) (_,_) _).
+    apply path_prod; apply path_forall; auto.
+  Defined.
+
+End Equality_Lemmas.
+
+
+
+      

@@ -251,6 +251,16 @@ Section Naturality.
   Context {σ : shape_system}.
   Context {Σ Σ' : signature σ} (f : Signature.map Σ Σ').
 
+  (* ad hoc lemma, used for [fmap_rename], [fmap_substitute]. *)
+  Local Lemma inverse_sufficient {X} {x y:X} (P : x = y -> Type)
+    : (forall e, P (e^)^) -> (forall e, P e).
+  Proof.
+    intros H e.
+    eapply transport.
+    - eapply inv_V.
+    - apply H.
+  Defined.
+
   Local Fixpoint fmap_rename {γ γ' : σ} (g : γ -> γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
     : Expression.fmap f (Substitution.rename g e)
@@ -266,7 +276,7 @@ Section Naturality.
     + apply ap. cbn. apply ap.
       set (ΣfS := Σ' (f S)). change (symbol_arity (f S)) with (snd ΣfS).
       set (p := Family.map_commutes f S : ΣfS = _). clearbody p ΣfS.
-      rewrite <- (inv_V p).
+      revert p; apply inverse_sufficient; intros p.
       set (p' := p^); clearbody p'; clear p.
       destruct p'; apply idpath.
   Defined.
@@ -303,7 +313,7 @@ Section Naturality.
       + apply ap. cbn. apply ap.
         set (ΣfS := Σ' (f S)). change (symbol_arity (f S)) with (snd ΣfS).
         set (p := Family.map_commutes f S : ΣfS = _). clearbody p ΣfS.
-        rewrite <- (inv_V p).
+        revert p; apply inverse_sufficient; intros p.
         set (p' := p^); clearbody p'; clear p.
         destruct p'. cbn.
         apply path_forall; intros i.

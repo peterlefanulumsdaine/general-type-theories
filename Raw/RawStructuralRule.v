@@ -796,16 +796,8 @@ Section StructuralRuleMap.
         exact (fun i => Expression.fmap f (J i)).
       + cbn. apply Closure.rule_eq.
         * apply idpath.
-        * apply (ap (fun x => (_;x))).
-          refine (@ap _ _
-            (fun ΓJ : (_ * hypothetical_judgement _ _ γ')
-              => (Build_raw_context γ' (fst ΓJ) ; snd ΓJ))
-            (_,_) (_,_) _).
-          apply path_prod.
-          -- apply path_forall; intros i.
-             apply inverse, fmap_rename.
-          -- apply path_forall; intros i.
-             apply inverse, fmap_rename.
+        * apply Judgement.eq_by_expressions; intros i;
+            apply inverse, fmap_rename.
     - (* subst_apply *)
       destruct i_sub_ap as [ Γ [Γ' [g [hjf hjfi]]]].
       simple refine (_;_).
