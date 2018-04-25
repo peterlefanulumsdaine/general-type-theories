@@ -62,8 +62,8 @@ Section PresuppositionClosureFlat.
     intros [r_str | r_log ].
     - intros p.
       refine (Closure.map_derivation _ _).
-      Focus 2. { apply TypedStructuralRule.well_typed. } Unfocus.
-      apply Closure.map_from_family_map, Family.inl.
+      2: { apply TypedStructuralRule.well_typed. }
+      + apply Closure.map_from_family_map, Family.inl.
     - destruct r_log as [r r_inst]. cbn in r_inst.
       destruct r_inst as [Γ r_args].
       unfold TypedClosure.weakly_well_typed_rule.
