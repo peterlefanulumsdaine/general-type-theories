@@ -380,11 +380,12 @@ Section TypedStructuralRule.
   Local Definition well_typed
     : TypedClosure.weakly_well_typed_system presupposition (structural_rule Σ).
   Proof.
-    intros [ [ [ r_cxt | r_subst ] | r_var ] | r_eq ].
+    intros [ [ [ [ r_cxt | r_rename ] | r_subst ] | r_var ] | r_eq ].
     - apply ctx_is_well_typed.
+    - admit. (* TODO: rename_is_well_typed *)
     - apply subst_is_well_typed.
     - apply variable_is_well_typed.
     - apply equality_is_well_typed.
-  Defined.
+  Admitted.
 
 End TypedStructuralRule.

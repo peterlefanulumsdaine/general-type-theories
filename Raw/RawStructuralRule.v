@@ -564,7 +564,8 @@ End Equality.
 End HypotheticalStructuralRules.
 
 Definition structural_rule : Closure.system (judgement_total Σ)
-  := context_instance + substitution_instance + variable_instance + equality_instance.
+  := context_instance + rename_instance + substitution_instance
+     + variable_instance + equality_instance.
 
 End StructuralRules.
 
@@ -578,9 +579,9 @@ Section StructuralRuleAccessors.
 
 Context {σ : shape_system} {Σ : signature σ}.
 
-Definition ctx_empty : structural_rule Σ := inl (inl (inl None)).
+Definition ctx_empty : structural_rule Σ := inl (inl (inl (inl None))).
 Definition ctx_extend : ctx_extend_instance Σ -> structural_rule Σ
-  := fun i => inl (inl (inl (Some i))).
+  := fun i => inl (inl (inl (inl (Some i)))).
 Definition subst_apply : subst_apply_instance Σ -> structural_rule Σ
   := fun i => inl (inl (inr (inl i))).
 Definition subst_equal : subst_equal_instance Σ -> structural_rule Σ
@@ -629,11 +630,12 @@ Section StructuralRuleMap.
        - then use [repeat apply Fmap_Family_Sum.] or similar.  *)
     (* TODO: intermediate approach: at least allow family map to be constructed as a single function, to avoid duplicated destructing. *)
     apply Family.Build_map'.
-    intros [ [ [ [ c1 | ] | [c2 | c3] ] | c4 ]  | c5 ].
+    intros [ [ [ [ [ i_cxt_ext | ] | [ i_rename_cxt | i_rename_hyp ] ]
+           | [i_sub_ap | i_sub_eq] ] | i_var ]  | i_eq ].
     (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
     - (* context extension *)
       simple refine (_;_).
-      + rename c1 into ΓA.
+      + rename i_cxt_ext into ΓA.
         refine (ctx_extend _).
         exists (Context.fmap f ΓA.1).
         exact (Expression.fmap f ΓA.2).
@@ -666,8 +668,12 @@ Section StructuralRuleMap.
       * cbn. apply (ap (fun x => (_; x))).
         apply (ap (Build_raw_context _)).
         apply path_forall. refine (empty_rect _ shape_is_empty _).
+    - (* rename_context *)
+      admit.
+    - (* rename_hypothetical *)
+      admit.
     - (* substitution *)
-      destruct c2 as [ Γ [Γ' [g [hjf hjfi]]]].
+      destruct i_sub_ap as [ Γ [Γ' [g [hjf hjfi]]]].
       simple refine (_;_).
       + refine (subst_apply _).
         exists (Context.fmap f Γ).
@@ -693,7 +699,7 @@ Section StructuralRuleMap.
           unfold Judgement.fmap_hypothetical_judgement.
           refine (fmap_substitute _ _ _)^.
     - (* substitution equality *)
-      destruct c3 as [ Γ [Γ' [g [g' [hjf hjfi]]]]].
+      destruct i_sub_eq as [ Γ [Γ' [g [g' [hjf hjfi]]]]].
       simple refine (_;_).
       + refine (subst_equal _).
         exists (Context.fmap f Γ).
@@ -733,7 +739,7 @@ Section StructuralRuleMap.
           unfold Judgement.fmap_hypothetical_judgement.
           destruct i; refine (fmap_substitute _ _ _)^.
     - (* var rule *)
-      destruct c4 as [Γ x].
+      destruct i_var as [Γ x].
       simple refine (variable _ ; _).
       + exists (Context.fmap f Γ); exact x.
       + cbn. apply Closure.rule_eq; cbn.
