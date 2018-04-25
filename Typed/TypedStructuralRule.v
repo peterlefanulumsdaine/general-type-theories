@@ -42,22 +42,29 @@ Section Sum_Shape_Empty.
   := shape_sum γ (shape_empty σ).
 
   (* TODO: upstream *)
-  Definition raw_context_sum_empty_inl (γ : σ)
-    : Context.map Σ (shape_sum_empty γ) γ.
+  Definition shape_sum_empty_inl_is_equiv (γ : σ)
+    : IsEquiv (coproduct_inj1 shape_is_sum : γ -> shape_sum_empty γ).
   Proof.
-    intros x. apply raw_variable, (coproduct_inj1 shape_is_sum), x.
-  Defined.    
+    simple refine (isequiv_adjointify _ _ _ _).
+    - apply (coproduct_rect shape_is_sum).
+      + intros i; exact i.
+      + apply (empty_rect _ shape_is_empty).
+    - unfold Sect. apply (coproduct_rect shape_is_sum).
+      + intros i. apply ap.
+        refine (coproduct_comp_inj1 _).
+      + apply (empty_rect _ shape_is_empty).
+    - intros i. refine (coproduct_comp_inj1 _).
+  Defined.
+
+  (* TODO: upstream *)
+  Definition shape_sum_empty_inl (γ : σ)
+    : γ <~> shape_sum_empty γ
+  := BuildEquiv _ _ _ (shape_sum_empty_inl_is_equiv γ).
 
   (* TODO: upstream *)
   Definition raw_context_sum_empty (Γ : raw_context Σ)
-    : raw_context Σ.
-  Proof.
-    exists (shape_sum_empty Γ).
-    apply (coproduct_rect shape_is_sum).
-    - intros i; refine (substitute _ (Γ i)).
-      apply raw_context_sum_empty_inl.
-    - apply (empty_rect _ shape_is_empty).
-  Defined.
+    : raw_context Σ
+  := rename_raw_context _ Γ (equiv_inverse (shape_sum_empty_inl _)).
 
   (* TODO: upstream *)
   Definition reindexing_to_empty_sum
@@ -67,7 +74,7 @@ Section Sum_Shape_Empty.
   Proof.
     exists (form_hypothetical hjf).
     exists (raw_context_sum_empty Γ).
-    intros i. exact (substitute (raw_context_sum_empty_inl _) (J i)).
+    intros i. exact (rename (shape_sum_empty_inl _) (J i)).
   Defined.
 
   (** From any judgement [ Γ |- J ],
@@ -81,9 +88,16 @@ Section Sum_Shape_Empty.
         [< (form_hypothetical hjf ; (Γ ; J)) >] 
         (reindexing_to_empty_sum J).
   Proof.
-    (* substitution rule, along the context morphism
-       [raw_context_sum_empty_inl]. *)
-  Admitted.
+    simple refine (Closure.deduce' _ _ _).
+    (* renaming rule *)
+    - apply rename_hypothetical.
+      exists Γ.
+      refine (_ ; (equiv_inverse (shape_sum_empty_inl _) ; _)).
+      exists hjf. exact J.
+    - apply idpath.
+    - intros []. cbn.
+      refine (Closure.hypothesis _ [<_>] tt).
+  Defined.
 
   (* TODO: upstream *)
   (** To derive a judgement [ Γ |- J ],
@@ -356,15 +370,15 @@ Section TypedStructuralRule.
               ** apply term_convert. (* term_convert rule *)
                 exists Γ'. cbn.
                 intros i; recursive_destruct i; cbn.
-                 --- refine (substitute _ (substitute f
+                 --- refine (rename _ (substitute f
                           (J (the_boundary class_term the_term_type)))). (* [f^*A] *)
-                     apply raw_context_sum_empty_inl.
-                 --- refine (substitute _ (substitute g
+                     apply shape_sum_empty_inl.
+                 --- refine (rename _ (substitute g
                           (J (the_boundary class_term the_term_type)))). (* [g^*A] *)
-                     apply raw_context_sum_empty_inl.
-                 --- refine (substitute _ (substitute g
+                     apply shape_sum_empty_inl.
+                 --- refine (rename _ (substitute g
                           (J (the_head _)))). (* [g^*a] *)
-                     apply raw_context_sum_empty_inl.
+                     apply shape_sum_empty_inl.
               ** apply Judgement.eq_by_eta.
                  apply ap.
                  admit. (*functoriality of substitution *)
