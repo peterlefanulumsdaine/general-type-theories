@@ -37,7 +37,7 @@ Require Import Raw.FlatRule.
 Section StructuralRules.
 
 Context {σ : shape_system}.
-Context (Σ : @signature σ).
+Context (Σ : signature σ).
 
 Section ContextRules.
 
@@ -47,7 +47,7 @@ Section ContextRules.
   |-  .   cxt
 
 *)
-Local Definition ctx_empty : Closure.rule (judgement_total Σ).
+Local Definition ctx_empty_rule : Closure.rule (judgement_total Σ).
 Proof.
   split.
   (* No premises: *)
@@ -64,7 +64,7 @@ Defined.
    |- Γ, x:A cxt
 
 *)
-Local Definition ctx_extend : Closure.system (judgement_total Σ).
+Local Definition ctx_extend_instance : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ & raw_type Σ Γ }.
   intros [ Γ A ]; split.
@@ -76,37 +76,41 @@ Proof.
   - exact [Cxt! |- (Context.extend Γ A) !].
 Defined.
 
-Local Definition context : Closure.system (judgement_total Σ)
-  := Family.adjoin ctx_extend ctx_empty.
-
-(**
-
-  NOTE: an issue arising from the present approach to shapes/proto-contexts: if the
-  context extension rule is formulated just with [shape_extend] as above, then it will
-  give no way to ever prove well-typedness of contexts with other shapes; in particular,
-  of contexts using [shape_coproduct], which will arise in the premises of logical rules.
-
-  Possible solutions (without entirely changing the proto-context approach):
-
-  - for now, we just aim to work over the de Bruijn shape-system, in which case the
-    standard rules as currently given are enough;
-
-  - to give the standard rules in named-variable case, formulate the context-extension
-    rule in more general way: for *any* (γ+1) coproduct, … (again, should be enough in
-    finitary shape systems)
-
-  - add a closure condition for the context judgements under “renaming variables” along
-    isomorphisms of proto-contexts? (should again suffice in enough in “finitary” shape
-    systems, i.e. where all shapes finite, and is a nice derived rule to have anyway)
-
-  - for eventual generalisation to infinitary settings, is there some more uniform way of
-    setting this up that would give the standard rules as derived rules? e.g. (a) put
-    well-orderings on (proto-)contexts, and say: a context is well-typed if each type is
-    well-typed under earlier parts? (b) similar, but without well-orderings (and then
-    allow derivations to take place over not-yet-well-typed contexts)?
-*)
+Local Definition context_instance : Closure.system (judgement_total Σ)
+  := Family.adjoin ctx_extend_instance ctx_empty_rule.
 
 End ContextRules.
+
+Section RenamingRules.
+(** Renaming of variables:
+
+for any isomorphism of shapes [f : γ ≅ δ], we can rename variables along
+[f] in any judgement with shape [γ], both hypothetical and context judgements:
+
+  Γ |- J   [J any hypothetical judgement]
+  --------------------
+  f^* Γ |- f^*J
+
+  |- Γ cxt
+  --------------------
+  |- f^* Γ cxt
+
+This is not traditionally explicitly given; we need it because our context
+extension rule only extends by “the standard fresh variable” over a given
+shape, and so to show that e.g. contexts whose shapes are given as coproducts
+are contexts, we need a rule like this (or some other strengthening of the
+context rules, or restrictions on the shape system).
+*)
+  Local Definition rename_hypothetical_instance : Closure.system (judgement_total Σ).
+  Admitted.
+
+  Local Definition rename_context_instance : Closure.system (judgement_total Σ).
+  Admitted.
+
+  Local Definition rename_instance : Closure.system (judgement_total Σ)
+    := rename_context_instance + rename_hypothetical_instance.
+
+End RenamingRules.
 
 Section SubstitutionRules.
 
@@ -117,7 +121,7 @@ Section SubstitutionRules.
   --------------------
   Γ' |- f^*J
 *)
-Local Definition subst_apply : Closure.system (judgement_total Σ).
+Local Definition subst_apply_instance : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ
     & { Γ' : raw_context Σ
@@ -152,7 +156,7 @@ Defined.
   --------------------
   Γ' |- f^*J = g^*J  [ for J any object judgement ]
  *)
-Local Definition subst_equal : Closure.system (judgement_total Σ).
+Local Definition subst_equal_instance : Closure.system (judgement_total Σ).
 Proof.
   exists {   Γ : raw_context Σ
     & { Γ' : raw_context Σ
@@ -200,8 +204,8 @@ Proof.
       exact (substitute f' (hjfi (the_head _))).
 Defined.
 
-Local Definition substitution : Closure.system (judgement_total Σ)
-  := subst_apply + subst_equal.
+Local Definition substitution_instance : Closure.system (judgement_total Σ)
+  := subst_apply_instance + subst_equal_instance.
 
 End SubstitutionRules.
 
@@ -223,7 +227,7 @@ Section HypotheticalStructuralRules.
 
 *)
 
-Local Definition variable : Closure.system (judgement_total Σ).
+Local Definition variable_instance : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ & Γ }.
   intros [Γ x]. set (A := Γ x). split.
@@ -243,7 +247,7 @@ Section Equality.
     ⊢ A ≡ A
 *)
 
-Local Definition tyeq_refl : flat_rule Σ.
+Local Definition tyeq_refl_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -271,7 +275,7 @@ Defined.
    ⊢ B ≡ A
 *)
 
-Local Definition tyeq_sym : flat_rule Σ.
+Local Definition tyeq_sym_rule : flat_rule Σ.
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
@@ -302,7 +306,7 @@ Defined.
        ⊢ A ≡ C
 *)
 
-Local Definition tyeq_tran : flat_rule Σ.
+Local Definition tyeq_tran_rule : flat_rule Σ.
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
@@ -340,7 +344,7 @@ Defined.
 ⊢ u ≡ u : A
 *)
 
-Local Definition tmeq_refl : flat_rule Σ.
+Local Definition tmeq_refl_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -372,7 +376,7 @@ Defined.
    ⊢ v ≡ u : A
 *)
 
-Local Definition tmeq_sym : flat_rule Σ.
+Local Definition tmeq_sym_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -407,7 +411,7 @@ Defined.
          ⊢ u ≡ w : A
 *)
 
-Local Definition tmeq_tran : flat_rule Σ.
+Local Definition tmeq_tran_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -453,7 +457,7 @@ Defined.
  ⊢ u : B
 *)
 
-Local Definition term_convert : flat_rule Σ.
+Local Definition term_convert_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -503,7 +507,7 @@ Defined.
  ⊢ u = u' : B
 *)
 
-Local Definition tmeq_convert : flat_rule Σ.
+Local Definition tmeq_convert_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -536,16 +540,16 @@ Proof.
   - exact [TmEq! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ B /] !].
 Defined.
 
-Local Definition equality : family (rule (judgement_total Σ)) :=
+Local Definition equality_instance : family (rule (judgement_total Σ)) :=
   Family.bind
-    [< tyeq_refl
-    ; tyeq_sym
-    ; tyeq_tran
-    ; tmeq_refl
-    ; tmeq_sym
-    ; tmeq_tran
-    ; term_convert
-    ; tmeq_convert
+    [< tyeq_refl_rule
+    ; tyeq_sym_rule
+    ; tyeq_tran_rule
+    ; tmeq_refl_rule
+    ; tmeq_sym_rule
+    ; tmeq_tran_rule
+    ; term_convert_rule
+    ; tmeq_convert_rule
     >]
     FlatRule.closure_system.
 
@@ -554,11 +558,49 @@ End Equality.
 End HypotheticalStructuralRules.
 
 Definition structural_rule : Closure.system (judgement_total Σ)
-  := context + substitution + variable + equality.
-
-(* TODO: add Haskell-style >= notation for bind? *)
+  := context_instance + substitution_instance + variable_instance + equality_instance.
 
 End StructuralRules.
+
+
+Section StructuralRuleAccessors.
+  (** Access functions, for selcting structural rules in derivations *)
+
+  (* Note: in a separate section just so that [Σ] can be declared as implicit
+   argument for them all, rather than needing to be all redeclared with
+   [Arguments] afterwards. *)
+
+Context {σ : shape_system} {Σ : signature σ}.
+
+Definition ctx_empty : structural_rule Σ := inl (inl (inl None)).
+Definition ctx_extend : ctx_extend_instance Σ -> structural_rule Σ
+  := fun i => inl (inl (inl (Some i))).
+Definition subst_apply : subst_apply_instance Σ -> structural_rule Σ
+  := fun i => inl (inl (inr (inl i))).
+Definition subst_equal : subst_equal_instance Σ -> structural_rule Σ
+  := fun i => inl (inl (inr (inr i))).
+Definition variable : variable_instance Σ -> structural_rule Σ
+  := fun i => inl (inr i).
+Definition equality : equality_instance Σ -> structural_rule Σ
+  := fun i => inr i.
+Definition tyeq_refl : FlatRule.closure_system (tyeq_refl_rule Σ) -> structural_rule Σ
+  := fun i => inr (Some (Some (Some (Some (Some (Some (Some tt)))))) ; i).
+Definition tyeq_sym : FlatRule.closure_system (tyeq_sym_rule Σ) -> structural_rule Σ
+  := fun i => inr (Some (Some (Some (Some (Some (Some None))))) ; i).
+Definition tyeq_tran : FlatRule.closure_system (tyeq_tran_rule Σ) -> structural_rule Σ
+  := fun i => inr (Some (Some (Some (Some (Some None)))) ; i).
+Definition tmeq_refl : FlatRule.closure_system (tmeq_refl_rule Σ) -> structural_rule Σ
+  := fun i => inr (Some (Some (Some (Some None))) ; i).
+Definition tmeq_sym : FlatRule.closure_system (tmeq_sym_rule Σ) -> structural_rule Σ
+  := fun i => inr (Some (Some (Some None)) ; i).
+Definition tmeq_tran : FlatRule.closure_system (tmeq_tran_rule Σ) -> structural_rule Σ
+  := fun i => inr (Some (Some None) ; i).
+Definition term_convert : FlatRule.closure_system (term_convert_rule Σ) -> structural_rule Σ
+  := fun i => inr (Some None ; i).
+Definition tmeq_convert : FlatRule.closure_system (tmeq_convert_rule Σ) -> structural_rule Σ
+  := fun i => inr (None ; i).
+
+End StructuralRuleAccessors.
 
 Section StructuralRuleMap.
 
@@ -586,7 +628,7 @@ Section StructuralRuleMap.
     - (* context extension *)
       simple refine (_;_).
       + rename c1 into ΓA.
-        refine (inl (inl (inl (Some _)))).
+        refine (ctx_extend _).
         exists (Context.fmap f ΓA.1).
         exact (Expression.fmap f ΓA.2).
       + cbn. apply Closure.rule_eq.
@@ -611,7 +653,7 @@ Section StructuralRuleMap.
                2: { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. }
              apply inverse. apply RawSubstitution.fmap_rename.
     - (* empty context *)
-      exists (inl (inl (inl None))).
+      exists (ctx_empty).
       cbn. apply Closure.rule_eq.
       * simple refine (Family.eq _ _). { apply idpath. }
         intros [].
@@ -621,7 +663,7 @@ Section StructuralRuleMap.
     - (* substitution *)
       destruct c2 as [ Γ [Γ' [g [hjf hjfi]]]].
       simple refine (_;_).
-      + refine (inl (inl (inr (inl _)))).
+      + refine (subst_apply _).
         exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
         exists (fmap_raw_context_map f g).
@@ -647,7 +689,7 @@ Section StructuralRuleMap.
     - (* substitution equality *)
       destruct c3 as [ Γ [Γ' [g [g' [hjf hjfi]]]]].
       simple refine (_;_).
-      + refine (inl (inl (inr (inr _)))).
+      + refine (subst_equal _).
         exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
         exists (fmap_raw_context_map f g).
@@ -686,7 +728,7 @@ Section StructuralRuleMap.
           destruct i; refine (fmap_substitute _ _ _)^.
     - (* var rule *)
       destruct c4 as [Γ x].
-      simple refine (inl (inr _) ; _).
+      simple refine (variable _ ; _).
       + exists (Context.fmap f Γ); exact x.
       + cbn. apply Closure.rule_eq; cbn.
         * apply inverse.
@@ -695,7 +737,7 @@ Section StructuralRuleMap.
           apply Judgement.eq_by_eta, idpath.
         * apply Judgement.eq_by_eta, idpath.
     - (* equality rules *)
-      simple refine (inr _; _); admit.
+      simple refine (equality _; _); admit.
       (* This should be do-able cleanly going via a lemma about
       naturality of translation of flat rules into closure rules,
       used for logical rules in [fmap] below, once that’s done. *)

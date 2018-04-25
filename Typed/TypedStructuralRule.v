@@ -101,7 +101,7 @@ Section Sum_Shape_Empty.
     eapply (flip (transport _)).
     {
       simple refine (Closure.deduce _ _ _ _).
-      - apply inl, inl, inr, inl. cbn. (* substitution rule *)
+      - apply subst_apply. cbn. (* substitution rule *)
         exists (raw_context_sum_empty Γ).
         exists Γ.
         simple refine (_;_). { admit. }
@@ -138,8 +138,8 @@ Section TypedStructuralRule.
   := TypedClosure.weakly_well_typed_rule presupposition (structural_rule Σ).
 
   (** Context rules are well typed. *)
-  Local Definition ctx_is_well_typed (r : RawStructuralRule.context Σ)
-    : is_well_typed (RawStructuralRule.context _ r).
+  Local Definition ctx_is_well_typed (r : RawStructuralRule.context_instance Σ)
+    : is_well_typed (RawStructuralRule.context_instance _ r).
   Proof.
     apply TypedClosure.weakly_from_strongly_well_typed_rule.
     destruct r as [  [Γ A] | ].
@@ -159,8 +159,8 @@ Section TypedStructuralRule.
 
   (** Substitution-application rules are well typed *)
   Local Definition subst_apply_is_well_typed
-        (r : RawStructuralRule.subst_apply Σ)
-    : is_well_typed (RawStructuralRule.subst_apply _ r).
+        (r : RawStructuralRule.subst_apply_instance Σ)
+    : is_well_typed (RawStructuralRule.subst_apply_instance _ r).
   Proof.
     destruct r as [Γ [ Γ' [ f [ hjf J]]]].
     intros p.
@@ -174,7 +174,7 @@ Section TypedStructuralRule.
       + simple refine (Closure.deduce _ _ _ _).
         (* Aim here: apply the same substitution rule, with the same substition,
            but with target the presupposition [p] of the original target. *)
-        * apply inl, inl, inr, inl.
+        * apply subst_apply.
           (* TODO: give access functions for locating the structural rules! *)
           exists Γ, Γ', f.
           exists (form_object (Judgement.boundary_slot _ p)).
@@ -199,8 +199,8 @@ Section TypedStructuralRule.
 
   (** Substitution-equality rules are well typed *)
   Local Definition subst_equal_is_well_typed
-        (r : RawStructuralRule.subst_equal Σ)
-    : is_well_typed (RawStructuralRule.subst_equal _ r).
+        (r : RawStructuralRule.subst_equal_instance Σ)
+    : is_well_typed (RawStructuralRule.subst_equal_instance _ r).
   Proof.
     destruct r as [Γ [ Γ' [ f [ g [cl J]]]]].
     intros p.
@@ -216,7 +216,7 @@ Section TypedStructuralRule.
          In each case, we get them by the [substitution_apply] rule. *)
       + eapply (flip (transport _)).
         { simple refine (Closure.deduce _ _ _ _).
-          * apply inl, inl, inr, inl.
+          * apply subst_apply.
             exists Γ, Γ'. refine (_;(form_object class_type; J)).
             destruct p as [ [] | | ].
             -- exact f.
@@ -255,7 +255,7 @@ Section TypedStructuralRule.
         * (* presup [ Γ |- f^*A type ] *)
           eapply (flip (transport _)).
           { simple refine (Closure.deduce _ _ _ _).
-            -- apply inl, inl, inr, inl.
+            -- apply subst_apply.
                exists Γ, Γ', f. refine (form_object class_type; _).
                intros [[] | ].
                exact (J (the_boundary class_term the_term_type)).
@@ -279,8 +279,8 @@ Section TypedStructuralRule.
         * (* presup [ Γ' |- f^*a : f^*A ] *)
           eapply (flip (transport _)).
           { simple refine (Closure.deduce _ _ _ _).
-            -- apply inl, inl, inr, inl. (* apply substitution rule:
-                                            substitute f into Γ |- a : A *)
+            -- apply subst_apply. (* subst-apply rule:
+                                    substitute f into Γ |- a : A *)
                exists Γ, Γ', f. refine (form_object class_term; _).
                exact J.
             -- intros [ [ x | ] | ].
@@ -311,7 +311,7 @@ Section TypedStructuralRule.
             -- intros [ [] | i].
                ++ eapply (flip (transport _)).
                   { simple refine (Closure.deduce _ _ _ _).
-                    - apply inr. cbn. exists (Some None). (* term_convert rule *)
+                    - apply term_convert. (* term_convert rule *)
                       exists Γ'. cbn.
                       intros i; recursive_destruct i; cbn.
                       + refine (substitute _ (substitute f
@@ -341,8 +341,8 @@ Section TypedStructuralRule.
   Admitted.
 
   (** All substitution rules are well typed *)
-  Local Definition subst_is_well_typed (r : RawStructuralRule.substitution Σ)
-    : is_well_typed (RawStructuralRule.substitution _ r).
+  Local Definition subst_is_well_typed (r : RawStructuralRule.substitution_instance Σ)
+    : is_well_typed (RawStructuralRule.substitution_instance _ r).
   Proof.
     destruct r as [ r_apply | r_equal ].
     - apply subst_apply_is_well_typed.
@@ -350,8 +350,8 @@ Section TypedStructuralRule.
   Defined.
 
   (** Variable rules are well typed *)
-  Local Definition variable_is_well_typed (r : RawStructuralRule.variable Σ)
-    : is_well_typed (RawStructuralRule.variable _ r).
+  Local Definition variable_is_well_typed (r : RawStructuralRule.variable_instance Σ)
+    : is_well_typed (RawStructuralRule.variable_instance _ r).
   Proof.
     destruct r as [Γ x].
     intros i; recursive_destruct i.
@@ -369,8 +369,8 @@ Section TypedStructuralRule.
   Defined.
 
   (** Equality rules are well typed *)
-  Local Definition equality_is_well_typed (r : RawStructuralRule.equality Σ)
-    : is_well_typed (RawStructuralRule.equality _ r).
+  Local Definition equality_is_well_typed (r : RawStructuralRule.equality_instance Σ)
+    : is_well_typed (RawStructuralRule.equality_instance _ r).
   Proof.
     (* deduce from showing these are well-typed as flat rules *)
   Admitted.
