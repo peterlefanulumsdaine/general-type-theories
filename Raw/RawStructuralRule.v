@@ -11,7 +11,7 @@ Require Import Raw.FlatRule.
   This module defines the “standard rules” — the rules which are not explicitly specified
   in a type theory, but are always assumed to be present. These fall into several groups:
 
-  - context formation: [ctx_extend], [ctx_empty]
+  - context formation: [context_extend], [context_empty]
   - variable-renaming rules: [rename_context], [rename_hypothetical]
   - substitution rules: [subst_apply], [subst_equal]
   - variable rule: [variable]
@@ -22,22 +22,22 @@ Require Import Raw.FlatRule.
 
   All of the above are then collected as a single family [structural_rule].
 
-  Each rule, e.g. [ctx_extend] — which formally is not just a single rule,
+  Each rule, e.g. [context_extend] — which formally is not just a single rule,
   but a family of rules, one for each raw context [Γ] and type [A] — has two
-  things one might want to call [ctx_extend]:
+  things one might want to call [context_extend]:
 
   - the definition of it as a family of rules;
   - the access function picking it out in the family [structural_rule].
 
-  We use [ctx_extend] for the access function, and call the family 
-  [ctx_extend_instance], since an element of the family is a specific instance
+  We use [context_extend] for the access function, and call the family 
+  [context_extend_instance], since an element of the family is a specific instance
   of the rule.  So when using this rule in a derivation, one will first say
   [apply cxt_extend] to select the context extension rule, and then specify
   the particular instance desired, i.e. the earlier context and the type to
   extend by.
 
-  (An alternative convention could be to use [ctx_extend] for the family, and
-  [select_ctx_extend] or similar for the access function.)
+  (An alternative convention could be to use [context_extend] for the family, and
+  [select_context_extend] or similar for the access function.)
 *)
 
 Section StructuralRules.
@@ -50,40 +50,40 @@ Section ContextRules.
 (* The empty context rule:
 
   ---------------
-  |-  .   cxt
+  |-  .   context
 
 *)
-Local Definition ctx_empty_rule : Closure.rule (judgement_total Σ).
+Local Definition context_empty_rule : Closure.rule (judgement_total Σ).
 Proof.
   split.
   (* No premises: *)
   - exact [< >].
   (* Conclusion: *)
-  - exact [Cxt! |- [::] !].
+  - exact [Context! |- [::] !].
 Defined.
 
 (* The context extension rule:
 
-   |- Γ cxt
+   |- Γ context
    Γ |- A type
    ----------------
-   |- Γ, x:A cxt
+   |- Γ, x:A context
 
 *)
-Local Definition ctx_extend_instance : Closure.system (judgement_total Σ).
+Local Definition context_extend_instance : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ & raw_type Σ Γ }.
   intros [ Γ A ]; split.
-  (* Premises: |- Γ cxt; Γ |- A type *)
+  (* Premises: |- Γ context; Γ |- A type *)
   - refine [< _ ; _ >].
-    + exact [Cxt! |- Γ !].
+    + exact [Context! |- Γ !].
     + exact [Ty! Γ |- A !].
   (* Conclusion: *)
-  - exact [Cxt! |- (Context.extend Γ A) !].
+  - exact [Context! |- (Context.extend Γ A) !].
 Defined.
 
 Local Definition context_instance : Closure.system (judgement_total Σ)
-  := Family.adjoin ctx_extend_instance ctx_empty_rule.
+  := Family.adjoin context_extend_instance context_empty_rule.
 
 End ContextRules.
 
@@ -97,9 +97,9 @@ for any isomorphism of shapes [f : γ ≅ δ], we can rename variables along
   --------------------
   f^* Γ |- f^*J
 
-  |- Γ cxt
+  |- Γ context
   --------------------
-  |- f^* Γ cxt
+  |- f^* Γ context
 
 This is not traditionally explicitly given; we need it because our context
 extension rule only extends by “the standard fresh variable” over a given
@@ -144,7 +144,7 @@ Proof.
       * exact (f i).
       * exact (substitute f (Γ i)).
     (* [Γ'] is a valid context: *)
-    + exact [Cxt! |- Γ' !]. 
+    + exact [Context! |- Γ' !]. 
     (* the target judgement holds over Γ *)
     + exists (Judgement.form_hypothetical hjf).
       exists Γ.
@@ -193,7 +193,7 @@ Proof.
       * exact (f i).
       * exact (f' i).
     (* [Γ'] is a valid context: *)
-    + exact [Cxt! |- Γ' !]. 
+    + exact [Context! |- Γ' !]. 
     (* the target judgement holds over Γ *)
     + exists (Judgement.form_hypothetical (form_object cl)).
       exists Γ.
@@ -226,7 +226,7 @@ Section HypotheticalStructuralRules.
 
 (* The general variable rule:
 
-  |- Γ cxt
+  |- Γ context
   Γ |- A type
   ------------- (x in Γ, A := type of x in Γ)
   Γ |- x : A 
@@ -238,7 +238,7 @@ Proof.
   exists { Γ : raw_context Σ & Γ }.
   intros [Γ x]. set (A := Γ x). split.
   (* premises *)
-  - exact [< [Cxt! |- Γ !]
+  - exact [< [Context! |- Γ !]
            ; [Ty! Γ |- A !]
           >].
   (*conclusion *)
@@ -567,6 +567,9 @@ Definition structural_rule : Closure.system (judgement_total Σ)
   := context_instance + rename_instance + substitution_instance
      + variable_instance + equality_instance.
 
+Ltac destruct_structural_rules :=
+  idtac.
+
 End StructuralRules.
 
 
@@ -579,8 +582,8 @@ Section StructuralRuleAccessors.
 
 Context {σ : shape_system} {Σ : signature σ}.
 
-Definition ctx_empty : structural_rule Σ := inl (inl (inl (inl None))).
-Definition ctx_extend : ctx_extend_instance Σ -> structural_rule Σ
+Definition context_empty : structural_rule Σ := inl (inl (inl (inl None))).
+Definition context_extend : context_extend_instance Σ -> structural_rule Σ
   := fun i => inl (inl (inl (inl (Some i)))).
 Definition subst_apply : subst_apply_instance Σ -> structural_rule Σ
   := fun i => inl (inl (inr (inl i))).
@@ -636,7 +639,7 @@ Section StructuralRuleMap.
     - (* context extension *)
       simple refine (_;_).
       + rename i_cxt_ext into ΓA.
-        refine (ctx_extend _).
+        refine (context_extend _).
         exists (Context.fmap f ΓA.1).
         exact (Expression.fmap f ΓA.2).
       + cbn. apply Closure.rule_eq.
@@ -661,7 +664,7 @@ Section StructuralRuleMap.
                2: { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. }
              apply inverse. apply RawSubstitution.fmap_rename.
     - (* empty context *)
-      exists (ctx_empty).
+      exists (context_empty).
       cbn. apply Closure.rule_eq.
       * simple refine (Family.eq _ _). { apply idpath. }
         intros [].

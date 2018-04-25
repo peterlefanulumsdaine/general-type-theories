@@ -272,7 +272,7 @@ Section JudgementNotations.
 
 End JudgementNotations.
 
-Notation "'[Cxt!' |- Γ !]" := (make_context_ji Γ) : judgement_scope.
+Notation "'[Context!' |- Γ !]" := (make_context_ji Γ) : judgement_scope.
 Notation "'[Ty!' Γ |- A !]" := (make_type_ji Γ A) : judgement_scope.
 Notation "'[TyEq!' Γ |- A ≡ A' !]" := (make_type_equality_ji Γ A A') : judgement_scope.
 Notation "'[Tm!' Γ |- a ; A !]" :=  (make_term_ji Γ a A) : judgement_scope.
