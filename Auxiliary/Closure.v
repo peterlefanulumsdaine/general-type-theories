@@ -46,12 +46,27 @@ Local Inductive derivation {X} (C : system X) (H : family X) : X -> Type :=
 (** Due to the dependency in conclusions, it is often tricky to give derivations
 in tactic proofs: [apply hypothesis], [apply deduce] often fail to unify.
 
-A reasonably convenient workaround is to write e.g.:
+The following lemmas allow one to write e.g.:
 
-    eapply (flip (transport _)).
-    - (several lines of stuff).
-    - apply idpath.
+    simple refine (Closure.deduce' _ _ _).
+    - (interactively select the desired rule) 
+    - (show it has the right conclusion; often just [apply idpath])
+    - (now derive the premises)
+
+      simple refine (Closure.hypothesis' _ _).
+    - (interactively select the desired hypothesis) 
+    - (show it has the right conclusion; often just [apply idpath])
 *)
+Local Definition deduce' {X} {C : system X} {H : family X}
+  {x : X} (r : C) (e : rule_conclusion (C r) = x)
+  (d_prems : forall p : rule_premises (C r), derivation C H (rule_premises (C r) p))
+  : derivation C H x
+:= transport _ e (deduce C H r d_prems).
+
+Local Definition hypothesis' {X} {C : system X} {H : family X}
+  {x : X} (h : H) (e : H h = x)
+  : derivation C H x
+:= transport _ e (hypothesis C H h).
 
 (** Given a derivation [d] from hypotheses [H], and for each hypothesis [h]
     a derivation of it from hypotheses [G], we can graft the derivations onto
@@ -67,6 +82,21 @@ Proof.
   (* deduction step *)
   - now apply (deduce _ _ r).
 Defined.
+
+(** For using [graft] interactively, similar to [deduce'], [hypothesis']. 
+ Use as:
+
+  refine (graft _ _ _).
+  - (give derivation d for grafting) 
+  - (show it has correct conclusion)
+  - (derive premises of d)
+
+*)
+Local Definition graft' {X} {C : system X}
+    {H} {x} {x'} (d : derivation C H x') (e : x' = x)
+    {G} (f : forall i : H, derivation C G (H i))
+  : derivation C G x
+:= transport _ e (graft C d f).
 
 (** A map from a closure system [C] to a closure system [D] gives, for each
     rule [C i] in [C i] in [C], a derivation in [D] of the conclusion of [C i]

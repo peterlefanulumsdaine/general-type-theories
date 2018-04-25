@@ -98,28 +98,24 @@ Section Sum_Shape_Empty.
           in H + Family.bind H presupposition)
         (form_hypothetical hjf ; (Γ ; J)).
   Proof.
-    eapply (flip (transport _)).
-    {
-      simple refine (Closure.deduce _ _ _ _).
-      - apply subst_apply. cbn. (* substitution rule *)
-        exists (raw_context_sum_empty Γ).
-        exists Γ.
-        simple refine (_;_). { admit. }
-        exists hjf. exact (pr2 (pr2 (reindexing_to_empty_sum J))).
-      - intros [[ i | ] | ].
-        + (* the renaming is a context map *)
-          cbn in i; cbn.
-          revert i. apply (coproduct_rect shape_is_sum).
-          * intros i. cbn. admit.
-          * admit.
-        + admit. (* the context is a context *)
-        + admit. (* the judgement we’re substituting into *)
-    }
-    admit. (* lemma on functoriality of substitution *)
-       
-    (* substitution rule, along the _inverse_ context morphism of
+    (* Outline: substitution rule, along the _inverse_ context morphism of
        [raw_context_sum_empty_inl], plus substitution functoriality lemma
        to show that the conclusion of that is the original judgement. *)
+    simple refine (Closure.deduce' _ _ _).
+    - apply subst_apply. cbn. (* substitution rule *)
+      exists (raw_context_sum_empty Γ).
+      exists Γ.
+      simple refine (_;_). { admit. }
+      exists hjf. exact (pr2 (pr2 (reindexing_to_empty_sum J))).
+    - admit. (* lemma on functoriality of substitution *)
+    - intros [[ i | ] | ].
+      + (* the renaming is a context map *)
+        cbn in i; cbn.
+        revert i. apply (coproduct_rect shape_is_sum).
+        * intros i. cbn. admit.
+        * admit.
+      + admit. (* the context is a context *)
+      + admit. (* the judgement we’re substituting into *)
   Admitted.
 
 End Sum_Shape_Empty.
@@ -147,10 +143,9 @@ Section TypedStructuralRule.
       + intros [ [] | ]. (* two premises *)
         * intros []. (* context hypothesis: no presups *)
         * intros [ [] | ]. (* type hypothesis: one presup *)
-          eapply (flip (transport _)).
-          { refine (Closure.hypothesis _ _ _).
-            cbn. apply (Some tt). }
-          apply idpath.
+          simple refine (Closure.hypothesis' _ _).
+          -- cbn. apply (Some tt).
+          -- apply idpath.
       + intros []. (* conclusion: no presups *)
     - split. (* empty context rule *)
       + intros []. (* no premises *)
@@ -170,30 +165,29 @@ Section TypedStructuralRule.
       { exact p. }
     destruct p as [ p | ].
     - (* [p] a hypothetical presupposition *)
-      eapply (flip (transport _)).
-      + simple refine (Closure.deduce _ _ _ _).
-        (* Aim here: apply the same substitution rule, with the same substition,
-           but with target the presupposition [p] of the original target. *)
-        * apply subst_apply.
-          (* TODO: give access functions for locating the structural rules! *)
-          exists Γ, Γ', f.
-          exists (form_object (Judgement.boundary_slot _ p)).
-          exact (pr2 (pr2 (presupposition _ p'))).
-        * intros [ q | ].
-          -- (* premises: show the substitution OK. *)
-            eapply (flip (transport _)).
-            ++ refine (Closure.hypothesis _ _ _). exact (inl (Some q)).
-            ++ apply idpath.
-          -- (* premises: new presupposition *)
-            eapply (flip (transport _)).
-            ++ refine (Closure.hypothesis _ _ _). exact (inr (None; p')).
-            ++ apply idpath.
+      simple refine (Closure.deduce' _ _ _).
+      (* Aim here: apply the same substitution rule, with the same substition,
+         but with target the presupposition [p] of the original target. *)
+      + apply subst_apply.
+        (* TODO: give access functions for locating the structural rules! *)
+        exists Γ, Γ', f.
+        exists (form_object (Judgement.boundary_slot _ p)).
+        exact (pr2 (pr2 (presupposition _ p'))).
       + recursive_destruct hjf; recursive_destruct p;
           apply Judgement.eq_by_eta; apply idpath.
+      + intros [ q | ].
+        * (* premises: show the substitution OK. *)
+          simple refine (Closure.hypothesis' _ _).
+          -- exact (inl (Some q)).
+          -- apply idpath.
+        * (* premises: new presupposition *)
+          simple refine (Closure.hypothesis' _ _).
+          -- exact (inr (None; p')).
+          -- apply idpath.
     - (* [p] the context presupposition [Γ'] *)
-      eapply (flip (transport _)).
-      { refine (Closure.hypothesis _ _ _). exact (inl (Some None)). }
-      apply idpath.
+      simple refine (Closure.hypothesis' _ _).
+      + exact (inl (Some None)).
+      + apply idpath.
   Defined.
 
 
@@ -214,130 +208,115 @@ Section TypedStructuralRule.
          Then the presups of [ Γ |- f^*A = g^*A ] are just
          [ Γ |- f^*A type ] and [ Γ |- g^*A type ].
          In each case, we get them by the [substitution_apply] rule. *)
-      + eapply (flip (transport _)).
-        { simple refine (Closure.deduce _ _ _ _).
-          * apply subst_apply.
-            exists Γ, Γ'. refine (_;(form_object class_type; J)).
+      + simple refine (Closure.deduce' _ _ _).
+        * apply subst_apply.
+          exists Γ, Γ'. refine (_;(form_object class_type; J)).
+          destruct p as [ [] | | ].
+          -- exact f.
+          -- exact g.
+        * recursive_destruct p;
+            apply Judgement.eq_by_eta; apply idpath.
+        * intros h; cbn in h.
+          destruct h as [ [ x | ] | ].
+          -- (* premise: [f] / [g] is a context map *)
             destruct p as [ [] | | ].
-            -- exact f.
-            -- exact g.
-          * intros h; cbn in h.
-            destruct h as [ [ x | ] | ].
-            -- (* premise: [f] / [g] is a context map *)
-              destruct p as [ [] | | ].
-              ++ eapply (flip (transport _)).
-                 { refine (Closure.hypothesis _ _ _).
-                   apply inl, Some, Some, inl, inl, x. }
-                 apply idpath.
-              ++ eapply (flip (transport _)).
-                 { refine (Closure.hypothesis _ _ _).
-                   apply inl, Some, Some, inl, inr, x. }
-                 apply idpath.
-            -- (* premise: [Γ'] is a context *)
-              eapply (flip (transport _)).
-              { refine (Closure.hypothesis _ _ _). exact (inl (Some None)). }
-              apply idpath.
-            -- (* premise: [Γ |- J]  *)
-              eapply (flip (transport _)).
-              { refine (Closure.hypothesis _ _ _). exact (inl None). }
-              apply idpath.
-        }
-        recursive_destruct p;
-          apply Judgement.eq_by_eta; apply idpath.
+            ++ simple refine (Closure.hypothesis' _ _).
+              ** apply inl, Some, Some, inl, inl, x.
+              ** apply idpath.
+            ++ simple refine (Closure.hypothesis' _ _).
+              ** apply inl, Some, Some, inl, inr, x.
+              ** apply idpath.
+          -- (* premise: [Γ'] is a context *)
+            simple refine (Closure.hypothesis' _ _).
+            ++ exact (inl (Some None)).
+            ++ apply idpath.
+          -- (* premise: [Γ |- J]  *)
+            simple refine (Closure.hypothesis' _ _).
+            ++ exact (inl None).
+            ++ apply idpath.
+        
       (* Case 2: substitutions are into a term judgement [ Γ |- a : A].
          Then the presups of [ Γ |- f^*a = g^*a : f^* A] are
          [ Γ |- f^*A type ], [ Γ |- f^*a : f^*A ], and [ Γ |- g^*A : f^*A ].
          The first two, we get by the [substitution_apply] rule; the third 
          additionally requires the [term_convert] and [substitution_equal]
          rules. *)
-   (* TODO: to make the following clearer, and reduce use of [transport], consider giving lemmas that “standardise” the hypothetical part of a judgement, in the conclusion of a derivation. *)
       + recursive_destruct p.
         * (* presup [ Γ |- f^*A type ] *)
-          eapply (flip (transport _)).
-          { simple refine (Closure.deduce _ _ _ _).
-            -- apply subst_apply.
-               exists Γ, Γ', f. refine (form_object class_type; _).
-               intros [[] | ].
-               exact (J (the_boundary class_term the_term_type)).
-            -- intros [ [ x | ] | ].
-               ++ (* premise: [f] is a context map *)
-                 eapply (flip (transport _)).
-                 { refine (Closure.hypothesis _ _ _).
-                   apply inl, Some, Some, inl, inl, x. }
-                 apply idpath.
-               ++ (* premise: [Γ'] is a context *)
-                 eapply (flip (transport _)).
-                 { refine (Closure.hypothesis _ _ _). exact (inl (Some None)). }
-                 apply idpath.
-               ++ (* premise: [Γ |- A type ]  *)
-                 eapply (flip (transport _)).
-                 { refine (Closure.hypothesis _ _ _).
-                 apply inr. exists None. exact (Some the_term_type). }
-                 apply Judgement.eq_by_eta; apply idpath.
-          }
-          apply Judgement.eq_by_eta; apply idpath.
+          simple refine (Closure.deduce' _ _ _).
+          -- apply subst_apply.
+             exists Γ, Γ', f. refine (form_object class_type; _).
+             intros [[] | ].
+             exact (J (the_boundary class_term the_term_type)).
+          -- apply Judgement.eq_by_eta; apply idpath.
+          -- intros [ [ x | ] | ].
+             ++ (* premise: [f] is a context map *)
+               simple refine (Closure.hypothesis' _ _).
+               ** apply inl, Some, Some, inl, inl, x.
+               ** apply idpath.
+             ++ (* premise: [Γ'] is a context *)
+               simple refine (Closure.hypothesis' _ _).
+               ** exact (inl (Some None)).
+               ** apply idpath.
+             ++ (* premise: [Γ |- A type ]  *)
+               simple refine (Closure.hypothesis' _ _).
+               ** apply inr. exists None. exact (Some the_term_type).
+               ** apply Judgement.eq_by_eta; apply idpath.
         * (* presup [ Γ' |- f^*a : f^*A ] *)
-          eapply (flip (transport _)).
-          { simple refine (Closure.deduce _ _ _ _).
-            -- apply subst_apply. (* subst-apply rule:
-                                    substitute f into Γ |- a : A *)
-               exists Γ, Γ', f. refine (form_object class_term; _).
-               exact J.
-            -- intros [ [ x | ] | ].
-               ++ (* premise: [f] is a context map *)
-                 eapply (flip (transport _)).
-                 { refine (Closure.hypothesis _ _ _).
-                   apply inl, Some, Some, inl, inl, x. }
-                 apply idpath.
-               ++ (* premise: [Γ'] is a context *)
-                 eapply (flip (transport _)).
-                 { refine (Closure.hypothesis _ _ _). exact (inl (Some None)). }
-                 apply idpath.
-               ++ (* premise: [Γ |- a : A type ]  *)
-                 eapply (flip (transport _)).
-                 { refine (Closure.hypothesis _ _ _). exact (inl None). }
-                 apply idpath.
-          }
-          apply Judgement.eq_by_eta; apply idpath.
+          simple refine (Closure.deduce' _ _ _).
+          -- apply subst_apply. (* subst-apply rule:
+                                   substitute f into Γ |- a : A *)
+             exists Γ, Γ', f. refine (form_object class_term; _).
+             exact J.
+          -- apply Judgement.eq_by_eta; apply idpath.
+          -- intros [ [ x | ] | ].
+             ++ (* premise: [f] is a context map *)
+               simple refine (Closure.hypothesis' _ _).
+               ** apply inl, Some, Some, inl, inl, x.
+               ** apply idpath.
+             ++ (* premise: [Γ'] is a context *)
+               simple refine (Closure.hypothesis' _ _).
+               ** exact (inl (Some None)).
+               ** apply idpath.
+             ++ (* premise: [Γ |- a : A type ]  *)
+               simple refine (Closure.hypothesis' _ _).
+               ** exact (inl None).
+               ** apply idpath.
         * (* presup [ Γ' |- g^*a : f^*A ] *)
           apply Judgement.canonicalise. unfold Judgement.eta_expand; cbn.
-          eapply (flip (transport _)).
-          { refine (Closure.graft _ _ _).
-            -- simple refine (derive_from_reindexing_to_empty_sum _).
-               exact Γ'. exact (form_object class_term).
-               intros i; recursive_destruct i.
-               ++ exact (substitute f (J (the_boundary class_term the_term_type))).
-               ++ exact (substitute g (J (the_head class_term))).
-            -- intros [ [] | i].
-               ++ eapply (flip (transport _)).
-                  { simple refine (Closure.deduce _ _ _ _).
-                    - apply term_convert. (* term_convert rule *)
-                      exists Γ'. cbn.
-                      intros i; recursive_destruct i; cbn.
-                      + refine (substitute _ (substitute f
+          refine (Closure.graft' _ _ _).
+          -- simple refine (derive_from_reindexing_to_empty_sum _).
+            exact Γ'. exact (form_object class_term).
+            intros i; recursive_destruct i.
+            ++ exact (substitute f (J (the_boundary class_term the_term_type))).
+            ++ exact (substitute g (J (the_head class_term))).
+          -- apply idpath.
+          -- intros [ [] | i].
+            ++ simple refine (Closure.deduce' _ _ _).
+              ** apply term_convert. (* term_convert rule *)
+                exists Γ'. cbn.
+                intros i; recursive_destruct i; cbn.
+                 --- refine (substitute _ (substitute f
                           (J (the_boundary class_term the_term_type)))). (* [f^*A] *)
-                        apply raw_context_sum_empty_inl.
-                      + refine (substitute _ (substitute g
+                     apply raw_context_sum_empty_inl.
+                 --- refine (substitute _ (substitute g
                           (J (the_boundary class_term the_term_type)))). (* [g^*A] *)
-                        apply raw_context_sum_empty_inl.
-                      + refine (substitute _ (substitute g
+                     apply raw_context_sum_empty_inl.
+                 --- refine (substitute _ (substitute g
                           (J (the_head _)))). (* [g^*a] *)
-                       apply raw_context_sum_empty_inl.
+                     apply raw_context_sum_empty_inl.
+              ** apply Judgement.eq_by_eta.
+                 apply ap.
+                 admit. (*functoriality of substitution *)
    (* TODO: all the above three are the same problem: renaming between a proto-context and its sum with the empty shape.  Think about how to make a utility lemma to deal with this situation!
    E.g. given an “algebraic” flat rule, can get a derivable equivallent that doesn’t add this damn thing to the context? *)
-                    - admit. (* from hypotheses, via an inverse to
-                              [derive_from_reindexing_to_empty_sum]. *)
-                  }
-                  apply Judgement.eq_by_eta.
-                  apply ap.
-                  admit. (*functoriality of substitution *)
-               ++ admit.
-          }
-          apply idpath.
+              ** admit. (* from hypotheses, via an inverse to
+                           [derive_from_reindexing_to_empty_sum]. *)
+            ++ admit.
     - (* [p] the context presupposition [Γ'] *)
-      eapply (flip (transport _)).
-      { refine (Closure.hypothesis _ _ _). exact (inl (Some None)). }
-      apply idpath.
+      simple refine (Closure.hypothesis' _ _).
+      + exact (inl (Some None)).
+      + apply idpath.
   Admitted.
 
   (** All substitution rules are well typed *)
@@ -356,15 +335,12 @@ Section TypedStructuralRule.
     destruct r as [Γ x].
     intros i; recursive_destruct i.
     (* type presupposition *)
-    - eapply (flip (transport _)). 
-      + refine (Closure.hypothesis _ _ _).
-        cbn.
-        apply inl, None.
+    - simple refine (Closure.hypothesis' _ _).
+      + cbn. apply inl, None.
       + apply Judgement.eq_by_eta; apply idpath.
     (* context presupposition *)
-    - eapply (flip (transport _)). 
-      + refine (Closure.hypothesis _ _ _).
-        cbn. apply inl, Some, tt.
+    - simple refine (Closure.hypothesis' _ _).
+      + cbn. apply inl, Some, tt.
       + cbn. apply idpath.
   Defined.
 

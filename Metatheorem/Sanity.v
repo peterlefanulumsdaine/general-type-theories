@@ -74,13 +74,12 @@ Section PresuppositionClosureFlat.
       + refine (FlatTypeTheory.instantiate_derivation _ _ _ _).
         apply T_presup_closed.
       + intros [ i | [ i i_presup]]. 
-        * eapply (flip (transport _)).
-          { refine (Closure.hypothesis _ _ _). exact (inl i). }
-          apply idpath.
-        * eapply (flip (transport _)).
-          { refine (Closure.hypothesis _ _ _). refine (inr (i;_)).
-            exact i_presup. }
-          apply inverse, instantiate_presupposition.
+        * simple refine (Closure.hypothesis' _ _).
+          -- exact (inl i).
+          -- apply idpath.
+        * simple refine (Closure.hypothesis' _ _).
+          -- refine (inr (i;_)). exact i_presup.
+          -- apply inverse, instantiate_presupposition.
   Defined.
 
   (** Putting the above together: all presuppositions of a derivable judgement
