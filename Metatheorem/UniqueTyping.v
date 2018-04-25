@@ -11,9 +11,9 @@ Require Import Typed.TypeTheory.
 Theorem unique_typing {σ : shape_system} (T : raw_type_theory σ)
     (Σ := RawTypeTheory.signature T)
     (Γ : raw_context Σ) (a : raw_term Σ Γ) (A A' : raw_type Σ Γ)
-    (d : RawTypeTheory.derivation T [<>] [Tm! Γ |- a ; A !])
-    (d' : RawTypeTheory.derivation T [<>] [Tm! Γ |- a ; A' !])
-  : RawTypeTheory.derivation T [<>] [TyEq! Γ |- A ≡ A' !].
+    (d : RawTypeTheory.derivation T [<>] [! Γ |- a ; A !])
+    (d' : RawTypeTheory.derivation T [<>] [! Γ |- a ; A' !])
+  : RawTypeTheory.derivation T [<>] [! Γ |- A ≡ A' !].
 Abort.
 
 (* Sketch proof: ????

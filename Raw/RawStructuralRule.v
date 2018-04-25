@@ -29,7 +29,7 @@ Require Import Raw.FlatRule.
   - the definition of it as a family of rules;
   - the access function picking it out in the family [structural_rule].
 
-  We use [context_extend] for the access function, and call the family 
+  We use [context_extend] for the access function, and call the family
   [context_extend_instance], since an element of the family is a specific instance
   of the rule.  So when using this rule in a derivation, one will first say
   [apply cxt_extend] to select the context extension rule, and then specify
@@ -59,7 +59,7 @@ Proof.
   (* No premises: *)
   - exact [< >].
   (* Conclusion: *)
-  - exact [Context! |- [::] !].
+  - exact [! |- [::] !].
 Defined.
 
 (* The context extension rule:
@@ -76,10 +76,10 @@ Proof.
   intros [ Γ A ]; split.
   (* Premises: |- Γ context; Γ |- A type *)
   - refine [< _ ; _ >].
-    + exact [Context! |- Γ !].
-    + exact [Ty! Γ |- A !].
+    + exact [! |- Γ !].
+    + exact [! Γ |- A !].
   (* Conclusion: *)
-  - exact [Context! |- (Context.extend Γ A) !].
+  - exact [! |- (Context.extend Γ A) !].
 Defined.
 
 Local Definition context_instance : Closure.system (judgement_total Σ)
@@ -140,11 +140,11 @@ Proof.
   - refine (Family.adjoin (Family.adjoin _ _) _).
     (* all components of [f] are suitably typed: *)
     + exists Γ.
-      intros i. refine [Tm! Γ' |- _ ; _ !].
+      intros i. refine [! Γ' |- _ ; _ !].
       * exact (f i).
       * exact (substitute f (Γ i)).
     (* [Γ'] is a valid context: *)
-    + exact [Context! |- Γ' !]. 
+    + exact [! |- Γ' !].
     (* the target judgement holds over Γ *)
     + exists (Judgement.form_hypothetical hjf).
       exists Γ.
@@ -176,24 +176,24 @@ Proof.
   - refine (Family.adjoin (Family.adjoin (_ + _ + _) _) _).
     (* f is a context morphism *)
     + exists Γ.
-      intros i. refine [Tm! Γ' |- _ ; _ !].
+      intros i. refine [! Γ' |- _ ; _ !].
       * exact (f i).
       * exact (substitute f (Γ i)).
     (* f' is a context morphism *)
     + exists Γ.
-      intros i. refine [Tm! Γ' |- _ ; _ !].
+      intros i. refine [! Γ' |- _ ; _ !].
       * exact (f' i).
       * exact (substitute f' (Γ i)).
     (* f ≡ f' *)
     + exists Γ.
-      intros i. refine [TmEq! Γ' |- _ ≡ _ ; _ !].
+      intros i. refine [! Γ' |- _ ≡ _ ; _ !].
     (* TODO: note inconsistent ordering of arguments in [give_Tm_ji] compared to other
        [give_Foo_ji]. Consider, consistentise? *)
       * exact (substitute f (Γ i)).
       * exact (f i).
       * exact (f' i).
     (* [Γ'] is a valid context: *)
-    + exact [Context! |- Γ' !]. 
+    + exact [! |- Γ' !].
     (* the target judgement holds over Γ *)
     + exists (Judgement.form_hypothetical (form_object cl)).
       exists Γ.
@@ -229,7 +229,7 @@ Section HypotheticalStructuralRules.
   |- Γ context
   Γ |- A type
   ------------- (x in Γ, A := type of x in Γ)
-  Γ |- x : A 
+  Γ |- x : A
 
 *)
 
@@ -238,11 +238,11 @@ Proof.
   exists { Γ : raw_context Σ & Γ }.
   intros [Γ x]. set (A := Γ x). split.
   (* premises *)
-  - exact [< [Context! |- Γ !]
-           ; [Ty! Γ |- A !]
+  - exact [< [! |- Γ !]
+           ; [! Γ |- A !]
           >].
   (*conclusion *)
-  - exact [Tm! Γ |- (raw_variable x) ; A !].
+  - exact [! Γ |- (raw_variable x) ; A !].
 Defined.
 
 Section Equality.
@@ -265,11 +265,11 @@ Proof.
   (* Premise *)
   - refine [< _ >].
     + (* Premise ⊢ A type *)
-      simple refine [Ty! _ |- _ !].
+      simple refine [! _ |- _ !].
       * exact [::].
       * exact [M/ A /].
   (* Conclusion : ⊢ A ≡ A *)
-  - simple refine [TyEq! _ |- _ ≡ _ !].
+  - simple refine [! _ |- _ ≡ _ !].
     + exact [::].
     + exact [M/ A /].
     + exact [M/ A /].
@@ -295,12 +295,12 @@ Proof.
   (* Premise *)
   - refine [< _ >].
     + (* Premise ⊢ A ≡ B *)
-      simple refine [TyEq! _ |- _ ≡ _ !].
+      simple refine [! _ |- _ ≡ _ !].
       * exact [::].
       * exact [M/ A /].
       * exact [M/ B /].
   (* Conclusion : ⊢ B ≡ A *)
-  - simple refine [TyEq! _ |- _ ≡ _ !].
+  - simple refine [! _ |- _ ≡ _ !].
     + exact [::].
     + exact [M/ B /].
     + exact [M/ A /].
@@ -328,17 +328,17 @@ Proof.
   (* Premise *)
   - refine [< _ ; _ >].
     + (* Premise ⊢ A ≡ B *)
-      simple refine [TyEq! _ |- _ ≡ _ !].
+      simple refine [! _ |- _ ≡ _ !].
       * exact [::].
       * exact [M/ A /].
       * exact [M/ B /].
     + (* Premise ⊢ B ≡ C *)
-      simple refine [TyEq! _ |- _ ≡ _ !].
+      simple refine [! _ |- _ ≡ _ !].
       * exact [::].
       * exact [M/ B /].
       * exact [M/ C /].
   (* Conclusion : ⊢ A ≡ C *)
-  - simple refine [TyEq! _ |- _ ≡ _ !].
+  - simple refine [! _ |- _ ≡ _ !].
     + exact [::].
     + exact [M/ A /].
     + exact [M/ C /].
@@ -364,12 +364,12 @@ Proof.
   (* Premise *)
   - refine [< _ >].
     + (* Premise ⊢ u : A type *)
-      simple refine [Tm! _ |- _ ; _ !].
+      simple refine [! _ |- _ ; _ !].
       * exact [::].
       * exact [M/ u /].
       * exact [M/ A /].
   (* Conclusion : ⊢ u ≡ u : A *)
-  - simple refine [TmEq! _ |- _ ≡ _ ; _ !].
+  - simple refine [! _ |- _ ≡ _ ; _ !].
     + exact [::].
     + exact [M/ A /].
     + exact [M/ u /].
@@ -398,13 +398,13 @@ Proof.
   (* Premise *)
   - refine [< _ >].
     + (* Premise ⊢ u ≡ v : A type *)
-      simple refine [TmEq! _ |- _ ≡ _ ; _ !].
+      simple refine [! _ |- _ ≡ _ ; _ !].
       * exact [::].
       * exact [M/ A /].
       * exact [M/ u /].
       * exact [M/ v /].
   (* Conclusion : ⊢ v ≡ u : A *)
-  - simple refine [TmEq! _ |- _ ≡ _ ; _ !].
+  - simple refine [! _ |- _ ≡ _ ; _ !].
     + exact [::].
     + exact [M/ A /].
     + exact [M/ v /].
@@ -435,19 +435,19 @@ Proof.
   (* Premise *)
   - refine [< _ ; _ >].
     + (* Premise ⊢ u ≡ v : A type *)
-      simple refine [TmEq! _ |- _ ≡ _ ; _ !].
+      simple refine [! _ |- _ ≡ _ ; _ !].
       * exact [::].
       * exact [M/ A /].
       * exact [M/ u /].
       * exact [M/ v /].
     + (* Premise ⊢ v ≡ w : A type *)
-      simple refine [TmEq! _ |- _ ≡ _ ; _ !].
+      simple refine [! _ |- _ ≡ _ ; _ !].
       * exact [::].
       * exact [M/ A /].
       * exact [M/ v /].
       * exact [M/ w /].
   (* Conclusion : ⊢ u ≡ w : A *)
-  - simple refine [TmEq! _ |- _ ≡ _ ; _ !].
+  - simple refine [! _ |- _ ≡ _ ; _ !].
     + exact [::].
     + exact [M/ A /].
     + exact [M/ u /].
@@ -479,25 +479,25 @@ Proof.
   (* Premise *)
   - refine [< _ ; _ ; _ ; _ >].
     + (* Premise ⊢ A type *)
-      simple refine [Ty! _ |- _ !].
+      simple refine [! _ |- _ !].
       * exact [::].
       * exact [M/ A /].
     + (* Premise ⊢ B type *)
-      simple refine [Ty! _ |- _ !].
+      simple refine [! _ |- _ !].
       * exact [::].
       * exact [M/ B /].
     + (* Premise ⊢ A ≡ B *)
-      simple refine [TyEq! _ |- _ ≡ _ !].
+      simple refine [! _ |- _ ≡ _ !].
       * exact [::].
       * exact [M/ A /].
       * exact [M/ B /].
     + (* Premise ⊢ u : A *)
-      simple refine [Tm! _ |- _ ; _ !].
+      simple refine [! _ |- _ ; _ !].
       * exact [::].
       * exact [M/ u /].
       * exact [M/ A /].
   (* Conclusion: ⊢ u : B *)
-  - simple refine [Tm! _ |- _ ; _ !].
+  - simple refine [! _ |- _ ; _ !].
     + exact [::].
     + exact [M/ u /].
     + exact [M/ B /].
@@ -531,19 +531,19 @@ Proof.
   (* Premise *)
   - refine [< _ ; _ ; _ ; _ ; _ ; _ >].
     + (* Premise ⊢ A type *)
-      exact [Ty! [::] |- [M/ A /] !].
+      exact [! [::] |- [M/ A /] !].
     + (* Premise ⊢ B type *)
-      exact [Ty! [::] |- [M/ B /] !].
+      exact [! [::] |- [M/ B /] !].
     + (* Premise ⊢ A ≡ B *)
-      exact [TyEq! [::] |- [M/ A /] ≡ [M/ B /] !].
+      exact [! [::] |- [M/ A /] ≡ [M/ B /] !].
     + (* Premise ⊢ u : A *)
-      exact [Tm! [::] |- [M/ u /] ; [M/ A /] !].
+      exact [! [::] |- [M/ u /] ; [M/ A /] !].
     + (* Premise ⊢ u' : A *)
-      exact [Tm! [::] |- [M/ u' /] ; [M/ A /] !].
+      exact [! [::] |- [M/ u' /] ; [M/ A /] !].
     + (* Premise ⊢ u ≡ u' : A *)
-      exact [TmEq! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ A /] !].
+      exact [! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ A /] !].
   (* Conclusion: ⊢ u ≡ u' : B *)
-  - exact [TmEq! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ B /] !].
+  - exact [! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ B /] !].
 Defined.
 
 Local Definition equality_instance : family (rule (judgement_total Σ)) :=
