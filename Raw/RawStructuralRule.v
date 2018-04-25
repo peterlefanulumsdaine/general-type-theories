@@ -8,8 +8,9 @@ Require Import Raw.RawSubstitution.
 Require Import Raw.FlatRule.
 
 (**
-  This module defines the “standard rules” — the rules which are not explicitly specified
-  in a type theory, but are always assumed to be present. These fall into several groups:
+  This module defines the _standard structural rules_ — the rules which are not
+  specified separately for every type theory, but are always provided
+  automatically. These fall into several groups:
 
   - context formation: [context_extend], [context_empty]
   - variable-renaming rules: [rename_context], [rename_hypothetical]
@@ -107,14 +108,63 @@ shape, and so to show that e.g. contexts whose shapes are given as coproducts
 are contexts, we need a rule like this (or some other strengthening of the
 context rules, or restrictions on the shape system).
 *)
-  Local Definition rename_hypothetical_instance : Closure.system (judgement_total Σ).
-  Admitted.
 
-  Local Definition rename_context_instance : Closure.system (judgement_total Σ).
-  Admitted.
 
-  Local Definition rename_instance : Closure.system (judgement_total Σ)
-    := rename_context_instance + rename_hypothetical_instance.
+(** The action of variable-renaming on contexts:
+
+  Given a raw context [Γ] and an _isomorphic_ shape [f : γ' <~> Γ], rename
+  the variables of [Γ] according to [f], to get a raw context with shape [γ'].
+
+  NOTE: in fact this operation seems to makes sense, and should preserve 
+  well-formedness of the context, for any _retraction_ [f : γ' <~> Γ], not just
+  for isomorphisms.  However, in the rules, we use only the case where [f] is
+  an isomorphism. *)
+(* TODO: upstream to [Raw.Syntax.Substitution]? *)
+Definition rename_raw_context
+    (Γ : raw_context Σ) {γ' : shape_carrier σ} (f : γ' <~> Γ)
+  : raw_context Σ.
+Proof.
+  exists γ'. 
+  exact (fun j => rename (equiv_inverse f) (Γ (f j))).
+Defined.
+
+(*
+  |- Γ context
+  ----------------- [f : γ' <~> Γ]
+  |- f^* Γ context
+*)
+Local Definition rename_context_instance : Closure.system (judgement_total Σ).
+Proof.
+  exists { Γ : raw_context Σ & { γ' : shape_carrier σ & γ' <~> Γ}}.
+  intros [Γ [γ' f]]. split.
+  - (* premises: *)
+    exact [< [! |- Γ !] >].
+  - (* conclusion: *)
+    refine [! |- rename_raw_context Γ f !].
+Defined.
+
+(*
+  Γ |- J   [J any hypothetical judgement]
+  -------------- [f : γ' <~> Γ]
+  f^* Γ |- f^*J
+*)
+Local Definition rename_hypothetical_instance : Closure.system (judgement_total Σ).
+Proof.
+  exists { Γ : raw_context Σ
+       & { γ' : shape_carrier σ
+       & { f : γ' <~> Γ
+       & { hjf : Judgement.hypothetical_form 
+       & hypothetical_judgement Σ hjf Γ }}}}.
+  intros [Γ [γ' [f [hjf J]]]]. split.
+  - (* premises: *)
+    exact [< (Judgement.form_hypothetical hjf ; ( Γ ; J )) >].
+  - (* conclusion: *)
+    refine (Judgement.form_hypothetical hjf ; (rename_raw_context Γ f ; _)).
+    intros i. exact (rename (equiv_inverse f) (J i)).
+Defined.
+
+Local Definition rename_instance : Closure.system (judgement_total Σ)
+  := rename_context_instance + rename_hypothetical_instance.
 
 End RenamingRules.
 
@@ -585,6 +635,10 @@ Context {σ : shape_system} {Σ : signature σ}.
 Definition context_empty : structural_rule Σ := inl (inl (inl (inl None))).
 Definition context_extend : context_extend_instance Σ -> structural_rule Σ
   := fun i => inl (inl (inl (inl (Some i)))).
+Definition rename_context : rename_context_instance Σ -> structural_rule Σ
+  := fun i => inl (inl (inl (inr (inl i)))).
+Definition rename_hypothetical : rename_hypothetical_instance Σ -> structural_rule Σ
+  := fun i => inl (inl (inl (inr (inr i)))).
 Definition subst_apply : subst_apply_instance Σ -> structural_rule Σ
   := fun i => inl (inl (inr (inl i))).
 Definition subst_equal : subst_equal_instance Σ -> structural_rule Σ
@@ -631,7 +685,6 @@ Section StructuralRuleMap.
     (* TODO: possible better approach:
        - [Fmap_Family] of families commutes with sums;
        - then use [repeat apply Fmap_Family_Sum.] or similar.  *)
-    (* TODO: intermediate approach: at least allow family map to be constructed as a single function, to avoid duplicated destructing. *)
     apply Family.Build_map'.
     intros [ [ [ [ [ i_cxt_ext | ] | [ i_rename_cxt | i_rename_hyp ] ]
            | [i_sub_ap | i_sub_eq] ] | i_var ]  | i_eq ].
