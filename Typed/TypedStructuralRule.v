@@ -31,6 +31,8 @@ applications of this less intrusive: i.e. to allow one to use instantiations
 of flat rules as the closure conditions one expects them to be, with just [Γ]
 instead of [ shape_sum Γ (shape_empty σ) ]. *)
 (* TODO: upstream the entire section; but to where? *)
+
+(* TODO: in fact, with current structural rules, this probably won’t be possible, since our context formation rules only give us contexts obtainable as an iterated extension.  How to fix this??? *)
 Section Sum_Shape_Empty.
 
   Context `{Funext} {σ : shape_system} {Σ : signature σ}.
@@ -92,9 +94,29 @@ Section Sum_Shape_Empty.
       {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
     : Closure.derivation (structural_rule Σ)
-        [< reindexing_to_empty_sum J >] 
+        (let H := [< reindexing_to_empty_sum J >]
+          in H + Family.bind H presupposition)
         (form_hypothetical hjf ; (Γ ; J)).
   Proof.
+    eapply (flip (transport _)).
+    {
+      simple refine (Closure.deduce _ _ _ _).
+      - apply inl, inl, inr, inl. cbn. (* substitution rule *)
+        exists (raw_context_sum_empty Γ).
+        exists Γ.
+        simple refine (_;_). { admit. }
+        exists hjf. exact (pr2 (pr2 (reindexing_to_empty_sum J))).
+      - intros [[ i | ] | ].
+        + (* the renaming is a context map *)
+          cbn in i; cbn.
+          revert i. apply (coproduct_rect shape_is_sum).
+          * intros i. cbn. admit.
+          * admit.
+        + admit. (* the context is a context *)
+        + admit. (* the judgement we’re substituting into *)
+    }
+    admit. (* lemma on functoriality of substitution *)
+       
     (* substitution rule, along the _inverse_ context morphism of
        [raw_context_sum_empty_inl], plus substitution functoriality lemma
        to show that the conclusion of that is the original judgement. *)
@@ -286,29 +308,30 @@ Section TypedStructuralRule.
                intros i; recursive_destruct i.
                ++ exact (substitute f (J (the_boundary class_term the_term_type))).
                ++ exact (substitute g (J (the_head class_term))).
-            -- intros [].
-               eapply (flip (transport _)).
-               { simple refine (Closure.deduce _ _ _ _).
-                 ++ apply inr. cbn. exists (Some None). (* term_convert rule *)
-                    exists Γ'. cbn.
-                    intros i; recursive_destruct i; cbn.
-                    ** refine (substitute _ (substitute f
-                         (J (the_boundary class_term the_term_type)))). (* [f^*A] *)
-                       apply raw_context_sum_empty_inl.
-                    ** refine (substitute _ (substitute g
-                         (J (the_boundary class_term the_term_type)))). (* [g^*A] *)
-                       apply raw_context_sum_empty_inl.
-                    ** refine (substitute _ (substitute g
-                         (J (the_head _)))). (* [g^*a] *)
+            -- intros [ [] | i].
+               ++ eapply (flip (transport _)).
+                  { simple refine (Closure.deduce _ _ _ _).
+                    - apply inr. cbn. exists (Some None). (* term_convert rule *)
+                      exists Γ'. cbn.
+                      intros i; recursive_destruct i; cbn.
+                      + refine (substitute _ (substitute f
+                          (J (the_boundary class_term the_term_type)))). (* [f^*A] *)
+                        apply raw_context_sum_empty_inl.
+                      + refine (substitute _ (substitute g
+                          (J (the_boundary class_term the_term_type)))). (* [g^*A] *)
+                        apply raw_context_sum_empty_inl.
+                      + refine (substitute _ (substitute g
+                          (J (the_head _)))). (* [g^*a] *)
                        apply raw_context_sum_empty_inl.
    (* TODO: all the above three are the same problem: renaming between a proto-context and its sum with the empty shape.  Think about how to make a utility lemma to deal with this situation!
    E.g. given an “algebraic” flat rule, can get a derivable equivallent that doesn’t add this damn thing to the context? *)
-                 ++ admit. (* from hypotheses, via an inverse to
+                    - admit. (* from hypotheses, via an inverse to
                               [derive_from_reindexing_to_empty_sum]. *)
-               }
-               apply Judgement.eq_by_eta.
-               apply ap.
-               admit. (*functoriality of substitution *)
+                  }
+                  apply Judgement.eq_by_eta.
+                  apply ap.
+                  admit. (*functoriality of substitution *)
+               ++ admit.
           }
           apply idpath.
     - (* [p] the context presupposition [Γ'] *)
