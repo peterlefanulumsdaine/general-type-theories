@@ -272,11 +272,11 @@ Section JudgementNotations.
 
 End JudgementNotations.
 
-Notation "'[Cxt!' |- Γ !]" := (make_context_ji Γ) : judgement_scope.
-Notation "'[Ty!' Γ |- A !]" := (make_type_ji Γ A) : judgement_scope.
-Notation "'[TyEq!' Γ |- A ≡ A' !]" := (make_type_equality_ji Γ A A') : judgement_scope.
-Notation "'[Tm!' Γ |- a ; A !]" :=  (make_term_ji Γ a A) : judgement_scope.
-Notation "'[TmEq!' Γ |- a ≡ a' ; A !]" := (make_term_equality_ji Γ A a a') : judgement_scope.
+Notation "'[!' |- Γ !]" := (make_context_ji Γ) : judgement_scope.
+Notation "'[!' Γ |- A !]" := (make_type_ji Γ A) : judgement_scope.
+Notation "'[!' Γ |- A ≡ A' !]" := (make_type_equality_ji Γ A A') : judgement_scope.
+Notation "'[!' Γ |- a ; A !]" :=  (make_term_ji Γ a A) : judgement_scope.
+Notation "'[!' Γ |- a ≡ a' ; A !]" := (make_term_equality_ji Γ A a a') : judgement_scope.
 
 Open Scope judgement_scope.
 
@@ -443,7 +443,7 @@ Section Canonicalisation.
 (** If judgements were record types, rather than function types over their finite set of slots, they would have judgemental eta, which would be very convenient.
 
 In lieu of that, we give explicit lemmas analogous to eta-expansion and the eta rule: we call this the “canonicalisation” of a judgement. *)
-  
+
   Context {σ : shape_system} {Σ : signature σ} `{Funext}.
 
   Local Definition eta_expand (j : judgement_total Σ)
@@ -467,7 +467,7 @@ In lieu of that, we give explicit lemmas analogous to eta-expansion and the eta 
     apply (ap (fun j => (_;j))).
     destruct j as [jf j].
     destruct jf as [ | hf]; try apply idpath.
-    destruct j as [Γ hj]. 
+    destruct j as [Γ hj].
     apply (ap (fun hj' => (_;hj'))).
     apply path_forall; intros i.
     recursive_destruct hf;

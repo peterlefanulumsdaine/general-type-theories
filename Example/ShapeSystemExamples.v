@@ -58,12 +58,12 @@ End Types_as_shapes.
 
 Section Free_shapes.
 
-  Inductive f_cxt : Type :=
-  | f_empty : f_cxt
-  | f_coproduct : f_cxt -> f_cxt -> f_cxt
-  | f_extend : f_cxt -> f_cxt.
+  Inductive f_context : Type :=
+  | f_empty : f_context
+  | f_coproduct : f_context -> f_context -> f_context
+  | f_extend : f_context -> f_context.
   
-  Fixpoint f_positions (c : f_cxt) : Type :=
+  Fixpoint f_positions (c : f_context) : Type :=
     match c with
     | f_empty => Empty
     | f_coproduct c d => sum (f_positions c) (f_positions d)
@@ -73,7 +73,7 @@ Section Free_shapes.
   Definition Free_Shape : shape_system.
   Proof.
     refine {|
-        shape_carrier := f_cxt ;
+        shape_carrier := f_context ;
         shape_position := f_positions ;
         shape_empty := f_empty ;
         shape_sum := f_coproduct ;

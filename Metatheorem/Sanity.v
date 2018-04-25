@@ -130,7 +130,7 @@ Section PresuppositionClosure.
                 There is one position, namely the context. *)
               destruct p as [[]|].
               (* We need to show that the context of the conclusion is well-formed. *)
-              destruct j as [j_ctx j_jdg].
+              destruct j as [j_context j_jdg].
               admit.
             + admit.
             + admit.

@@ -35,7 +35,7 @@ variables.
 
 There are the following **judgment forms:**
 
-1. `Γ ctx` – "`Γ` is a context"
+1. `Γ context` – "`Γ` is a context"
 2. `Γ ⊢ A type` – "`A` is type in context `Γ`"
 3. `Γ ⊢ t : A` – "`t` is a term of type `A` in context `Γ`"
 4. `Γ ⊢ A ≡ B` – "type `A` and `B` are equal in context `Γ`"
@@ -46,11 +46,11 @@ Each judgment has a **boundary**, which consists of several structurally smaller
 subentities of the judgment). We say that a boundary is **well-formed** when the judgments in
 its boundary are derivable. The boundaries are as follows:
 
-1. the boundary of `Γ ctx` is empty
-2. the boundary of `Γ ⊢ A type` is `Γ ctx`
+1. the boundary of `Γ context` is empty
+2. the boundary of `Γ ⊢ A type` is `Γ context`
 3. the boundary of `Γ ⊢ t : A` is `Γ ⊢ A type`
-4. the boundary of `Γ ⊢ A ≡ B` is ``Γ ctx``,  `Γ ⊢ A type`, and `Γ ⊢ B type`
-5. the boundary of `Γ ⊢ s ≡ t : A` is ``Γ ctx``, `Γ ⊢ A type`, `Γ ⊢ s : A`, and `Γ ⊢ s : A`
+4. the boundary of `Γ ⊢ A ≡ B` is ``Γ context``,  `Γ ⊢ A type`, and `Γ ⊢ B type`
+5. the boundary of `Γ ⊢ s ≡ t : A` is ``Γ context``, `Γ ⊢ A type`, `Γ ⊢ s : A`, and `Γ ⊢ s : A`
 
 ### Rules
 

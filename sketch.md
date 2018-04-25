@@ -49,11 +49,11 @@ Raw signatures:
 
 - DON’T assume finitary; don’t use lists!  Use *families* for everything?
 - syntactic classes: Term, Type
-- arities: a syntactic class (for the output), & a family of “argument arities”; where an argument-arity is a synt class and a pre-context 
+- arities: a syntactic class (for the output), & a family of “argument arities”; where an argument-arity is a synt class and a pre-context
 - raw binding-signatures: a family of arities
 - raw syntax, for a binding-signature: inductive family, dependent over pre-contexts
 - raw context: a pre-context, plus map from its variables to raw types over that pre-context
-- raw context morphisms: together with a family of terms of the source pre-context, indexed byt the target pre-cxt
+- raw context morphisms: together with a family of terms of the source pre-context, indexed by the target pre-context
 
 Substitution on raw syntax
 
