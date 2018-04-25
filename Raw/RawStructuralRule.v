@@ -743,9 +743,9 @@ Section StructuralRuleMap.
     - (* empty context *)
       exists (context_empty).
       cbn. apply Closure.rule_eq.
-      * simple refine (Family.eq _ _). { apply idpath. }
+      + simple refine (Family.eq _ _). { apply idpath. }
         intros [].
-      * cbn. apply (ap (fun x => (_; x))).
+      + cbn. apply (ap (fun x => (_; x))).
         apply (ap (Build_raw_context _)).
         apply path_forall. refine (empty_rect _ shape_is_empty _).
     - (* context extension *)
@@ -776,10 +776,37 @@ Section StructuralRuleMap.
                2: { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. }
              apply inverse. apply RawSubstitution.fmap_rename.
     - (* rename_context *)
-      admit.
+      destruct i_rename_cxt as [Γ [γ' e]].
+      simple refine (_;_).
+      + apply rename_context.
+        exists (Context.fmap f Γ).
+        exact (γ'; e).
+      + cbn. apply Closure.rule_eq.
+        * apply idpath.
+        * apply (ap (fun x => (_;x))).
+          apply (ap (fun x => Build_raw_context _ x)).
+          apply path_forall; intros i.
+          apply inverse, fmap_rename.
     - (* rename_hypothetical *)
-      admit.
-    - (* substitution *)
+      destruct i_rename_hyp as [Γ [γ' [e [hjf J]]]].
+      simple refine (_;_).
+      + apply rename_hypothetical.
+        exists (Context.fmap f Γ).
+        exists γ', e, hjf.
+        exact (fun i => Expression.fmap f (J i)).
+      + cbn. apply Closure.rule_eq.
+        * apply idpath.
+        * apply (ap (fun x => (_;x))).
+          refine (@ap _ _
+            (fun ΓJ : (_ * hypothetical_judgement _ _ γ')
+              => (Build_raw_context γ' (fst ΓJ) ; snd ΓJ))
+            (_,_) (_,_) _).
+          apply path_prod.
+          -- apply path_forall; intros i.
+             apply inverse, fmap_rename.
+          -- apply path_forall; intros i.
+             apply inverse, fmap_rename.
+    - (* subst_apply *)
       destruct i_sub_ap as [ Γ [Γ' [g [hjf hjfi]]]].
       simple refine (_;_).
       + refine (subst_apply _).
@@ -805,7 +832,7 @@ Section StructuralRuleMap.
           apply path_forall. intros i.
           unfold Judgement.fmap_hypothetical_judgement.
           refine (fmap_substitute _ _ _)^.
-    - (* substitution equality *)
+    - (* subst_equal *)
       destruct i_sub_eq as [ Γ [Γ' [g [g' [hjf hjfi]]]]].
       simple refine (_;_).
       + refine (subst_equal _).
