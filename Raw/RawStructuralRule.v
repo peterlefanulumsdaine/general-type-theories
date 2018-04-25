@@ -617,11 +617,7 @@ Definition structural_rule : Closure.system (judgement_total Σ)
   := context_instance + rename_instance + substitution_instance
      + variable_instance + equality_instance.
 
-Ltac destruct_structural_rules :=
-  idtac.
-
 End StructuralRules.
-
 
 Section StructuralRuleAccessors.
   (** Access functions, for selcting structural rules in derivations *)
@@ -666,6 +662,62 @@ Definition tmeq_convert : FlatRule.closure_system (tmeq_convert_rule Σ) -> stru
 
 End StructuralRuleAccessors.
 
+Section StructuralRuleInd.
+
+Context {σ : shape_system}.
+Context {Σ : signature σ}.
+
+Local Definition structural_rule_rect :
+      forall (P : structural_rule Σ -> Type),
+       P context_empty ->
+       (forall i_cxt_ext : context_extend_instance Σ, P (context_extend i_cxt_ext)) ->
+       (forall i_rename_cxt : rename_context_instance Σ, P (rename_context i_rename_cxt)) ->
+       (forall i_rename_hyp : rename_hypothetical_instance Σ,
+        P (rename_hypothetical i_rename_hyp)) ->
+       (forall i_sub_ap : subst_apply_instance Σ, P (subst_apply i_sub_ap)) ->
+       (forall i_sub_eq : subst_equal_instance Σ, P (subst_equal i_sub_eq)) ->
+       (forall i_var : variable_instance Σ, P (variable i_var)) ->
+       (forall i_eq : equality_instance Σ, P (equality i_eq)) ->
+       forall s : structural_rule Σ, P s.
+Proof.
+  intros P X X0 X1 X2 X3 X4 X5 X6 s.
+  destruct s as
+      [ [ [ [ [ i_cxt_ext | ]
+            | [ i_rename_cxt | i_rename_hyp ] ]
+          | [i_sub_ap | i_sub_eq] ]
+        | i_var ]
+      | i_eq ]
+  ; eauto.
+Defined.
+
+
+Local Definition equality_instance_rect :
+  forall (P : structural_rule Σ -> Type),
+       (forall i_tyeq_refl : FlatRule.closure_system (tyeq_refl_rule Σ),
+        P (tyeq_refl i_tyeq_refl)) ->
+       (forall tyeq_sym_rule : FlatRule.closure_system (tyeq_sym_rule Σ),
+        P (tyeq_sym tyeq_sym_rule)) ->
+       (forall tyeq_tran_rule : FlatRule.closure_system (tyeq_tran_rule Σ),
+        P (tyeq_tran tyeq_tran_rule)) ->
+       (forall i_tmeq_refl : FlatRule.closure_system (tmeq_refl_rule Σ),
+        P (tmeq_refl i_tmeq_refl)) ->
+       (forall i_tmeq_sym : FlatRule.closure_system (tmeq_sym_rule Σ),
+        P (tmeq_sym i_tmeq_sym)) ->
+       (forall i_tmeq_tran : FlatRule.closure_system (tmeq_tran_rule Σ),
+        P (tmeq_tran i_tmeq_tran)) ->
+       (forall i_term_convert : FlatRule.closure_system (term_convert_rule Σ),
+        P (term_convert i_term_convert)) ->
+       (forall i_tmeq_convert : FlatRule.closure_system (tmeq_convert_rule Σ),
+        P (tmeq_convert i_tmeq_convert)) -> forall e : equality_instance Σ, P (equality e).
+Proof.
+  intros P X X0 X1 X2 X3 X4 X5 X6.
+  intros [ index element ].
+  repeat destruct index as [ index | ];
+  try destruct index; eauto.
+Defined.
+
+End StructuralRuleInd.
+
 Section StructuralRuleMap.
 
   Context `{H : Funext}.
@@ -686,9 +738,16 @@ Section StructuralRuleMap.
        - [Fmap_Family] of families commutes with sums;
        - then use [repeat apply Fmap_Family_Sum.] or similar.  *)
     apply Family.Build_map'.
-    intros [ [ [ [ [ i_cxt_ext | ] | [ i_rename_cxt | i_rename_hyp ] ]
-           | [i_sub_ap | i_sub_eq] ] | i_var ]  | i_eq ].
+    apply structural_rule_rect ; intros.
     (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
+    - (* empty context *)
+      exists (context_empty).
+      cbn. apply Closure.rule_eq.
+      * simple refine (Family.eq _ _). { apply idpath. }
+        intros [].
+      * cbn. apply (ap (fun x => (_; x))).
+        apply (ap (Build_raw_context _)).
+        apply path_forall. refine (empty_rect _ shape_is_empty _).
     - (* context extension *)
       simple refine (_;_).
       + rename i_cxt_ext into ΓA.
@@ -716,14 +775,6 @@ Section StructuralRuleMap.
              eapply concat.
                2: { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. }
              apply inverse. apply RawSubstitution.fmap_rename.
-    - (* empty context *)
-      exists (context_empty).
-      cbn. apply Closure.rule_eq.
-      * simple refine (Family.eq _ _). { apply idpath. }
-        intros [].
-      * cbn. apply (ap (fun x => (_; x))).
-        apply (ap (Build_raw_context _)).
-        apply path_forall. refine (empty_rect _ shape_is_empty _).
     - (* rename_context *)
       admit.
     - (* rename_hypothetical *)
