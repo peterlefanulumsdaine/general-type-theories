@@ -596,9 +596,8 @@ Proof.
   - exact [! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ B /] !].
 Defined.
 
-Local Definition equality_instance : family (rule (judgement_total Σ)) :=
-  Family.bind
-    [< tyeq_refl_rule
+Local Definition equality_flat_rule : family (flat_rule Σ)
+  := [< tyeq_refl_rule
     ; tyeq_sym_rule
     ; tyeq_tran_rule
     ; tmeq_refl_rule
@@ -606,8 +605,10 @@ Local Definition equality_instance : family (rule (judgement_total Σ)) :=
     ; tmeq_tran_rule
     ; term_convert_rule
     ; tmeq_convert_rule
-    >]
-    FlatRule.closure_system.
+    >].
+
+Local Definition equality_instance : family (rule (judgement_total Σ))
+  := Family.bind equality_flat_rule FlatRule.closure_system.
 
 End Equality.
 

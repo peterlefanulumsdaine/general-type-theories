@@ -34,6 +34,7 @@ MODULES := \
 	Raw/RawRule \
 	Raw/RawTypeTheory \
 	Typed/TypedClosure \
+	Typed/TypedFlatRule \
 	Typed/TypedRule \
 	Typed/TypedStructuralRule \
 	Typed/TypeTheory \
