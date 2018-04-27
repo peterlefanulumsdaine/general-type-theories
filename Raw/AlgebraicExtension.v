@@ -1,3 +1,5 @@
+Require Import HoTT.
+Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Proto.ShapeSystem.
@@ -66,3 +68,66 @@ Proof.
   exists (ae_raw_context _ r).
   apply (ae_hypothetical_boundary).
 Defined.
+
+
+Section Flattening.
+
+  Context {σ : shape_system} {Σ : signature σ}.
+
+  (* In flattening an algebraic extension (or rule), and in other settings (e.g. type-checking the premises), we often want to extract premises as judgements.
+
+   We need to do this into several different signatures, so in this lemma, we isolate exactly what is required: a map from the signature of this premise, plus (in case the premise is an object premise) a symbol to use as the head of the judgement, i.e. the metavariable introduced by the premise. *)
+  (* TODO: consider whether the flattening of the conclusion of rules can also be unified with this. *)
+  Local Definition judgement_of_premise
+      {a} {A : algebraic_extension Σ a} (i : A)
+      {Σ'} (f : Signature.map (ae_signature _ i) Σ')
+      (Sr : Judgement.is_object (ae_form _ i)
+           -> { S : Σ'
+             & (symbol_arity S = Arity.simple (ae_shape _ i))
+             * (symbol_class S = Judgement.class_of (ae_form _ i))})
+   : judgement_total Σ'.
+  Proof.
+    exists (form_hypothetical (ae_form _ i)).
+    exists (Context.fmap f (ae_raw_context _ i)).
+    apply Judgement.hypothetical_instance_from_boundary_and_head.
+    - refine (Judgement.fmap_hypothetical_boundary f _).
+      apply ae_hypothetical_boundary.
+    - intro H_obj.
+      destruct i as [ i_obj | i_eq ]; simpl in *.
+      + (* case: i an object rule *)
+        simple refine (raw_symbol' _ _ _).
+        * refine (Sr _).1. constructor.
+        * refine (snd (Sr _).2).
+        * set (e := (fst (Sr tt).2)^). destruct e.
+           intro v. apply raw_variable.
+           exact (coproduct_inj1 shape_is_sum v).
+      + (* case: i an equality rule *)
+        destruct H_obj. (* ruled out by assumption *)
+  Defined.
+
+  Local Definition flatten {a}
+    (A : algebraic_extension Σ a)
+  : family (judgement_total (Metavariable.extend Σ a)).
+  (* This construction involves essentially two aspects:
+
+     - translate the syntax of each expression in the rule from its “local”
+       signatures to the overall signature;
+
+     - reconstruct the head terms of the object premises *)
+  Proof.
+    exists (ae_premise A).
+    intros i.
+    apply (judgement_of_premise i).
+    + apply Metavariable.fmap2.
+      apply Family.inclusion.
+    + intros H_i_obj.
+      destruct i as [ i | i ]; simpl in i.
+      * (* case: i an object premise *)
+        simple refine (_;_).
+        -- apply include_metavariable. exact i.
+        -- split; apply idpath.
+      * (* case: i an equality premise *)
+        destruct H_i_obj. (* ruled out by assumption *)
+  Defined.
+
+End Flattening.

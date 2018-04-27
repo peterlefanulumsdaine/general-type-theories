@@ -147,45 +147,47 @@ Section Flattening.
 
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
-
-  (* In flattening a rule, and in other settings (e.g. type-checking the premises), we often want to extract premises as judgements.
-
-   We need to do this into several different signatures, so in this lemma, we isolate exactly what is required: a map from the signature of this premise, plus (in case the premise is an object premise) a symbol to use as the head of the judgement, i.e. the metavariable introduced by the premise. *)
-  (* TODO: consider whether the flattening of the conclusion can also be covered by this. *)
-  Local Definition judgement_of_premise
-      {a} {A : algebraic_extension Σ a} (i : A)
-      {Σ'} (f : Signature.map (ae_signature _ i) Σ')
-      (Sr : Judgement.is_object (ae_form _ i)
-           -> { S : Σ'
-             & (symbol_arity S = Arity.simple (ae_shape _ i))
-             * (symbol_class S = Judgement.class_of (ae_form _ i))})
-   : judgement_total Σ'.
+  
+  (* TODO: consider whether this can be unified with [judgement_of_premise] *)
+  Local Definition judgement_of_conclusion
+    {a} {hjf_concl}
+    (R : rule Σ a hjf_concl)
+    (Sr : Judgement.is_object hjf_concl
+          -> { S : Σ & (symbol_arity S = a) * (symbol_class S = Judgement.class_of hjf_concl) })
+      : judgement_total (Metavariable.extend Σ a).
   Proof.
-    exists (form_hypothetical (ae_form _ i)).
-    exists (Context.fmap f (ae_raw_context _ i)).
+    exists (form_hypothetical hjf_concl).
+    simpl.
+    exists (pr1 (conclusion_boundary R)).
     apply Judgement.hypothetical_instance_from_boundary_and_head.
-    - refine (Judgement.fmap_hypothetical_boundary f _).
-      apply ae_hypothetical_boundary.
-    - intro H_obj.
-      destruct i as [ i_obj | i_eq ]; simpl in *.
-      + (* case: i an object rule *)
-        simple refine (raw_symbol' _ _ _).
-        * refine (Sr _).1. constructor.
-        * refine (snd (Sr _).2).
-        * set (e := (fst (Sr tt).2)^). destruct e.
-           intro v. apply raw_variable.
-           exact (coproduct_inj1 shape_is_sum v).
-      + (* case: i an equality rule *)
+    - exact (pr2 (conclusion_boundary R)).
+    - intros H_obj.
+      destruct hjf_concl as [ ocl | ecl ]; simpl in *.
+      + (* case: R an object rule *)
+        destruct (Sr tt) as [S_R [e_a e_cl]]. clear Sr H_obj.
+        destruct e_cl. (* TODO: can we simplify here with [raw_symbol']? *)
+        refine (raw_symbol (inl S_R : Metavariable.extend _ _) _).
+        change (symbol_arity (inl S_R : Metavariable.extend _ _))
+          with (symbol_arity S_R).
+        set (aR := symbol_arity S_R) in *. destruct (e_a^); clear e_a.
+        intros p.
+        cbn in p.
+        refine (raw_symbol (inr p : Metavariable.extend _ _) _).
+        intros i.
+        apply raw_variable.
+        apply (coproduct_inj1 shape_is_sum).
+        exact (coproduct_inj2 shape_is_sum i).
+      + (* case: R an equality rule *)
         destruct H_obj. (* ruled out by assumption *)
   Defined.
-
+    
   (* Flattening a rule requires no extra information in the case of an
   equality-rule; in the case of an object-rule, it requires a symbol of
   appropriate arity to give the object introduced. *)
   Local Definition flatten
     {a} {hjf_concl}
     (R : rule Σ a hjf_concl)
-    (Sr : Judgement.is_object hjf_concl
+    (SR : Judgement.is_object hjf_concl
         -> { S : Σ & (symbol_arity S = a) * (symbol_class S = Judgement.class_of hjf_concl) })
   : flat_rule Σ.
   (* This construction involves essentially two aspects:
@@ -195,46 +197,9 @@ Section Flattening.
 
      - reconstruct the head terms of the object premises and the conclusion *)
   Proof.
-    refine (Build_flat_rule _ a _ _).
-    - (* premises *)
-      exists (rule_premise R).
-      intros i.
-      apply (judgement_of_premise i).
-      + apply Metavariable.fmap2.
-        apply Family.inclusion.
-      + intros H_i_obj.
-        destruct i as [ i | i ]; simpl in i.
-        * (* case: i an object premise *)
-          simple refine (_;_).
-          -- apply include_metavariable. exact i.
-          -- split; apply idpath.
-        * (* case: i an equality premise *)
-          destruct H_i_obj. (* ruled out by assumption *)
-   - (* conclusion *)
-     (* TODO: consider whether this can be unified with [judgement_of_premise] *)
-      exists (form_hypothetical hjf_concl).
-      simpl.
-      exists (pr1 (conclusion_boundary R)).
-      apply Judgement.hypothetical_instance_from_boundary_and_head.
-      + exact (pr2 (conclusion_boundary R)).
-      + intros H_obj.
-        destruct hjf_concl as [ ocl | ecl ]; simpl in *.
-        * (* case: R an object rule *)
-          destruct (Sr tt) as [S_R [e_a e_cl]]. clear Sr H_obj.
-          destruct e_cl. (* TODO: can we simplify here with [raw_symbol']? *)
-          refine (raw_symbol (inl S_R : Metavariable.extend _ _) _).
-          change (symbol_arity (inl S_R : Metavariable.extend _ _))
-            with (symbol_arity S_R).
-          set (aR := symbol_arity S_R) in *. destruct (e_a^); clear e_a.
-          intros p.
-          cbn in p.
-          refine (raw_symbol (inr p : Metavariable.extend _ _) _).
-          intros i.
-          apply raw_variable.
-          apply (coproduct_inj1 shape_is_sum).
-          exact (coproduct_inj2 shape_is_sum i).
-        * (* case: R an equality rule *)
-          destruct H_obj. (* ruled out by assumption *)
+    exists a.
+    - exact (AlgebraicExtension.flatten (rule_premise R)).
+    - exact (judgement_of_conclusion R SR).
   Defined.
 
 End Flattening.

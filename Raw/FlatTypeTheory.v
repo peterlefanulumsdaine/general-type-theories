@@ -36,16 +36,6 @@ Section FlatTypeTheoryDerivation.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  (** For each presupposition of the given judgement boundary [jbi], a derivation
-    of the presupposition in flat type theory [T] from hypotheses [H]. *)
-  Local Definition presupposition_derivation
-        (T : flat_type_theory Σ)
-        {jf} (jbi : Judgement.boundary Σ jf)
-        (H : family (judgement_total Σ))
-    : Type
-    :=
-      forall (i : presupposition_of_boundary jbi),
-        derivation T H (presupposition_of_boundary _ i).
 
   (** The derivation of the conclusion of rule [R] from its premises
     in flat type theroy [T], with given hypotheses. *)

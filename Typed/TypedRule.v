@@ -6,8 +6,10 @@ Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 Require Import Raw.AlgebraicExtension.
 Require Import Raw.RawRule.
+Require Import Raw.FlatRule.
 Require Import Raw.FlatTypeTheory.
 Require Import Raw.FlatTypeTheoryMap.
+Require Import Typed.TypedFlatRule.
 
 (** In this file: definition of well-typedness of an algebraic extension, and a (well-presented) rule. *)
 
@@ -21,14 +23,11 @@ Section WellTypedRule.
     : Type.
   Proof.
     refine (forall r : A, _).
-    refine (FlatTypeTheory.presupposition_derivation _ (AlgebraicExtension.judgement_boundary r) _).
-    - (* ambient type theory to typecheck premise [p] in *)
-      simple refine (FlatTypeTheory.fmap _ T).
-      apply include_symbol.
-    - (* open hypotheses to allow in the derivation *)
+    assert (H : family (judgement_total (ae_signature A r))).
+    { (* open hypotheses to allow in the derivation of each premise *)
       exists {i : ae_premise A & ae_lt _ i r }.
       intros [i lt_i_r].
-      apply (RawRule.judgement_of_premise i).
+      apply (AlgebraicExtension.judgement_of_premise i).
       + apply Metavariable.fmap2.
         simple refine (_;_).
         * intros [j lt_j_i].
@@ -36,12 +35,19 @@ Section WellTypedRule.
         * intro; apply idpath.
       + intros H_i_obj.
         destruct i as [ i | i ]; simpl in i.
-        * (* case: i an object premise *)
-          simple refine (_;_). 
-          -- apply include_metavariable. exists i. assumption.
-          -- split; apply idpath.
-        * (* case: i an equality premise *)
-          destruct H_i_obj. (* ruled out by assumption *)
+      * (* case: i an object premise *)
+        simple refine (_;_). 
+        -- apply include_metavariable. exists i. assumption.
+        -- split; apply idpath.
+      * (* case: i an equality premise *)
+        destruct H_i_obj. (* ruled out by assumption *)
+    }
+    set (r_bdry := AlgebraicExtension.judgement_boundary r).
+    refine (forall (i : presupposition_of_boundary r_bdry),
+               FlatTypeTheory.derivation
+                 (FlatTypeTheory.fmap include_symbol T)
+                 H
+                 (presupposition_of_boundary _ i)).
   Defined.
   (* NOTE: when checking we want to add the earlier premises of [A] to [T], and typecheck [r] over that.  There are (at least) three ways to do this:
   (1) take earlier rules just as judgements, and allow them as hypotheses in the derivation;
@@ -64,23 +70,47 @@ Section WellTypedRule.
   Proof.
     refine (is_well_typed_algebraic_extension T (rule_premise R) * _).
     (* well-typedness of conclusion *)
-    refine (FlatTypeTheory.presupposition_derivation _ (RawRule.conclusion_boundary R) _).
-    - (* ambient type theory to typecheck premise [p] in *)
-      simple refine (FlatTypeTheory.fmap _ T).
-      apply include_symbol.
-    - (* open hypotheses to allow in the derivation *)
-      exists (rule_premise R).
-      intros i. apply (RawRule.judgement_of_premise i).
-      + apply Metavariable.fmap2.
-        apply Family.inclusion.
-      + intros H_i_obj.
-        destruct i as [ i | i ]; simpl in i.
-        * (* case: i an object premise *)
-          simple refine (_;_). 
-          -- apply include_metavariable. exact i.
-          -- split; apply idpath.
-        * (* case: i an equality premise *)
-          destruct H_i_obj. (* ruled out by assumption *)
+    exact (forall (i : presupposition_of_boundary (RawRule.conclusion_boundary R)),
+               FlatTypeTheory.derivation
+                 (FlatTypeTheory.fmap include_symbol T)
+                 (AlgebraicExtension.flatten (rule_premise R))
+                 (presupposition_of_boundary _ i)).
   Defined.
 
 End WellTypedRule.
+
+Section Flattening.
+
+  Context {σ : shape_system} `{Funext}.
+
+  Definition weakly_well_typed_flatten
+      {Σ : signature σ} {T : flat_type_theory Σ}
+      {a} {hjf_concl}
+      {R : rule Σ a hjf_concl}
+      (T_WT : is_well_typed_rule T R)
+      (Sr : Judgement.is_object hjf_concl ->
+        {S : Σ.(family_index) &
+        (symbol_arity S = a) * (symbol_class S = Judgement.class_of hjf_concl)})
+    : TypedFlatRule.weakly_well_typed T (RawRule.flatten R Sr).
+  Proof.
+    apply snd in T_WT.
+    intros i.
+    refine (Closure.graft' (T_WT i) _ _).
+    - unfold presupposition.
+      apply ap10.
+      assert (e :
+        RawRule.conclusion_boundary R
+        =
+        boundary_of_judgement
+          (pr2 (flat_rule_conclusion _ (RawRule.flatten R Sr)))).
+      { recursive_destruct hjf_concl; apply idpath. }
+      (* TODO: perhaps try to improve defs of boundary/judgt slots
+       so that the above computes on the nose? *)
+      destruct e. apply idpath.
+    - clear i. intros i.
+      exact (Closure.hypothesis _ (_+_) (inl i)).
+  Defined.
+  (* TODO: in fact, we should be able to extend this to showing
+   that [flatten R] is _strongly_ well-typed. *)
+  
+ End Flattening.
