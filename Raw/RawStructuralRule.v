@@ -173,6 +173,7 @@ Section SubstitutionRules.
 (** General substitution along context maps:
 
   Γ' |- f(x) : A   [for each x in Γ, A := type of x in Γ]
+  ⊢ Γ'     [not a presupposition of the previous premise if Γ is empty]
   Γ |- J   [for J any hypothetical judgement]
   --------------------
   Γ' |- f^*J
