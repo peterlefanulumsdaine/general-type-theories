@@ -702,16 +702,42 @@ Section TypedStructuralRule.
         * apply inl. refine (Some (Some (Some (Some None)))).
         * apply Judgement.eq_by_eta, idpath.
       + (* LHS presup :   |- u : B *)
-        (* refine (Closure.graft' _ _ _). 
-        { (* TODO: need to generalise [derive_from_reindexing_to_empty_sum] to work over TT’s, not just structural rules. *) } *)
+        refine (Closure.graft' _ _ _). 
+        { simple refine (derive_from_reindexing_to_empty_sum _).
+          - exact [::].
+          - exact (form_object class_term).
+          - intros [ [] | ]; cbn.
+            + exact [M/ B /].
+            + exact [M/ u /]. }
+        { apply Judgement.eq_by_eta, idpath. }
+        intros [].
         simple refine (Closure.deduce' _ _ _).
         * apply inl, term_convert.
           exists [::]. intros [ [ [] | ] | ].
           -- exact [M/ A /].
           -- exact [M/ B /].
           -- exact [M/ u /].
-        * admit. (* not true as stands; need to insert  [derive_from_reindexing_to_empty_sum] above. *)
-        * admit.
+        * apply Judgement.eq_by_expressions.
+          -- apply (coproduct_rect shape_is_sum);
+               exact (empty_rect _ shape_is_empty _).
+          -- intros [ [] | ].
+            ++ cbn. apply ap.
+               apply path_forall. exact (empty_rect _ shape_is_empty _).
+            ++ cbn. apply ap.
+               apply path_forall. exact (empty_rect _ shape_is_empty _).
+        * intros [[[[] | ] | ] | ].
+          -- (* |- A type *)
+            simple refine (Closure.hypothesis' _ _).
+            ++ apply inl. refine (Some (Some (Some (Some (Some tt))))).
+            ++ admit. (* not correct as stands!
+                         need to apply [derive_reindexing_to_empty_sum] above. *) 
+          -- (* |- B type *)
+            simple refine (Closure.hypothesis' _ _).
+            ++ apply inl. refine (Some (Some (Some (Some None)))).
+            ++ admit. (* not correct as stands!
+                         need to apply [derive_reindexing_to_empty_sum] above. *) 
+          -- admit. (* |- A = B *)
+          -- admit. (* |- u : A *)
       + (* RHS presup :   |- u' : B *)
         admit. (* Should be similar to LHS presup above. *)     
       + (* context presup :  |- . *)
@@ -721,11 +747,11 @@ Section TypedStructuralRule.
         * intros [].
   Admitted.
   (* TODO: some thoughts from this proof:
-  - all structural rule names can probably be globalised; any reason not to? 
   - maybe split this long proof up into separate lemmas
   - rename [the_equality_sort], to eg [the_equality_boundary]? 
   - make presuppositions less option-blind? 
-  - make structural rule accessors take value in closure systems of type theories, not in [structural_rules] itself! *)
+  - maybe make structural rule accessors take value in closure systems of type theories, not in [structural_rules] itself?  (More convenient for giving derivations; but then recursion over structural rules is less clear.) 
+  - change [derive_from_reindexing_to_empty_sum] and converse to be not just the derivations, but functions which graft them on.  Also to work on arbitrary judgements?? *)
 
   (** Equality rules are well typed (as closure rules) *)
   Local Definition equality_is_well_typed (r : equality_instance Σ)
