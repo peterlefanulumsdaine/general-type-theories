@@ -632,8 +632,95 @@ Section TypedStructuralRule.
       (r : RawStructuralRule.equality_flat_rule Σ)
     : TypedFlatRule.weakly_well_typed [<>] (RawStructuralRule.equality_flat_rule _ r).
   Proof.
-    (* show for each rule individually *)
+    destruct r as [[[[[[[ ] | ] | ] | ] | ] | ] | ]; cbn.
+    - (* tyeq_refl: Γ |- A  // Γ |- A = A *)
+      intros [ [ [] | | ] | ].
+      + (* left-hand side presup: Γ |- A *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inl. exact tt.
+        * apply Judgement.eq_by_eta, idpath.
+      + (* right-hand side presup: Γ |- A *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inl. exact tt.
+        * apply Judgement.eq_by_eta, idpath.
+      + (* context presup: |- Γ *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inr. exists tt. exact None.
+        * apply idpath.
+    - admit. (* tyeq_sym *)
+    - admit. (* tyeq_tran *)
+    - admit. (* tmeq_refl *)
+    - (* tmeq_sym :  |- a = b : A //  |- b = a : A *)
+      set (metas := flat_rule_metas _ (RawStructuralRule.tmeq_sym_rule Σ)).
+      set (A := Some (Some tt) : metas).
+      set (a := Some None : metas).
+      set (b := None : metas).
+      subst metas.
+      intros [ [ [] | | ] | ].
+      + (* type presup :  |- A type *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inr. exists tt.
+          refine (Some (the_equality_sort class_term the_term_type)).
+        * apply Judgement.eq_by_eta, idpath.
+      + (* LHS presup :   |- a : A *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inr. exists tt. exact (Some (the_equality_rhs _)).
+        * apply Judgement.eq_by_eta, idpath.
+      + (* RHS presup :   |- b : A*)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inr. exists tt. exact (Some (the_equality_lhs _)).
+        * apply Judgement.eq_by_eta, idpath.        
+      + (* context presup :  |- . *)
+        simple refine (Closure.deduce' _ _ _).
+        * apply inl, context_empty.
+        * apply idpath.
+        * intros [].
+    - admit. (* tmeq_tran *)
+    - admit. (* term_convert *)
+    - (* tmeq_convert: 
+         ⊢ A, B type
+         ⊢ A ≡ B type
+         ⊢ u, u' : A
+         ⊢ u = u' : A
+         -------------
+         ⊢ u = u' : B
+       *)
+      set (metas := flat_rule_metas _ (RawStructuralRule.tmeq_convert_rule Σ)).
+      pose (A := Some (Some (Some tt)) : metas).
+      pose (B := Some (Some None) : metas).
+      pose (u := Some None : metas).
+      pose (u' := None : metas).
+      subst metas.
+      intros [ [ [] | | ] | ].
+      + (* type presup :  |- B type *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inl. refine (Some (Some (Some (Some None)))).
+        * apply Judgement.eq_by_eta, idpath.
+      + (* LHS presup :   |- u : B *)
+        (* refine (Closure.graft' _ _ _). 
+        { (* TODO: need to generalise [derive_from_reindexing_to_empty_sum] to work over TT’s, not just structural rules. *) } *)
+        simple refine (Closure.deduce' _ _ _).
+        * apply inl, term_convert.
+          exists [::]. intros [ [ [] | ] | ].
+          -- exact [M/ A /].
+          -- exact [M/ B /].
+          -- exact [M/ u /].
+        * admit. (* not true as stands; need to insert  [derive_from_reindexing_to_empty_sum] above. *)
+        * admit.
+      + (* RHS presup :   |- u' : B *)
+        admit. (* Should be similar to LHS presup above. *)     
+      + (* context presup :  |- . *)
+        simple refine (Closure.deduce' _ _ _).
+        * apply inl, context_empty.
+        * apply idpath.
+        * intros [].
   Admitted.
+  (* TODO: some thoughts from this proof:
+  - all structural rule names can probably be globalised; any reason not to? 
+  - maybe split this long proof up into separate lemmas
+  - rename [the_equality_sort], to eg [the_equality_boundary]? 
+  - make presuppositions less option-blind? 
+  - make structural rule accessors take value in closure systems of type theories, not in [structural_rules] itself! *)
 
   (** Equality rules are well typed (as closure rules) *)
   Local Definition equality_is_well_typed (r : RawStructuralRule.equality_instance Σ)
