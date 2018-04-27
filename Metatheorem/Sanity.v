@@ -63,7 +63,10 @@ Section PresuppositionClosureFlat.
     - intros p.
       refine (Closure.map_derivation _ _).
       2: { apply TypedStructuralRule.well_typed. }
-      + apply Closure.map_from_family_map, Family.inl.
+      + apply Closure.map_from_family_map.
+        apply Family.map_sum.
+        * apply Family.idmap.
+        * apply Family.Build_map'; intros [[]].
     - destruct r_log as [r r_inst]. cbn in r_inst.
       destruct r_inst as [Γ r_args].
       unfold TypedClosure.weakly_well_typed_rule.

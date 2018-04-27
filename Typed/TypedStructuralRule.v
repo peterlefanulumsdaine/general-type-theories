@@ -9,6 +9,7 @@ Require Import Raw.RawStructuralRule.
 Require Import Typed.TypedClosure.
 Require Import Typed.TypedFlatRule.
 Require Import Raw.FlatTypeTheoryMap.
+Require Import Raw.FlatTypeTheory.
 Require Import Raw.FlatRule.
 
 (** We show that all the structural rules are well-typed.
@@ -82,15 +83,15 @@ Section Sum_Shape_Empty.
       one can derive [ Γ+0 |- r^* J ],
    where [Γ+0] is the sum of Γ with the empty shape,
    and r^*J is the reindexing of [J] to [Γ+0]. *)
-  Definition derive_reindexing_to_empty_sum
+  Definition derive_reindexing_to_empty_sum {T}
       {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
-    : Closure.derivation (structural_rule Σ)
+    : Closure.derivation (structural_rule Σ + T)
         [< (form_hypothetical hjf ; (Γ ; J)) >] 
         (reindexing_to_empty_sum J).
   Proof.
     simple refine (Closure.deduce' _ _ _).
-    - apply rename_hypothetical.
+    - apply inl, rename_hypothetical.
       exists Γ.
       refine (_ ; (equiv_inverse (shape_sum_empty_inl _) ; _)).
       exists hjf. exact J.
@@ -137,10 +138,10 @@ Section Sum_Shape_Empty.
       it’s sufficient to derive [ Γ+0 |- r^* J ],
    where [Γ+0] is the sum of Γ with the empty shape,
    and r^*J is the reindexing of [J] to [Γ+0]. *)
-  Definition derive_from_reindexing_to_empty_sum
+  Definition derive_from_reindexing_to_empty_sum {T}
       {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
-    : Closure.derivation (structural_rule Σ)
+    : Closure.derivation (structural_rule Σ + T)
         [< reindexing_to_empty_sum J >]
         (form_hypothetical hjf ; (Γ ; J)).
   Proof.
@@ -148,7 +149,7 @@ Section Sum_Shape_Empty.
     functoriality lemma for renaming to show that the conclusion
     of that is the original judgement. *)
     simple refine (Closure.deduce' _ _ _).
-    - apply rename_hypothetical.
+    - apply inl, rename_hypothetical.
       exists (raw_context_sum_empty Γ),
         Γ, (shape_sum_empty_inl _), hjf.
       exact (fun i => rename (shape_sum_empty_inl _) (J i)).
@@ -180,9 +181,12 @@ Section TypedStructuralRule.
   premises/conclusion are derivable. *)
 
   (** Is a given closure rule arising from a total judgement well-typed in the sense
-      that its presuppositions are derivable using structural rules? *)
+      that its presuppositions are derivable, using just structural rules? 
+
+  In fact, we ask for derivations not over just the structural rules but over the closure system associated to the empty flat type theory, so that infrastructure for derivations over general flat type theories can be used. *)
   Local Definition is_well_typed : Closure.rule (judgement_total Σ) -> Type
-  := TypedClosure.weakly_well_typed_rule presupposition (structural_rule Σ).
+    := TypedClosure.weakly_well_typed_rule
+         presupposition (FlatTypeTheory.closure_system [<>]).
 
   (** Context rules are well typed. *)
   Local Definition context_is_well_typed (r : context_instance Σ)
@@ -231,7 +235,8 @@ Section TypedStructuralRule.
       cbn in hjf_p.
       set (J_p_orig := (JJ_p_orig.2).2).
       simple refine (Closure.deduce' _ _ _).
-      + apply rename_hypothetical. exists Γ, γ', f, hjf_p. exact J_p_orig.
+      + apply inl, rename_hypothetical.
+        exists Γ, γ', f, hjf_p. exact J_p_orig.
       + apply (ap (fun x => (_;x))).
         apply (ap (fun x => (_;x))).
         apply path_forall; intros i.
@@ -244,7 +249,7 @@ Section TypedStructuralRule.
         * apply idpath.
     - (* context presupposition *)
       simple refine (Closure.deduce' _ _ _). 
-      + apply rename_context. exists Γ, γ'; exact f.
+      + apply inl, rename_context. exists Γ, γ'; exact f.
       + apply idpath.
       + intros []. 
         simple refine (Closure.hypothesis' _ _).
@@ -279,7 +284,7 @@ Section TypedStructuralRule.
       simple refine (Closure.deduce' _ _ _).
       (* Aim here: apply the same substitution rule, with the same substition,
          but with target the presupposition [p] of the original target. *)
-      + apply subst_apply.
+      + apply inl, subst_apply.
         (* TODO: give access functions for locating the structural rules! *)
         exists Γ, Γ', f.
         exists (form_object (Judgement.boundary_slot _ p)).
@@ -320,7 +325,7 @@ Section TypedStructuralRule.
          [ Γ |- f^*A type ] and [ Γ |- g^*A type ].
          In each case, we get them by the [substitution_apply] rule. *)
       + simple refine (Closure.deduce' _ _ _).
-        * apply subst_apply.
+        * apply inl, subst_apply.
           exists Γ, Γ'. refine (_;(form_object class_type; J)).
           destruct p as [ [] | | ].
           -- exact f.
@@ -357,7 +362,7 @@ Section TypedStructuralRule.
         recursive_destruct p.
         * (* presup [ Γ |- f^*A type ] *)
           simple refine (Closure.deduce' _ _ _).
-          -- apply subst_apply.
+          -- apply inl, subst_apply.
              exists Γ, Γ', f. refine (form_object class_type; _).
              intros [[] | ].
              exact A.
@@ -377,8 +382,8 @@ Section TypedStructuralRule.
                ** apply Judgement.eq_by_eta; apply idpath.
         * (* presup [ Γ' |- f^*a : f^*A ] *)
           simple refine (Closure.deduce' _ _ _).
-          -- apply subst_apply. (* subst-apply rule:
-                                   substitute f into Γ |- a : A *)
+          -- apply inl, subst_apply.
+             (* subst-apply rule: substitute f into Γ |- a : A *)
              exists Γ, Γ', f. refine (form_object class_term; _).
              exact J.
           -- apply Judgement.eq_by_eta; apply idpath.
@@ -411,7 +416,7 @@ Section TypedStructuralRule.
          (*      Γ' |- g^*a : g^*A    Γ' |- g^*A = f^*A  
                ------------------------------------------ 
                         Γ' |- g^*a : f^*A                    *)
-            ++ apply term_convert.
+            ++ apply inl, term_convert.
               exists Γ'. cbn.
               intros i; recursive_destruct i; cbn.
               ** refine (rename _ (substitute g A)). (* [g^*A] *)
@@ -471,7 +476,7 @@ Section TypedStructuralRule.
                 }
                 intros [].
                 simple refine (Closure.deduce' _ _ _).
-                { apply subst_apply.
+                { apply inl, subst_apply.
                   exists Γ, Γ', g, (form_object class_type).
                   intros [ [] | ]. exact A.
                 }
@@ -522,7 +527,7 @@ Section TypedStructuralRule.
                     intros i. recursive_destruct i. exact A. }
 
                   simple refine (Closure.deduce'
-                                   (subst_apply instance)
+                                   (inl (subst_apply instance) : (_ + _)%family)
                                    _ _).
                   - apply Judgement.eq_by_eta, idpath.
                   - intros premise.
@@ -577,7 +582,7 @@ Section TypedStructuralRule.
                 }
                 intros [].
                 simple refine (Closure.deduce' _ _ _).
-                --- apply subst_apply. (* subst-apply rule:
+                --- apply inl, subst_apply. (* subst-apply rule:
                                           substitute g into Γ |- a : A *)
                   exists Γ, Γ', g. refine (form_object class_term; _).
                   exact J.
@@ -729,19 +734,14 @@ Section TypedStructuralRule.
     destruct r as [r [Γ I]].
     set (r_flat_rule := equality_flat_rule _ r).
     intros c_presup.
-    refine (Closure.map_derivation _ _).
-    2: { apply (TypedFlatRule.closure_system_weakly_well_typed _ _
-           (equality_flat_rule_is_well_typed r) I). }
-    apply Closure.map_from_family_map, Family.Build_map'.
-    destruct i as [ i_struct | [[] _] ]. (* No logical rules. *)
-    exists i_struct. apply idpath.
+    apply (TypedFlatRule.closure_system_weakly_well_typed _ _
+           (equality_flat_rule_is_well_typed r) I).
   Defined.
 
   (** Putting the above components together, we obtain the main result:
       all structural rules are well-typed. *)
   Local Definition well_typed
-    : TypedClosure.weakly_well_typed_system presupposition (structural_rule Σ).
-  Proof.
+    : forall r : structural_rule Σ, is_well_typed (structural_rule Σ r).
     intros [ [ [ [ ? | ? ] | ? ] | ? ] | ? ].
     - apply context_is_well_typed.
     - apply rename_is_well_typed.
