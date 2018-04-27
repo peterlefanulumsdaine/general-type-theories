@@ -488,10 +488,51 @@ Section TypedStructuralRule.
                   simple refine (Closure.hypothesis' _ _).
                   +++ apply inr. (* use a presupposition… *)
                       exists None. (* …of the original target judgement… *)
-                      apply Some, the_term_type. 
+                      apply Some, the_term_type.
                   +++ apply Judgement.eq_by_eta, idpath.
               ** (* [ Γ' |- f^*A type ] *)
-                admit.
+                refine (Closure.graft' _ _ _).
+                { simple refine (derive_reindexing_to_empty_sum _).
+                  - exact Γ'.
+                  - apply form_object, class_type.
+                  - unfold hypothetical_judgement.
+                    intros i. cbn in i. recursive_destruct i.
+                    exact (substitute f A). }
+                { apply Judgement.eq_by_expressions.
+                  - refine (coproduct_rect shape_is_sum _ _ _).
+                    2: { refine (empty_rect _ shape_is_empty _). }
+                    intros i. apply inverse.
+                    eapply concat. { refine (coproduct_comp_inj1 _). }
+                    apply ap, ap, inverse. refine (coproduct_comp_inj1 _).
+                  - intros i; recursive_destruct i.
+                    cbn. apply inverse.
+                    eapply concat.
+                    2: { apply substitute_idmap. }
+                    apply ap10; refine (apD10 _ _); apply ap.
+                    apply path_forall.
+                    refine (coproduct_rect shape_is_sum _ _ _).
+                    2: { refine (empty_rect _ shape_is_empty _). }
+                    intros i. refine (coproduct_comp_inj1 _).
+                }
+                intros [].
+                {
+                  transparent assert (instance : (RawStructuralRule.subst_apply_instance Σ)).
+                  { exists Γ, Γ', f, (form_object class_type).
+                    intros i. recursive_destruct i. exact A. }
+
+                  simple refine (Closure.deduce'
+                                   (subst_apply instance)
+                                   _ _).
+                  - apply Judgement.eq_by_eta, idpath.
+                  - intros premise.
+                    pose premise as p.
+                    destruct premise as [ [ x | ] | ]; rename p into premise;
+                      fold premise; simpl (_ premise).
+                    + admit.    (* the variables have types *)
+                    + admit.    (* Γ' is a context *)
+                    + admit.    (* Γ ⊢ A *)
+                }
+
   (* This should be almost identical to the preceding derivation of
      [ Γ' |- f^*A type ]. *)
               ** (* [ Γ' |- g^*A = f^*A ] *)
@@ -602,6 +643,6 @@ Section TypedStructuralRule.
     - apply subst_is_well_typed.
     - apply variable_is_well_typed.
     - apply equality_is_well_typed.
-  Admitted.
+  Defined.
 
 End TypedStructuralRule.
