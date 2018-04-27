@@ -7,6 +7,7 @@ Require Import Raw.Syntax.
 Require Import Raw.RawRule.
 Require Import Raw.RawStructuralRule.
 Require Import Typed.TypedClosure.
+Require Import Typed.TypedFlatRule.
 Require Import Raw.FlatTypeTheoryMap.
 Require Import Raw.FlatRule.
 
@@ -625,12 +626,29 @@ Section TypedStructuralRule.
       + cbn. apply idpath.
   Defined.
 
-  (** Equality rules are well typed *)
+  (** Equality rules are well typed, as _flat_ rules 
+  (over the _empty_ type theory, since no logical rules are needed) *)
+  Local Definition equality_flat_rule_is_well_typed
+      (r : RawStructuralRule.equality_flat_rule Σ)
+    : TypedFlatRule.weakly_well_typed [<>] (RawStructuralRule.equality_flat_rule _ r).
+  Proof.
+    (* show for each rule individually *)
+  Admitted.
+
+  (** Equality rules are well typed (as closure rules) *)
   Local Definition equality_is_well_typed (r : RawStructuralRule.equality_instance Σ)
     : is_well_typed (RawStructuralRule.equality_instance _ r).
   Proof.
-    (* deduce from showing these are well-typed as flat rules *)
-  Admitted.
+    destruct r as [r [Γ I]].
+    set (r_flat_rule := RawStructuralRule.equality_flat_rule _ r).
+    intros c_presup.
+    refine (Closure.map_derivation _ _).
+    2: { apply (TypedFlatRule.closure_system_weakly_well_typed _ _
+           (equality_flat_rule_is_well_typed r) I). }
+    apply Closure.map_from_family_map, Family.Build_map'.
+    destruct i as [ i_struct | [[] _] ]. (* No logical rules. *)
+    exists i_struct. apply idpath.
+  Defined.
 
   (** Putting the above components together, we obtain the main result:
       all structural rules are well-typed. *)
