@@ -15,7 +15,7 @@ Require Import Raw.FlatRule.
   - context formation: [context_extend], [context_empty]
   - variable-renaming rules: [rename_context], [rename_hypothetical]
   - substitution rules: [subst_apply], [subst_equal]
-  - variable rule: [variable]
+  - variable rule: [variable_rule]
   - equality rules:
       [tyeq_refl, tyeq_sym, tyeq_tran,
       tmeq_refl, tmeq_sym, tmeq_tran,
@@ -54,7 +54,7 @@ Section ContextRules.
   |-  .   context
 
 *)
-Local Definition context_empty_rule : Closure.rule (judgement_total Σ).
+Definition context_empty_rule : Closure.rule (judgement_total Σ).
 Proof.
   split.
   (* No premises: *)
@@ -71,7 +71,7 @@ Defined.
    |- Γ, x:A context
 
 *)
-Local Definition context_extend_instance : Closure.system (judgement_total Σ).
+Definition context_extend_instance : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ & raw_type Σ Γ }.
   intros [ Γ A ]; split.
@@ -83,7 +83,7 @@ Proof.
   - exact [! |- (Context.extend Γ A) !].
 Defined.
 
-Local Definition context_instance : Closure.system (judgement_total Σ)
+Definition context_instance : Closure.system (judgement_total Σ)
   := Family.adjoin context_extend_instance context_empty_rule.
 
 End ContextRules.
@@ -133,7 +133,7 @@ Defined.
   ----------------- [f : γ' <~> Γ]
   |- f^* Γ context
 *)
-Local Definition rename_context_instance : Closure.system (judgement_total Σ).
+Definition rename_context_instance : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ & { γ' : shape_carrier σ & γ' <~> Γ}}.
   intros [Γ [γ' f]]. split.
@@ -148,7 +148,7 @@ Defined.
   -------------- [f : γ' <~> Γ]
   f^* Γ |- f^*J
 *)
-Local Definition rename_hypothetical_instance : Closure.system (judgement_total Σ).
+Definition rename_hypothetical_instance : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ
        & { γ' : shape_carrier σ
@@ -163,7 +163,7 @@ Proof.
     intros i. exact (rename (equiv_inverse f) (J i)).
 Defined.
 
-Local Definition rename_instance : Closure.system (judgement_total Σ)
+Definition rename_instance : Closure.system (judgement_total Σ)
   := rename_context_instance + rename_hypothetical_instance.
 
 End RenamingRules.
@@ -178,7 +178,7 @@ Section SubstitutionRules.
   --------------------
   Γ' |- f^*J
 *)
-Local Definition subst_apply_instance : Closure.system (judgement_total Σ).
+Definition subst_apply_instance : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ
     & { Γ' : raw_context Σ
@@ -213,7 +213,7 @@ Defined.
   --------------------
   Γ' |- f^*J = g^*J  [ for J any object judgement ]
  *)
-Local Definition subst_equal_instance : Closure.system (judgement_total Σ).
+Definition subst_equal_instance : Closure.system (judgement_total Σ).
 Proof.
   exists {   Γ : raw_context Σ
     & { Γ' : raw_context Σ
@@ -261,7 +261,7 @@ Proof.
       exact (substitute f' (hjfi (the_head _))).
 Defined.
 
-Local Definition substitution_instance : Closure.system (judgement_total Σ)
+Definition substitution_instance : Closure.system (judgement_total Σ)
   := subst_apply_instance + subst_equal_instance.
 
 End SubstitutionRules.
@@ -284,7 +284,7 @@ Section HypotheticalStructuralRules.
 
 *)
 
-Local Definition variable_instance : Closure.system (judgement_total Σ).
+Definition variable_instance : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ & Γ }.
   intros [Γ x]. set (A := Γ x). split.
@@ -304,7 +304,7 @@ Section Equality.
     ⊢ A ≡ A
 *)
 
-Local Definition tyeq_refl_rule : flat_rule Σ.
+Definition tyeq_refl_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -332,7 +332,7 @@ Defined.
    ⊢ B ≡ A
 *)
 
-Local Definition tyeq_sym_rule : flat_rule Σ.
+Definition tyeq_sym_rule : flat_rule Σ.
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
@@ -363,7 +363,7 @@ Defined.
        ⊢ A ≡ C
 *)
 
-Local Definition tyeq_tran_rule : flat_rule Σ.
+Definition tyeq_tran_rule : flat_rule Σ.
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
@@ -401,7 +401,7 @@ Defined.
 ⊢ u ≡ u : A
 *)
 
-Local Definition tmeq_refl_rule : flat_rule Σ.
+Definition tmeq_refl_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -433,7 +433,7 @@ Defined.
    ⊢ v ≡ u : A
 *)
 
-Local Definition tmeq_sym_rule : flat_rule Σ.
+Definition tmeq_sym_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -468,7 +468,7 @@ Defined.
          ⊢ u ≡ w : A
 *)
 
-Local Definition tmeq_tran_rule : flat_rule Σ.
+Definition tmeq_tran_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -514,7 +514,7 @@ Defined.
  ⊢ u : B
 *)
 
-Local Definition term_convert_rule : flat_rule Σ.
+Definition term_convert_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -564,7 +564,7 @@ Defined.
  ⊢ u = u' : B
 *)
 
-Local Definition tmeq_convert_rule : flat_rule Σ.
+Definition tmeq_convert_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -597,7 +597,7 @@ Proof.
   - exact [! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ B /] !].
 Defined.
 
-Local Definition equality_flat_rule : family (flat_rule Σ)
+Definition equality_flat_rule : family (flat_rule Σ)
   := [< tyeq_refl_rule
     ; tyeq_sym_rule
     ; tyeq_tran_rule
@@ -608,7 +608,7 @@ Local Definition equality_flat_rule : family (flat_rule Σ)
     ; tmeq_convert_rule
     >].
 
-Local Definition equality_instance : family (rule (judgement_total Σ))
+Definition equality_instance : family (rule (judgement_total Σ))
   := Family.bind equality_flat_rule FlatRule.closure_system.
 
 End Equality.
@@ -641,9 +641,9 @@ Definition subst_apply : subst_apply_instance Σ -> structural_rule Σ
   := fun i => inl (inl (inr (inl i))).
 Definition subst_equal : subst_equal_instance Σ -> structural_rule Σ
   := fun i => inl (inl (inr (inr i))).
-Definition variable : variable_instance Σ -> structural_rule Σ
+Definition variable_rule : variable_instance Σ -> structural_rule Σ
   := fun i => inl (inr i).
-Definition equality : equality_instance Σ -> structural_rule Σ
+Definition equality_rule : equality_instance Σ -> structural_rule Σ
   := fun i => inr i.
 Definition tyeq_refl : FlatRule.closure_system (tyeq_refl_rule Σ) -> structural_rule Σ
   := fun i => inr (Some (Some (Some (Some (Some (Some (Some tt)))))) ; i).
@@ -669,7 +669,7 @@ Section StructuralRuleInd.
 Context {σ : shape_system}.
 Context {Σ : signature σ}.
 
-Local Definition structural_rule_rect :
+Definition structural_rule_rect :
       forall (P : structural_rule Σ -> Type),
        P context_empty ->
        (forall i_cxt_ext : context_extend_instance Σ, P (context_extend i_cxt_ext)) ->
@@ -678,8 +678,8 @@ Local Definition structural_rule_rect :
         P (rename_hypothetical i_rename_hyp)) ->
        (forall i_sub_ap : subst_apply_instance Σ, P (subst_apply i_sub_ap)) ->
        (forall i_sub_eq : subst_equal_instance Σ, P (subst_equal i_sub_eq)) ->
-       (forall i_var : variable_instance Σ, P (variable i_var)) ->
-       (forall i_eq : equality_instance Σ, P (equality i_eq)) ->
+       (forall i_var : variable_instance Σ, P (variable_rule i_var)) ->
+       (forall i_eq : equality_instance Σ, P (equality_rule i_eq)) ->
        forall s : structural_rule Σ, P s.
 Proof.
   intros P X X0 X1 X2 X3 X4 X5 X6 s.
@@ -693,7 +693,7 @@ Proof.
 Defined.
 
 
-Local Definition equality_instance_rect :
+Definition equality_instance_rect :
   forall (P : structural_rule Σ -> Type),
        (forall i_tyeq_refl : FlatRule.closure_system (tyeq_refl_rule Σ),
         P (tyeq_refl i_tyeq_refl)) ->
@@ -710,7 +710,7 @@ Local Definition equality_instance_rect :
        (forall i_term_convert : FlatRule.closure_system (term_convert_rule Σ),
         P (term_convert i_term_convert)) ->
        (forall i_tmeq_convert : FlatRule.closure_system (tmeq_convert_rule Σ),
-        P (tmeq_convert i_tmeq_convert)) -> forall e : equality_instance Σ, P (equality e).
+        P (tmeq_convert i_tmeq_convert)) -> forall e : equality_instance Σ, P (equality_rule e).
 Proof.
   intros P X X0 X1 X2 X3 X4 X5 X6.
   intros [ index element ].
@@ -868,7 +868,7 @@ Section StructuralRuleMap.
           destruct i; refine (fmap_substitute _ _ _)^.
     - (* var rule *)
       destruct i_var as [Γ x].
-      simple refine (variable _ ; _).
+      simple refine (variable_rule _ ; _).
       + exists (Context.fmap f Γ); exact x.
       + cbn. apply Closure.rule_eq; cbn.
         * apply inverse.
@@ -877,7 +877,7 @@ Section StructuralRuleMap.
           apply Judgement.eq_by_eta, idpath.
         * apply Judgement.eq_by_eta, idpath.
     - (* equality rules *)
-      simple refine (equality _; _); admit.
+      simple refine (equality_rule _; _); admit.
       (* This should be do-able cleanly going via a lemma about
       naturality of translation of flat rules into closure rules,
       used for logical rules in [fmap] below, once that’s done. *)

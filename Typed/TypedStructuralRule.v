@@ -13,9 +13,9 @@ Require Import Raw.FlatRule.
 
 (** We show that all the structural rules are well-typed.
 
-   For the ones stated as flat rules, this means showing they’re well-typed as such: i.e.
-   showing that whenever their premises hold, then all the presuppositions of both their
-   premises and conclusion hold.
+   In general this means only _weak_ well-typedness: for each rule, we derive
+   the presuppositions of its conclusion, from its premises together with
+   their presuppositions.
  *)
 
 
@@ -185,8 +185,8 @@ Section TypedStructuralRule.
   := TypedClosure.weakly_well_typed_rule presupposition (structural_rule Σ).
 
   (** Context rules are well typed. *)
-  Local Definition context_is_well_typed (r : RawStructuralRule.context_instance Σ)
-    : is_well_typed (RawStructuralRule.context_instance _ r).
+  Local Definition context_is_well_typed (r : context_instance Σ)
+    : is_well_typed (context_instance _ r).
   Proof.
     apply TypedClosure.weakly_from_strongly_well_typed_rule.
     destruct r as [  [Γ A] | ].
@@ -205,16 +205,16 @@ Section TypedStructuralRule.
 
   (** Rules for variable-renaming in contexts are well typed *)
   Local Definition rename_context_is_well_typed
-      (r : RawStructuralRule.rename_context_instance Σ)
-    : is_well_typed (RawStructuralRule.rename_context_instance _ r).
+      (r : rename_context_instance Σ)
+    : is_well_typed (rename_context_instance _ r).
   Proof.
     intros []. (* no presups for conclusion *)
   Defined.
 
   (** Rules for variable-renaming in hypothetical judgements are well typed *)
   Local Definition rename_hypothetical_is_well_typed
-      (r : RawStructuralRule.rename_hypothetical_instance Σ)
-    : is_well_typed (RawStructuralRule.rename_hypothetical_instance _ r).
+      (r : rename_hypothetical_instance Σ)
+    : is_well_typed (rename_hypothetical_instance _ r).
   Proof.
     destruct r as [Γ [γ' [f [hjf J]]]]; cbn.
     intros p.
@@ -255,8 +255,8 @@ Section TypedStructuralRule.
 
   (** All variable-renaming rules are well typed *)
   Local Definition rename_is_well_typed
-      (r : RawStructuralRule.rename_instance Σ)
-    : is_well_typed (RawStructuralRule.rename_instance _ r).
+      (r : rename_instance Σ)
+    : is_well_typed (rename_instance _ r).
   Proof.
     destruct r as [ ? | ? ].
     - apply rename_context_is_well_typed.
@@ -265,8 +265,8 @@ Section TypedStructuralRule.
 
   (** Substitution-application rules are well typed *)
   Local Definition subst_apply_is_well_typed
-        (r : RawStructuralRule.subst_apply_instance Σ)
-    : is_well_typed (RawStructuralRule.subst_apply_instance _ r).
+        (r : subst_apply_instance Σ)
+    : is_well_typed (subst_apply_instance _ r).
   Proof.
     destruct r as [Γ [ Γ' [ f [ hjf J]]]].
     intros p.
@@ -304,8 +304,8 @@ Section TypedStructuralRule.
 
   (** Substitution-equality rules are well typed *)
   Local Definition subst_equal_is_well_typed
-        (r : RawStructuralRule.subst_equal_instance Σ)
-    : is_well_typed (RawStructuralRule.subst_equal_instance _ r).
+        (r : subst_equal_instance Σ)
+    : is_well_typed (subst_equal_instance _ r).
   Proof.
     destruct r as [Γ [ Γ' [ f [ g [cl J]]]]].
     intros p.
@@ -517,7 +517,7 @@ Section TypedStructuralRule.
                 }
                 intros [].
                 {
-                  transparent assert (instance : (RawStructuralRule.subst_apply_instance Σ)).
+                  transparent assert (instance : (subst_apply_instance Σ)).
                   { exists Γ, Γ', f, (form_object class_type).
                     intros i. recursive_destruct i. exact A. }
 
@@ -602,8 +602,8 @@ Section TypedStructuralRule.
   Admitted.
 
   (** All substitution rules are well typed *)
-  Local Definition subst_is_well_typed (r : RawStructuralRule.substitution_instance Σ)
-    : is_well_typed (RawStructuralRule.substitution_instance _ r).
+  Local Definition subst_is_well_typed (r : substitution_instance Σ)
+    : is_well_typed (substitution_instance _ r).
   Proof.
     destruct r as [ ? | ? ].
     - apply subst_apply_is_well_typed.
@@ -611,8 +611,8 @@ Section TypedStructuralRule.
   Defined.
 
   (** Variable rules are well typed *)
-  Local Definition variable_is_well_typed (r : RawStructuralRule.variable_instance Σ)
-    : is_well_typed (RawStructuralRule.variable_instance _ r).
+  Local Definition variable_is_well_typed (r : variable_instance Σ)
+    : is_well_typed (variable_instance _ r).
   Proof.
     destruct r as [Γ x].
     intros i; recursive_destruct i.
@@ -629,8 +629,8 @@ Section TypedStructuralRule.
   (** Equality rules are well typed, as _flat_ rules 
   (over the _empty_ type theory, since no logical rules are needed) *)
   Local Definition equality_flat_rule_is_well_typed
-      (r : RawStructuralRule.equality_flat_rule Σ)
-    : TypedFlatRule.weakly_well_typed [<>] (RawStructuralRule.equality_flat_rule _ r).
+      (r : equality_flat_rule Σ)
+    : TypedFlatRule.weakly_well_typed [<>] (equality_flat_rule _ r).
   Proof.
     destruct r as [[[[[[[ ] | ] | ] | ] | ] | ] | ]; cbn.
     - (* tyeq_refl: Γ |- A  // Γ |- A = A *)
@@ -651,7 +651,7 @@ Section TypedStructuralRule.
     - admit. (* tyeq_tran *)
     - admit. (* tmeq_refl *)
     - (* tmeq_sym :  |- a = b : A //  |- b = a : A *)
-      set (metas := flat_rule_metas _ (RawStructuralRule.tmeq_sym_rule Σ)).
+      set (metas := flat_rule_metas _ (tmeq_sym_rule Σ)).
       set (A := Some (Some tt) : metas).
       set (a := Some None : metas).
       set (b := None : metas).
@@ -685,7 +685,7 @@ Section TypedStructuralRule.
          -------------
          ⊢ u = u' : B
        *)
-      set (metas := flat_rule_metas _ (RawStructuralRule.tmeq_convert_rule Σ)).
+      set (metas := flat_rule_metas _ (tmeq_convert_rule Σ)).
       pose (A := Some (Some (Some tt)) : metas).
       pose (B := Some (Some None) : metas).
       pose (u := Some None : metas).
@@ -723,11 +723,11 @@ Section TypedStructuralRule.
   - make structural rule accessors take value in closure systems of type theories, not in [structural_rules] itself! *)
 
   (** Equality rules are well typed (as closure rules) *)
-  Local Definition equality_is_well_typed (r : RawStructuralRule.equality_instance Σ)
-    : is_well_typed (RawStructuralRule.equality_instance _ r).
+  Local Definition equality_is_well_typed (r : equality_instance Σ)
+    : is_well_typed (equality_instance _ r).
   Proof.
     destruct r as [r [Γ I]].
-    set (r_flat_rule := RawStructuralRule.equality_flat_rule _ r).
+    set (r_flat_rule := equality_flat_rule _ r).
     intros c_presup.
     refine (Closure.map_derivation _ _).
     2: { apply (TypedFlatRule.closure_system_weakly_well_typed _ _
