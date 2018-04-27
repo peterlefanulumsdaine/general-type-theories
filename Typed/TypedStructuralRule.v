@@ -83,7 +83,7 @@ Section Sum_Shape_Empty.
       one can derive [ Γ+0 |- r^* J ],
    where [Γ+0] is the sum of Γ with the empty shape,
    and r^*J is the reindexing of [J] to [Γ+0]. *)
-  Definition derive_reindexing_to_empty_sum {T}
+  Definition derivation_of_reindexing_to_empty_sum {T}
       {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
     : Closure.derivation (structural_rule Σ + T)
@@ -134,11 +134,11 @@ Section Sum_Shape_Empty.
   Defined.
 
   (* TODO: upstream *)
-  (** To derive a judgement [ Γ |- J ],
-      it’s sufficient to derive [ Γ+0 |- r^* J ],
-   where [Γ+0] is the sum of Γ with the empty shape,
-   and r^*J is the reindexing of [J] to [Γ+0]. *)
-  Definition derive_from_reindexing_to_empty_sum {T}
+  (** Derivation of an arbitrary hypotherical judgement [ Γ |- J ],
+   from its reindexing to the sum-with-empty, [ Γ+0 |- r^* J ].
+
+   Can be used cleanly via [derive_from_reindexing_to_empty_sum] below. *)
+  Definition derivation_from_reindexing_to_empty_sum {T}
       {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
     : Closure.derivation (structural_rule Σ + T)
@@ -169,6 +169,23 @@ Section Sum_Shape_Empty.
       refine (Closure.hypothesis _ [<_>] tt).
   Defined.
   (* TODO: rename everything involving [Raw_Weaken], [Raw_Subst]! *)
+
+  (** To derive a judgement [ Γ |- J ],
+      it’s sufficient to derive [ Γ+0 | - r^* J ],
+   where [Γ+0] is the sum of Γ with the empty shape,
+   and r^*J is the reindexing of [J] to [Γ+0]. *)
+  Definition derive_from_reindexing_to_empty_sum {T} {h}
+      {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
+      (J : hypothetical_judgement Σ hjf Γ)
+    : Closure.derivation (structural_rule Σ + T) h
+                         (reindexing_to_empty_sum J)
+    -> Closure.derivation (structural_rule Σ + T) h
+                         (form_hypothetical hjf ; (Γ ; J)).
+  Proof.
+    intros D.
+    refine (Closure.graft _ (derivation_from_reindexing_to_empty_sum J) _).
+    intros i. exact D.
+  Defined.
 
 End Sum_Shape_Empty.
 
@@ -404,14 +421,9 @@ Section TypedStructuralRule.
           apply Judgement.canonicalise.
   (* We want to apply [term_convert], but its conclusion is not exactly
    the judgement we want: its conclusion is t*)
-          refine (Closure.graft' _ _ _).
-          -- simple refine (derive_from_reindexing_to_empty_sum _).
-            exact Γ'. exact (form_object class_term).
-            intros i; recursive_destruct i.
-            ++ exact (substitute f A).
-            ++ exact (substitute g a).
-          -- apply idpath.
-          -- intros [].
+          apply derive_from_reindexing_to_empty_sum.
+          (* TODO: rebullet/reindent the following subproof.
+           (not done for now, to avoid merge conflicts) *)
             simple refine (Closure.deduce' _ _ _).
          (*      Γ' |- g^*a : g^*A    Γ' |- g^*A = f^*A  
                ------------------------------------------ 
@@ -449,11 +461,11 @@ Section TypedStructuralRule.
                   2: { refine (empty_rect _ shape_is_empty _). }
                   intros i. refine (coproduct_comp_inj1 _).
    (* TODO: all the above gunk is from a single problem: the instantiation of a rule with empty local contexts doesn’t give you quite what you think it should!
-   [derive_from_reindexing_to_empty_sum] and [derive_reindexing_to_empty_sum] help a bit, but still it’s pretty nasty.  How can we improve this?? *)
+   [derivation_from_reindexing_to_empty_sum] and [derivation_of_reindexing_to_empty_sum] help a bit, but still it’s pretty nasty.  How can we improve this?? *)
             ++ intros i; recursive_destruct i.
               ** (* [ Γ' |- g^*A type ] *)
                 refine (Closure.graft' _ _ _).
-                { simple refine (derive_reindexing_to_empty_sum _).
+                { simple refine (derivation_of_reindexing_to_empty_sum _).
                   - exact Γ'.
                   - apply form_object, class_type.
                   - intros i; recursive_destruct i.
@@ -498,7 +510,7 @@ Section TypedStructuralRule.
                   +++ apply Judgement.eq_by_eta, idpath.
               ** (* [ Γ' |- f^*A type ] *)
                 refine (Closure.graft' _ _ _).
-                { simple refine (derive_reindexing_to_empty_sum _).
+                { simple refine (derivation_of_reindexing_to_empty_sum _).
                   - exact Γ'.
                   - apply form_object, class_type.
                   - unfold hypothetical_judgement.
@@ -545,10 +557,10 @@ Section TypedStructuralRule.
                 admit.
   (* This should be quite similar to the derivation of [ Γ' |- g^*A = f^*A ]
    that follows it: essentially two steps, first using
-   [derive_reindexing_to_empty_sum], and then using [subst_equal]. *)
+   [derivation_of_reindexing_to_empty_sum], and then using [subst_equal]. *)
               ** (* Γ' |- g^*a : g^*A *)
                 refine (Closure.graft' _ _ _).
-                { simple refine (derive_reindexing_to_empty_sum _).
+                { simple refine (derivation_of_reindexing_to_empty_sum _).
                   - exact Γ'.
                   - apply form_object, class_term.
                   - intros i; recursive_destruct i.
@@ -702,15 +714,7 @@ Section TypedStructuralRule.
         * apply inl. refine (Some (Some (Some (Some None)))).
         * apply Judgement.eq_by_eta, idpath.
       + (* LHS presup :   |- u : B *)
-        refine (Closure.graft' _ _ _). 
-        { simple refine (derive_from_reindexing_to_empty_sum _).
-          - exact [::].
-          - exact (form_object class_term).
-          - intros [ [] | ]; cbn.
-            + exact [M/ B /].
-            + exact [M/ u /]. }
-        { apply Judgement.eq_by_eta, idpath. }
-        intros [].
+        apply derive_from_reindexing_to_empty_sum.
         simple refine (Closure.deduce' _ _ _).
         * apply inl, term_convert.
           exists [::]. intros [ [ [] | ] | ].
@@ -730,12 +734,12 @@ Section TypedStructuralRule.
             simple refine (Closure.hypothesis' _ _).
             ++ apply inl. refine (Some (Some (Some (Some (Some tt))))).
             ++ admit. (* not correct as stands!
-                         need to apply [derive_reindexing_to_empty_sum] above. *) 
+                         need to apply [derivation_of_reindexing_to_empty_sum] above. *) 
           -- (* |- B type *)
             simple refine (Closure.hypothesis' _ _).
             ++ apply inl. refine (Some (Some (Some (Some None)))).
             ++ admit. (* not correct as stands!
-                         need to apply [derive_reindexing_to_empty_sum] above. *) 
+                         need to apply [derivation_of_reindexing_to_empty_sum] above. *) 
           -- admit. (* |- A = B *)
           -- admit. (* |- u : A *)
       + (* RHS presup :   |- u' : B *)
@@ -751,7 +755,7 @@ Section TypedStructuralRule.
   - rename [the_equality_sort], to eg [the_equality_boundary]? 
   - make presuppositions less option-blind? 
   - maybe make structural rule accessors take value in closure systems of type theories, not in [structural_rules] itself?  (More convenient for giving derivations; but then recursion over structural rules is less clear.) 
-  - change [derive_from_reindexing_to_empty_sum] and converse to be not just the derivations, but functions which graft them on.  Also to work on arbitrary judgements?? *)
+  - change [derivation_from_reindexing_to_empty_sum] and converse to be not just the derivations, but functions which graft them on.  Also to work on arbitrary judgements?? *)
 
   (** Equality rules are well typed (as closure rules) *)
   Local Definition equality_is_well_typed (r : equality_instance Σ)
