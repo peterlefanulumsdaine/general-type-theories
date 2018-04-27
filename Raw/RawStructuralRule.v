@@ -17,8 +17,8 @@ Require Import Raw.FlatRule.
   - substitution rules: [subst_apply], [subst_equal]
   - variable rule: [variable_rule]
   - equality rules:
-      [tyeq_refl, tyeq_sym, tyeq_tran,
-      tmeq_refl, tmeq_sym, tmeq_tran,
+      [tyeq_refl, tyeq_sym, tyeq_trans,
+      tmeq_refl, tmeq_sym, tmeq_trans,
       term_convert, tmeq_convert].
 
   All of the above are then collected as a single family [structural_rule].
@@ -357,13 +357,13 @@ Proof.
     + exact [M/ A /].
 Defined.
 
-(* rule tyeq_tran
+(* rule tyeq_trans
   ⊢ A ≡ B     ⊢ B ≡ C
 -----------------------
        ⊢ A ≡ C
 *)
 
-Definition tyeq_tran_rule : flat_rule Σ.
+Definition tyeq_trans_rule : flat_rule Σ.
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
@@ -462,13 +462,13 @@ Proof.
     + exact [M/ u /].
 Defined.
 
-(* rule tmeq_tran
+(* rule tmeq_trans
   ⊢ u ≡ v : A     ⊢ v ≡ w : A
 -------------------------------
          ⊢ u ≡ w : A
 *)
 
-Definition tmeq_tran_rule : flat_rule Σ.
+Definition tmeq_trans_rule : flat_rule Σ.
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -600,10 +600,10 @@ Defined.
 Definition equality_flat_rule : family (flat_rule Σ)
   := [< tyeq_refl_rule
     ; tyeq_sym_rule
-    ; tyeq_tran_rule
+    ; tyeq_trans_rule
     ; tmeq_refl_rule
     ; tmeq_sym_rule
-    ; tmeq_tran_rule
+    ; tmeq_trans_rule
     ; term_convert_rule
     ; tmeq_convert_rule
     >].
@@ -649,13 +649,13 @@ Definition tyeq_refl : FlatRule.closure_system (tyeq_refl_rule Σ) -> structural
   := fun i => inr (Some (Some (Some (Some (Some (Some (Some tt)))))) ; i).
 Definition tyeq_sym : FlatRule.closure_system (tyeq_sym_rule Σ) -> structural_rule Σ
   := fun i => inr (Some (Some (Some (Some (Some (Some None))))) ; i).
-Definition tyeq_tran : FlatRule.closure_system (tyeq_tran_rule Σ) -> structural_rule Σ
+Definition tyeq_trans : FlatRule.closure_system (tyeq_trans_rule Σ) -> structural_rule Σ
   := fun i => inr (Some (Some (Some (Some (Some None)))) ; i).
 Definition tmeq_refl : FlatRule.closure_system (tmeq_refl_rule Σ) -> structural_rule Σ
   := fun i => inr (Some (Some (Some (Some None))) ; i).
 Definition tmeq_sym : FlatRule.closure_system (tmeq_sym_rule Σ) -> structural_rule Σ
   := fun i => inr (Some (Some (Some None)) ; i).
-Definition tmeq_tran : FlatRule.closure_system (tmeq_tran_rule Σ) -> structural_rule Σ
+Definition tmeq_trans : FlatRule.closure_system (tmeq_trans_rule Σ) -> structural_rule Σ
   := fun i => inr (Some (Some None) ; i).
 Definition term_convert : FlatRule.closure_system (term_convert_rule Σ) -> structural_rule Σ
   := fun i => inr (Some None ; i).
@@ -699,14 +699,14 @@ Definition equality_instance_rect :
         P (tyeq_refl i_tyeq_refl)) ->
        (forall tyeq_sym_rule : FlatRule.closure_system (tyeq_sym_rule Σ),
         P (tyeq_sym tyeq_sym_rule)) ->
-       (forall tyeq_tran_rule : FlatRule.closure_system (tyeq_tran_rule Σ),
-        P (tyeq_tran tyeq_tran_rule)) ->
+       (forall tyeq_trans_rule : FlatRule.closure_system (tyeq_trans_rule Σ),
+        P (tyeq_trans tyeq_trans_rule)) ->
        (forall i_tmeq_refl : FlatRule.closure_system (tmeq_refl_rule Σ),
         P (tmeq_refl i_tmeq_refl)) ->
        (forall i_tmeq_sym : FlatRule.closure_system (tmeq_sym_rule Σ),
         P (tmeq_sym i_tmeq_sym)) ->
-       (forall i_tmeq_tran : FlatRule.closure_system (tmeq_tran_rule Σ),
-        P (tmeq_tran i_tmeq_tran)) ->
+       (forall i_tmeq_trans : FlatRule.closure_system (tmeq_trans_rule Σ),
+        P (tmeq_trans i_tmeq_trans)) ->
        (forall i_term_convert : FlatRule.closure_system (term_convert_rule Σ),
         P (term_convert i_term_convert)) ->
        (forall i_tmeq_convert : FlatRule.closure_system (tmeq_convert_rule Σ),

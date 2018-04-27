@@ -648,7 +648,7 @@ Section TypedStructuralRule.
         * apply inr. exists tt. exact None.
         * apply idpath.
     - admit. (* tyeq_sym *)
-    - admit. (* tyeq_tran *)
+    - admit. (* tyeq_trans *)
     - admit. (* tmeq_refl *)
     - (* tmeq_sym :  |- a = b : A //  |- b = a : A *)
       set (metas := flat_rule_metas _ (tmeq_sym_rule Σ)).
@@ -675,7 +675,7 @@ Section TypedStructuralRule.
         * apply inl, context_empty.
         * apply idpath.
         * intros [].
-    - admit. (* tmeq_tran *)
+    - admit. (* tmeq_trans *)
     - admit. (* term_convert *)
     - (* tmeq_convert: 
          ⊢ A, B type
