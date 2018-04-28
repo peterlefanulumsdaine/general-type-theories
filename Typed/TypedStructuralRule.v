@@ -4,6 +4,7 @@ Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Raw.Syntax.
+Require Import Raw.RawSubstitution.
 Require Import Raw.RawRule.
 Require Import Raw.RawStructuralRule.
 Require Import Typed.TypedClosure.
@@ -123,38 +124,6 @@ Section Sum_Shape_Empty.
     intros i. exact D.
   Defined.
 
-  (* TODO: upstream *)
-  Lemma rename_idmap {γ} {cl} (e : raw_expression Σ cl γ)
-    : rename idmap e = e.
-  Proof.
-    induction e as [ γ i | γ s es IH_es ].
-    - apply idpath.
-    - cbn. apply ap.
-      apply path_forall; intros i.
-      eapply concat.
-      2: { apply IH_es. }
-      apply ap10. refine (apD10 _ _). apply ap.
-      apply path_forall. refine (coproduct_rect shape_is_sum _ _ _).
-      + intros j. refine (coproduct_comp_inj1 _).
-      + intros j. refine (coproduct_comp_inj2 _).
-  Defined.
-
-  (* TODO: upstream *)
-  (* Note: proof literally identical to that of [rename_idmap]! *)
-  Lemma substitute_idmap {γ} {cl} (e : raw_expression Σ cl γ)
-    : substitute (fun i => raw_variable i) e = e.
-  Proof.
-    induction e as [ γ i | γ s es IH_es ].
-    - apply idpath.
-    - cbn. apply ap.
-      apply path_forall; intros i.
-      eapply concat.
-      2: { apply IH_es. }
-      apply ap10. refine (apD10 _ _). apply ap.
-      apply path_forall. refine (coproduct_rect shape_is_sum _ _ _).
-      + intros j. refine (coproduct_comp_inj1 _).
-      + intros j. refine (coproduct_comp_inj2 _).
-  Defined.
 
   (* TODO: generalise this to arbitrary judgements, and add function
    [rename_judgement] (both to make this more general, and to make
@@ -183,7 +152,7 @@ Section Sum_Shape_Empty.
     - apply Judgement.eq_by_expressions. 
       + intros i. subst Γ'.
         eapply concat.
-        { apply inverse, RawSubstitution.comp_Raw_Weaken. }
+        { apply inverse, rename_comp. }
         refine (_ @ ap _ _).
         * eapply concat. 2: { apply rename_idmap. }
           apply ap10. refine (apD10 _ _). apply ap.
@@ -191,7 +160,7 @@ Section Sum_Shape_Empty.
         * apply eisretr.
       + intros i; subst J'. 
         eapply concat.
-        { apply inverse, RawSubstitution.comp_Raw_Weaken. }
+        { apply inverse, rename_comp. }
         eapply concat. 2: { apply rename_idmap. }
         apply ap10. refine (apD10 _ _). apply ap.
         apply path_forall. refine (eissect _).
@@ -238,13 +207,13 @@ Section Sum_Shape_Empty.
         Γ, (shape_sum_empty_inl _), hjf.
       exact (fun i => rename (shape_sum_empty_inl _) (J i)).
     - apply Judgement.eq_by_expressions; intros i.
-      + eapply concat. { apply inverse, RawSubstitution.comp_Raw_Weaken. }
+      + eapply concat. { apply inverse, rename_comp. }
         eapply concat.
         { eapply (ap (fun f => rename f _)).
           apply path_forall; intros j; apply eissect. }
         eapply concat. { apply rename_idmap. }
         apply ap, eissect.
-      + eapply concat. { apply inverse, RawSubstitution.comp_Raw_Weaken. }
+      + eapply concat. { apply inverse, rename_comp. }
         eapply concat.
         { eapply (ap (fun f => rename f _)).
           apply path_forall; intros j; apply eissect. }
@@ -560,7 +529,7 @@ Section TypedStructuralRule.
                     { apply ap. refine (coproduct_comp_inj1 _). }
                     eapply concat. 2: { apply rename_idmap. }
                     eapply concat. 
-                    { apply inverse, RawSubstitution.comp_Raw_Weaken. }
+                    { apply inverse, rename_comp. }
                     apply ap10. refine (apD10 _ _). apply ap.
                     apply path_forall. refine (eissect _).
                   - intros i; recursive_destruct i. apply inverse.
@@ -571,7 +540,7 @@ Section TypedStructuralRule.
                       * intros x. refine (coproduct_comp_inj1 _).
                       * apply (empty_rect _ shape_is_empty).
                     + eapply concat.
-                      { apply inverse, RawSubstitution.comp_Raw_Weaken. }
+                      { apply inverse, rename_comp. }
                       eapply concat. 2: { apply rename_idmap. }
                       apply ap10. refine (apD10 _ _). apply ap, path_forall. 
                       refine (@eissect _ _ _ (shape_sum_empty_inl_is_equiv _)).

@@ -16,8 +16,8 @@ Section Auxiliary.
 
   Local Definition transport_rename {γ γ' : σ} (g : γ -> γ')
       {cl cl' : syntactic_class} (p : cl = cl') (e : raw_expression Σ cl γ)
-    : transport (fun cl => raw_expression Σ cl γ') p (Substitution.rename g e)
-      = Substitution.rename g (transport (fun cl => raw_expression Σ cl γ) p e).
+    : transport (fun cl => raw_expression Σ cl γ') p (rename g e)
+      = rename g (transport (fun cl => raw_expression Σ cl γ) p e).
   Proof.
     destruct p. apply idpath.
   Defined.
@@ -32,7 +32,7 @@ Section Auxiliary.
 
 End Auxiliary.
 
-(* Outline: first we show functoriality of [raw_variable_substitution]; this is completely direct. *)
+(* Outline: first we show functoriality of [rename]; this is completely direct. *)
 
 Section RawWeakenFunctoriality.
 
@@ -40,15 +40,15 @@ Section RawWeakenFunctoriality.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  Local Fixpoint comp_Raw_Weaken {γ γ' γ'' : σ} (f : γ -> γ') (f' : γ' -> γ'')
+  Fixpoint rename_comp {γ γ' γ'' : σ} (f : γ -> γ') (f' : γ' -> γ'')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
-    : Substitution.rename (f' o f) e = Substitution.rename f' (Substitution.rename f e).
+    : rename (f' o f) e = rename f' (rename f e).
   Proof.
     destruct e as [ γ i | γ S args ].
   - reflexivity.
   - cbn. apply ap. apply path_forall; intros i.
     refine (_ @ _).
-    2: { apply comp_Raw_Weaken. }
+    2: { apply rename_comp. }
     + apply ap10. refine (apD10 _ _). apply ap.
       apply path_arrow.
       refine (coproduct_rect _ _ _ _); intros x.
@@ -60,7 +60,20 @@ Section RawWeakenFunctoriality.
         refine (coproduct_comp_inj2 _).
   Defined.
 
-  (* todo: id_Raw_Weaken *)
+  Lemma rename_idmap {γ} {cl} (e : raw_expression Σ cl γ)
+    : rename idmap e = e.
+  Proof.
+    induction e as [ γ i | γ s es IH_es ].
+    - apply idpath.
+    - cbn. apply ap.
+      apply path_forall; intros i.
+      eapply concat.
+      2: { apply IH_es. }
+      apply ap10. refine (apD10 _ _). apply ap.
+      apply path_forall. refine (coproduct_rect shape_is_sum _ _ _).
+      + intros j. refine (coproduct_comp_inj1 _).
+      + intros j. refine (coproduct_comp_inj2 _).
+  Defined.
 
 End RawWeakenFunctoriality.
 
@@ -71,12 +84,12 @@ Section Raw_Context_Category_Structure.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  Local Definition id_Raw_Context (γ : σ) : Context.map Σ γ γ.
+  Local Definition id_raw_context (γ : σ) : Context.map Σ γ γ.
   Proof.
     exact (@raw_variable _ _ _).
   Defined.
 
-  Local Definition comp_Raw_Context {γ γ' γ'': σ}
+  Local Definition comp_raw_context {γ γ' γ'': σ}
       (f : Context.map Σ γ' γ)
       (f' : Context.map Σ γ'' γ')
     : Context.map Σ γ'' γ
@@ -88,69 +101,66 @@ End Raw_Context_Category_Structure.
   [ return := raw_variable : γ -> Raw_Syntax γ ]
   [ lift := substitute : (γ' -> Raw_Syntax γ) -> (Raw_Syntax γ' -> Raw_Syntax γ) ]
   we show roughly:
-  [ id_left_Raw_Subst : forall (f : γ' -> Raw_Syntax γ) , (fun a => lift f (return a)) = f ]
-  [ id_right_Raw_Subst : lift return = idfun : Raw_Syntax γ -> Raw_Syntax γ]
-  [ assoc_Raw_Subst : (lift g) o (lift f) = lift ((lift g) o f) ]
+  [ id_left_substitute : forall (f : γ' -> Raw_Syntax γ) , (fun a => lift f (return a)) = f ]
+  [ id_right_substitute : lift return = idfun : Raw_Syntax γ -> Raw_Syntax γ]
+  [ associativity : (lift g) o (lift f) = lift ((lift g) o f) ]
 
   These then suffice to show that raw context maps (roughly, the Kleisli category of this not-exactly-monad) form a category (modulo h-levels).
 
-  TODO: see if this “looks like a monad” can be made more precise: does our approach fit into e.g. relative monads?
+  TODO: see if this “looks like a monad” can be made more precise: does our approach fit into e.g. relative or indexed monads?
 *)
-Section Raw_Subst_Assoc.
+Section Substitute_Laws.
 
   Context `{H_Funext : Funext}.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  (* For the proof of functoriality of substitution, we first  *)
-
-  Lemma id_Raw_Context_Map_Extending {γ δ : σ}
-    : Substitution.extend _ _ δ (@id_Raw_Context _ Σ γ)
-    = id_Raw_Context _.
-  Proof.
-    apply path_arrow.
-    simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros i.
-    - refine (coproduct_comp_inj1 _).
-    - refine (coproduct_comp_inj2 _).
-  Defined.
-
-  Local Definition id_left_Raw_Subst {γ γ' : σ} (f : Context.map Σ γ' γ) (x : _)
+  Local Definition id_left_substitute {γ γ' : σ} (f : Context.map Σ γ' γ) (x : _)
     : substitute f (raw_variable x) = f x.
   Proof.
     apply idpath.
   Defined.
 
-  Local Fixpoint id_right_Raw_Subst {γ : σ} {cl : syntactic_class} (e : raw_expression Σ cl γ)
-    : substitute (id_Raw_Context γ) e = e.
+  (* Note: proof literally identical to that of [rename_idmap]! *)
+  Lemma substitute_idmap {γ} {cl} (e : raw_expression Σ cl γ)
+    : substitute (id_raw_context γ) e = e.
   Proof.
-    destruct e as [ γ i | γ S args ].
+    induction e as [ γ i | γ s es IH_es ].
     - apply idpath.
     - cbn. apply ap.
       apply path_forall; intros i.
       eapply concat.
-      { eapply ap10. refine (apD10 _ _). apply ap.
-        apply id_Raw_Context_Map_Extending.
-      }
-      apply id_right_Raw_Subst.
+      2: { apply IH_es. }
+      apply ap10. refine (apD10 _ _). apply ap.
+      apply path_forall. refine (coproduct_rect shape_is_sum _ _ _).
+      + intros j. refine (coproduct_comp_inj1 _).
+      + intros j. refine (coproduct_comp_inj2 _).
   Defined.
 
-  Local Fixpoint Raw_Weaken_Raw_Subst {γ γ' γ'' : σ}
+  (* We provide this under two names: [substitute_idmap] follows general
+     naming conventions for recognising it when it arises in derivations;
+     [id_right_substitute] fits the monad-law structure, for when it’s being
+     used in those terms. *)
+  Local Fixpoint id_right_substitute {γ : σ} {cl : syntactic_class} (e : raw_expression Σ cl γ)
+    : substitute (id_raw_context γ) e = e
+  := substitute_idmap e.
+
+  Local Fixpoint rename_substitute {γ γ' γ'' : σ}
       (f : Context.map Σ γ' γ) (g : γ' -> γ'')
       {cl} (e : raw_expression Σ cl γ)
-    : Substitution.rename g (substitute f e)
-      = substitute ((Substitution.rename g) o f) e.
+    : rename g (substitute f e)
+      = substitute ((rename g) o f) e.
   Proof.
     destruct e as [ γ i | γ S args ].
     { apply idpath. }
     cbn. apply ap. apply path_forall; intros i.
-    eapply concat. { apply Raw_Weaken_Raw_Subst. }
+    eapply concat. { apply rename_substitute. }
     apply ap10. refine (apD10 _ _). apply ap. apply path_arrow.
-    (* TODO: extract as lemma about [Raw_Context_Map_Extending] ? *)
     simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
-      refine (_^ @ _^). { apply comp_Raw_Weaken. }
+      refine (_^ @ _^). { apply rename_comp. }
       eapply concat. { refine (coproduct_comp_inj1 _). }
-      refine (_^ @ _). { apply comp_Raw_Weaken. }
+      refine (_^ @ _). { apply rename_comp. }
       apply ap10. refine (apD10 _ _). apply ap. apply path_arrow. intros y.
       refine _^. refine (coproduct_comp_inj1 _).
     - eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
@@ -159,15 +169,15 @@ Section Raw_Subst_Assoc.
       apply ap. refine _^. refine (coproduct_comp_inj2 _).
   Defined.
 
-  Local Fixpoint Raw_Subst_Raw_Weaken {γ γ' γ'' : σ} (f : γ -> γ') (g : Context.map Σ γ'' γ')
+  Fixpoint substitute_rename {γ γ' γ'' : σ} (f : γ -> γ') (g : Context.map Σ γ'' γ')
       {cl} (e : raw_expression Σ cl γ)
-    : substitute g (Substitution.rename f e)
+    : substitute g (rename f e)
     = substitute (g o f) e.
   Proof.
     destruct e as [ γ i | γ S args ].
     { apply idpath. }
     cbn. apply ap. apply path_forall; intros i.
-    eapply concat. { apply Raw_Subst_Raw_Weaken. }
+    eapply concat. { apply substitute_rename. }
     apply ap10. refine (apD10 _ _). apply ap. apply path_arrow.
     simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
@@ -178,7 +188,7 @@ Section Raw_Subst_Assoc.
       refine _^. refine (coproduct_comp_inj2 _).
   Defined.
 
-  Local Fixpoint assoc_Raw_Subst {γ γ' γ'': σ}
+  Local Fixpoint assoc_substitute {γ γ' γ'': σ}
       (f : Context.map Σ γ' γ)
       (f' : Context.map Σ γ'' γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
@@ -187,17 +197,16 @@ Section Raw_Subst_Assoc.
     destruct e as [ γ i | γ S args ].
     { apply idpath. }
     cbn. apply ap. apply path_forall; intros i.
-    eapply concat. { apply assoc_Raw_Subst. }
+    eapply concat. { apply assoc_substitute. }
     apply ap10. refine (apD10 _ _). apply ap.
     apply path_arrow.
-    (* TODO: break out the following as a lemma about [Raw_Context_Map_Extending]? *)
     simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       refine (_ @ _^).
       2 : { refine (coproduct_comp_inj1 _). }
-      + eapply concat. { apply Raw_Subst_Raw_Weaken. }
+      + eapply concat. { apply substitute_rename. }
         eapply concat.
-        2: { eapply inverse, Raw_Weaken_Raw_Subst. }
+        2: { eapply inverse, rename_substitute. }
         * apply ap10. refine (apD10 _ _). apply ap. apply path_arrow. intros ?.
           refine (coproduct_comp_inj1 _).
     - eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
@@ -206,7 +215,16 @@ Section Raw_Subst_Assoc.
       + cbn. refine (coproduct_comp_inj2 _).
   Defined.
 
-End Raw_Subst_Assoc.
+  (* Alias of [assoc_substitute], to fit general naming conventions for
+     equational lemmas *)
+  Definition substitute_substitute {γ γ' γ'': σ}
+      (f : Context.map Σ γ' γ)
+      (f' : Context.map Σ γ'' γ')
+      {cl : syntactic_class} (e : raw_expression Σ cl γ)
+    : substitute f' (substitute f e) = substitute (fun i => substitute f' (f i)) e
+  := assoc_substitute f f' e.
+
+End Substitute_Laws.
 
 (* Finally, the category laws for raw context maps. *)
 Section Raw_Context_Category.
@@ -215,30 +233,30 @@ Section Raw_Context_Category.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  Lemma id_left_Raw_Context {γ} (f : Context.map Σ γ γ)
-    : comp_Raw_Context (id_Raw_Context _) f = f.
+  Lemma id_left_raw_context {γ} (f : Context.map Σ γ γ)
+    : comp_raw_context (id_raw_context _) f = f.
   Proof.
     apply idpath.
     (* To understand this, uncomment the following: *)
-    (* [unfold comp_Raw_Context, id_Raw_Context.] *)
+    (* [unfold comp_raw_context, id_raw_context.] *)
   Defined.
 
-  Lemma id_right_Raw_Context {γ} (f : Context.map Σ γ γ)
-    : comp_Raw_Context f (id_Raw_Context _) = f.
+  Lemma id_right_raw_context {γ} (f : Context.map Σ γ γ)
+    : comp_raw_context f (id_raw_context _) = f.
   Proof.
     apply path_forall; intros x; cbn.
-    apply id_right_Raw_Subst.
+    apply id_right_substitute.
   Defined.
 
-  Lemma assoc_Raw_Context {γ0 γ1 γ2 γ3: σ}
+  Lemma assoc_raw_context {γ0 γ1 γ2 γ3: σ}
       (f0 : Context.map Σ γ0 γ1)
       (f1 : Context.map Σ γ1 γ2)
       (f2 : Context.map Σ γ2 γ3)
-    : comp_Raw_Context f2 (comp_Raw_Context f1 f0)
-    = comp_Raw_Context (comp_Raw_Context f2 f1) f0.
+    : comp_raw_context f2 (comp_raw_context f1 f0)
+    = comp_raw_context (comp_raw_context f2 f1) f0.
   Proof.
-    apply path_forall; intros x; unfold comp_Raw_Context; cbn.
-    refine _^. apply assoc_Raw_Subst.
+    apply path_forall; intros x; unfold comp_raw_context; cbn.
+    refine _^. apply assoc_substitute.
   Defined.
 
 End Raw_Context_Category.
@@ -263,8 +281,8 @@ Section Naturality.
 
   Local Fixpoint fmap_rename {γ γ' : σ} (g : γ -> γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
-    : Expression.fmap f (Substitution.rename g e)
-      = Substitution.rename g (Expression.fmap f e).
+    : Expression.fmap f (rename g e)
+      = rename g (Expression.fmap f e).
   Proof.
     destruct e as [ γ i | γ S args ].
   - apply idpath.
