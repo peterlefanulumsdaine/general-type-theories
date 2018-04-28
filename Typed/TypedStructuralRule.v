@@ -79,6 +79,16 @@ Section Sum_Shape_Empty.
     intros i. exact (rename (shape_sum_empty_inl _) (J i)).
   Defined.
 
+  (* TODO: upstream, at least to [RawStructuralRules] with [rename_raw_context]
+     ; and use wherever possible, eg in renaming rules. *)
+  Definition rename_hypothetical_judgment
+      {Γ : raw_context Σ} {γ' : σ.(shape_carrier)} (f : γ' <~> Γ)
+      {hjf} (J : hypothetical_judgement Σ hjf Γ)
+    : hypothetical_judgement Σ hjf (rename_raw_context _ Γ f).
+  Proof.
+    intros i; exact (rename f^-1 (J i)).
+  Defined.
+
   (** From any judgement [ Γ |- J ],
       one can derive [ Γ+0 |- r^* J ],
    where [Γ+0] is the sum of Γ with the empty shape,
@@ -100,6 +110,19 @@ Section Sum_Shape_Empty.
       refine (Closure.hypothesis _ [<_>] tt).
   Defined.
 
+  Definition derive_reindexing_to_empty_sum {T} {h}
+      {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
+      (J : hypothetical_judgement Σ hjf Γ)
+    : Closure.derivation (structural_rule Σ + T) h
+                             (form_hypothetical hjf ; (Γ ; J))
+    -> Closure.derivation (structural_rule Σ + T) h
+                             (reindexing_to_empty_sum J).
+  Proof.
+    intros D.
+    refine (Closure.graft _ (derivation_of_reindexing_to_empty_sum J) _).
+    intros i. exact D.
+  Defined.
+
   (* TODO: upstream *)
   Lemma rename_idmap {γ} {cl} (e : raw_expression Σ cl γ)
     : rename idmap e = e.
@@ -117,7 +140,7 @@ Section Sum_Shape_Empty.
   Defined.
 
   (* TODO: upstream *)
-  (* Note: proof literally identital to that of [rename_idmap]! *)
+  (* Note: proof literally identical to that of [rename_idmap]! *)
   Lemma substitute_idmap {γ} {cl} (e : raw_expression Σ cl γ)
     : substitute (fun i => raw_variable i) e = e.
   Proof.
@@ -131,6 +154,67 @@ Section Sum_Shape_Empty.
       apply path_forall. refine (coproduct_rect shape_is_sum _ _ _).
       + intros j. refine (coproduct_comp_inj1 _).
       + intros j. refine (coproduct_comp_inj2 _).
+  Defined.
+
+  (* TODO: generalise this to arbitrary judgements, and add function
+   [rename_judgement] (both to make this more general, and to make
+   the statement cleaner). *)
+  (* NOTE: test whether this or [derivation_of_reindexing_to_empty_sum]
+   is easier to use in practice; maybe get rid of whichever is less
+   useful. *)
+  Definition derivation_of_judgement_over_empty_sum {T}
+      {γ : σ} (γ0 := (shape_sum γ (shape_empty _)))
+      {Γ_types : γ0 -> raw_type Σ γ0} (Γ := Build_raw_context γ0 Γ_types)
+      {hjf : Judgement.hypothetical_form}
+      (J : hypothetical_judgement Σ hjf Γ)
+      (Γ' := rename_raw_context _ Γ (shape_sum_empty_inl _))
+      (J' := (form_hypothetical hjf ; (Γ' ;
+               (fun i => rename (shape_sum_empty_inl _)^-1 (J i))
+      : hypothetical_judgement _ _ _)))
+    : Closure.derivation (structural_rule Σ + T)
+        [< J' >]
+        (form_hypothetical hjf ; (Γ ; J)).
+  Proof.
+    simple refine (Closure.deduce' _ _ _).
+    - apply inl, rename_hypothetical.
+      exists Γ'.
+      refine (_ ; (equiv_inverse (shape_sum_empty_inl _) ; _)).
+      exists hjf. exact J'.2.2.
+    - apply Judgement.eq_by_expressions. 
+      + intros i. subst Γ'.
+        eapply concat.
+        { apply inverse, RawSubstitution.comp_Raw_Weaken. }
+        refine (_ @ ap _ _).
+        * eapply concat. 2: { apply rename_idmap. }
+          apply ap10. refine (apD10 _ _). apply ap.
+          apply path_forall. refine (eissect _).
+        * apply eisretr.
+      + intros i; subst J'. 
+        eapply concat.
+        { apply inverse, RawSubstitution.comp_Raw_Weaken. }
+        eapply concat. 2: { apply rename_idmap. }
+        apply ap10. refine (apD10 _ _). apply ap.
+        apply path_forall. refine (eissect _).
+    - intros [].
+      refine (Closure.hypothesis _ [<_>] tt).
+  Defined.
+
+  Definition derive_judgement_over_empty_sum {T} {h}
+      {γ : σ} (γ0 := (shape_sum γ (shape_empty _)))
+      {Γ_types : γ0 -> raw_type Σ γ0} (Γ := Build_raw_context γ0 Γ_types)
+      {hjf : Judgement.hypothetical_form}
+      (J : hypothetical_judgement Σ hjf Γ)
+      (Γ' := rename_raw_context _ Γ (shape_sum_empty_inl _))
+      (J' := (form_hypothetical hjf ; (Γ' ;
+               (fun i => rename (shape_sum_empty_inl _)^-1 (J i))
+      : hypothetical_judgement _ _ _)))
+    : Closure.derivation (structural_rule Σ + T) h J'
+    -> Closure.derivation (structural_rule Σ + T) h
+                            (form_hypothetical hjf ; (Γ ; J)).
+  Proof.
+    intros D.
+    refine (Closure.graft _ (derivation_of_judgement_over_empty_sum J) _).
+    intros i. exact D.
   Defined.
 
   (* TODO: upstream *)
@@ -464,35 +548,34 @@ Section TypedStructuralRule.
    [derivation_from_reindexing_to_empty_sum] and [derivation_of_reindexing_to_empty_sum] help a bit, but still it’s pretty nasty.  How can we improve this?? *)
             ++ intros i; recursive_destruct i.
               ** (* [ Γ' |- g^*A type ] *)
-                refine (Closure.graft' _ _ _).
-                { simple refine (derivation_of_reindexing_to_empty_sum _).
-                  - exact Γ'.
-                  - apply form_object, class_type.
-                  - intros i; recursive_destruct i.
-                    exact (substitute g A). }
-                { apply Judgement.eq_by_expressions.
-                  - refine (coproduct_rect shape_is_sum _ _ _).
-                    2: { refine (empty_rect _ shape_is_empty _). }
-                    intros i. apply inverse.
-                    eapply concat. { refine (coproduct_comp_inj1 _). }
-                    apply ap, ap, inverse. refine (coproduct_comp_inj1 _).
-                  - intros i; recursive_destruct i.
-                    cbn. apply inverse.
-                    eapply concat.
-                    2: { apply substitute_idmap. }
-                    apply ap10; refine (apD10 _ _); apply ap.
-                    apply path_forall.
-                    refine (coproduct_rect shape_is_sum _ _ _).
-                    2: { refine (empty_rect _ shape_is_empty _). }
-                    intros i. refine (coproduct_comp_inj1 _).
-                }
-                intros [].
+                apply derive_judgement_over_empty_sum.
                 simple refine (Closure.deduce' _ _ _).
                 { apply inl, subst_apply.
                   exists Γ, Γ', g, (form_object class_type).
                   intros [ [] | ]. exact A.
                 }
-                { apply Judgement.eq_by_eta, idpath. }
+                { apply Judgement.eq_by_expressions.
+                  - intros i. apply inverse.
+                    eapply concat.
+                    { apply ap. refine (coproduct_comp_inj1 _). }
+                    eapply concat. 2: { apply rename_idmap. }
+                    eapply concat. 
+                    { apply inverse, RawSubstitution.comp_Raw_Weaken. }
+                    apply ap10. refine (apD10 _ _). apply ap.
+                    apply path_forall. refine (eissect _).
+                  - intros i; recursive_destruct i. apply inverse.
+                    eapply concat.
+                    + cbn. apply ap. refine (_ @ substitute_idmap _).
+                      apply ap10. refine (apD10 _ _). apply ap, path_forall.
+                      refine (coproduct_rect shape_is_sum _ _ _).
+                      * intros x. refine (coproduct_comp_inj1 _).
+                      * apply (empty_rect _ shape_is_empty).
+                    + eapply concat.
+                      { apply inverse, RawSubstitution.comp_Raw_Weaken. }
+                      eapply concat. 2: { apply rename_idmap. }
+                      apply ap10. refine (apD10 _ _). apply ap, path_forall. 
+                      refine (@eissect _ _ _ (shape_sum_empty_inl_is_equiv _)).
+                }
                 intros [ [ x | ] | ].
                 --- (* premise: [g] is a context map *)
                   simple refine (Closure.hypothesis' _ _).
