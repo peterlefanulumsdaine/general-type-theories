@@ -540,17 +540,41 @@ Section TypedStructuralRule.
                apply path_forall. exact (empty_rect _ shape_is_empty _).
         * intros [[[[] | ] | ] | ].
           -- (* |- A type *)
+            apply derive_judgement_over_empty_sum.
             simple refine (Closure.hypothesis' _ _).
             ++ apply inl. refine (Some (Some (Some (Some (Some tt))))).
-            ++ admit. (* not correct as stands!
-                         need to apply [derivation_of_reindexing_to_empty_sum] above. *) 
+            ++ apply Judgement.eq_by_expressions.
+              ** refine (empty_rect _ shape_is_empty _).
+              ** intros [ [] | ].
+                 apply (ap (raw_symbol (include_metavariable A))), path_forall.
+                 refine (empty_rect _ shape_is_empty _).
           -- (* |- B type *)
+            apply derive_judgement_over_empty_sum.
             simple refine (Closure.hypothesis' _ _).
             ++ apply inl. refine (Some (Some (Some (Some None)))).
-            ++ admit. (* not correct as stands!
-                         need to apply [derivation_of_reindexing_to_empty_sum] above. *) 
-          -- admit. (* |- A = B *)
-          -- admit. (* |- u : A *)
+            ++ apply Judgement.eq_by_expressions.
+              ** refine (empty_rect _ shape_is_empty _).
+              ** intros [ [] | ].
+                 apply (ap (raw_symbol (include_metavariable B))), path_forall.
+                 refine (empty_rect _ shape_is_empty _).
+          -- (* |- A = B *)
+            apply derive_judgement_over_empty_sum.
+            simple refine (Closure.hypothesis' _ _).
+            ++ apply inl. refine (Some (Some (Some None))).
+            ++ apply Judgement.eq_by_expressions.
+              ** refine (empty_rect _ shape_is_empty _).
+              ** intros i; recursive_destruct i;
+                   cbn; apply ap, path_forall;
+                   refine (empty_rect _ shape_is_empty _).
+          -- (* |- u : A *)
+            apply derive_judgement_over_empty_sum.
+            simple refine (Closure.hypothesis' _ _).
+            ++ apply inl. refine (Some (Some None)).
+            ++ apply Judgement.eq_by_expressions.
+              ** refine (empty_rect _ shape_is_empty _).
+              ** intros i; recursive_destruct i;
+                   cbn; apply ap, path_forall;
+                   refine (empty_rect _ shape_is_empty _).
       + (* RHS presup :   |- u' : B *)
         admit. (* Should be similar to LHS presup above. *)     
       + (* context presup :  |- . *)
