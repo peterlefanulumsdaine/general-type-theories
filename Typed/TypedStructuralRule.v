@@ -533,48 +533,23 @@ Section TypedStructuralRule.
         * apply Judgement.eq_by_expressions.
           -- apply (coproduct_rect shape_is_sum);
                exact (empty_rect _ shape_is_empty _).
-          -- intros [ [] | ].
-            ++ cbn. apply ap.
-               apply path_forall. exact (empty_rect _ shape_is_empty _).
-            ++ cbn. apply ap.
-               apply path_forall. exact (empty_rect _ shape_is_empty _).
-        * intros [[[[] | ] | ] | ].
-          -- (* |- A type *)
-            apply derive_judgement_over_empty_sum.
-            simple refine (Closure.hypothesis' _ _).
-            ++ apply inl. refine (Some (Some (Some (Some (Some tt))))).
-            ++ apply Judgement.eq_by_expressions.
-              ** refine (empty_rect _ shape_is_empty _).
-              ** intros [ [] | ].
-                 apply (ap (raw_symbol (include_metavariable A))), path_forall.
-                 refine (empty_rect _ shape_is_empty _).
-          -- (* |- B type *)
-            apply derive_judgement_over_empty_sum.
-            simple refine (Closure.hypothesis' _ _).
-            ++ apply inl. refine (Some (Some (Some (Some None)))).
-            ++ apply Judgement.eq_by_expressions.
-              ** refine (empty_rect _ shape_is_empty _).
-              ** intros [ [] | ].
-                 apply (ap (raw_symbol (include_metavariable B))), path_forall.
-                 refine (empty_rect _ shape_is_empty _).
-          -- (* |- A = B *)
-            apply derive_judgement_over_empty_sum.
-            simple refine (Closure.hypothesis' _ _).
-            ++ apply inl. refine (Some (Some (Some None))).
-            ++ apply Judgement.eq_by_expressions.
-              ** refine (empty_rect _ shape_is_empty _).
-              ** intros i; recursive_destruct i;
-                   cbn; apply ap, path_forall;
-                   refine (empty_rect _ shape_is_empty _).
-          -- (* |- u : A *)
-            apply derive_judgement_over_empty_sum.
-            simple refine (Closure.hypothesis' _ _).
-            ++ apply inl. refine (Some (Some None)).
-            ++ apply Judgement.eq_by_expressions.
-              ** refine (empty_rect _ shape_is_empty _).
-              ** intros i; recursive_destruct i;
-                   cbn; apply ap, path_forall;
-                   refine (empty_rect _ shape_is_empty _).
+          -- intros [ [] | ]; cbn; apply ap, path_forall;
+               exact (empty_rect _ shape_is_empty _).
+        * intros i. set (i_keep := i).
+(* Note: the following chain, though slow, is substantially faster than I (PLL)
+   was able to get any other way. To compare this with solving the goals
+   individually, see commit f648e3e. *)
+          destruct i as [[[[] | ] | ] | ];
+          apply derive_judgement_over_empty_sum;
+          (simple refine (Closure.hypothesis' _ _);
+          [ try exact (inl (Some (Some i_keep)))
+          | apply Judgement.eq_by_expressions;
+            [ refine (empty_rect _ shape_is_empty _)
+            | intros i; recursive_destruct i;
+              cbn; apply ap, path_forall;
+              refine (empty_rect _ shape_is_empty _)
+            ]
+          ] ).
       + (* RHS presup :   |- u' : B *)
         admit. (* Should be similar to LHS presup above. *)     
       + (* context presup :  |- . *)
