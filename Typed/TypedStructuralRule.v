@@ -53,20 +53,15 @@ Section TypedStructuralRule.
       + intros []. (* no presups for conclusion *)
   Defined.
 
-  (** Rules for variable-renaming in contexts are well typed *)
-  Local Definition rename_context_is_well_typed
-      (r : rename_context_instance Σ)
-    : is_well_typed (rename_context_instance _ r).
+  (** Rules for variable-renaming are well typed *)
+  Local Definition rename_is_well_typed
+      (r : rename_instance Σ)
+    : is_well_typed (rename_instance _ r).
   Proof.
-    intros []. (* no presups for conclusion *)
-  Defined.
-
-  (** Rules for variable-renaming in hypothetical judgements are well typed *)
-  Local Definition rename_hypothetical_is_well_typed
-      (r : rename_hypothetical_instance Σ)
-    : is_well_typed (rename_hypothetical_instance _ r).
-  Proof.
-    destruct r as [Γ [γ' [f [hjf J]]]]; cbn.
+    destruct r as [J [γ' f]]; destruct J as [[ | hjf ] J].
+    { intros []. } (* Context judgement: no presuppositions. *)
+    (* Hypothetical judgement: *)
+    destruct J as [Γ J]; cbn.
     intros p.
     set (p_orig := p : presupposition (form_hypothetical hjf; Γ; J)).
     (* In all cases, we just rename along [f] in the corresponding original
@@ -75,14 +70,9 @@ Section TypedStructuralRule.
     the context presup or a hypothetical presup. *)
     destruct p as [ p | ].
     - (* hypothetical presupposition *)
-      set (JJ_p_orig := presupposition _ p_orig).
-      set (hjf_p := match JJ_p_orig.1 with form_context => hjf
-                                     | form_hypothetical hjf_p => hjf_p end).
-      cbn in hjf_p.
-      set (J_p_orig := (JJ_p_orig.2).2).
       simple refine (Closure.deduce' _ _ _).
-      + apply inl, rename_hypothetical.
-        exists Γ, γ', f, hjf_p. exact J_p_orig.
+      + apply inl, RawStructuralRule.rename.
+        exact (presupposition _ p_orig; (γ'; f)).
       + apply (ap (fun x => (_;x))).
         apply (ap (fun x => (_;x))).
         apply path_forall; intros i.
@@ -95,23 +85,14 @@ Section TypedStructuralRule.
         * apply idpath.
     - (* context presupposition *)
       simple refine (Closure.deduce' _ _ _). 
-      + apply inl, rename_context. exists Γ, γ'; exact f.
+      + apply inl, RawStructuralRule.rename.
+        exists [! |- Γ !], γ'; exact f.
       + apply idpath.
       + intros []. 
         simple refine (Closure.hypothesis' _ _).
         * apply inr. (* go for a presup *)
           exact (tt; p_orig). (* select corresponding original presup *)
         * apply idpath.
-  Defined.
-
-  (** All variable-renaming rules are well typed *)
-  Local Definition rename_is_well_typed
-      (r : rename_instance Σ)
-    : is_well_typed (rename_instance _ r).
-  Proof.
-    destruct r as [ ? | ? ].
-    - apply rename_context_is_well_typed.
-    - apply rename_hypothetical_is_well_typed.
   Defined.
 
   (** Substitution-application rules are well typed *)

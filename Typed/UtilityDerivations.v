@@ -46,30 +46,6 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
     : γ <~> shape_sum_empty γ
   := BuildEquiv _ _ _ (shape_sum_empty_inl_is_equiv γ).
 
-  Definition raw_context_sum_empty (Γ : raw_context Σ)
-    : raw_context Σ
-  := rename_raw_context _ Γ (equiv_inverse (shape_sum_empty_inl _)).
-
-  Definition reindexing_to_empty_sum
-      {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
-      (J : hypothetical_judgement Σ hjf Γ)
-    : judgement_total Σ.
-  Proof.
-    exists (form_hypothetical hjf).
-    exists (raw_context_sum_empty Γ).
-    intros i. exact (rename (shape_sum_empty_inl _) (J i)).
-  Defined.
-
-  (* TODO: upstream, at least to [RawStructuralRules] with [rename_raw_context]
-     ; and use wherever possible, eg in renaming rules. *)
-  Definition rename_hypothetical_judgment
-      {Γ : raw_context Σ} {γ' : σ.(shape_carrier)} (f : γ' <~> Γ)
-      {hjf} (J : hypothetical_judgement Σ hjf Γ)
-    : hypothetical_judgement Σ hjf (rename_raw_context _ Γ f).
-  Proof.
-    intros i; exact (rename f^-1 (J i)).
-  Defined.
-
   (** From any judgement [ Γ |- J ],
       one can derive [ Γ+0 |- r^* J ],
    where [Γ+0] is the sum of Γ with the empty shape,
@@ -77,15 +53,15 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
   Definition derivation_of_reindexing_to_empty_sum {T}
       {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
+      (J_tot := (form_hypothetical hjf ; (Γ ; J)))
     : Closure.derivation (structural_rule Σ + T)
-        [< (form_hypothetical hjf ; (Γ ; J)) >] 
-        (reindexing_to_empty_sum J).
+        [< J_tot >] 
+        (Judgement.rename J_tot (equiv_inverse (shape_sum_empty_inl _))).
   Proof.
     simple refine (Closure.deduce' _ _ _).
-    - apply inl, rename_hypothetical.
-      exists Γ.
-      refine (_ ; (equiv_inverse (shape_sum_empty_inl _) ; _)).
-      exists hjf. exact J.
+    - apply inl, RawStructuralRule.rename. 
+      exists J_tot.
+      exact (_ ; equiv_inverse (shape_sum_empty_inl _)).
     - apply idpath.
     - intros [].
       refine (Closure.hypothesis _ [<_>] tt).
@@ -94,16 +70,15 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
   Definition derive_reindexing_to_empty_sum {T} {h}
       {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
-    : Closure.derivation (structural_rule Σ + T) h
-                             (form_hypothetical hjf ; (Γ ; J))
+      (J_tot := (form_hypothetical hjf ; (Γ ; J)))
+    : Closure.derivation (structural_rule Σ + T) h J_tot
     -> Closure.derivation (structural_rule Σ + T) h
-                             (reindexing_to_empty_sum J).
+         (Judgement.rename J_tot (equiv_inverse (shape_sum_empty_inl _))).
   Proof.
     intros D.
     refine (Closure.graft _ (derivation_of_reindexing_to_empty_sum J) _).
     intros i. exact D.
   Defined.
-
 
   (* TODO: generalise this to arbitrary judgements, and add function
    [rename_judgement] (both to make this more general, and to make
@@ -116,21 +91,18 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
       {Γ_types : γ0 -> raw_type Σ γ0} (Γ := Build_raw_context γ0 Γ_types)
       {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
-      (Γ' := rename_raw_context _ Γ (shape_sum_empty_inl _))
-      (J' := (form_hypothetical hjf ; (Γ' ;
-               (fun i => rename (shape_sum_empty_inl _)^-1 (J i))
-      : hypothetical_judgement _ _ _)))
+      (J_tot := (form_hypothetical hjf ; (Γ ; J)))
+      (J'_tot := Judgement.rename J_tot (shape_sum_empty_inl _))
     : Closure.derivation (structural_rule Σ + T)
-        [< J' >]
-        (form_hypothetical hjf ; (Γ ; J)).
+        [< J'_tot >]
+        J_tot.
   Proof.
     simple refine (Closure.deduce' _ _ _).
-    - apply inl, rename_hypothetical.
-      exists Γ'.
-      refine (_ ; (equiv_inverse (shape_sum_empty_inl _) ; _)).
-      exists hjf. exact J'.2.2.
+    - apply inl, RawStructuralRule.rename.
+      exists J'_tot. cbn.
+      exact (_ ; equiv_inverse (shape_sum_empty_inl _)).
     - apply Judgement.eq_by_expressions. 
-      + intros i. subst Γ'.
+      + intros i.
         eapply concat.
         { apply inverse, rename_comp. }
         refine (_ @ ap _ _).
@@ -138,7 +110,7 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
           apply ap10. refine (apD10 _ _). apply ap.
           apply path_forall. refine (eissect _).
         * apply eisretr.
-      + intros i; subst J'. 
+      + intros i. 
         eapply concat.
         { apply inverse, rename_comp. }
         eapply concat. 2: { apply rename_idmap. }
@@ -153,13 +125,10 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
       {Γ_types : γ0 -> raw_type Σ γ0} (Γ := Build_raw_context γ0 Γ_types)
       {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
-      (Γ' := rename_raw_context _ Γ (shape_sum_empty_inl _))
-      (J' := (form_hypothetical hjf ; (Γ' ;
-               (fun i => rename (shape_sum_empty_inl _)^-1 (J i))
-      : hypothetical_judgement _ _ _)))
-    : Closure.derivation (structural_rule Σ + T) h J'
-    -> Closure.derivation (structural_rule Σ + T) h
-                            (form_hypothetical hjf ; (Γ ; J)).
+      (J_tot := (form_hypothetical hjf ; (Γ ; J)))
+      (J'_tot := Judgement.rename J_tot (shape_sum_empty_inl _))
+    : Closure.derivation (structural_rule Σ + T) h J'_tot
+    -> Closure.derivation (structural_rule Σ + T) h J_tot.
   Proof.
     intros D.
     refine (Closure.graft _ (derivation_of_judgement_over_empty_sum J) _).
@@ -173,18 +142,18 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
   Definition derivation_from_reindexing_to_empty_sum {T}
       {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
+      (J_tot := (form_hypothetical hjf ; (Γ ; J)))
     : Closure.derivation (structural_rule Σ + T)
-        [< reindexing_to_empty_sum J >]
-        (form_hypothetical hjf ; (Γ ; J)).
+        [< Judgement.rename J_tot (equiv_inverse (shape_sum_empty_inl _)) >]
+        J_tot.
   Proof.
     (* Outline: renaming rule, along [shape_sum_empty_inl], plus
     functoriality lemma for renaming to show that the conclusion
     of that is the original judgement. *)
     simple refine (Closure.deduce' _ _ _).
-    - apply inl, rename_hypothetical.
-      exists (raw_context_sum_empty Γ),
-        Γ, (shape_sum_empty_inl _), hjf.
-      exact (fun i => rename (shape_sum_empty_inl _) (J i)).
+    - apply inl, RawStructuralRule.rename.
+      exists (Judgement.rename J_tot (equiv_inverse (shape_sum_empty_inl _))).
+      exists Γ. apply shape_sum_empty_inl. 
     - apply Judgement.eq_by_expressions; intros i.
       + eapply concat. { apply inverse, rename_comp. }
         eapply concat.
@@ -200,7 +169,6 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
     - intros [].
       refine (Closure.hypothesis _ [<_>] tt).
   Defined.
-  (* TODO: rename everything involving [Raw_Weaken], [Raw_Subst]! *)
 
   (** To derive a judgement [ Γ |- J ],
       it’s sufficient to derive [ Γ+0 | - r^* J ],
@@ -209,10 +177,10 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
   Definition derive_from_reindexing_to_empty_sum {T} {h}
       {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
+      (J_tot := (form_hypothetical hjf ; (Γ ; J)))
     : Closure.derivation (structural_rule Σ + T) h
-                         (reindexing_to_empty_sum J)
-    -> Closure.derivation (structural_rule Σ + T) h
-                         (form_hypothetical hjf ; (Γ ; J)).
+           (Judgement.rename J_tot (equiv_inverse (shape_sum_empty_inl _)))
+    -> Closure.derivation (structural_rule Σ + T) h J_tot.
   Proof.
     intros D.
     refine (Closure.graft _ (derivation_from_reindexing_to_empty_sum J) _).

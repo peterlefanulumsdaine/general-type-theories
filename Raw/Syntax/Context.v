@@ -1,3 +1,4 @@
+Require Import HoTT.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
 Require Import Raw.Syntax.Signature.
@@ -70,3 +71,23 @@ Section Signature_Maps.
   := fun i => (Expression.fmap f (g i)).
 
 End Signature_Maps.
+
+Section Rename_Variables.
+(** The action of variable-renaming on contexts (and, later, judgements) is a bit subtler than on expressions: one can only rename an _isomorphism_ of shapes, not an arbitrary map.
+
+  Precisely, given a raw context [Γ] and an _isomorphic_ shape [f : γ' <~> Γ], one can rename the variables of [Γ] according to [f], to get a raw context with shape [γ']; and similarly for judgements; and this will in each case preserve derivability/well-typedness.
+
+ (NOTE: in fact this all seems to make sense more generally for _retractions_ [f : γ' <~> Γ] of shapes, not just isomorphisms. However. we have no use-case for the more general version, so we give these for now just for the case of isomorphisms.) *)
+
+  Context {σ : shape_system} {Σ : signature σ}.
+
+  (** NOTE: arguments of this are in the opposite order from in renaming of expressions; this is inevitable, unless we split up the context argument into shape and types separately, which would make this cumbersome to apply. *)
+  Local Definition rename
+      (Γ : raw_context Σ) {γ' : shape_carrier σ} (f : γ' <~> Γ)
+    : raw_context Σ.
+  Proof.
+    exists γ'. 
+    exact (fun j => rename (equiv_inverse f) (Γ (f j))).
+  Defined.
+
+End Rename_Variables.

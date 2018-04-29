@@ -4,6 +4,7 @@ Require Import Proto.ShapeSystem.
 Require Import Raw.Syntax.Signature.
 Require Import Raw.Syntax.SyntacticClass.
 Require Import Raw.Syntax.Expression.
+Require Import Raw.Syntax.Substitution.
 Require Import Raw.Syntax.Context.
 
 Section JudgementDefinitions.
@@ -162,10 +163,18 @@ Section JudgementDefinitions.
       + exact (pr2 j i).
   Defined.
 
+  Definition shape_of_judgement (J : judgement_total) : shape_carrier σ.
+  Proof.
+    destruct J as [[ | ] J].
+    - exact J. (* J just context *)
+    - exact J.1. (* J is context + hyp judgement *)
+  Defined.
+
 End JudgementDefinitions.
 
 Arguments hypothetical_boundary : simpl nomatch.
 Arguments boundary_of_judgement {_ _ _} _ : simpl nomatch.
+Arguments shape_of_judgement {_ _} _ : simpl nomatch.
 
 Section JudgementFmap.
 
@@ -528,6 +537,32 @@ In lieu of that, we give explicit lemmas for judgement equality:
 
 End Equality_Lemmas.
 
+Section Rename_Variables.
+(** As discussed in [Raw.Syntax.Context], one can rename the variables of a judgement along an isomorphism of shapes. *)
 
+  Context {σ : shape_system} {Σ : signature σ}.
 
-      
+  (** Note: argument order follows [Context.rename], not general [rename] for expressions. *)
+  Definition rename_hypothetical_judgement
+      {γ} {hjf} (J : hypothetical_judgement Σ hjf γ)
+      {γ' : shape_carrier σ} (f : γ' <~> γ)
+    : hypothetical_judgement Σ hjf γ'.
+  Proof.
+    exact (fun j => rename (equiv_inverse f) (J j)).
+  Defined.
+
+  Local Definition rename
+      (J : judgement_total Σ)
+      {γ' : shape_carrier σ} (f : γ' <~> shape_of_judgement J)
+    : judgement_total Σ.
+  Proof.
+    set (jf := pr1 J); exists jf.
+    destruct J as [[ | ] J].
+    - (* context judgement *)
+      exact (Context.rename J f).
+    - (* hypothetical judgement *)
+      exists (Context.rename J.1 f).
+      exact (rename_hypothetical_judgement J.2 f).
+  Defined.
+
+End Rename_Variables.

@@ -1,3 +1,4 @@
+Require Import HoTT.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
 Require Import Raw.Syntax.SyntacticClass.
@@ -7,8 +8,7 @@ Require Import Raw.Syntax.Expression.
 
 Section RawSubstitution.
 
-  Context {σ : shape_system}.
-  Context {Σ : signature σ}.
+  Context {σ : shape_system} {Σ : signature σ}.
 
   (* A raw substitution takes positions in one shape to raw terms over another shape. *)
   Definition raw_substitution (γ δ : σ)

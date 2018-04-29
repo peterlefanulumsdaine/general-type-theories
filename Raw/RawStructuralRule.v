@@ -109,62 +109,23 @@ are contexts, we need a rule like this (or some other strengthening of the
 context rules, or restrictions on the shape system).
 *)
 
-
-(** The action of variable-renaming on contexts:
-
-  Given a raw context [Γ] and an _isomorphic_ shape [f : γ' <~> Γ], rename
-  the variables of [Γ] according to [f], to get a raw context with shape [γ'].
-
-  NOTE: in fact this operation seems to makes sense, and should preserve 
-  well-formedness of the context, for any _retraction_ [f : γ' <~> Γ], not just
-  for isomorphisms.  However, in the rules, we use only the case where [f] is
-  an isomorphism. *)
-(* TODO: upstream to [Raw.Syntax.Substitution]? *)
-Definition rename_raw_context
-    (Γ : raw_context Σ) {γ' : shape_carrier σ} (f : γ' <~> Γ)
-  : raw_context Σ.
-Proof.
-  exists γ'. 
-  exact (fun j => rename (equiv_inverse f) (Γ (f j))).
-Defined.
-
 (*
-  |- Γ context
-  ----------------- [f : γ' <~> Γ]
-  |- f^* Γ context
-*)
-Definition rename_context_instance : Closure.system (judgement_total Σ).
-Proof.
-  exists { Γ : raw_context Σ & { γ' : shape_carrier σ & γ' <~> Γ}}.
-  intros [Γ [γ' f]]. split.
-  - (* premises: *)
-    exact [< [! |- Γ !] >].
-  - (* conclusion: *)
-    refine [! |- rename_raw_context Γ f !].
-Defined.
-
-(*
-  Γ |- J   [J any hypothetical judgement]
+  Γ |- J   [J any judgement]
   -------------- [f : γ' <~> Γ]
   f^* Γ |- f^*J
 *)
-Definition rename_hypothetical_instance : Closure.system (judgement_total Σ).
+(* TODO: naming of this rule far from ideal (both in itself, and in how it interacts with our [_instance] convention).  Keep seeking better options? *)
+(* TODO: would it work more cleanly if the direction of this rule was reversed? *)
+Definition rename_instance : Closure.system (judgement_total Σ).
 Proof.
-  exists { Γ : raw_context Σ
-       & { γ' : shape_carrier σ
-       & { f : γ' <~> Γ
-       & { hjf : Judgement.hypothetical_form 
-       & hypothetical_judgement Σ hjf Γ }}}}.
-  intros [Γ [γ' [f [hjf J]]]]. split.
+  exists { J : judgement_total Σ
+               & { γ' : shape_carrier σ & γ' <~> shape_of_judgement J }}.
+  intros [J [γ' f]]. split.
   - (* premises: *)
-    exact [< (Judgement.form_hypothetical hjf ; ( Γ ; J )) >].
+    exact [< J >].
   - (* conclusion: *)
-    refine (Judgement.form_hypothetical hjf ; (rename_raw_context Γ f ; _)).
-    intros i. exact (rename (equiv_inverse f) (J i)).
+    exact (Judgement.rename J f).
 Defined.
-
-Definition rename_instance : Closure.system (judgement_total Σ)
-  := rename_context_instance + rename_hypothetical_instance.
 
 End RenamingRules.
 
@@ -633,10 +594,8 @@ Context {σ : shape_system} {Σ : signature σ}.
 Definition context_empty : structural_rule Σ := inl (inl (inl (inl None))).
 Definition context_extend : context_extend_instance Σ -> structural_rule Σ
   := fun i => inl (inl (inl (inl (Some i)))).
-Definition rename_context : rename_context_instance Σ -> structural_rule Σ
-  := fun i => inl (inl (inl (inr (inl i)))).
-Definition rename_hypothetical : rename_hypothetical_instance Σ -> structural_rule Σ
-  := fun i => inl (inl (inl (inr (inr i)))).
+Local Definition rename : rename_instance Σ -> structural_rule Σ
+  := fun i => inl (inl (inl (inr i))).
 Definition subst_apply : subst_apply_instance Σ -> structural_rule Σ
   := fun i => inl (inl (inr (inl i))).
 Definition subst_equal : subst_equal_instance Σ -> structural_rule Σ
@@ -673,25 +632,22 @@ Definition structural_rule_rect :
       forall (P : structural_rule Σ -> Type),
        P context_empty ->
        (forall i_cxt_ext : context_extend_instance Σ, P (context_extend i_cxt_ext)) ->
-       (forall i_rename_cxt : rename_context_instance Σ, P (rename_context i_rename_cxt)) ->
-       (forall i_rename_hyp : rename_hypothetical_instance Σ,
-        P (rename_hypothetical i_rename_hyp)) ->
+       (forall i_rename : rename_instance Σ, P (rename i_rename)) ->
        (forall i_sub_ap : subst_apply_instance Σ, P (subst_apply i_sub_ap)) ->
        (forall i_sub_eq : subst_equal_instance Σ, P (subst_equal i_sub_eq)) ->
        (forall i_var : variable_instance Σ, P (variable_rule i_var)) ->
        (forall i_eq : equality_instance Σ, P (equality_rule i_eq)) ->
        forall s : structural_rule Σ, P s.
 Proof.
-  intros P X X0 X1 X2 X3 X4 X5 X6 s.
+  intros P X X0 X1 X2 X3 X4 X5 s.
   destruct s as
       [ [ [ [ [ i_cxt_ext | ]
-            | [ i_rename_cxt | i_rename_hyp ] ]
+            | i_rename ]
           | [i_sub_ap | i_sub_eq] ]
         | i_var ]
       | i_eq ]
   ; eauto.
 Defined.
-
 
 Definition equality_instance_rect :
   forall (P : structural_rule Σ -> Type),
@@ -777,28 +733,21 @@ Section StructuralRuleMap.
              eapply concat.
                2: { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. }
              apply inverse. apply RawSubstitution.fmap_rename.
-    - (* rename_context *)
-      destruct i_rename_cxt as [Γ [γ' e]].
+    - (* rename *)
+      destruct i_rename as [J [γ' e]].
       simple refine (_;_).
-      + apply rename_context.
-        exists (Context.fmap f Γ).
-        exact (γ'; e).
-      + cbn. apply Closure.rule_eq.
+      + apply rename.
+        exists (fmap_judgement_total f J).
+        destruct J as [[ | ] J]; exact (γ'; e).
+      + apply Closure.rule_eq.
         * apply idpath.
-        * apply (ap (fun x => (_;x))).
-          apply (ap (fun x => Build_raw_context _ x)).
-          apply path_forall; intros i.
-          apply inverse, fmap_rename.
-    - (* rename_hypothetical *)
-      destruct i_rename_hyp as [Γ [γ' [e [hjf J]]]].
-      simple refine (_;_).
-      + apply rename_hypothetical.
-        exists (Context.fmap f Γ).
-        exists γ', e, hjf.
-        exact (fun i => Expression.fmap f (J i)).
-      + cbn. apply Closure.rule_eq.
-        * apply idpath.
-        * apply Judgement.eq_by_expressions; intros i;
+        * destruct J as [[ | ] J]; cbn.
+          -- (* context judgement *)
+            apply (ap (fun x => (_;x))), (ap (Build_raw_context _)).
+            apply path_forall; intros i.
+            apply inverse, fmap_rename.
+          -- (* hypothetical judgement *)
+            apply Judgement.eq_by_expressions; intros i;
             apply inverse, fmap_rename.
     - (* subst_apply *)
       destruct i_sub_ap as [ Γ [Γ' [g [hjf hjfi]]]].
