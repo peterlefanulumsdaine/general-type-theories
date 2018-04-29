@@ -452,8 +452,105 @@ Section TypedStructuralRule.
       + cbn. apply idpath.
   Defined.
 
-  (** Equality rules are well typed, as _flat_ rules 
-  (over the _empty_ type theory, since no logical rules are needed) *)
+  Section Equality_Flat_Rules.
+  (** For the equality rules, we first show that they are well-typed as _flat_
+  rules; it follows that their instantiations as closure conditions are well-
+  typed as such. 
+
+  We give most together in [equality_flat_rule_is_well_typed], but break out
+  the particularly long cases beforehand individually. *)
+
+  Local Definition tmeq_convert_is_well_typed
+    : TypedFlatRule.weakly_well_typed [<>] (tmeq_convert_rule Σ). 
+  Proof.
+    (* tmeq_convert: 
+       ⊢ A, B type
+       ⊢ A ≡ B type
+       ⊢ u, u' : A
+       ⊢ u = u' : A
+       -------------
+       ⊢ u = u' : B
+       *)
+    set (metas := flat_rule_metas _ (tmeq_convert_rule Σ)).
+    pose (A := Some (Some (Some tt)) : metas).
+    pose (B := Some (Some None) : metas).
+    pose (u := Some None : metas).
+    pose (u' := None : metas).
+    subst metas.
+    intros [ [ [] | | ] | ].
+    - (* type presup :  |- B type *)
+      simple refine (Closure.hypothesis' _ _).
+      + apply inl. refine (Some (Some (Some (Some None)))).
+      + apply Judgement.eq_by_eta, idpath.
+    - (* LHS presup :   |- u : B *)
+      apply derive_from_reindexing_to_empty_sum.
+      simple refine (Closure.deduce' _ _ _).
+      + apply inl, term_convert.
+        exists [::]. intros [ [ [] | ] | ].
+        * exact [M/ A /].
+        * exact [M/ B /].
+        * exact [M/ u /].
+      + apply Judgement.eq_by_expressions.
+        * apply (coproduct_rect shape_is_sum);
+            exact (empty_rect _ shape_is_empty _).
+        * intros [ [] | ]; cbn; apply ap, path_forall;
+            exact (empty_rect _ shape_is_empty _).
+      + intros i. set (i_keep := i).
+   (* Note: the following chain, though slow, is substantially faster than I (PLL)
+   was able to get any other way. To compare this with solving the goals
+   individually, see commit f648e3e. *)
+        destruct i as [[[[] | ] | ] | ];
+          apply derive_judgement_over_empty_sum;
+          (simple refine (Closure.hypothesis' _ _);
+           [ exact (inl (Some (Some i_keep)))
+           | apply Judgement.eq_by_expressions;
+             [ refine (empty_rect _ shape_is_empty _)
+             | intros i; recursive_destruct i;
+               cbn; apply ap, path_forall;
+               refine (empty_rect _ shape_is_empty _)
+             ]
+          ] ).
+    - (* RHS presup :   |- u' : B *)
+      apply derive_from_reindexing_to_empty_sum.
+      simple refine (Closure.deduce' _ _ _).
+      + apply inl, term_convert.
+        exists [::]. intros [ [ [] | ] | ].
+        * exact [M/ A /].
+        * exact [M/ B /].
+        * exact [M/ u' /].
+      + apply Judgement.eq_by_expressions.
+        * apply (coproduct_rect shape_is_sum);
+            exact (empty_rect _ shape_is_empty _).
+        * intros [ [] | ]; cbn; apply ap, path_forall;
+            exact (empty_rect _ shape_is_empty _).
+      + intros i. set (i_keep := i).
+        destruct i as [[[[] | ] | ] | ];
+          apply derive_judgement_over_empty_sum;
+          try (simple refine (Closure.hypothesis' _ _);
+               [ exact (inl (Some (Some i_keep)))
+               | apply Judgement.eq_by_expressions;
+                 [ refine (empty_rect _ shape_is_empty _)
+                 | intros i; recursive_destruct i;
+                   cbn; apply ap, path_forall;
+                   refine (empty_rect _ shape_is_empty _)
+                 ]
+              ] ).
+        (* remaining hypothesis : |- b : B *)
+        simple refine (Closure.hypothesis' _ _).
+        * exact (inl (Some None)).
+        * apply Judgement.eq_by_expressions;
+            [ refine (empty_rect _ shape_is_empty _)
+            | intros i; recursive_destruct i;
+              cbn; apply ap, path_forall;
+              refine (empty_rect _ shape_is_empty _)
+            ].
+    - (* context presup :  |- . *)
+      simple refine (Closure.deduce' _ _ _).
+      + apply inl, context_empty.
+      + apply idpath.
+      + intros [].
+  Defined.
+
   Local Definition equality_flat_rule_is_well_typed
       (r : equality_flat_rule Σ)
     : TypedFlatRule.weakly_well_typed [<>] (equality_flat_rule _ r).
@@ -503,92 +600,8 @@ Section TypedStructuralRule.
         * intros [].
     - admit. (* tmeq_trans *)
     - admit. (* term_convert *)
-    - (* tmeq_convert: 
-         ⊢ A, B type
-         ⊢ A ≡ B type
-         ⊢ u, u' : A
-         ⊢ u = u' : A
-         -------------
-         ⊢ u = u' : B
-       *)
-      set (metas := flat_rule_metas _ (tmeq_convert_rule Σ)).
-      pose (A := Some (Some (Some tt)) : metas).
-      pose (B := Some (Some None) : metas).
-      pose (u := Some None : metas).
-      pose (u' := None : metas).
-      subst metas.
-      intros [ [ [] | | ] | ].
-      + (* type presup :  |- B type *)
-        simple refine (Closure.hypothesis' _ _).
-        * apply inl. refine (Some (Some (Some (Some None)))).
-        * apply Judgement.eq_by_eta, idpath.
-      + (* LHS presup :   |- u : B *)
-        apply derive_from_reindexing_to_empty_sum.
-        simple refine (Closure.deduce' _ _ _).
-        * apply inl, term_convert.
-          exists [::]. intros [ [ [] | ] | ].
-          -- exact [M/ A /].
-          -- exact [M/ B /].
-          -- exact [M/ u /].
-        * apply Judgement.eq_by_expressions.
-          -- apply (coproduct_rect shape_is_sum);
-               exact (empty_rect _ shape_is_empty _).
-          -- intros [ [] | ]; cbn; apply ap, path_forall;
-               exact (empty_rect _ shape_is_empty _).
-        * intros i. set (i_keep := i).
-(* Note: the following chain, though slow, is substantially faster than I (PLL)
-   was able to get any other way. To compare this with solving the goals
-   individually, see commit f648e3e. *)
-          destruct i as [[[[] | ] | ] | ];
-          apply derive_judgement_over_empty_sum;
-          (simple refine (Closure.hypothesis' _ _);
-          [ exact (inl (Some (Some i_keep)))
-          | apply Judgement.eq_by_expressions;
-            [ refine (empty_rect _ shape_is_empty _)
-            | intros i; recursive_destruct i;
-              cbn; apply ap, path_forall;
-              refine (empty_rect _ shape_is_empty _)
-            ]
-          ] ).
-      + (* RHS presup :   |- u' : B *)
-        apply derive_from_reindexing_to_empty_sum.
-        simple refine (Closure.deduce' _ _ _).
-        * apply inl, term_convert.
-          exists [::]. intros [ [ [] | ] | ].
-          -- exact [M/ A /].
-          -- exact [M/ B /].
-          -- exact [M/ u' /].
-        * apply Judgement.eq_by_expressions.
-          -- apply (coproduct_rect shape_is_sum);
-               exact (empty_rect _ shape_is_empty _).
-          -- intros [ [] | ]; cbn; apply ap, path_forall;
-               exact (empty_rect _ shape_is_empty _).
-        * intros i. set (i_keep := i).
-          destruct i as [[[[] | ] | ] | ];
-          apply derive_judgement_over_empty_sum;
-          try (simple refine (Closure.hypothesis' _ _);
-          [ exact (inl (Some (Some i_keep)))
-          | apply Judgement.eq_by_expressions;
-            [ refine (empty_rect _ shape_is_empty _)
-            | intros i; recursive_destruct i;
-              cbn; apply ap, path_forall;
-              refine (empty_rect _ shape_is_empty _)
-            ]
-          ] ).
-          (* remaining hypothesis : |- b : B *)
-          simple refine (Closure.hypothesis' _ _).
-          -- exact (inl (Some None)).
-          -- apply Judgement.eq_by_expressions;
-            [ refine (empty_rect _ shape_is_empty _)
-            | intros i; recursive_destruct i;
-              cbn; apply ap, path_forall;
-              refine (empty_rect _ shape_is_empty _)
-            ].
-      + (* context presup :  |- . *)
-        simple refine (Closure.deduce' _ _ _).
-        * apply inl, context_empty.
-        * apply idpath.
-        * intros [].
+    - (* tmeq_convert *)
+      apply tmeq_convert_is_well_typed.
   Admitted.
   (* TODO: some thoughts from this proof:
   - maybe split this long proof up into separate lemmas
@@ -596,6 +609,10 @@ Section TypedStructuralRule.
   - make presuppositions less option-blind? 
   - maybe make structural rule accessors take value in closure systems of type theories, not in [structural_rules] itself?  (More convenient for giving derivations; but then recursion over structural rules is less clear.) 
   - change [derivation_from_reindexing_to_empty_sum] and converse to be not just the derivations, but functions which graft them on.  Also to work on arbitrary judgements?? *)
+
+
+  
+  End Equality_Flat_Rules.
 
   (** Equality rules are well typed (as closure rules) *)
   Local Definition equality_is_well_typed (r : equality_instance Σ)
