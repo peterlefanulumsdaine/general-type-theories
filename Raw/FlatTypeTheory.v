@@ -57,6 +57,7 @@ Section FlatTypeTheoryDerivation.
     : derivation T (Family.fmap (Metavariable.instantiate_judgement I) hyps)
                    (Metavariable.instantiate_judgement I j).
   Proof.
+    (* Sketch: use a closure-system map, over the action of [Metavariable.instantiate_judgement I]. *)
   Admitted.
 
 End FlatTypeTheoryDerivation.
