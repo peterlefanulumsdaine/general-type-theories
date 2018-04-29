@@ -542,7 +542,7 @@ Section TypedStructuralRule.
           destruct i as [[[[] | ] | ] | ];
           apply derive_judgement_over_empty_sum;
           (simple refine (Closure.hypothesis' _ _);
-          [ try exact (inl (Some (Some i_keep)))
+          [ exact (inl (Some (Some i_keep)))
           | apply Judgement.eq_by_expressions;
             [ refine (empty_rect _ shape_is_empty _)
             | intros i; recursive_destruct i;
@@ -551,7 +551,39 @@ Section TypedStructuralRule.
             ]
           ] ).
       + (* RHS presup :   |- u' : B *)
-        admit. (* Should be similar to LHS presup above. *)     
+        apply derive_from_reindexing_to_empty_sum.
+        simple refine (Closure.deduce' _ _ _).
+        * apply inl, term_convert.
+          exists [::]. intros [ [ [] | ] | ].
+          -- exact [M/ A /].
+          -- exact [M/ B /].
+          -- exact [M/ u' /].
+        * apply Judgement.eq_by_expressions.
+          -- apply (coproduct_rect shape_is_sum);
+               exact (empty_rect _ shape_is_empty _).
+          -- intros [ [] | ]; cbn; apply ap, path_forall;
+               exact (empty_rect _ shape_is_empty _).
+        * intros i. set (i_keep := i).
+          destruct i as [[[[] | ] | ] | ];
+          apply derive_judgement_over_empty_sum;
+          try (simple refine (Closure.hypothesis' _ _);
+          [ exact (inl (Some (Some i_keep)))
+          | apply Judgement.eq_by_expressions;
+            [ refine (empty_rect _ shape_is_empty _)
+            | intros i; recursive_destruct i;
+              cbn; apply ap, path_forall;
+              refine (empty_rect _ shape_is_empty _)
+            ]
+          ] ).
+          (* remaining hypothesis : |- b : B *)
+          simple refine (Closure.hypothesis' _ _).
+          -- exact (inl (Some None)).
+          -- apply Judgement.eq_by_expressions;
+            [ refine (empty_rect _ shape_is_empty _)
+            | intros i; recursive_destruct i;
+              cbn; apply ap, path_forall;
+              refine (empty_rect _ shape_is_empty _)
+            ].
       + (* context presup :  |- . *)
         simple refine (Closure.deduce' _ _ _).
         * apply inl, context_empty.
