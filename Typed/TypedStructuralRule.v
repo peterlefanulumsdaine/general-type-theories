@@ -604,11 +604,10 @@ Section TypedStructuralRule.
       apply tmeq_convert_is_well_typed.
   Admitted.
   (* TODO: some thoughts from this proof:
-  - maybe split this long proof up into separate lemmas
   - rename [the_equality_sort], to eg [the_equality_boundary]? 
   - make presuppositions less option-blind? 
   - maybe make structural rule accessors take value in closure systems of type theories, not in [structural_rules] itself?  (More convenient for giving derivations; but then recursion over structural rules is less clear.) 
-  - change [derivation_from_reindexing_to_empty_sum] and converse to be not just the derivations, but functions which graft them on.  Also to work on arbitrary judgements?? *)
+*)
 
 
   
