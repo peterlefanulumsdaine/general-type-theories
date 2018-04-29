@@ -33,31 +33,20 @@ Section PresuppositionClosureFlat.
 
   Context {σ : shape_system} `{Funext}.
 
-  (* TODO: make Σ implicit in fields of [flat_rule] *)
-  (** A flat rule is presupposition-closed, over an ambient flat theory [R],
-     if all presuppositions of its conclusion are derivable from
-     the premises together with their presuppositions,
-     over [T] (translated up to the metavariable-extension signature) *)
-  Definition presupposition_closed_flat_rule {Σ : signature σ}
-      (T : flat_type_theory Σ) (r : flat_rule Σ)
-    : Type
-  := forall i : presupposition (flat_rule_conclusion _ r), 
-      FlatTypeTheory.derivation
-        (FlatTypeTheory.fmap include_symbol T)
-        (flat_rule_premises _ r + (Family.bind (flat_rule_premises _ r) presupposition))
-        (presupposition _ i).
+  (** A flat type theory is presupposition-closed if all its rules are (weakly) well-typed over it.
 
-  (** A flat type theory is presupposition-closed if all its rules are. *)
+  (One might be tempted to call this “well-typed”, but we don’t, because it’s not really strong enough to imply much about the behaviour of the theory.) *)
   Definition presupposition_closed_flat_type_theory
       {Σ : signature σ} (T : flat_type_theory Σ)
     : Type
-  := forall r : T, presupposition_closed_flat_rule T (T r).
+  := forall r : T, TypedFlatRule.weakly_well_typed T (T r).
 
   (** If a flat type theory T is presup-closed, then so is its associated closure system. *)
   Theorem closure_system_of_presupposition_closed_flat_type_theory
       {Σ : signature σ} {T : flat_type_theory Σ}
       (T_presup_closed : presupposition_closed_flat_type_theory T)
-    : TypedClosure.weakly_well_typed_system presupposition (FlatTypeTheory.closure_system T).
+    : TypedClosure.weakly_well_typed_system presupposition
+        (FlatTypeTheory.closure_system T).
   Proof.
     intros [r_str | r_log ].
     - intros p.
@@ -69,20 +58,8 @@ Section PresuppositionClosureFlat.
         * apply Family.Build_map'; intros [[]].
     - destruct r_log as [r r_inst]. cbn in r_inst.
       destruct r_inst as [Γ r_args].
-      unfold TypedClosure.weakly_well_typed_rule.
-      intros p.
-      eapply transport. 
-      { apply instantiate_presupposition. }
-      refine (Closure.graft _ _ _).
-      + refine (FlatTypeTheory.instantiate_derivation _ _ _ _).
-        apply T_presup_closed.
-      + intros [ i | [ i i_presup]]. 
-        * simple refine (Closure.hypothesis' _ _).
-          -- exact (inl i).
-          -- apply idpath.
-        * simple refine (Closure.hypothesis' _ _).
-          -- refine (inr (i;_)). exact i_presup.
-          -- apply inverse, instantiate_presupposition.
+      apply TypedFlatRule.closure_system_weakly_well_typed.
+      apply T_presup_closed.
   Defined.
 
   (** Putting the above together: all presuppositions of a derivable judgement
@@ -110,43 +87,80 @@ Section PresuppositionClosure.
 
   Context {σ : shape_system} `{Funext}.
 
+
   (** For any raw type theory [T] and a rule [r] of the flattened [T], every
       presupposition in the boundary of the conclusion of [r] can be derived. *)
-  Lemma presupposition_closed_flatten {T : raw_type_theory σ}
+  Lemma presupposition_closed_flatten
+      {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
     : presupposition_closed_flat_type_theory (RawTypeTheory.flatten T).
   Proof.
     (* The flattened [T] has logical and congruence rules, two cases to consider. *)
     (* Hopefully these cases can be treated uniformly by a lemma that [RawRule.flatten]
        applied to a well-typed rule is presupposition-closed; but that is a bit subtle
        to state/use, due to the translation between signatures involved. *)
-    intros [r|r].
-    - {
-        (* [r] is a logical rule, we consider one of the presuppositions [p] of the conclusion. *)
-        intros p.
-        (* We must show that [p] has a derivation. *)
-        destruct (flat_rule_conclusion _ ((RawTypeTheory.flatten T) (inl r))) as [[|hjf] j].
-        - (* [p] is in the boundary of the presupposition that the context of the conclusion
-            is well -formed, whose boundary is empty. There is no such [p]. *)
-            elim p.
-        - { destruct hjf as [[|]|eq].
-            + (* p is a position in the boundary of "is a type" judgement.
-                There is one position, namely the context. *)
-              destruct p as [[]|].
-              (* We need to show that the context of the conclusion is well-formed. *)
-              destruct j as [j_context j_jdg].
-              admit.
-            + admit.
-            + admit.
-          }
-      }
+    intros [r|r]; apply TypedRule.weakly_well_typed_flatten.
+    - assert (r_WT := T_WT r).
+      admit.
+  (* Detailed sketch:
+We need to get from
+
+  TypedRule.is_well_typed_rule
+    (FlatTypeTheory.fmap (RawTypeTheory.subtheory_signature T r)
+       (RawTypeTheory.flatten (RawTypeTheory.subtheory T r))) 
+    (T.(tt_rule) r)
+
+to
+
+  TypedRule.is_well_typed_rule (RawTypeTheory.flatten T)
+    (RawRule.fmap (RawTypeTheory.include_rule_signature r) (T.(tt_rule) r)).
+
+We have signature maps
+
+  RawTypeTheory.subtheory_signature
+    : (RawTypeTheory.signature (RawTypeTheory.subtheory T i))
+    -> (tt_rule_signature i)
+
+  RawTypeTheory.include_rule_signature 
+    : (tt_rule_signature i)
+    -> (RawTypeTheory.signature (RawTypeTheory.subtheory T i))
+
+So from fmap of rule well-typedness along the latter, get
+
+  TypedRule.is_well_typed_rule
+    (FlatTypeTheory.fmap (RawTypeTheory.subtheory_signature T r)
+       (RawTypeTheory.flatten (RawTypeTheory.subtheory T r))) 
+    (T.(tt_rule) r)
+  ->
+  TypedRule.is_well_typed_rule
+    (FlatTypeTheory.fmap (RawTypeTheory.include_rule_signature r)
+    (FlatTypeTheory.fmap (RawTypeTheory.subtheory_signature T r)
+       (RawTypeTheory.flatten (RawTypeTheory.subtheory T r))))
+    (RawRule.fmap (RawTypeTheory.include_rule_signature r) (T.(tt_rule) r))
+
+then by a commutativity, this is
+
+  TypedRule.is_well_typed_rule
+    (FlatTypeTheory.fmap (RawTypeTheory.include_subtheory_signature T r)
+       (RawTypeTheory.flatten (RawTypeTheory.subtheory T r))))
+    (RawRule.fmap (RawTypeTheory.include_rule_signature r) (T.(tt_rule) r))
+
+  and then there should be a flat type theory map 
+    (FlatTypeTheory.fmap (RawTypeTheory.include_subtheory_signature T r)
+       (RawTypeTheory.flatten (RawTypeTheory.subtheory T r))))
+  -> 
+    (RawTypeTheory.flatten T)
+
+which we can map the well-typedness along.
+  *)
+    - admit. (* TODO: same as the above, plus lemma that associated congruence rule is well-typed *)
   Admitted.
 
-  (* TODO: at least make access function between [judgment] and [judgement_total]; perhaps make it a coercion? *)
   (** Working in a type theory [T], given a judgement [j] which is derivable
       from hypotheses [hyps], suppose every presupposition [q] of every hypothesis [h : hyps]
       is derivable from [hyps], then every presuppsition [p] of [j] is derivable from
       [hyps]. *)
-  Theorem derive_presupposition {T : raw_type_theory σ}
+  Theorem derive_presupposition
+      {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
       {j : judgement_total (RawTypeTheory.signature T)}
       {hyps : family _}
       (dj : RawTypeTheory.derivation T hyps j)
@@ -156,20 +170,21 @@ Section PresuppositionClosure.
         (presupposition _ p).
   Proof.
     apply derive_presupposition_from_flat; try assumption.
-    apply presupposition_closed_flatten.
+    apply presupposition_closed_flatten, T_WT.
   Defined.
 
   (** Working in a type theory [T], given a judgment [j] which is derivable
       without hypotheses, ever presupposition of [j] is derivable. *)
-  Corollary derive_presupposition_closed {T : raw_type_theory σ}
+  Corollary derive_presupposition_closed
+      {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
       {j : judgement_total (RawTypeTheory.signature T)}
       (dj : RawTypeTheory.derivation T [<>] j)
       {p : presupposition j }
     : RawTypeTheory.derivation T [<>] (presupposition j p).
   Proof.
     refine (Closure.graft _ _ _).
-    - refine (derive_presupposition dj).
-    - intros i. recursive_destruct i.
+    - refine (derive_presupposition T_WT dj).
+    - intros i; recursive_destruct i.
   Defined.
 
 End PresuppositionClosure.

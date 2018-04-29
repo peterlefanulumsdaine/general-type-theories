@@ -30,12 +30,16 @@ Section WellTyped.
   as of the conclusion, and (in all these derivations) we assume just the
   premises as hypotheses, not also their presuppositions.
   *)
+
 End WellTyped.
 
 Section Instantiations.
 
-  Context {σ : shape_system} {Σ : signature σ}.
+  Context {σ : shape_system} {Σ : signature σ} `{Funext}.
 
+  (** If a flat rule [r] is well-typed over a type theory [T],
+      then each instantiation of [r] as a closure condition is well-typed
+      over the associated closure system of [T]. *)
   Local Lemma closure_system_weakly_well_typed
        (T : flat_type_theory Σ)
        (r : flat_rule Σ) (D_r : weakly_well_typed T r)
@@ -47,6 +51,21 @@ Section Instantiations.
     (* Rough idea: derivations translate along the instantiation of syntax,
     so the derivations provided by well-typedness of [r] translate into 
     the derivations required for well-typedness of its instantiations. *)
-  Admitted.
+      unfold TypedClosure.weakly_well_typed_rule.
+      intros p.
+      eapply transport. 
+      { apply instantiate_presupposition. }
+      refine (Closure.graft _ _ _).
+      + refine (FlatTypeTheory.instantiate_derivation _ _ _ _).
+        apply D_r.
+      + intros [ i | [ i i_presup]]. 
+        * simple refine (Closure.hypothesis' _ _).
+          -- exact (inl i).
+          -- apply idpath.
+        * simple refine (Closure.hypothesis' _ _).
+          -- refine (inr (i;_)). exact i_presup.
+          -- apply inverse, instantiate_presupposition.
+  Defined.
+
 
 End Instantiations.
