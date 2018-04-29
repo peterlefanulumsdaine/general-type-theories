@@ -36,19 +36,17 @@ Section FlatTypeTheoryDerivation.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
+  (** Type of derivations of the conclusion of a rule [R] from its premises,
+    in flat type theory [T], with given hypotheses. 
 
-  (** The derivation of the conclusion of rule [R] from its premises
-    in flat type theroy [T], with given hypotheses. *)
+  I.e. type expressing the proposition that [R] is a derivable rule of [T]. *)
   Local Definition flat_rule_derivation
-        (R : flat_rule Σ) (T : flat_type_theory Σ)
-    : Type.
-  Proof.
-    simple refine (Closure.derivation _ (flat_rule_premises _ R) (flat_rule_conclusion _ R)).
-    apply closure_system.
-    simple refine (fmap _ T).
-    apply Family.inl. (* TODO: make this a lemma about signature maps,
-                            so it’s more findable using “SearchAbout” etc *)
-  Defined.
+        (T : flat_type_theory Σ) (R : flat_rule Σ)
+    : Type
+  :=  Closure.derivation
+       (closure_system (fmap include_symbol T))
+       (flat_rule_premises _ R)
+       (flat_rule_conclusion _ R).
 
   (** Instantiate derivation [d] with metavariable instantiation [I]. *)
   Local Definition instantiate_derivation
@@ -60,6 +58,5 @@ Section FlatTypeTheoryDerivation.
                    (Metavariable.instantiate_judgement I j).
   Proof.
   Admitted.
-
 
 End FlatTypeTheoryDerivation.

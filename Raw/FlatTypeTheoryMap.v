@@ -10,7 +10,6 @@ Require Import Raw.RawStructuralRule.
 Require Import Raw.FlatTypeTheory.
 Require Import Raw.RawTypeTheory.
 
-(* TODO: probably this section should be broken out to a separate file. *)
 Section FlatTypeTheoryMap.
 
   Context `{H : Funext}.
@@ -25,9 +24,8 @@ Section FlatTypeTheoryMap.
     {Σ' : signature σ} (T' : flat_type_theory Σ')
   := { fttm_signature_map :> Signature.map Σ Σ'
      ; fttm_rule_derivation
-       : forall R : T, FlatTypeTheory.flat_rule_derivation
+       : forall R : T, FlatTypeTheory.flat_rule_derivation T'
                          (FlatRule.fmap fttm_signature_map (T R))
-                         T'
      }.
 
   Local Definition fmap
