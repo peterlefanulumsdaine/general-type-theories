@@ -41,17 +41,20 @@ Section FlatTypeTheoryMap.
     {Σ : signature σ} (T : flat_type_theory Σ)
     {Σ' : signature σ} (T' : flat_type_theory Σ')
     (f : flat_type_theory_map T T')
-  : Closure.map
-      (Family.fmap (Closure.fmap (fmap_judgement_total f)) (FlatTypeTheory.closure_system T))
+  : Closure.map_over (fmap_judgement_total f)
+      (FlatTypeTheory.closure_system T)
       (FlatTypeTheory.closure_system T').
   Proof.
+    (* TODO: unnecessarily complicated!
+       Should start with [apply Closure.map_from_family_map.] *)
     intros r. (* We need to unfold [r] a bit here, bit not too much. *)
     unfold Family.fmap, family_index, FlatTypeTheory.closure_system in r.
     destruct r as [ r_str | r_from_rr ].
     - (* Structural rules *)
       (* an instance of a structural rule is translated to an instance of the same structural rule *)
       set (f_r := RawStructuralRule.fmap f r_str).
-      set (e_f_r := Family.map_commutes (RawStructuralRule.fmap f) r_str).
+      set (e_f_r := Family.map_over_commutes
+                      (RawStructuralRule.fmap f) r_str).
       set (e_prems := ap (@Closure.premises _) e_f_r).
       set (e_concl := ap (@Closure.conclusion _) e_f_r).
       refine (transport _ e_concl _).

@@ -681,20 +681,18 @@ Section StructuralRuleMap.
   Context `{H : Funext}.
   Context {σ : shape_system}.
 
-  (* TODO: perhaps abstract [Family_Map_over] or something, i.e. a displayed-category version of family maps, for use in definitions like this? *)
-
   (** For a given signature map [f] from [Σ] to [Σ'], give a family map from
      the structural rules of [Σ] to structural rules of [Σ']. *)
   Local Definition fmap
       {Σ Σ' : signature σ}
       (f : Signature.map Σ Σ')
-    : Family.map
-        (Family.fmap (Closure.fmap (fmap_judgement_total f)) (structural_rule Σ))
+    : Family.map_over (Closure.fmap (fmap_judgement_total f))
+        (structural_rule Σ)
         (structural_rule Σ').
   Proof.
     (* TODO: possible better approach:
-       - [Fmap_Family] of families commutes with sums;
-       - then use [repeat apply Fmap_Family_Sum.] or similar.  *)
+       - [Family.fmap] of families commutes with sums;
+       - then use [repeat apply Family.fmap_sum.] or similar?  *)
     apply Family.Build_map'.
     apply structural_rule_rect ; intros.
     (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
