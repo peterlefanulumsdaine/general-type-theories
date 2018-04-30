@@ -98,11 +98,19 @@ Local Definition graft' {X} {C : system X}
   : derivation C G x
 := transport _ e (graft C d f).
 
+(** In general, one can consider maps between closure systems _over_ maps between the sets they’re on, in the sense of a _displayed category_ (arXiv:1705.04296).
+
+  A map from a closure system [C] on [X] to a closure system [D] on [Y], over [f : X -> Y] gives for each rule [C i] of [C] a derivation in [D] of the conclusion of [C i] from the premises of [C i]. *)
+Local Definition map_over {X Y} (f : X -> Y) (C : system X) (D : system Y)
+  : Type
+:= forall i : C, derivation D
+     (Family.fmap f (premises (C i))) (f (conclusion (C i))).
+
 (** A map from a closure system [C] to a closure system [D] gives, for each
     rule [C i] in [C i] in [C], a derivation in [D] of the conclusion of [C i]
     from the premises of [C i]. *)
 Local Definition map {X} (C D : system X) : Type
-  := forall i : C, derivation D (premises (C i)) (conclusion (C i)).
+  := map_over idmap C D.
 
 (** We can of always map a closure system to itself by deducing the
     conclusion of every rule by simply applying the rule. *)
@@ -117,29 +125,46 @@ Defined.
 (** More generally, a family map between closure systems gives a closure map between them.
 
 An alternative point of view here is that family maps could be taken as the basic maps between closure systems; closure system maps are then Kleisli maps for the monad sending a closure system to its family of derivability conditions, and this definition is then the unit map of that monad.  We do not take that approach as primary since it creates various complications, e.g. size issues.  *)
+
 Local Definition map_from_family_map
-     {X} {C D : system X} (f : Family.map C D)
-   : map C D.
+    {X Y} {f : X -> Y} {C : system X} {D : system Y}
+  : Family.map_over (fmap f) C D -> map_over f C D.
 Proof.
-  intro i.
-  eapply paths_rew.
-  - apply (deduce _ _ (f i)).
-    set (Df := premises (D (f i))) in *.
-    set (e := ap _ (Family.map_commutes f i)^ : _ = Df).
+  intros ff i.
+  refine (deduce' (ff i) _ _).
+  - refine (ap _ (Family.map_over_commutes _ _)).
+  - set (Df := premises (D (ff i))) in *.
+    set (e := ap _ (Family.map_over_commutes ff i)^ : _ = Df).
     destruct e.
     intro p. apply hypothesis.
-  - apply ap, Family.map_commutes.
 Defined.
 
-(* If we know how to map the closure system [C] to the closure system [D],
+(** If we know how to map the closure system [C] to the closure system [D],
    then we can map any derivation in [C] to a derivation in [D]. *)
-Local Fixpoint map_derivation {X} {C D : system X} (f : map C D) {H} {x} (d : derivation C H x) :
-  derivation D H x.
+Local Fixpoint map_derivation_over
+    {X Y} {f : X -> Y} {C : system X} {D : system Y} (ff : map_over f C D)
+    {H} {x} (d : derivation C H x)
+  : derivation D (Family.fmap f H) (f x).
 Proof.
-  destruct d.
-  - now apply hypothesis.
-  - apply (@graft X D (premises (C r))).
-    + now apply f.
-    + intro i.
-      now apply (map_derivation _ C _ f).
+  destruct d as [i | r d_prems].
+  - refine (hypothesis _ (Family.fmap f H) i).
+  - refine (graft _ (ff r) _).
+    intro i. apply (map_derivation_over _ _ _ _ _ ff), d_prems.
 Defined.
+
+Arguments map_derivation_over : simpl nomatch.
+
+(** Although this is literally just a special case of [map_derivation_over],
+ it is given separately since the specialised statement works better in
+ interactive proofs.
+
+ Specifically, while [Family.fmap idmap H] is in fact judgementally
+ equal to [H], the unification performed by [apply] doesn’t always recognise
+ this. *)
+Definition map_derivation
+    {X} {C D : system X} (f : map C D)
+    {H} {x} (d : derivation C H x)
+  : derivation D H x
+:= map_derivation_over f d.
+
+Arguments map_derivation : simpl nomatch.

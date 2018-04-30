@@ -113,24 +113,51 @@ Defined.
 
 Section FamilyMap.
 
+  (** In general, one can consider maps between families _over_ (or _modulo_) maps between the types they’re from, in the sense of a _displayed category_ (arXiv:1705.04296). 
+
+   Given [f : A -> B] and families [K] from [A] and [L] from [B],
+   a map over [f] from [K] to [L] is a function [ff] from elements of [K] to 
+   elements of [L], such that for any element [i : K], its realisation [K i]
+   as an element of [A] is mapped under [f] to the realisation [L (ff i)] in
+   [B]. *)
+  Local Definition map_over {A B} (f : A -> B) (K : family A) (L : family B)
+    := { ff : K -> L
+       & forall i : K, L (ff i) = f (K i) }.
+
+  (** For the special case of a map between families from the same type, a map of families is a map of their indices/elements, commuting with the evaluation map. *)
   Local Definition map {A} (K L : family A)
-    := { f : family_index K -> family_index L & forall i : K, L (f i) = K i }.
+    := map_over idmap K L.
 
   (* Re-grouping of [Build_map]: useful when the map and equality components for each input are most easily given together, e.g. if they involve an induction on the input. *)
-  Definition Build_map' {A} (K L : family A)
-      (f : forall i:K, { j:L & L j = K i })
-    : map K L.
+  Definition Build_map' {A B} (f : A -> B) (K : family A) (L : family B)
+      (g : forall i:K, { j:L & L j = f (K i) })
+    : map_over f K L.
   Proof.
-    exists (fun i => pr1 (f i)).
-    intros i. exact (pr2 (f i)).
+    exists (fun i => pr1 (g i)).
+    intros i. exact (pr2 (g i)).
   Defined.
 
-  Local Definition map_index_action {A} {K L : family A}
-    : map K L -> (K -> L)
+  Local Definition map_index_action
+      {A B} (f : A -> B) (K : family A) (L : family B)
+    : map_over f K L -> (K -> L)
   := pr1.
-  Coercion map_index_action : map >-> Funclass.
+  Coercion map_index_action : map_over >-> Funclass.
 
-  Local Definition map_commutes {A} {K L : family A}
+  (* Trivial, but needed in order for the coercion [map_index_action] to
+   work on [map] as well as [map_over]. *)
+  Local Definition map_over_of_map {A} {K L : family A}
+    : map K L -> map_over idmap K L
+  := idmap.
+  Coercion map_over_of_map : map >-> map_over.
+
+  Local Definition map_over_commutes
+    {A B} {f : A -> B} {K : family A} {L : family B}
+    : forall ff : map_over f K L,
+      forall i : K, L (ff i) = f (K i)
+  := pr2.
+
+  Local Definition map_commutes
+    {A} {K L : family A}
     : forall f : map K L,
       forall i : K, L (f i) = K i
   := pr2.
@@ -142,13 +169,21 @@ Section FamilyMap.
     intro; constructor.
   Defined.
 
-  Local Definition compose {X} {K L M : family X} (g : map L M) (f : map K L)
-    : map K M.
+  Local Definition compose_over {X Y Z} {g : Y -> Z} {f : X -> Y}
+     {K} {L} {M} (gg : map_over g L M) (ff : map_over f K L)
+    : map_over (g o f) K M.
   Proof.
-    exists (compose g f).
-    intros. refine (_ @ _); apply map_commutes.
+    exists (compose gg ff).
+    intros. refine (_ @ _).
+    - apply map_over_commutes.
+    - apply ap; apply map_over_commutes.
   Defined.
 
+  Local Definition compose {X} {K L M : family X} (g : map L M) (f : map K L)
+    : map K M
+  := compose_over g f.
+
+  (* TODO: generalise more of the following constructions to act on [map_over] instead of [map]. *)
   Local Definition map_sum {X}
       {K K' : family X} (f : map K K')
       {L L' : family X} (g : map L L')
