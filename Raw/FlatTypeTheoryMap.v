@@ -56,7 +56,7 @@ Section FlatTypeTheoryMap.
       set (e_concl := ap (@Closure.conclusion _) e_f_r).
       refine (transport _ e_concl _).
       refine (transport (fun H => derivation _ H _) e_prems _).
-      refine (map_derivation _ (one_step_derivation f_r)).
+      refine (Closure.fmap_derivation _ (one_step_derivation f_r)).
       apply Closure.map_from_family_map.
       apply Family.inl.
      - (* Logical rules *)

@@ -141,7 +141,7 @@ Defined.
 
 (** If we know how to map the closure system [C] to the closure system [D],
    then we can map any derivation in [C] to a derivation in [D]. *)
-Local Fixpoint map_derivation_over
+Local Fixpoint fmap_derivation_over
     {X Y} {f : X -> Y} {C : system X} {D : system Y} (ff : map_over f C D)
     {H} {x} (d : derivation C H x)
   : derivation D (Family.fmap f H) (f x).
@@ -149,10 +149,10 @@ Proof.
   destruct d as [i | r d_prems].
   - refine (hypothesis _ (Family.fmap f H) i).
   - refine (graft _ (ff r) _).
-    intro i. apply (map_derivation_over _ _ _ _ _ ff), d_prems.
+    intro i. apply (fmap_derivation_over _ _ _ _ _ ff), d_prems.
 Defined.
 
-Arguments map_derivation_over : simpl nomatch.
+Arguments fmap_derivation_over : simpl nomatch.
 
 (** Although this is literally just a special case of [map_derivation_over],
  it is given separately since the specialised statement works better in
@@ -161,10 +161,10 @@ Arguments map_derivation_over : simpl nomatch.
  Specifically, while [Family.fmap idmap H] is in fact judgementally
  equal to [H], the unification performed by [apply] doesn’t always recognise
  this. *)
-Definition map_derivation
+Local Definition fmap_derivation
     {X} {C D : system X} (f : map C D)
     {H} {x} (d : derivation C H x)
   : derivation D H x
-:= map_derivation_over f d.
+:= fmap_derivation_over f d.
 
-Arguments map_derivation : simpl nomatch.
+Arguments fmap_derivation : simpl nomatch.

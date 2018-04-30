@@ -50,7 +50,7 @@ Section PresuppositionClosureFlat.
   Proof.
     intros [r_str | r_log ].
     - intros p.
-      refine (Closure.map_derivation _ _).
+      refine (Closure.fmap_derivation _ _).
       2: { apply TypedStructuralRule.well_typed. }
       + apply Closure.map_from_family_map.
         apply Family.map_sum.
