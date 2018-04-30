@@ -11,7 +11,6 @@ Require Import Raw.RawStructuralRule.
 Require Import Raw.FlatRule.
 Require Import Raw.FlatTypeTheory.
 Require Import Typed.TypedClosure.
-Require Import Raw.FlatTypeTheoryMap.
 Require Import Typed.TypedStructuralRule.
 Require Import Typed.TypeTheory.
 

@@ -8,7 +8,6 @@ Require Import Raw.AlgebraicExtension.
 Require Import Raw.RawRule.
 Require Import Raw.FlatRule.
 Require Import Raw.FlatTypeTheory.
-Require Import Raw.FlatTypeTheoryMap.
 Require Import Typed.TypedFlatRule.
 
 (** In this file: definition of well-typedness of an algebraic extension, and a (well-presented) rule. *)

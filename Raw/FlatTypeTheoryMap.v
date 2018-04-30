@@ -15,10 +15,6 @@ Section FlatTypeTheoryMap.
   Context `{H : Funext}.
   Context {σ : shape_system}.
 
-  (* TODO:
-    possibly the [Signature.map] should be extracted as a parameter,
-    à la displayed categories?
-  *)
   Record flat_type_theory_map
     {Σ : signature σ} (T : flat_type_theory Σ)
     {Σ' : signature σ} (T' : flat_type_theory Σ')
