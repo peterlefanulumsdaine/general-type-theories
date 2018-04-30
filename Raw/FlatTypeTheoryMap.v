@@ -15,14 +15,12 @@ Section FlatTypeTheoryMap.
   Context `{H : Funext}.
   Context {σ : shape_system}.
 
-  Record flat_type_theory_map
-    {Σ : signature σ} (T : flat_type_theory Σ)
-    {Σ' : signature σ} (T' : flat_type_theory Σ')
-  := { fttm_signature_map :> Signature.map Σ Σ'
-     ; fttm_rule_derivation
-       : forall R : T, FlatTypeTheory.flat_rule_derivation T'
-                         (FlatRule.fmap fttm_signature_map (T R))
-     }.
+  (* A flat type theory map [ff : T -> T'] over a map [f : Σ -> Σ'] of their signatures consists of derivations exhibiting the translation of each rule of [T] as a derivable rule of [T']. *)
+  Definition flat_type_theory_map_over
+    {Σ Σ': signature σ} (f : Signature.map Σ Σ')
+    (T : flat_type_theory Σ) (T' : flat_type_theory Σ')
+  := forall R : T,
+      FlatTypeTheory.flat_rule_derivation T' (FlatRule.fmap f (T R)).
 
   (* TODO: upstream to [Auxiliary.Closure] *)
   Lemma one_step_derivation {X} {T : Closure.system X} (r : T)
@@ -34,9 +32,9 @@ Section FlatTypeTheoryMap.
   Defined.
 
   Definition fmap_closure_system
-    {Σ : signature σ} (T : flat_type_theory Σ)
-    {Σ' : signature σ} (T' : flat_type_theory Σ')
-    (f : flat_type_theory_map T T')
+    {Σ Σ': signature σ} {f : Signature.map Σ Σ'}
+    {T : flat_type_theory Σ} {T' : flat_type_theory Σ'}
+    (ff : flat_type_theory_map_over f T T')
   : Closure.map_over (fmap_judgement_total f)
       (FlatTypeTheory.closure_system T)
       (FlatTypeTheory.closure_system T').
@@ -62,7 +60,7 @@ Section FlatTypeTheoryMap.
        cbn in r_from_rr. rename r_from_rr into r.
        destruct r as [i [Γ A]].
        cbn.
-       set (fc := fttm_rule_derivation _ _ f i). (* TODO: implicits! *)
+       set (fc := ff i).
        set (c := T i) in *.
        set (a := flat_rule_metas Σ c) in *.
        unfold FlatTypeTheory.flat_rule_derivation in fc. cbn in fc.
