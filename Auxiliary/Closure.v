@@ -125,7 +125,6 @@ Defined.
 (** More generally, a family map between closure systems gives a closure map between them.
 
 An alternative point of view here is that family maps could be taken as the basic maps between closure systems; closure system maps are then Kleisli maps for the monad sending a closure system to its family of derivability conditions, and this definition is then the unit map of that monad.  We do not take that approach as primary since it creates various complications, e.g. size issues.  *)
-
 Local Definition map_from_family_map
     {X Y} {f : X -> Y} {C : system X} {D : system Y}
   : Family.map_over (fmap f) C D -> map_over f C D.
@@ -139,8 +138,8 @@ Proof.
     intro p. apply hypothesis.
 Defined.
 
-(** If we know how to map the closure system [C] to the closure system [D],
-   then we can map any derivation in [C] to a derivation in [D]. *)
+(** Given a closure system map from [C] to [D],
+   we can map derivations over [C] to derivations over [D]. *)
 Local Fixpoint fmap_derivation_over
     {X Y} {f : X -> Y} {C : system X} {D : system Y} (ff : map_over f C D)
     {H} {x} (d : derivation C H x)
@@ -154,7 +153,7 @@ Defined.
 
 Arguments fmap_derivation_over : simpl nomatch.
 
-(** Although this is literally just a special case of [map_derivation_over],
+(** Although [fmap_derivation] is just a special case of [map_derivation_over],
  it is given separately since the specialised statement works better in
  interactive proofs.
 
@@ -168,3 +167,24 @@ Local Definition fmap_derivation
 := fmap_derivation_over f d.
 
 Arguments fmap_derivation : simpl nomatch.
+
+Local Definition inl {X} {C D : system X}
+  : map C (C + D)
+:= map_from_family_map Family.inl.
+
+Local Definition inr {X} {C D : system X}
+  : map D (C + D)
+:= map_from_family_map Family.inr.
+
+(** Analogue of [Family.fmap_of_sum] (see note there re naming conventions) *)
+Local Definition fmap_sum
+    {X Y} {f : X -> Y}
+    {C} {D} (ff : map_over f C D)
+    {C'} {D'} (ff' : map_over f C' D')
+  : map_over f (Family.sum C C') (Family.sum D D').
+Proof.
+  intros [r | r'].
+  - exact (fmap_derivation inl (ff _)).
+  - exact (fmap_derivation inr (ff' _)).
+ Defined.
+

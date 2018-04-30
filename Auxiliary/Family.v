@@ -183,18 +183,25 @@ Section FamilyMap.
     : map K M
   := compose_over g f.
 
-  (* TODO: generalise more of the following constructions to act on [map_over] instead of [map]. *)
-  Local Definition map_sum {X}
-      {K K' : family X} (f : map K K')
-      {L L' : family X} (g : map L L')
-    : map (sum K L) (sum K' L').
+  (* TODO: we have a conflict of naming conventions here!
+
+  On the one hand, short of putting [sum] into a separate module, it’s not clear what we should call this other than [fmap_sum].
+
+   On the other hand, lemma above with conclusion [fmap f (sum K L) = …] also reasonably deserves the name [fmap_sum], by general convention for equational reasoning lemmas.
+
+   Current name [fmap_of_sum] is a bad ad hoc solution to the clash. TODO: discuss and find a better solution. *)
+  Local Definition fmap_of_sum
+      {X Y} {f : X -> Y}
+      {K} {K'} (gg : map_over f K K')
+      {L} {L'} (hh : map_over f L L')
+    : map_over f (sum K L) (sum K' L').
   Proof.
     simple refine (_;_).
     - intros [ i | j ].
-      + apply inl, f, i.
-      + apply inr, g, j.
+      + apply inl, gg, i.
+      + apply inr, hh, j.
     - intros [ i | j ];
-      simpl; apply map_commutes.
+      simpl; apply map_over_commutes.
   Defined.
 
   Local Definition inl {X} {K K' : family X}

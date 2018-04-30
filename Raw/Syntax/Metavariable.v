@@ -53,15 +53,15 @@ Section AlgebraicExtension.
     intros; apply idpath.
   Defined.
 
-  (* To use rules, one *instantiates* their metavariables, as raw syntax of the ambient
-     signature, over some context. *)
+  (* To use rules, one *instantiates* their metavariables, as raw syntax of the
+     ambient signature, over some context. *)
   Local Definition instantiation (a : @arity σ) (Σ : signature σ) (γ : σ)
     : Type
-    := forall i : a,
+  := forall i : a,
          raw_expression Σ (argument_class i) (shape_sum γ (argument_shape i)).
 
-  (* Given such an instantiation, one can translate syntax over the extended signature
-     into syntax over the base signature. *)
+  (* Given such an instantiation, one can translate syntax over the extended
+     signature into syntax over the base signature. *)
   Local Definition instantiate_expression
       {cl} {a : @arity σ} {Σ : signature σ} {γ : σ}
       (I : instantiation a Σ γ)
@@ -215,7 +215,7 @@ Open Scope syntax_scope.
 
 Section Signature_Maps.
 
-  Context {σ : shape_system}.
+  Context {σ : shape_system} `{Funext}.
 
   (* Metavariable extension is bifunctorial in both arguments (the signature and the arity).
 
@@ -225,7 +225,7 @@ Section Signature_Maps.
       {a a' : arity σ} (g : Family.map a a')
     : Signature.map (extend Σ a) (extend Σ' a').
   Proof.
-    apply Family.map_sum.
+    apply Family.fmap_of_sum.
     - apply f.
     - apply Family.map_fmap, g.
   Defined.
@@ -241,6 +241,12 @@ Section Signature_Maps.
       {a a' : arity σ} (f : Family.map a a')
     : Signature.map (extend Σ a) (extend Σ a')
   := fmap (Family.idmap _) f.
+
+  Definition fmap_instantiation
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {γ} (I : instantiation a Σ γ)
+    : instantiation a Σ' γ
+  := fun i => Expression.fmap f (I i).
 
 End Signature_Maps.
 

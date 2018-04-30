@@ -340,3 +340,45 @@ Section Naturality.
   Defined.
 
 End Naturality.
+
+
+Section Instantiation.
+(** Currently, the following doesn’t really belong in this file;
+ either it should be moved to a new file, or this file should be renamed to
+ e.g. [SyntaxLemmas] or something. *)
+
+  Context {σ : shape_system} `{Funext}.
+
+  Lemma fmap_instantiate_expression
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {cl} {a : @arity σ} {γ : σ}
+      (I : Metavariable.instantiation a Σ γ)
+      {δ} (e : raw_expression (Metavariable.extend Σ a) cl δ)
+    : Expression.fmap f (Metavariable.instantiate_expression I e)
+    = Metavariable.instantiate_expression
+        (fmap_instantiation f I)
+        (Expression.fmap (Metavariable.fmap1 f a) e).
+  Proof.
+    induction e as [ δ i | δ [S | M] e_args IH_e_args ].
+    - apply idpath.
+    - simpl Metavariable.instantiate_expression. simpl Expression.fmap.
+      assert (instantiate_expression_transport_cl
+        : forall γ δ (I : Metavariable.instantiation a Σ' γ)
+                 cl cl' (p : cl = cl') (e : raw_expression _ cl δ),
+              Metavariable.instantiate_expression I
+                 (transport (fun cl => raw_expression _ cl _) p e)
+            = transport (fun cl => raw_expression _ cl _) p
+                 (Metavariable.instantiate_expression I e)).
+      { intros ? ? ? ? ? p ?. destruct p; apply idpath. }
+      eapply concat.
+      2: { apply inverse, instantiate_expression_transport_cl. }
+      clear instantiate_expression_transport_cl.
+      apply ap. simpl. apply ap.
+      revert e_args IH_e_args.
+      unfold symbol_arity. cbn.
+      set (ΣS := Σ S). set (fS := f S).
+      (* Idea here: we should now be able to fold/abstract [Σ S], [Σ' (f S)], and then destruct [Family.map_commutes f S], to avoid having to deal explicitly with the transports.  However, it seems difficult getting all occurrences to fold. *)
+      admit.
+  Admitted.
+
+End Instantiation.
