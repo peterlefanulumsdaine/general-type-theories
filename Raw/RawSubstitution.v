@@ -374,11 +374,29 @@ Section Instantiation.
       2: { apply inverse, instantiate_expression_transport_cl. }
       clear instantiate_expression_transport_cl.
       apply ap. simpl. apply ap.
-      revert e_args IH_e_args.
-      unfold symbol_arity. cbn.
-      set (ΣS := Σ S). set (fS := f S).
-      (* Idea here: we should now be able to fold/abstract [Σ S], [Σ' (f S)], and then destruct [Family.map_commutes f S], to avoid having to deal explicitly with the transports.  However, it seems difficult getting all occurrences to fold. *)
-      admit.
-  Admitted.
+      (* Now that we are under [raw_symbol S], we fold/abstract [Σ S], [Σ' (f S)], and then destruct [Family.map_commutes f S], to avoid having to deal explicitly with the transports. Making sure all instances are folded is a little fiddly. *)
+      unfold symbol_arity in *. cbn in *.
+      set (ΣS := Σ S) in *. set (ΣfS := Σ' (f S)) in *.
+      change (Σ' (f.(proj1_sig) S)) with ΣfS.
+      change (Family.map_over_commutes f) with (Family.map_commutes f).
+      set (e_S := Family.map_commutes f S : ΣfS = ΣS).
+      clearbody e_S ΣS ΣfS.
+      destruct e_S. simpl transport.
+      apply path_forall; intros i.
+      eapply concat. { apply fmap_rename. }
+      apply ap. apply IH_e_args.
+    - simpl Metavariable.instantiate_expression.
+      eapply concat. { apply fmap_substitute. }
+      unfold fmap_raw_context_map, fmap_instantiation.
+      apply ap10. refine (apD10 _ _). apply ap.
+      apply path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _); intros i.
+      + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        cbn. apply inverse. refine (coproduct_comp_inj1 _).
+      + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply fmap_rename. }
+        eapply concat. { apply ap, IH_e_args. }
+        eapply inverse. { refine (coproduct_comp_inj2 _). }
+  Defined.
 
 End Instantiation.
