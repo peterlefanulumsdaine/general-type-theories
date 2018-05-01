@@ -95,7 +95,7 @@ Section AlgebraicExtension.
   Global Arguments instantiate_term {_ _ _} _ [_] _.
 
   Local Definition instantiate_context
-      {a : @arity σ} {Σ : signature σ} {Γ : raw_context Σ}
+      {a : @arity σ} {Σ : signature σ} (Γ : raw_context Σ)
       (I : instantiation a Σ Γ)
       (Δ : raw_context (extend Σ a))
     : raw_context Σ.
@@ -110,17 +110,17 @@ Section AlgebraicExtension.
   Defined.
 
   Local Definition instantiate_judgement
-      {a : @arity σ} {Σ : signature σ} {Γ : raw_context Σ}
+      {a : @arity σ} {Σ : signature σ} (Γ : raw_context Σ)
       (I : instantiation a Σ Γ)
       (j : judgement_total (extend Σ a))
     : judgement_total Σ.
   Proof.
     exists (pr1 j).
     destruct j as [jf jfi] ; destruct jf ; simpl in *.
-    - apply (instantiate_context I). assumption.
+    - apply (instantiate_context _ I). assumption.
     - destruct jfi as [Δ hjfi].
       simple refine (existT _ _ _).
-      + apply (instantiate_context I).
+      + apply (instantiate_context _ I).
         assumption.
       + simpl.
         intro i.
@@ -134,9 +134,9 @@ Section AlgebraicExtension.
       {Σ : signature σ}
       {Γ : raw_context Σ} {a : arity σ} (I : instantiation a Σ Γ)
       (j : judgement_total _)
-      (i : presupposition (instantiate_judgement I j))
-    : instantiate_judgement I (presupposition j i)
-      = presupposition (instantiate_judgement I j) i.
+      (i : presupposition (instantiate_judgement _ I j))
+    : instantiate_judgement _ I (presupposition j i)
+      = presupposition (instantiate_judgement _ I j) i.
   Proof.
     apply (ap (fun ji => (_;ji))). (* judgement form of presup unchanged *)
     destruct j as [[ | hjf] j].
@@ -156,8 +156,8 @@ Section AlgebraicExtension.
 
 End AlgebraicExtension.
 
-Arguments instantiate_judgement : simpl nomatch.
 Arguments instantiate_expression : simpl nomatch.
+Arguments instantiate_judgement : simpl nomatch.
 Arguments instantiate_context : simpl nomatch.
 
 Section MetavariableNotations.

@@ -54,8 +54,8 @@ Section FlatTypeTheoryDerivation.
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
       {hyps : family _} (j : judgement_total (Metavariable.extend Σ a))
       (d : derivation (fmap include_symbol T) hyps j)
-    : derivation T (Family.fmap (Metavariable.instantiate_judgement I) hyps)
-                   (Metavariable.instantiate_judgement I j).
+    : derivation T (Family.fmap (Metavariable.instantiate_judgement _ I) hyps)
+                   (Metavariable.instantiate_judgement _ I j).
   Proof.
     simple refine (Closure.fmap_derivation_over _ d).
     admit. (* todo: break this out as lemma. *)

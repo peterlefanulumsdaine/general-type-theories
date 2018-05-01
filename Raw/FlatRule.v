@@ -28,8 +28,8 @@ Section FlatRule.
     split.
     - (* premises *)
       refine (Family.fmap _ (flat_rule_premises R)).
-      apply (Metavariable.instantiate_judgement I).
-    - apply (Metavariable.instantiate_judgement I).
+      apply (Metavariable.instantiate_judgement _ I).
+    - apply (Metavariable.instantiate_judgement _ I).
       apply (flat_rule_conclusion R).
   Defined.
 

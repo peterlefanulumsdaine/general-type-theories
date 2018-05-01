@@ -81,3 +81,5 @@ Section Signature_Maps.
   Defined.
 
 End Signature_Maps.
+
+Arguments fmap : simpl nomatch.

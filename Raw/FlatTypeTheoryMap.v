@@ -31,6 +31,22 @@ Section FlatTypeTheoryMap.
     intros i. exact (hypothesis T _ i).
   Defined.
 
+  (* TODO: upstream to [Family]. *)
+  Lemma family_fmap_comp {X Y Z} (f : X -> Y) (g : Y -> Z) (K : family X)
+    : Family.fmap (g o f) K = Family.fmap g (Family.fmap f K).
+  Proof.
+    apply idpath.
+  Defined.
+
+  (* TODO: upstream to [Closure] (and add analogue in [Family]?) *)
+  Lemma closure_sum_rect {X} {Y} {f : X -> Y}
+      {K1 K2 : Closure.system X} {L : Closure.system Y}
+      (ff1 : Closure.map_over f K1 L) (ff2 : Closure.map_over f K2 L)
+    : Closure.map_over f (K1 + K2) L.
+  Proof.
+    intros [ x | x ]; [apply ff1 | apply ff2].
+  Defined.
+
   Definition fmap_closure_system
     {Σ Σ': signature σ} {f : Signature.map Σ Σ'}
     {T : flat_type_theory Σ} {T' : flat_type_theory Σ'}
@@ -39,26 +55,28 @@ Section FlatTypeTheoryMap.
       (FlatTypeTheory.closure_system T)
       (FlatTypeTheory.closure_system T').
   Proof.
-    apply Closure.fmap_sum.
+    apply closure_sum_rect.
     { (* structural rules *)
       apply Closure.map_from_family_map.
+      refine (Family.compose_over (Family.inl) _).
       apply RawStructuralRule.fmap.
     }
     (* Logical rules *)
-    intros [r [Γ I]].
-    cbn.
-    set (D := ff r).
-    admit.
-    (* some lemmas we want here:
-    - can map an instantiation of variables under map of signatures
-    - from [FlatTypeTheory.flat_rule_derivation], can get a [Closure.derivation] of any instantiation of the rule (using [instantiate_derivation]);
-    - …?
-
-    set (D_inst := FlatTypeTheory.instantiate_derivation T' I _ D). 
-    unfold FlatTypeTheory.flat_rule_derivation in D.
-    cbn in D.
-    *)
-  Admitted.
+    intros [r [Γ I]]. cbn.
+    (* From here, want to get goal into a form where it can be obtained
+     by [instantiate_derivation]. *)
+    eapply transport. { apply inverse, fmap_instantiate_judgement. }
+    eapply (transport (fun H => derivation _ H _)).
+    { apply inverse.
+      eapply concat. { apply inverse, family_fmap_comp. }
+      eapply concat.
+      { refine (ap10 _ _). apply ap, path_forall; intros i.
+        apply fmap_instantiate_judgement. }
+      apply family_fmap_comp.
+    }
+    apply instantiate_derivation.
+    apply ff.
+  Defined.
 
   (* TODO: maps of type theories preserve derivability. *)
 End FlatTypeTheoryMap.

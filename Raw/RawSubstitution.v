@@ -351,9 +351,9 @@ Section Instantiation.
 
   Lemma fmap_instantiate_expression
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {cl} {a : @arity σ} {γ : σ}
+      {a : @arity σ} {γ : σ}
       (I : Metavariable.instantiation a Σ γ)
-      {δ} (e : raw_expression (Metavariable.extend Σ a) cl δ)
+      {cl} {δ} (e : raw_expression (Metavariable.extend Σ a) cl δ)
     : Expression.fmap f (Metavariable.instantiate_expression I e)
     = Metavariable.instantiate_expression
         (fmap_instantiation f I)
@@ -397,6 +397,56 @@ Section Instantiation.
         eapply concat. { apply fmap_rename. }
         eapply concat. { apply ap, IH_e_args. }
         eapply inverse. { refine (coproduct_comp_inj2 _). }
+  Defined.
+
+  
+  Definition fmap_instantiate_context
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {Γ : raw_context Σ} (I : Metavariable.instantiation a Σ Γ)
+      (Δ : raw_context (Metavariable.extend Σ a))
+    : Context.fmap f (Metavariable.instantiate_context Γ I Δ)
+    = Metavariable.instantiate_context
+        (Context.fmap f Γ)
+        (fmap_instantiation f I)
+        (Context.fmap (Metavariable.fmap1 f a) Δ).
+  Proof.
+    apply (ap (Build_raw_context _)), path_forall.
+    refine (coproduct_rect shape_is_sum _ _ _); intros i;
+      unfold Metavariable.instantiate_context.
+    - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+      eapply concat. 2: {apply inverse. refine (coproduct_comp_inj1 _). }
+      apply fmap_rename.
+    - eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+      eapply concat. 2: {apply inverse. refine (coproduct_comp_inj2 _). }
+      apply fmap_instantiate_expression.
+  Defined.
+
+  Lemma fmap_instantiate_judgement
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a : @arity σ} (Γ : raw_context Σ)
+      (I : Metavariable.instantiation a Σ Γ)
+      (J : judgement_total (Metavariable.extend _ _))
+    : fmap_judgement_total f (Metavariable.instantiate_judgement Γ I J)
+    = Metavariable.instantiate_judgement
+        (Context.fmap f Γ) 
+        (fmap_instantiation f I)
+        (fmap_judgement_total (Metavariable.fmap1 f a) J).
+  Proof.
+    destruct J as [[ | ] J].
+    - (* context judgement *)
+      apply (ap (fun Δ => (_;Δ))). cbn. apply fmap_instantiate_context.
+    - (* hypothetical judgement *)
+      apply Judgement.eq_by_expressions. 
+      + (* context part *)
+        refine (coproduct_rect shape_is_sum _ _ _); intros i;
+          unfold Metavariable.instantiate_context.
+        * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+          eapply concat. 2: {apply inverse. refine (coproduct_comp_inj1 _). }
+          apply fmap_rename.
+        * eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+          eapply concat. 2: {apply inverse. refine (coproduct_comp_inj2 _). }
+          apply fmap_instantiate_expression.
+      + intros i; apply fmap_instantiate_expression.
   Defined.
 
 End Instantiation.
