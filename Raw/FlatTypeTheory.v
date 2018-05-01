@@ -57,31 +57,8 @@ End Derivations.
 
 Section Instantiation.
 
+  Context `{Funext}.
   Context {σ : shape_system} {Σ : signature σ}.
-
-  (* TODO: upstream to [FlatRule] *)
-  Definition instantiate_flat_rule
-      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
-      (r : flat_rule Σ)
-    : Family.map_over
-        (Closure.fmap (Metavariable.instantiate_judgement Γ I))
-        (FlatRule.closure_system (FlatRule.fmap include_symbol r))
-        (FlatRule.closure_system r).
-  Proof.
-    (* Sketch: will require lemma about instantiating twice! *)
-  Admitted.
-
-  (* TODO: upstream to [RawStructuralRule] *)
-  Definition instantiate_structural_rule
-      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
-    : Family.map_over
-        (Closure.fmap (Metavariable.instantiate_judgement Γ I))
-        (structural_rule (Metavariable.extend Σ a))
-        (structural_rule Σ).
-  Proof.
-    (* Sketch: do this by hand for the ones given as closure conditions;
-     for the ones given as flat rules, use [instantiate_flat_rule]. *)
-  Admitted.
 
   (** For any flat type theory [T], an an instantiation [I] from a metavariable 
   extension [Σ + a] of its signature, there is a closure system map from the
@@ -97,11 +74,11 @@ Section Instantiation.
   Proof.
     apply Closure.map_from_family_map.
     apply Family.fmap_of_sum.
-    - apply instantiate_structural_rule.
+    - apply RawStructuralRule.instantiate.
     - apply Family.Build_map'.
       intros [r I_r].
-      exists (r;instantiate_flat_rule I (T r) I_r).
-      exact (Family.map_over_commutes (instantiate_flat_rule I (T r)) _).
+      exists (r; FlatRule.instantiate I (T r) I_r).
+      exact (Family.map_over_commutes (FlatRule.instantiate I (T r)) _).
   Defined.
 
   (** Instantiate derivation [d] with metavariable instantiation [I]. *)

@@ -676,6 +676,24 @@ Defined.
 
 End StructuralRuleInd.
 
+Section Instantiation.
+
+  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
+
+  Local Definition instantiate
+      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
+    : Family.map_over
+        (Closure.fmap (Metavariable.instantiate_judgement Γ I))
+        (structural_rule (Metavariable.extend Σ a))
+        (structural_rule Σ).
+  Proof.
+    (* Sketch: do this by hand for the ones given as closure conditions;
+     for the ones given as flat rules, use [instantiate_flat_rule]. *)
+    (* Query: can this be unified with [RawStructuralRule.fmap] below? *)
+  Admitted.
+
+End Instantiation.
+
 Section StructuralRuleMap.
 
   Context `{H : Funext}.
@@ -824,10 +842,20 @@ Section StructuralRuleMap.
           apply Judgement.eq_by_eta, idpath.
         * apply Judgement.eq_by_eta, idpath.
     - (* equality rules *)
-      simple refine (equality_rule _; _); admit.
-      (* This should be do-able cleanly going via a lemma about
-      naturality of translation of flat rules into closure rules,
-      used for logical rules in [fmap] below, once that’s done. *)
+      destruct i_eq as [r ΓI].
+      simple refine (equality_rule _; _).
+      + exists r. set (r_keep := r).
+        recursive_destruct r;
+          exact (FlatRule.fmap_closure_system f
+                          (equality_flat_rule _ r_keep) ΓI).
+      + set (r_keep := r). recursive_destruct r;
+        set (e := (Family.map_over_commutes
+          (FlatRule.fmap_closure_system f
+             (equality_flat_rule _ r_keep))
+          ΓI)).
+        (* [e] is almost right for every case, modulo knowing that
+           [FlatRule.fmap f (equality_flat_rule Σ) = equality_flat_rule Σ'] *) 
+        admit.
   Admitted.
 
 End StructuralRuleMap.

@@ -1,7 +1,9 @@
+Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
 Require Import Proto.ShapeSystem.
 Require Import Raw.Syntax.
+Require Import Raw.SyntaxLemmas.
 
 Section FlatRule.
 
@@ -37,15 +39,54 @@ End FlatRule.
 
 Arguments closure_system {_ _} _.
 
-Local Definition fmap {σ : shape_system} {Σ Σ' : signature σ}
-      (f : Signature.map Σ Σ')
-  : flat_rule Σ -> flat_rule Σ'.
-Proof.
-  intros R.
-  exists (flat_rule_metas _ R).
-  - refine (Family.fmap _ (flat_rule_premises _ R)).
-    apply fmap_judgement_total.
-    apply Metavariable.fmap1, f.
-  - refine (fmap_judgement_total _ (flat_rule_conclusion _ R)).
-    apply Metavariable.fmap1, f.
-Defined.
+Section SignatureMaps.
+
+  Context `{Funext} {σ : shape_system}.
+
+  Local Definition fmap
+        {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+    : flat_rule Σ -> flat_rule Σ'.
+  Proof.
+    intros R.
+    exists (flat_rule_metas _ R).
+    - refine (Family.fmap _ (flat_rule_premises _ R)).
+      apply fmap_judgement_total.
+      apply Metavariable.fmap1, f.
+    - refine (fmap_judgement_total _ (flat_rule_conclusion _ R)).
+      apply Metavariable.fmap1, f.
+  Defined.
+
+  Local Definition fmap_closure_system 
+        {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+        (R : flat_rule Σ)
+    : Family.map_over (Closure.fmap (fmap_judgement_total f))
+        (closure_system R)
+        (closure_system (fmap f R)).
+  Proof.
+    apply Family.Build_map'.
+    intros [Γ I_R].
+    exists (Context.fmap f Γ ; fmap_instantiation f I_R).
+    apply Closure.rule_eq.
+    - simple refine (Family.eq _ _). { apply idpath. }
+      cbn. intros i. apply inverse, fmap_instantiate_judgement.
+    - cbn. apply inverse, fmap_instantiate_judgement.
+  Defined.
+
+End SignatureMaps.
+
+Section Instantiations.
+
+  Context {σ : shape_system} {Σ : signature σ}.
+
+  Local Definition instantiate
+      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
+      (r : flat_rule Σ)
+    : Family.map_over
+        (Closure.fmap (Metavariable.instantiate_judgement Γ I))
+        (closure_system (fmap include_symbol r))
+        (closure_system r).
+  Proof.
+    (* Sketch: will require lemma about instantiating twice! *)
+  Admitted.
+
+End Instantiations.
