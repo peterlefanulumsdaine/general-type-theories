@@ -28,7 +28,7 @@ Proof.
 Defined.
 
 Local Lemma fmap_comp {X Y Z} (f : X -> Y) (g : Y -> Z) (K : family X)
-  : Family.fmap (g o f) K = Family.fmap g (Family.fmap f K).
+  : fmap (g o f) K = fmap g (fmap f K).
 Proof.
   apply idpath.
 Defined.
@@ -222,6 +222,15 @@ Section FamilyMap.
   Proof.
     exists inr.
     intro; apply idpath.
+  Defined.
+
+  Local Definition sum_rect {X} {Y} {f : X -> Y}
+      {K1 K2} {L} (ff1 : map_over f K1 L) (ff2 : map_over f K2 L)
+    : map_over f (K1 + K2) L.
+  Proof.
+    simple refine (_;_).
+    - intros [ x | x ]; [apply ff1 | apply ff2]; apply x. 
+    - intros [ x | x ]; cbn; apply map_over_commutes.
   Defined.
 
   Local Definition some {X} (K : family X) (x : X)
