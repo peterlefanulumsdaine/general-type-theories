@@ -27,6 +27,12 @@ Proof.
   exact (fun i => f (K i)).
 Defined.
 
+Local Lemma fmap_comp {X Y Z} (f : X -> Y) (g : Y -> Z) (K : family X)
+  : Family.fmap (g o f) K = Family.fmap g (Family.fmap f K).
+Proof.
+  apply idpath.
+Defined.
+
 (** The empty family. *)
 Local Definition empty (X : Type) : family X.
 Proof.

@@ -188,3 +188,9 @@ Proof.
   - exact (fmap_derivation inr (ff' _)).
  Defined.
 
+Local Lemma sum_rect {X} {Y} {f : X -> Y}
+    {K1 K2} {L} (ff1 : map_over f K1 L) (ff2 : map_over f K2 L)
+  : map_over f (K1 + K2) L.
+Proof.
+  intros [ x | x ]; [apply ff1 | apply ff2].
+Defined.
