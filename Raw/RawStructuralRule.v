@@ -4,7 +4,7 @@ Require Import Auxiliary.Closure.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
-Require Import Raw.RawSubstitution.
+Require Import Raw.SyntaxLemmas.
 Require Import Raw.FlatRule.
 
 (**
@@ -725,12 +725,12 @@ Section StructuralRuleMap.
           -- eapply concat. { refine (plusone_comp_one _ _ _ _ _ _). }
              eapply concat.
                2: { apply ap. refine (plusone_comp_one _ _ _ _ _ _)^. }
-             apply inverse. apply RawSubstitution.fmap_rename.
+             apply inverse. apply SyntaxLemmas.fmap_rename.
           -- intros x. cbn in x.
              eapply concat. { refine (plusone_comp_inj _ _ _ _ _ _ _). }
              eapply concat.
                2: { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. }
-             apply inverse. apply RawSubstitution.fmap_rename.
+             apply inverse. apply SyntaxLemmas.fmap_rename.
     - (* rename *)
       destruct i_rename as [J [γ' e]].
       simple refine (_;_).

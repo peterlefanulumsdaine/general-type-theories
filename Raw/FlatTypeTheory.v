@@ -2,7 +2,7 @@ Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
 Require Import Raw.Syntax.
-Require Import Raw.RawSubstitution.
+Require Import Raw.SyntaxLemmas.
 Require Import Raw.RawStructuralRule.
 Require Import Raw.FlatRule.
 
