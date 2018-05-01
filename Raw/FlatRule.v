@@ -1,4 +1,5 @@
 Require Import HoTT.
+Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
 Require Import Proto.ShapeSystem.
@@ -78,6 +79,61 @@ Section Instantiations.
 
   Context {σ : shape_system} {Σ : signature σ}.
 
+  (* TODO: upstream to [ShapeSystems]? *)
+  (* TODO: perhaps make into equivalence? *)
+  Definition shape_assoc (γ δ κ : shape_carrier σ)
+    : shape_sum γ (shape_sum δ κ) <~> shape_sum (shape_sum γ δ) κ.
+  Proof.
+    simple refine (equiv_adjointify _ _ _ _); unfold Sect.
+    - repeat apply (coproduct_rect shape_is_sum); intros i.
+      + repeat apply (coproduct_inj1 shape_is_sum); exact i.
+      + apply (coproduct_inj1 shape_is_sum), (coproduct_inj2 shape_is_sum), i.
+      + repeat apply (coproduct_inj2 shape_is_sum); exact i.
+    - repeat apply (coproduct_rect shape_is_sum); intros i.
+      + repeat apply (coproduct_inj1 shape_is_sum); exact i.
+      + apply (coproduct_inj2 shape_is_sum), (coproduct_inj1 shape_is_sum), i.
+      + repeat apply (coproduct_inj2 shape_is_sum); exact i.
+    - unfold Sect. repeat apply (coproduct_rect shape_is_sum); intros i.
+      + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        refine (coproduct_comp_inj1 _).
+      + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { refine (coproduct_comp_inj2 _). }
+        refine (coproduct_comp_inj1 _).
+      + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { refine (coproduct_comp_inj2 _). }
+        refine (coproduct_comp_inj2 _).
+    - unfold Sect. repeat apply (coproduct_rect shape_is_sum); intros i.
+      + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { refine (coproduct_comp_inj1 _). }
+        refine (coproduct_comp_inj1 _).
+      + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { refine (coproduct_comp_inj1 _). }
+        refine (coproduct_comp_inj2 _).
+      + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        refine (coproduct_comp_inj2 _).
+  Defined.
+
+  (* TODO: upstream to [Raw.Syntax.Metavariable]? *)
+  Definition instantiate_instantiation
+      (Γ : raw_context _) {a} (I : Metavariable.instantiation a Σ Γ)
+      (Δ : raw_context _) {b}
+      (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
+    : Metavariable.instantiation b Σ (Metavariable.instantiate_context Γ I Δ).
+  Proof.
+    intros i.
+    refine (rename _ (Metavariable.instantiate_expression I (J i))).
+    apply shape_assoc.
+  Defined.
+
+  (** Given a flat rule [R] over a signature [Σ], an arity [a] specifying a
+   metavariable extension, and an instantiation [I] of [a] in [Σ] over some context [Γ],
+
+   any instance of [R] over the extended signature [extend Σ a] gets translated
+   under [I] into an instance of [R] over [Σ]. *)
   Local Definition instantiate
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
       (r : flat_rule Σ)
@@ -86,7 +142,13 @@ Section Instantiations.
         (closure_system (fmap include_symbol r))
         (closure_system r).
   Proof.
-    (* Sketch: will require lemma about instantiating twice! *)
+    apply Build_map'. 
+    intros [Δ J].
+    exists (Metavariable.instantiate_context _ I Δ ;
+            instantiate_instantiation _ I _ J).
+    apply Closure.rule_eq.
+    - admit. (* should be like the conclusion below, but inside [Family.eq.] *)
+    - admit. (* Some lemma about instantiating twice *)
   Admitted.
 
 End Instantiations.
