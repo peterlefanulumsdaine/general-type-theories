@@ -30,7 +30,6 @@ MODULES := \
 	Raw/CongruenceRule \
 	Raw/FlatRule \
 	Raw/FlatTypeTheory \
-	Raw/FlatTypeTheoryMap \
 	Raw/RawRule \
 	Raw/RawTypeTheory \
 	Typed/TypedClosure \
