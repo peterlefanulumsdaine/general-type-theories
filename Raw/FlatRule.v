@@ -119,36 +119,61 @@ Section Instantiations.
 
   (* TODO: upstream to [Raw.Syntax.Metavariable]? *)
   Definition instantiate_instantiation
-      (Γ : raw_context _) {a} (I : Metavariable.instantiation a Σ Γ)
-      (Δ : raw_context _) {b}
-      (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
-    : Metavariable.instantiation b Σ (Metavariable.instantiate_context Γ I Δ).
+      {γ} {a} (I : Metavariable.instantiation a Σ γ)
+      {δ} {b} (J : Metavariable.instantiation b (Metavariable.extend Σ a) δ)
+    : Metavariable.instantiation b Σ (shape_sum γ δ).
   Proof.
     intros i.
     refine (rename _ (Metavariable.instantiate_expression I (J i))).
     apply shape_assoc.
   Defined.
 
-  (** Given a flat rule [R] over a signature [Σ], an arity [a] specifying a
-   metavariable extension, and an instantiation [I] of [a] in [Σ] over some context [Γ],
-
-   any instance of [R] over the extended signature [extend Σ a] gets translated
-   under [I] into an instance of [R] over [Σ]. *)
-  Local Definition instantiate
-      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
-      (r : flat_rule Σ)
-    : Family.map_over
-        (Closure.fmap (Metavariable.instantiate_judgement Γ I))
-        (closure_system (fmap include_symbol r))
-        (closure_system r).
+  (* TODO: move up to [SyntaxLemmas]? *)
+  Lemma instantiate_instantiate_expression 
+      {γ} {a} (I : Metavariable.instantiation a Σ γ)
+      {δ} {b} (J : Metavariable.instantiation b (Metavariable.extend Σ a) δ)
+      {cl} {θ} (e : raw_expression _ cl θ)
+    : Metavariable.instantiate_expression
+        (instantiate_instantiation I J) e
+    = rename (shape_assoc _ _ _)
+        (Metavariable.instantiate_expression I
+          (Metavariable.instantiate_expression J
+            (Expression.fmap (Metavariable.fmap1 include_symbol _) e))).
   Proof.
-    apply Build_map'. 
-    intros [Δ J].
-    exists (Metavariable.instantiate_context _ I Δ ;
-            instantiate_instantiation _ I _ J).
-    apply Closure.rule_eq.
-    - admit. (* should be like the conclusion below, but inside [Family.eq.] *)
-    - admit. (* Some lemma about instantiating twice *)
+  Admitted.
+
+  (* TODO: refactor judgements to put the shape as separate component throughout (i.e. so that [shape_of_judgement] computes without destructing the judgement form); then this should be unnecessary. *)
+  Lemma instantiate_instantiate_shape_of_judgement
+      {Γ : raw_context _} {a} (I : Metavariable.instantiation a Σ Γ)
+      {Δ : raw_context _} {b}
+      (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
+      (j : judgement_total (Metavariable.extend Σ b))
+  : shape_sum Γ (shape_sum Δ (shape_of_judgement j))
+  <~>
+    shape_of_judgement
+      (Metavariable.instantiate_judgement Γ I
+        (Metavariable.instantiate_judgement Δ J
+          (fmap_judgement_total (Metavariable.fmap1 include_symbol _) j))).
+  Proof.
+    (* idea: destruct judgement form, then use shape_assoc. *) 
+  Admitted.
+
+  (* TODO: move up to [SyntaxLemmas]? *)
+  Lemma instantiate_instantiate_judgement
+      {Γ : raw_context _} {a} (I : Metavariable.instantiation a Σ Γ)
+      {Δ : raw_context _} {b}
+      (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
+      (j : judgement_total (Metavariable.extend Σ b))
+    : Metavariable.instantiate_judgement
+        (Metavariable.instantiate_context _ I Δ)
+        (instantiate_instantiation I J) j
+    = Judgement.rename
+        (Metavariable.instantiate_judgement Γ I
+          (Metavariable.instantiate_judgement Δ J
+            (fmap_judgement_total (Metavariable.fmap1 include_symbol _) j)))
+        (instantiate_instantiate_shape_of_judgement I J j).
+  Proof.
+    (* idea: use [instantiate_instantiate_expression] *) 
   Admitted.
 
 End Instantiations.

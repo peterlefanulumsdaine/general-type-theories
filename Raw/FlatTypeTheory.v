@@ -60,6 +60,30 @@ Section Instantiation.
   Context `{Funext}.
   Context {σ : shape_system} {Σ : signature σ}.
 
+  (** Given a flat rule [R] over a signature [Σ], an arity [a] specifying a
+   metavariable extension, and an instantiation [I] of [a] in [Σ] over some
+   context [Γ],
+
+   any instance of [R] over the extended signature [extend Σ a] gets translated
+   under [I] into an instance of [R] over [Σ], modulo renaming. 
+
+   Note: this can’t be in [Raw.FlatRule], since it uses the structural rules. *)
+  Local Definition instantiate_flat_rule
+      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
+      (r : flat_rule Σ)
+    : Closure.map_over
+        (Metavariable.instantiate_judgement Γ I)
+        (FlatRule.closure_system (FlatRule.fmap include_symbol r))
+        (structural_rule Σ + FlatRule.closure_system r).
+  Proof.
+    intros [Δ J].    
+    (* The derivation essentially consists of the instance
+     [(Metavariable.instantiate_context _ I Δ
+     ; instantiate_instantiation I J)]
+     wrapped in renamings along [instantiate_instantiate_shape_of_judgement].
+     *)
+  Admitted.
+
   (** For any flat type theory [T], an an instantiation [I] from a metavariable 
   extension [Σ + a] of its signature, there is a closure system map from the
   interpretation of [T] over [Σ + a] to the interpretation of [Σ]: any
@@ -72,13 +96,17 @@ Section Instantiation.
        (closure_system (fmap include_symbol T)) 
        (closure_system T).
   Proof.
-    apply Closure.map_from_family_map.
-    apply Family.fmap_of_sum.
-    - apply RawStructuralRule.instantiate.
-    - apply Family.Build_map'.
-      intros [r I_r].
-      exists (r; FlatRule.instantiate I (T r) I_r).
-      exact (Family.map_over_commutes (FlatRule.instantiate I (T r)) _).
+    apply Closure.sum_rect.
+    - apply Closure.map_from_family_map.
+      refine (Family.compose_over (Family.inl) (RawStructuralRule.instantiate _)).
+    - intros [r I_r].
+      refine (Closure.fmap_derivation _ (instantiate_flat_rule I (T r) I_r)).
+      clear I_r.
+      apply Closure.map_from_family_map.
+      apply (Family.fmap_of_sum (Family.idmap _)).
+      (* TODO: the following could be a lemma about [Family.bind]? *)
+      apply Family.Build_map'.
+      intros I_r. exists (r;I_r). apply idpath.
   Defined.
 
   (** Instantiate derivation [d] with metavariable instantiation [I]. *)
