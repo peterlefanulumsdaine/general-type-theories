@@ -76,7 +76,10 @@ Section Instantiation.
         (FlatRule.closure_system (FlatRule.fmap include_symbol r))
         (structural_rule Σ + FlatRule.closure_system r).
   Proof.
-    intros [Δ J].    
+    intros [Δ J].
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl. apply RawStructuralRule.rename. cbn.
+      (* TODO: this would be MUCH easier if judgements were refactored with the shape not dependent on the form *)
     (* The derivation essentially consists of the instance
      [(Metavariable.instantiate_context _ I Δ
      ; instantiate_instantiation I J)]

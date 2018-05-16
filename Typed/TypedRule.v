@@ -101,7 +101,7 @@ Section Flattening.
         RawRule.conclusion_boundary R
         =
         boundary_of_judgement
-          (pr2 (flat_rule_conclusion _ (RawRule.flatten R Sr)))).
+          (flat_rule_conclusion _ (RawRule.flatten R Sr))).
       { recursive_destruct hjf_concl; apply idpath. }
       (* TODO: perhaps try to improve defs of boundary/judgt slots
        so that the above computes on the nose? *)

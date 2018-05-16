@@ -110,21 +110,17 @@ Section AlgebraicExtension.
   Defined.
 
   Local Definition instantiate_judgement
-      {a : @arity σ} {Σ : signature σ} (Γ : raw_context Σ)
+      {a : arity σ} {Σ : signature σ} (Γ : raw_context Σ)
       (I : instantiation a Σ Γ)
       (j : judgement_total (extend Σ a))
     : judgement_total Σ.
   Proof.
-    exists (pr1 j).
-    destruct j as [jf jfi] ; destruct jf ; simpl in *.
-    - apply (instantiate_context _ I). assumption.
-    - destruct jfi as [Δ hjfi].
-      simple refine (existT _ _ _).
-      + apply (instantiate_context _ I).
-        assumption.
-      + simpl.
-        intro i.
-        apply (instantiate_expression I (hjfi i)).
+    exists (form_of_judgement_total j).
+    exists (instantiate_context _ I (context_of_judgement j)).
+    destruct j as [jf J]; destruct jf; simpl in *.
+    - constructor.
+    - simpl. intro i.
+      apply (instantiate_expression I (hypothetical_part J i)).
   Defined.
 
   (** The instantiation under [I] of any presupposition of a judgement [j]
@@ -138,13 +134,13 @@ Section AlgebraicExtension.
     : instantiate_judgement _ I (presupposition j i)
       = presupposition (instantiate_judgement _ I j) i.
   Proof.
-    apply (ap (fun ji => (_;ji))). (* judgement form of presup unchanged *)
+    apply (ap (Build_judgement_total _)). (* judgement form of presup unchanged *)
     destruct j as [[ | hjf] j].
     - destruct i. (* [j] is context judgement: no presuppositions. *)
     - (* [j] is a hypothetical judgement *)
+      apply (ap (Build_judgement _)). (* context of presup unchanged *)
       destruct i as [ i | ].
-      + (* judgement form and context of presup are unchanged: *)
-        simple refine (path_sigma _ _ _ _ _); try apply idpath.
+      + (* hypothetical presupposition *)
         apply path_forall; intros k.
         recursive_destruct hjf;
         recursive_destruct i;
@@ -249,4 +245,3 @@ Section Signature_Maps.
   := fun i => Expression.fmap f (I i).
 
 End Signature_Maps.
-

@@ -122,18 +122,37 @@ Section JudgementDefinitions.
           { Γ : raw_context Σ & hypothetical_boundary hjf Γ }
      end.
 
-  Definition judgement (jf : form) : Type
-    := match jf with
-       | form_context => raw_context Σ
-       | form_hypothetical hjf =>
-         { Γ : raw_context Σ & hypothetical_judgement hjf Γ }
-       end.
+  (** NOTE: the redundant “unit” is slightly ugly.
+      However, compared to having the whole “shape” of [judgement jf] depend
+      on whether [jf] is a context form or hyp form, this keeps the context
+      part uniformly accessible, which gives better computational behaviour. *)
+  Record judgement (jf : form) : Type
+  := { context_of_judgement : raw_context Σ
+     ; hypothetical_part :
+         match jf with
+         | form_context => (Unit : Type)
+         | form_hypothetical hjf => hypothetical_judgement hjf context_of_judgement
+         end
+     }.
+     (* NOTE: the cast [Unit : Type] above is necessary, for subtle universe-
+      polymorphism reasons.  (Specifically: otherwise, Coq specialises [Unit]
+      to [Set], which then forces the type of the other branch to be [Set], and
+      so imposes unwanted universe constraints on the signature, shape system,
+      etc., which can cause conflicts downstream.) *)
+
+  Definition make_context_judgement (Γ : raw_context Σ) : judgement form_context
+  := Build_judgement form_context Γ tt.
+ 
+  Definition shape_of_judgement {jf} (J : judgement jf) : shape_carrier σ
+  := context_of_judgement _ J.
 
   (* NOTE [AB]: I know the name [judgement_total] is ugly, but I do not want to introduce "instance" all over the place.
       Will first check to see which types are most frequently mentioned in the rest of the code. *)
   (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly (among many other things). *)
-  Definition judgement_total
-    := { jf : form & judgement jf }.
+  Record judgement_total : Type
+  := { form_of_judgement_total : form 
+     ; judgement_of_judgement_total :> judgement form_of_judgement_total
+     }.
 
   Local Definition hypothetical_instance_from_boundary_and_head
       {hjf : hypothetical_form} {γ}
@@ -157,24 +176,23 @@ Section JudgementDefinitions.
   destruct jf as [ | hjf].
     - constructor. (* context judgement: no boundary *)
     - (* hyp judgement *)
-      cbn in j. exists (pr1 j). intros i.
+      cbn in j. exists (context_of_judgement _ j). intros i.
       destruct hjf as [ ob_hjf | eq_hjf ].
-      + exact (pr2 j (the_boundary _ i)).
-      + exact (pr2 j i).
-  Defined.
-
-  Definition shape_of_judgement (J : judgement_total) : shape_carrier σ.
-  Proof.
-    destruct J as [[ | ] J].
-    - exact J. (* J just context *)
-    - exact J.1. (* J is context + hyp judgement *)
+      + exact (hypothetical_part _ j (the_boundary _ i)).
+      + exact (hypothetical_part _ j i).
   Defined.
 
 End JudgementDefinitions.
 
 Arguments hypothetical_boundary : simpl nomatch.
+Arguments Build_judgement {_ _ _} _ _.
+Arguments context_of_judgement {_ _ _} j : simpl nomatch.
+Arguments hypothetical_part {_ _ _} j : simpl nomatch.
+Arguments make_context_judgement {_ _} _.
+Arguments Build_judgement_total {_ _} _ _.
+Arguments form_of_judgement_total {_ _} j : simpl nomatch.
 Arguments boundary_of_judgement {_ _ _} _ : simpl nomatch.
-Arguments shape_of_judgement {_ _} _ : simpl nomatch.
+Arguments shape_of_judgement {_ _ _} _ : simpl nomatch.
 
 Section JudgementFmap.
 
@@ -203,20 +221,20 @@ Section JudgementFmap.
       {jf}
     : judgement Σ jf -> judgement Σ' jf.
   Proof.
+    intros J.
+    exists (Context.fmap f (context_of_judgement J)).
     destruct jf as [ | hjf].
-    - apply Context.fmap, f.
-    - cbn. intros Γ_hjfi.
-      exists (Context.fmap f Γ_hjfi.1).
-      exact (fmap_hypothetical_judgement f Γ_hjfi.2).
+    - constructor.
+    - cbn. exact (fmap_hypothetical_judgement f (hypothetical_part J)).
   Defined.
 
   (* NOTE: if [judgement_total] is renamed to [judgement] and [judgement] to [judgement_instance], then [Judgement.fmap] and [fmap_judgement_total] below should be renamed accordingly. *)
   Definition fmap_judgement_total {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
     : judgement_total Σ -> judgement_total Σ'.
   Proof.
-    intros jf_jfi.
-    exists jf_jfi.1.
-    exact (fmap f jf_jfi.2).
+    intros J.
+    exists (form_of_judgement_total J).
+    exact (fmap f J).
   Defined.
 
 End JudgementFmap.
@@ -226,15 +244,14 @@ Section JudgementNotations.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  Local Definition make_context_ji
+  Local Definition make_context_judgement_total
         (Γ : raw_context Σ)
     : judgement_total Σ.
   Proof.
-    exists form_context.
-    exact Γ.
+    exists form_context. apply make_context_judgement, Γ.
   Defined.
 
-  Local Definition make_type_ji
+  Local Definition make_type_judgement_total
         (Γ : raw_context Σ) (A : raw_type Σ Γ)
     : judgement_total Σ.
   Proof.
@@ -243,7 +260,7 @@ Section JudgementNotations.
     intros [ [] | ]; exact A.
   Defined.
 
-  Local Definition make_type_equality_ji
+  Local Definition make_type_equality_judgement_total
              (Γ : raw_context Σ)
              (A A' : raw_type Σ Γ)
     : judgement_total Σ.
@@ -255,7 +272,7 @@ Section JudgementNotations.
     exact A'.
   Defined.
 
-  Local Definition make_term_ji
+  Local Definition make_term_judgement_total
              (Γ : raw_context Σ) (a : raw_term Σ Γ) (A : raw_type Σ Γ)
     : judgement_total Σ.
   Proof.
@@ -266,8 +283,8 @@ Section JudgementNotations.
     exact a.
   Defined.
 
-  (* TODO: consistentise order with [make_term_ji]. *)
-  Local Definition make_term_equality_ji
+  (* TODO: consistentise order with [make_term_judgement_total]. *)
+  Local Definition make_term_equality_judgement_total
              (Γ : raw_context Σ) (A : raw_type Σ Γ) (a a': raw_term Σ Γ)
     : judgement_total Σ.
   Proof.
@@ -281,11 +298,11 @@ Section JudgementNotations.
 
 End JudgementNotations.
 
-Notation "'[!' |- Γ !]" := (make_context_ji Γ) : judgement_scope.
-Notation "'[!' Γ |- A !]" := (make_type_ji Γ A) : judgement_scope.
-Notation "'[!' Γ |- A ≡ A' !]" := (make_type_equality_ji Γ A A') : judgement_scope.
-Notation "'[!' Γ |- a ; A !]" :=  (make_term_ji Γ a A) : judgement_scope.
-Notation "'[!' Γ |- a ≡ a' ; A !]" := (make_term_equality_ji Γ A a a') : judgement_scope.
+Notation "'[!' |- Γ !]" := (make_context_judgement_total Γ) : judgement_scope.
+Notation "'[!' Γ |- A !]" := (make_type_judgement_total Γ A) : judgement_scope.
+Notation "'[!' Γ |- A ≡ A' !]" := (make_type_equality_judgement_total Γ A A') : judgement_scope.
+Notation "'[!' Γ |- a ; A !]" :=  (make_term_judgement_total Γ a A) : judgement_scope.
+Notation "'[!' Γ |- a ≡ a' ; A !]" := (make_term_equality_judgement_total Γ A a a') : judgement_scope.
 
 Open Scope judgement_scope.
 
@@ -386,28 +403,28 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
       + (* hyp judgement: presups are the context,
                         plus the slots of the hyp boundary *)
         exact (option (boundary_slot hjf)).
-    - intros i; simple refine (_;_).
+    - intros i. simple refine (Build_judgement_total _ _).
       + clear jb. destruct jf as [ | hjf].
         * destruct i as [].
         * destruct i as [ i | ].
           -- exact (form_hypothetical (form_object ((boundary_slot hjf) i))).
           -- exact form_context.
-      +  destruct jf as [ | hjf].
+      + destruct jf as [ | hjf].
          * destruct i as [].
-         * destruct i as [ i | ].
-           -- exists (pr1 jb).
-              intros j.
+         * exists (pr1 jb).
+           destruct i as [ i | ].
+           -- intros j.
               refine (transport (fun cl => raw_expression _ cl _) _ _).
               ++ exact (Family.map_commutes (boundary_slot_from_presupposition i) j).
               ++ exact (pr2 jb (boundary_slot_from_presupposition i j)).
-           -- exact (pr1 jb).
+           -- constructor.
   Defined.
 
   (** The presuppositions of judgement [j]. *)
   Definition presupposition
       {Σ : signature σ} (j : judgement_total Σ)
     : family (judgement_total Σ)
-  := presupposition_of_boundary (boundary_of_judgement (pr2 j)).
+  := presupposition_of_boundary (boundary_of_judgement j).
 
 End Presupposition.
 
@@ -462,24 +479,26 @@ In lieu of that, we give explicit lemmas for judgement equality:
   Proof.
     destruct j as [jf j].
     exists jf.
+    exists (context_of_judgement j).
     destruct jf as [ | hf].
-    - exact j.
-    - exists (j.1).
-      intros i.
+    - (* note: could use [constructor] here, but this keeps this case
+         literally equal to [j]. *)
+      exact (hypothetical_part j).
+    - intros i.
       set (i_keep := i).
       recursive_destruct hf;
         recursive_destruct i;
-        exact (j.2 i_keep).
+        exact (hypothetical_part j i_keep).
   Defined.
 
   Local Definition eta (j : judgement_total Σ)
     : eta_expand j = j.
   Proof.
-    apply (ap (fun j => (_;j))).
+    apply (ap (Build_judgement_total _)).
     destruct j as [jf j].
     destruct jf as [ | hf]; try apply idpath.
     destruct j as [Γ hj].
-    apply (ap (fun hj' => (_;hj'))).
+    apply (ap (Build_judgement _)).
     apply path_forall; intros i.
     recursive_destruct hf;
       recursive_destruct i;
@@ -524,13 +543,16 @@ In lieu of that, we give explicit lemmas for judgement equality:
       {J J' : hypothetical_judgement Σ hjf γ}
       (e_Γ : forall i, Γ i = Γ' i)
       (e_J : forall i, J i = J' i)
-    : ((form_hypothetical hjf ; (Build_raw_context γ Γ ; J)) : judgement_total Σ)
-    = (form_hypothetical hjf ; (Build_raw_context γ Γ' ; J')).
+    : Build_judgement_total _ (@Build_judgement _ _
+        (form_hypothetical hjf) (Build_raw_context γ Γ) J)
+    = Build_judgement_total _ (@Build_judgement _ _
+        (form_hypothetical hjf) (Build_raw_context γ Γ') J').
   Proof.
-    apply (ap (fun x => (_;x))).
+    apply (ap (Build_judgement_total _)).
     refine (@ap _ _
                 (fun ΓJ : (_ * hypothetical_judgement _ _ γ)
-                 => (Build_raw_context γ (fst ΓJ) ; snd ΓJ))
+                 => @Build_judgement _ _ (form_hypothetical _)
+                       (Build_raw_context γ (fst ΓJ)) (snd ΓJ))
             (_,_) (_,_) _).
     apply path_prod; apply path_forall; auto.
   Defined.
@@ -556,13 +578,13 @@ Section Rename_Variables.
       {γ' : shape_carrier σ} (f : γ' <~> shape_of_judgement J)
     : judgement_total Σ.
   Proof.
-    set (jf := pr1 J); exists jf.
+    exists (form_of_judgement_total J).
+    exists (Context.rename (context_of_judgement J) f).
     destruct J as [[ | ] J].
     - (* context judgement *)
-      exact (Context.rename J f).
+      constructor.
     - (* hypothetical judgement *)
-      exists (Context.rename J.1 f).
-      exact (rename_hypothetical_judgement J.2 f).
+      exact (rename_hypothetical_judgement (hypothetical_part J) f).
   Defined.
 
 End Rename_Variables.

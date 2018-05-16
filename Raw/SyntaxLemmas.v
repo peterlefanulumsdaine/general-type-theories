@@ -432,7 +432,8 @@ Section Fmap_Instantiation.
   Proof.
     destruct J as [[ | ] J].
     - (* context judgement *)
-      apply (ap (fun Δ => (_;Δ))). cbn. apply fmap_instantiate_context.
+      apply (ap (Build_judgement_total _)), (ap (fun Γ => Build_judgement Γ _)).
+      cbn. apply fmap_instantiate_context.
     - (* hypothetical judgement *)
       apply Judgement.eq_by_expressions. 
       + (* context part *)
@@ -941,8 +942,9 @@ Section Instantiations.
         (instantiate_instantiate_shape_of_judgement I J j).
   Proof.
     destruct j as [[ | jf ] j].
-    - apply (ap (fun j => (_;j))).
-      apply (ap (fun A => Build_raw_context _ A)).
+    - apply (ap (Build_judgement_total _)),
+            (ap (fun Γ => Build_judgement Γ _)),
+            (ap (fun A => Build_raw_context _ A)).
       apply path_forall.
       intros i; apply instantiate_instantiate_context_pointwise.
     - apply Judgement.eq_by_expressions.

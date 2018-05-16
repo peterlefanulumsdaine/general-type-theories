@@ -61,9 +61,10 @@ Section TypedStructuralRule.
     destruct r as [J [γ' f]]; destruct J as [[ | hjf ] J].
     { intros []. } (* Context judgement: no presuppositions. *)
     (* Hypothetical judgement: *)
+    set (J_orig := Build_judgement_total _ J).
     destruct J as [Γ J]; cbn.
     intros p.
-    set (p_orig := p : presupposition (form_hypothetical hjf; Γ; J)).
+    set (p_orig := p : presupposition J_orig).
     (* In all cases, we just rename along [f] in the corresponding original
     presupposition.  However, this will require a different rule — either
     [rename_context] or [rename_hypotherical] — depending on whether [p] is
@@ -73,8 +74,8 @@ Section TypedStructuralRule.
       simple refine (Closure.deduce' _ _ _).
       + apply inl, RawStructuralRule.rename.
         exact (presupposition _ p_orig; (γ'; f)).
-      + apply (ap (fun x => (_;x))).
-        apply (ap (fun x => (_;x))).
+      + apply (ap (Build_judgement_total _)).
+        apply (ap (Build_judgement _)).
         apply path_forall; intros i.
         recursive_destruct hjf; recursive_destruct p; recursive_destruct i;
           apply idpath.
@@ -103,7 +104,7 @@ Section TypedStructuralRule.
     destruct r as [Γ [ Γ' [ f [ hjf J]]]].
     intros p.
     transparent assert (j : (judgement_total Σ)).
-      { exists (form_hypothetical hjf). refine (Γ;J). }
+      { exists (form_hypothetical hjf). exists Γ. exact J. }
     transparent assert (p' : (presupposition j)).
       { exact p. }
     destruct p as [ p | ].
@@ -115,7 +116,7 @@ Section TypedStructuralRule.
         (* TODO: give access functions for locating the structural rules! *)
         exists Γ, Γ', f.
         exists (form_object (Judgement.boundary_slot _ p)).
-        exact (pr2 (pr2 (presupposition _ p'))).
+        exact (hypothetical_part (presupposition _ p')).
       + recursive_destruct hjf; recursive_destruct p;
           apply Judgement.eq_by_eta; apply idpath.
       + intros [ q | ].
@@ -142,7 +143,7 @@ Section TypedStructuralRule.
     destruct r as [Γ [ Γ' [ f [ g [cl J]]]]].
     intros p.
     transparent assert (j : (judgement_total Σ)).
-      { exists (form_hypothetical (form_object cl)). refine (Γ;J). }
+      { exists (form_hypothetical (form_object cl)), Γ. exact J. }
     destruct p as [ p | ].
     - (* [p] a hypothetical presupposition *)
       (* What we do here genuinely depends on [cl]. *)
@@ -320,9 +321,8 @@ Section TypedStructuralRule.
               ** (* [ Γ' |- f^*A type ] *)
                 refine (Closure.graft' _ _ _).
                 { simple refine (derivation_of_reindexing_to_empty_sum _).
-                  - exact Γ'.
                   - apply form_object, class_type.
-                  - unfold hypothetical_judgement.
+                  - exists Γ'.
                     intros i. cbn in i. recursive_destruct i.
                     exact (substitute f A). }
                 { apply Judgement.eq_by_expressions.
@@ -370,9 +370,9 @@ Section TypedStructuralRule.
               ** (* Γ' |- g^*a : g^*A *)
                 refine (Closure.graft' _ _ _).
                 { simple refine (derivation_of_reindexing_to_empty_sum _).
-                  - exact Γ'.
                   - apply form_object, class_term.
-                  - intros i; recursive_destruct i.
+                  - exists Γ'.
+                    intros i; recursive_destruct i.
                     + exact (substitute g A).
                     + exact (substitute g a). }
                 { apply Judgement.eq_by_expressions.

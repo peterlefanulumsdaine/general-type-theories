@@ -51,9 +51,9 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
    where [Γ+0] is the sum of Γ with the empty shape,
    and r^*J is the reindexing of [J] to [Γ+0]. *)
   Definition derivation_of_reindexing_to_empty_sum {T}
-      {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
-      (J : hypothetical_judgement Σ hjf Γ)
-      (J_tot := (form_hypothetical hjf ; (Γ ; J)))
+      {hjf : Judgement.hypothetical_form}
+      (J : judgement Σ (form_hypothetical hjf))
+      (J_tot := Build_judgement_total _ J)
     : Closure.derivation (structural_rule Σ + T)
         [< J_tot >] 
         (Judgement.rename J_tot (equiv_inverse (shape_sum_empty_inl _))).
@@ -68,9 +68,9 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
   Defined.
 
   Definition derive_reindexing_to_empty_sum {T} {h}
-      {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
-      (J : hypothetical_judgement Σ hjf Γ)
-      (J_tot := (form_hypothetical hjf ; (Γ ; J)))
+      {hjf : Judgement.hypothetical_form}
+      (J : judgement Σ (form_hypothetical hjf))
+      (J_tot := Build_judgement_total _ J)
     : Closure.derivation (structural_rule Σ + T) h J_tot
     -> Closure.derivation (structural_rule Σ + T) h
          (Judgement.rename J_tot (equiv_inverse (shape_sum_empty_inl _))).
@@ -91,7 +91,8 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
       {Γ_types : γ0 -> raw_type Σ γ0} (Γ := Build_raw_context γ0 Γ_types)
       {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
-      (J_tot := (form_hypothetical hjf ; (Γ ; J)))
+      (J_tot := Build_judgement_total _ (@Build_judgement _ _ 
+                  (form_hypothetical _) Γ J))
       (J'_tot := Judgement.rename J_tot (shape_sum_empty_inl _))
     : Closure.derivation (structural_rule Σ + T)
         [< J'_tot >]
@@ -125,7 +126,8 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
       {Γ_types : γ0 -> raw_type Σ γ0} (Γ := Build_raw_context γ0 Γ_types)
       {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
-      (J_tot := (form_hypothetical hjf ; (Γ ; J)))
+      (J_tot := Build_judgement_total _ (@Build_judgement _ _ 
+                  (form_hypothetical _) Γ J))
       (J'_tot := Judgement.rename J_tot (shape_sum_empty_inl _))
     : Closure.derivation (structural_rule Σ + T) h J'_tot
     -> Closure.derivation (structural_rule Σ + T) h J_tot.
@@ -142,7 +144,8 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
   Definition derivation_from_reindexing_to_empty_sum {T}
       {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
-      (J_tot := (form_hypothetical hjf ; (Γ ; J)))
+      (J_tot := Build_judgement_total _ (@Build_judgement _ _ 
+                  (form_hypothetical _) Γ J))
     : Closure.derivation (structural_rule Σ + T)
         [< Judgement.rename J_tot (equiv_inverse (shape_sum_empty_inl _)) >]
         J_tot.
@@ -177,7 +180,8 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
   Definition derive_from_reindexing_to_empty_sum {T} {h}
       {Γ : raw_context Σ} {hjf : Judgement.hypothetical_form}
       (J : hypothetical_judgement Σ hjf Γ)
-      (J_tot := (form_hypothetical hjf ; (Γ ; J)))
+      (J_tot := Build_judgement_total _ (@Build_judgement _ _ 
+                  (form_hypothetical _) Γ J))
     : Closure.derivation (structural_rule Σ + T) h
            (Judgement.rename J_tot (equiv_inverse (shape_sum_empty_inl _)))
     -> Closure.derivation (structural_rule Σ + T) h J_tot.

@@ -683,7 +683,7 @@ Section Instantiation.
   Local Definition instantiate
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
     : Family.map_over
-        (Closure.fmap (Metavariable.instantiate_judgement Γ I))
+        (Closure.fmap (@Metavariable.instantiate_judgement σ _ Σ Γ I))
         (structural_rule (Metavariable.extend Σ a))
         (structural_rule Σ).
   Proof.
@@ -719,8 +719,10 @@ Section StructuralRuleMap.
       cbn. apply Closure.rule_eq.
       + simple refine (Family.eq _ _). { apply idpath. }
         intros [].
-      + cbn. apply (ap (fun x => (_; x))).
-        apply (ap (Build_raw_context _)).
+      + cbn.
+        apply (ap (Build_judgement_total _)),
+              (ap (make_context_judgement)),
+              (ap (Build_raw_context _)).
         apply path_forall. refine (empty_rect _ shape_is_empty _).
     - (* context extension *)
       simple refine (_;_).
@@ -732,12 +734,14 @@ Section StructuralRuleMap.
         * simple refine (Family.eq _ _). { apply idpath. }
           cbn. intros [ [] | ].
           -- apply idpath.
-          -- apply (ap (fun x => (_; x))).
-             apply (ap (fun x => (_; x))).
+          -- apply (ap (Build_judgement_total _)).
+             apply (ap (Build_judgement _)).
              apply path_forall. intros [ [] | ];
              apply idpath.
-        * cbn. apply (ap (fun x => (_; x))).
-          apply (ap (Build_raw_context _)).
+        * cbn.
+          apply (ap (Build_judgement_total _)),
+                (ap make_context_judgement),
+                (ap (Build_raw_context _)).
           apply path_forall.
           refine (plusone_rect _ _ (shape_is_extend _ _) _ _ _).
           -- eapply concat. { refine (plusone_comp_one _ _ _ _ _ _). }
@@ -759,7 +763,8 @@ Section StructuralRuleMap.
         * apply idpath.
         * destruct J as [[ | ] J]; cbn.
           -- (* context judgement *)
-            apply (ap (fun x => (_;x))), (ap (Build_raw_context _)).
+            apply (ap (Build_judgement_total _)),
+                  (ap make_context_judgement), (ap (Build_raw_context _)).
             apply path_forall; intros i.
             apply inverse, fmap_rename.
           -- (* hypothetical judgement *)
@@ -782,12 +787,12 @@ Section StructuralRuleMap.
           apply ap011; try apply idpath.
           unfold Family.fmap.
           apply ap, path_forall; intros i.
-          apply (ap (fun x => (_; x))).
-          apply (ap (fun x => (_; x))).
+          apply (ap (Build_judgement_total _)).
+          apply (ap (Build_judgement _)).
           apply path_forall. intros [ [] | ]; try apply idpath.
           refine (fmap_substitute _ _ _).
-        * apply (ap (fun x => (_; x))).
-          apply (ap (fun x => (_; x))).
+        * apply (ap (Build_judgement_total _)).
+          apply (ap (Build_judgement _)).
           apply path_forall. intros i.
           unfold Judgement.fmap_hypothetical_judgement.
           refine (fmap_substitute _ _ _)^.
@@ -811,23 +816,23 @@ Section StructuralRuleMap.
           eapply concat. { eapply (ap (fun K => K + _)), Family.fmap_sum. }
           apply ap2; try apply ap2; unfold Family.fmap.
           -- apply ap, path_forall; intros i.
-             apply (ap (fun x => (_; x))).
-             apply (ap (fun x => (_; x))).
+             apply (ap (Build_judgement_total _)).
+             apply (ap (Build_judgement _)).
              apply path_forall. intros [ [] | ]; try apply idpath.
              refine (fmap_substitute _ _ _).
           -- apply ap, path_forall; intros i.
-             apply (ap (fun x => (_; x))).
-             apply (ap (fun x => (_; x))).
+             apply (ap (Build_judgement_total _)).
+             apply (ap (Build_judgement _)).
              apply path_forall. intros [ [] | ]; try apply idpath.
              refine (fmap_substitute _ _ _).
           -- apply ap, path_forall; intros i.
-             apply (ap (fun x => (_; x))).
-             apply (ap (fun x => (_; x))).
+             apply (ap (Build_judgement_total _)).
+             apply (ap (Build_judgement _)).
              apply path_forall. intros j.
              destruct j as [ [] | | ]; try apply idpath.
              refine (fmap_substitute _ _ _).
-        * apply (ap (fun x => (_; x))).
-          apply (ap (fun x => (_; x))).
+        * apply (ap (Build_judgement_total _)).
+          apply (ap (Build_judgement _)).
           apply path_forall. intros i.
           unfold Judgement.fmap_hypothetical_judgement.
           destruct i; refine (fmap_substitute _ _ _)^.
