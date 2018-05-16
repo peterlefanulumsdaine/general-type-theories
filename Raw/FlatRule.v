@@ -78,6 +78,7 @@ End SignatureMaps.
 Section Instantiations.
 
   Context {σ : shape_system} {Σ : signature σ}.
+  Context `{Funext}.
 
   (* TODO: upstream to [ShapeSystems]? *)
   (* TODO: perhaps make into equivalence? *)
@@ -117,6 +118,9 @@ Section Instantiations.
         refine (coproduct_comp_inj2 _).
   Defined.
 
+  Instance shape_assoc_is_equiv {γ δ κ} : IsEquiv (shape_assoc γ δ κ)
+    := equiv_isequiv (shape_assoc _ _ _).
+
   (* TODO: upstream to [Raw.Syntax.Metavariable]? *)
   Definition instantiate_instantiation
       {γ} {a} (I : Metavariable.instantiation a Σ γ)
@@ -127,6 +131,21 @@ Section Instantiations.
     refine (rename _ (Metavariable.instantiate_expression I (J i))).
     apply shape_assoc.
   Defined.
+
+  (* TODO: move up to [SyntaxLemmas]? *)
+  Lemma instantiate_rename
+      {cl} {a : @arity σ} {γ : σ}
+      (I : Metavariable.instantiation a Σ γ)
+      {δ} (e : raw_expression (Metavariable.extend Σ a) cl δ)
+      {δ' : σ} (f : δ -> δ')
+    : Metavariable.instantiate_expression I (rename f e)
+    = rename
+        (coproduct_rect shape_is_sum _
+          (coproduct_inj1 shape_is_sum)
+          ((coproduct_inj2 shape_is_sum) o f))
+        (Metavariable.instantiate_expression I e).
+  Proof.
+  Admitted.
 
   (* TODO: move up to [SyntaxLemmas]? *)
   Lemma instantiate_instantiate_expression 
@@ -148,15 +167,84 @@ Section Instantiations.
       {Δ : raw_context _} {b}
       (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
       (j : judgement_total (Metavariable.extend Σ b))
-  : shape_sum Γ (shape_sum Δ (shape_of_judgement j))
+  : shape_of_judgement
+      (Metavariable.instantiate_judgement
+        (Metavariable.instantiate_context _ I Δ)
+        (instantiate_instantiation I J) j)
   <~>
     shape_of_judgement
       (Metavariable.instantiate_judgement Γ I
         (Metavariable.instantiate_judgement Δ J
           (fmap_judgement_total (Metavariable.fmap1 include_symbol _) j))).
   Proof.
-    (* idea: destruct judgement form, then use shape_assoc. *) 
-  Admitted.
+    destruct j as [[ | ? ] ?];
+    apply equiv_inverse, shape_assoc. 
+  Defined.
+
+  (* TODO: move up to [SyntaxLemmas]? *)
+  Lemma instantiate_instantiate_context_pointwise
+      {Γ : raw_context _} {a} (I : Metavariable.instantiation a Σ Γ)
+      {Δ : raw_context _} {b}
+      (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
+      (K : raw_context (Metavariable.extend Σ b))
+    : forall i,
+      Metavariable.instantiate_context
+        (Metavariable.instantiate_context _ I Δ)
+        (instantiate_instantiation I J) K i
+    = Context.rename
+        (Metavariable.instantiate_context Γ I
+          (Metavariable.instantiate_context Δ J
+            (Context.fmap (Metavariable.fmap1 include_symbol _) K)))
+        (shape_assoc _ _ _)^-1
+        i.
+  Proof.
+  repeat refine (coproduct_rect shape_is_sum _ _ _).
+    - intros i; cbn.
+      eapply concat. { refine (coproduct_comp_inj1 _). }
+      eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+      eapply concat. { apply inverse, rename_comp. }
+      apply inverse.
+      eapply concat.
+      { apply ap.
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        refine (coproduct_comp_inj1 _).
+      }
+      eapply concat. { apply inverse, rename_comp. }
+      refine (ap (fun f => rename f _) _).
+      clear i. apply path_forall; intros x.
+      refine (coproduct_comp_inj1 _).
+    - intros i; cbn.
+      eapply concat. { refine (coproduct_comp_inj1 _). }
+      eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+      apply inverse.
+      eapply concat.
+      { apply ap.
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        refine (coproduct_comp_inj2 _).
+      }
+      eapply concat. { apply ap, ap. refine (coproduct_comp_inj1 _). }
+      eapply concat. { apply ap, instantiate_rename. }
+      eapply concat. { apply inverse, rename_comp. }
+      refine (ap (fun f => rename f _) _).
+      clear i. apply path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _); intros i.
+      + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        refine (coproduct_comp_inj1 _).
+      + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { refine (coproduct_comp_inj2 _). }
+        refine (coproduct_comp_inj1 _).
+    - intros i.
+      eapply concat. { refine (coproduct_comp_inj2 _). }
+      eapply concat. { apply instantiate_instantiate_expression. }
+      refine ((ap (fun f => rename f _) _) @ ap _ _).
+      + apply ap, inverse, einv_V. 
+      + apply inverse.
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { refine (coproduct_comp_inj2 _). }
+        apply ap. refine (coproduct_comp_inj2 _).
+  Defined.
 
   (* TODO: move up to [SyntaxLemmas]? *)
   Lemma instantiate_instantiate_judgement
@@ -173,7 +261,14 @@ Section Instantiations.
             (fmap_judgement_total (Metavariable.fmap1 include_symbol _) j)))
         (instantiate_instantiate_shape_of_judgement I J j).
   Proof.
-    (* idea: use [instantiate_instantiate_expression] *) 
-  Admitted.
+    destruct j as [[ | jf ] j].
+    - apply (ap (fun j => (_;j))).
+      apply (ap (fun A => Build_raw_context _ A)).
+      apply path_forall.
+      intros i; apply instantiate_instantiate_context_pointwise.
+    - apply Judgement.eq_by_expressions.
+      + apply instantiate_instantiate_context_pointwise.
+      + intros i. refine (instantiate_instantiate_expression _ _ _).
+  Defined.
 
 End Instantiations.
