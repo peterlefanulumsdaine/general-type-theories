@@ -467,7 +467,76 @@ Section Subst_Instantiation.
           ((coproduct_inj2 shape_is_sum) o f))
         (Metavariable.instantiate_expression I e).
   Proof.
-  Admitted.
+    revert δ' f.
+    induction e as [ θ i | θ [S | M] e_args IH_e_args ]; intros δ' f.
+    - (* [e] is a variable *)
+      cbn. apply ap, inverse. refine (coproduct_comp_inj2 _). 
+    - (* [e] is a symbol of [Σ] *)
+      simpl. apply ap. apply path_forall; intros i.
+      eapply concat. { apply ap, IH_e_args. }
+      eapply concat. { apply inverse, rename_comp. }
+      apply inverse.
+      eapply concat. { apply inverse, rename_comp. }
+      apply (ap (fun f => rename f _)).
+      apply path_forall.
+      repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
+      + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { refine (coproduct_comp_inj1 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        apply inverse.
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        refine (coproduct_comp_inj1 _).
+      + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { refine (coproduct_comp_inj1 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        apply inverse.
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap, ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { refine (coproduct_comp_inj2 _). }
+        refine (coproduct_comp_inj1 _).
+      + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { refine (coproduct_comp_inj2 _). }
+        apply inverse.
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap, ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { refine (coproduct_comp_inj2 _). }
+        refine (coproduct_comp_inj2 _).
+    - (* [e] is a metavariable from [a] *)
+      simpl.
+      eapply concat. 2: { apply inverse, rename_substitute. }
+      apply (ap (fun f => substitute f _)).
+      apply path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _); intros i.
+      + eapply concat. { refine (coproduct_comp_inj1 _). }
+        apply inverse.
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        cbn. apply ap. refine (coproduct_comp_inj1 _).
+      + eapply concat. { refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap, IH_e_args. }
+        eapply concat. { apply inverse, rename_comp. }
+        apply inverse.
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply inverse, rename_comp. }
+        apply (ap (fun f => rename f _)). 
+        apply path_forall.
+        repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
+        * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+          eapply concat. { refine (coproduct_comp_inj1 _). }
+          apply inverse.
+          eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+          refine (coproduct_comp_inj1 _).
+        * eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+          eapply concat. { apply ap, ap. refine (coproduct_comp_inj1 _). }
+          eapply concat. { refine (coproduct_comp_inj2 _). }
+          apply inverse.
+          eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+          eapply concat. { apply ap, ap. refine (coproduct_comp_inj1 _). }
+          eapply concat. { refine (coproduct_comp_inj2 _). }
+          apply ap. refine (coproduct_comp_inj1 _). 
+        * revert j. apply empty_rect, shape_is_empty.
+  Defined.
 
   Lemma instantiate_substitute
       {cl} {a : @arity σ} {γ : σ}
@@ -481,7 +550,93 @@ Section Subst_Instantiation.
           (fun i => Metavariable.instantiate_expression I (f i)))
         (Metavariable.instantiate_expression I e).
   Proof.
-  Admitted.
+    revert δ' f.
+    induction e as [ θ i | θ [S | M] e_args IH_e_args ]; intros δ' f.
+    - (* [e] is a variable *)
+      simpl. apply inverse. refine (coproduct_comp_inj2 _). 
+    - (* [e] is a symbol of [Σ] *)
+      simpl. apply ap. apply path_forall; intros i.
+      eapply concat. { apply ap, IH_e_args. }
+      eapply concat. { apply rename_substitute. }
+      apply inverse.
+      eapply concat. { apply substitute_rename. }
+      apply (ap (fun f => substitute f _)).
+      apply path_forall.
+      repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
+      + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { refine (coproduct_comp_inj1 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        apply inverse.
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        simpl; apply ap. refine (coproduct_comp_inj1 _).
+      + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { refine (coproduct_comp_inj1 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        apply inverse.
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap, ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { apply ap, instantiate_rename. }
+        eapply concat. { apply inverse, rename_comp. }
+        apply (ap (fun f => rename f _)).
+        apply path_forall. refine (coproduct_rect shape_is_sum _ _ _); intros k.
+        * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+          refine (coproduct_comp_inj1 _).
+        * eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+          eapply concat. { refine (coproduct_comp_inj2 _). }
+          refine (coproduct_comp_inj1 _).
+      + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { refine (coproduct_comp_inj2 _). }
+        apply inverse.
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap, ap. refine (coproduct_comp_inj2 _). }
+        simpl. apply ap. 
+        eapply concat. { refine (coproduct_comp_inj2 _). }
+        refine (coproduct_comp_inj2 _).
+    - (* [e] is a metavariable from [a] *)
+      simpl.
+      eapply concat. 2: { apply inverse, substitute_substitute. }
+      apply (ap (fun f => substitute f _)).
+      apply path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _); intros i.
+      + eapply concat. { refine (coproduct_comp_inj1 _). }
+        apply inverse.
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        cbn. refine (coproduct_comp_inj1 _).
+      + eapply concat. { refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap, IH_e_args. }
+        eapply concat. { apply rename_substitute. }
+        apply inverse.
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply substitute_rename. }
+        apply (ap (fun f => substitute f _)). 
+        apply path_forall.
+        repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
+        * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+          eapply concat. { refine (coproduct_comp_inj1 _). }
+          apply inverse.
+          eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+          cbn. apply ap. refine (coproduct_comp_inj1 _).
+        * eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+          eapply concat. { apply ap, ap. refine (coproduct_comp_inj1 _). }
+          eapply concat. { refine (coproduct_comp_inj2 _). }
+          apply inverse.
+          eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+          eapply concat. { apply ap, ap. refine (coproduct_comp_inj1 _). }
+          eapply concat. { apply ap, instantiate_rename. }
+          eapply concat. { apply inverse, rename_comp. }
+          eapply concat. 2: { apply rename_idmap. }
+          apply (ap (fun f => rename f _)).
+          apply path_forall.
+          refine (coproduct_rect shape_is_sum _ _ _); intros k.
+          -- eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+           refine (coproduct_comp_inj1 _).
+          -- eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+           eapply concat. { refine (coproduct_comp_inj2 _). }
+           apply ap. refine (coproduct_comp_inj1 _).
+        * revert j. apply empty_rect, shape_is_empty.
+  Defined.
 
 End Subst_Instantiation.
 
