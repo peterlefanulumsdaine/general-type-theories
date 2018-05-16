@@ -859,8 +859,7 @@ Section Instantiations.
         (Metavariable.instantiate_judgement Δ J
           (fmap_judgement_total (Metavariable.fmap1 include_symbol _) j))).
   Proof.
-    destruct j as [[ | ? ] ?];
-    apply equiv_inverse, shape_assoc. 
+    apply equiv_inverse,shape_assoc.
   Defined.
 
   Lemma instantiate_instantiate_context_pointwise
@@ -939,7 +938,7 @@ Section Instantiations.
         (Metavariable.instantiate_judgement Γ I
           (Metavariable.instantiate_judgement Δ J
             (fmap_judgement_total (Metavariable.fmap1 include_symbol _) j)))
-        (instantiate_instantiate_shape_of_judgement I J j).
+         (shape_assoc _ _ _)^-1.
   Proof.
     destruct j as [[ | jf ] j].
     - apply (ap (Build_judgement_total _)),

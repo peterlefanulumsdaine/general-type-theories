@@ -60,6 +60,15 @@ Section Instantiation.
   Context `{Funext}.
   Context {σ : shape_system} {Σ : signature σ}.
 
+  (* TODO: upstream to [Raw.Syntax.Judgement]? *)
+  Definition rename_judgement_inverse
+      (J : judgement_total Σ)
+      {γ' : shape_carrier σ} (e : shape_of_judgement J <~> γ')
+    : Judgement.rename (Judgement.rename J (e^-1)) e = J.
+  Proof.
+    (* should go via functoriality of renaming *)
+  Admitted.
+
   (** Given a flat rule [R] over a signature [Σ], an arity [a] specifying a
    metavariable extension, and an instantiation [I] of [a] in [Σ] over some
    context [Γ],
@@ -77,15 +86,44 @@ Section Instantiation.
         (structural_rule Σ + FlatRule.closure_system r).
   Proof.
     intros [Δ J].
-    simple refine (Closure.deduce' _ _ _).
-    { apply inl. apply RawStructuralRule.rename. cbn.
-      (* TODO: this would be MUCH easier if judgements were refactored with the shape not dependent on the form *)
     (* The derivation essentially consists of the instance
      [(Metavariable.instantiate_context _ I Δ
      ; instantiate_instantiation I J)]
-     wrapped in renamings along [instantiate_instantiate_shape_of_judgement].
+     wrapped in renamings along [shape_assoc].
      *)
-  Admitted.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl. apply RawStructuralRule.rename. cbn.
+      set (j := Metavariable.instantiate_judgement Γ I
+         (Closure.conclusion
+            (FlatRule.closure_system (FlatRule.fmap include_symbol r) (Δ;J)))).
+      exists (Judgement.rename j (shape_assoc _ _ _)^-1).
+      refine (_ ; shape_assoc _ _ _).
+    }
+    { apply rename_judgement_inverse. }
+    intros []; cbn.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inr. 
+      exists (Metavariable.instantiate_context _ I Δ).
+      exact (instantiate_instantiation I J).
+    }
+    { apply instantiate_instantiate_judgement. }
+    cbn. intros p.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, RawStructuralRule.rename. cbn.
+      exists
+        (Metavariable.instantiate_judgement Γ I
+          (Metavariable.instantiate_judgement Δ J
+            (fmap_judgement_total
+              (Metavariable.fmap1 include_symbol _)
+              (flat_rule_premises _ r p)))).
+      refine (_ ; (equiv_inverse (shape_assoc _ _ _))).
+    }
+    { apply inverse, instantiate_instantiate_judgement. }
+    intros [].
+    simple refine (Closure.hypothesis' _ _).
+    { exact p. }
+    { apply idpath. }
+  Defined.
 
   (** For any flat type theory [T], an an instantiation [I] from a metavariable 
   extension [Σ + a] of its signature, there is a closure system map from the
