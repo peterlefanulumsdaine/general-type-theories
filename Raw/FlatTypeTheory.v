@@ -60,15 +60,6 @@ Section Instantiation.
   Context `{Funext}.
   Context {σ : shape_system} {Σ : signature σ}.
 
-  (* TODO: upstream to [Raw.Syntax.Judgement]? *)
-  Definition rename_judgement_inverse
-      (J : judgement_total Σ)
-      {γ' : shape_carrier σ} (e : shape_of_judgement J <~> γ')
-    : Judgement.rename (Judgement.rename J (e^-1)) e = J.
-  Proof.
-    (* should go via functoriality of renaming *)
-  Admitted.
-
   (** Given a flat rule [R] over a signature [Σ], an arity [a] specifying a
    metavariable extension, and an instantiation [I] of [a] in [Σ] over some
    context [Γ],

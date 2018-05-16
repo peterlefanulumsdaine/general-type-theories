@@ -261,6 +261,65 @@ Section Raw_Context_Category.
 
 End Raw_Context_Category.
 
+Section Derived_Lemmas.
+(** In this section: lemmas on the derived forms of renaming and substitution (i.e. into boundaries, judgements, etc) that are easily derived formally from the main lemmas above. *)
+
+  Context `{H_Funext : Funext}.
+  Context {σ : shape_system} {Σ : signature σ}.
+
+  Definition rename_rename_judgement
+      (J : judgement_total Σ)
+      {γ' : shape_carrier σ} (e : γ' <~> shape_of_judgement J)
+      {γ'' : shape_carrier σ} (e' : γ'' <~> γ')
+    : Judgement.rename (Judgement.rename J e) e'
+      = Judgement.rename J (equiv_compose e e').
+  Proof.
+    destruct J as [ [ | hjf ] J].
+    - (* context judgement *)
+      apply (ap (Build_judgement_total _)),
+            (ap make_context_judgement),
+            (ap (Build_raw_context _)).
+      apply path_forall; cbn; intros i.
+      apply inverse, rename_comp.
+    - (* hypothetical judgement *)
+      apply Judgement.eq_by_expressions; cbn.
+      + intros i. apply inverse, rename_comp.
+      + intros i. unfold rename_hypothetical_judgement; cbn.
+        apply inverse, rename_comp.
+  Defined.
+
+  Definition rename_judgement_idmap
+      (J : judgement_total Σ)
+    : Judgement.rename J (equiv_idmap _)
+      = J.
+  Proof.
+    destruct J as [ [ | hjf ] J].
+    - (* context judgement *)
+      apply (ap (Build_judgement_total _)).
+      eapply concat.
+      { eapply (ap make_context_judgement),
+               (ap (Build_raw_context _)).
+        apply path_forall; cbn; intros i.
+        apply rename_idmap. }
+      apply (ap (Build_judgement _)), contr_unit.
+    - (* hypothetical judgement *)
+      apply Judgement.eq_by_expressions; cbn.
+      + intros i. apply rename_idmap.
+      + intros i. unfold rename_hypothetical_judgement; cbn.
+        apply rename_idmap.
+  Defined.
+
+  Definition rename_judgement_inverse
+      (J : judgement_total Σ)
+      {γ' : shape_carrier σ} (e : shape_of_judgement J <~> γ')
+    : Judgement.rename (Judgement.rename J (e^-1)) e = J.
+  Proof.
+    eapply concat. { apply rename_rename_judgement. }
+    eapply concat. 2: { apply rename_judgement_idmap. }
+    apply ap, ecompose_Ve.
+  Defined.
+
+End Derived_Lemmas.
 
 (* Here we give naturality of weakening/substitution with respect to signature maps *)
 Section Naturality.
