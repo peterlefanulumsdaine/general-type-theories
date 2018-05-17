@@ -244,4 +244,61 @@ Section Signature_Maps.
     : instantiation a Σ' γ
   := fun i => Expression.fmap f (I i).
 
+  Local Definition fmap_idmap {Σ} {a}
+    : fmap (Signature.idmap Σ) (Family.idmap a)
+    = Signature.idmap (extend Σ a).
+  Proof.
+    apply Family.map_eq'.
+    intros [S | i]; exists (idpath _); apply idpath.
+  Defined.
+
+  Local Definition fmap1_idmap {Σ} {a}
+    : fmap1 (Signature.idmap Σ) a
+    = Signature.idmap (extend Σ a).
+  Proof.
+    apply fmap_idmap.
+  Defined.
+
+  Local Definition fmap2_idmap {Σ} {a}
+    : fmap2 Σ (Family.idmap a)
+    = Signature.idmap (extend Σ a).
+  Proof.
+    apply fmap_idmap.
+  Defined.
+
+  Local Definition fmap_compose
+    {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ') 
+    {a a' a''} (g' : Family.map a' a'') (g : Family.map a a')
+    : fmap (Signature.compose f' f) (Family.compose g' g)
+    = Signature.compose (fmap f' g') (fmap f g).
+  Proof.
+    apply Family.map_eq'.
+    intros [S | i]; exists (idpath _).
+    - apply inverse, concat_1p.
+    - cbn. apply inverse.
+      eapply concat. { apply concat_1p. }
+      eapply concat. { apply ap, ap_idmap. }
+      apply inverse.
+      eapply concat. { apply ap, ap, ap_idmap. }
+      refine (ap_pp _ _ _).
+  Defined.
+
+  Local Definition fmap1_compose
+    {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ') 
+    (a : _)
+    : fmap1 (Signature.compose f' f) a
+    = Signature.compose (fmap1 f' a) (fmap1 f a).
+  Proof.
+    refine (fmap_compose _ _ (Family.idmap _) (Family.idmap _)).
+  Defined.
+
+  Local Definition fmap2_compose
+    (Σ : _) 
+    {a a' a''} (g' : Family.map a' a'') (g : Family.map a a')
+    : fmap2 Σ (Family.compose g' g)
+    = Signature.compose (fmap2 Σ g') (fmap2 Σ g).
+  Proof.
+    refine (fmap_compose (Signature.idmap _) (Signature.idmap _) _ _).
+  Defined.
+
 End Signature_Maps.

@@ -194,11 +194,142 @@ Arguments form_of_judgement_total {_ _} j : simpl nomatch.
 Arguments boundary_of_judgement {_ _ _} _ : simpl nomatch.
 Arguments shape_of_judgement {_ _ _} _ : simpl nomatch.
 
+(** A tactic that is often handy working with syntax, especially slots:
+recursively destruct some object of an iterated inductive type.
+
+Currently only supports specific inductive types hand-coded here. *)
+(* TODO: can this be generalised to work for arbitrary inductive types? *)
+Ltac recursive_destruct x :=
+    cbn in x;
+    try match type of x with
+    | form =>
+      let hf := fresh "hf" in
+      destruct x as [ | hf ]; [idtac | recursive_destruct hf]
+    | hypothetical_form =>
+      let cl := fresh "cl" in
+      destruct x as [ cl | cl ]; recursive_destruct cl
+    | syntactic_class => destruct x as [ | ]
+    | option _ =>
+      let y := fresh "y" in
+      destruct x as [ y | ]; [recursive_destruct y | idtac ]
+    | Empty => destruct x
+    | Unit => destruct x as []
+    | sum _ _ =>
+      let y := fresh "y" in
+      destruct x as [ y | y ]; recursive_destruct y
+    | sig _ =>
+      let x1 := fresh "x1" in
+      let x2 := fresh "x2" in
+      destruct x as [ x1 x2 ]; recursive_destruct x1; recursive_destruct x2
+    | term_boundary_slot_index => destruct x as []
+    | object_slot_index _ =>
+      let slot := fresh "slot" in
+      destruct x as [ slot | ] ; [ recursive_destruct slot | idtac ]
+    | equality_boundary_slot_index _ =>
+      let slot := fresh "slot" in
+      destruct x as [ slot | | ] ; [ recursive_destruct slot | idtac | idtac ]
+    | _ => idtac
+    end.
+
+Section Equality_Lemmas.
+(** If judgements were record types, rather than function types over their finite set of slots, they would have judgemental eta, which would be very convenient.
+
+In lieu of that, we give explicit lemmas for judgement equality:
+- one [eq_by_eta] analogous to eta-expansion and the eta rule,
+- one [eq_by_expressions] analogous to general function extensionality. *)
+
+  Context {σ : shape_system} {Σ : signature σ} `{Funext}.
+
+  Local Definition eta_expand (j : judgement_total Σ)
+    : judgement_total Σ.
+  Proof.
+    destruct j as [jf j].
+    exists jf.
+    exists (context_of_judgement j).
+    destruct jf as [ | hf].
+    - (* note: could use [constructor] here, but this keeps this case
+         literally equal to [j]. *)
+      exact (hypothetical_part j).
+    - intros i.
+      set (i_keep := i).
+      recursive_destruct hf;
+        recursive_destruct i;
+        exact (hypothetical_part j i_keep).
+  Defined.
+
+  Local Definition eta (j : judgement_total Σ)
+    : eta_expand j = j.
+  Proof.
+    apply (ap (Build_judgement_total _)).
+    destruct j as [jf j].
+    destruct jf as [ | hf]; try apply idpath.
+    destruct j as [Γ hj].
+    apply (ap (Build_judgement _)).
+    apply path_forall; intros i.
+    recursive_destruct hf;
+      recursive_destruct i;
+      apply idpath.
+  Defined.
+
+  (** To give something for a judgement (e.g. to derive it), one can always eta-expand the judgement first. *)
+  Local Definition canonicalise
+      (P : judgement_total Σ -> Type)
+      (j : judgement_total Σ)
+    : P (eta_expand j) -> P j.
+  Proof.
+    apply transport, eta.
+  Defined.
+
+  (* TODO: consider naming *)
+  (** To check two judgements are equal, it’s enough to check their eta-expansions.
+   Convenient for when modulo eta expansion, judgements are literally equal:
+   [apply Judgement.eq_by_eta, idpath.] 
+
+   For other cases, [eq_by_expressions] may be clearer. *)
+  Local Definition eq_by_eta
+      (j j' : judgement_total Σ)
+    : eta_expand j = eta_expand j' -> j = j'.
+  Proof.
+    intros e.
+    exact ((eta j)^ @ e @ eta j').
+  Defined.
+
+  (** When two judgements have the same form and are over the same shape, 
+  then they are equal if all expressions involved (in both the context and
+  the hypothetical part) are equal.
+
+  Often useful in cases where the equality of expressions is for a uniform
+  reason, such as functoriality/naturality lemmas. 
+
+  For cases where the specific form of the judgement is involved in the 
+  difference, [eq_by_eta] may be cleaner. *)
+  Local Definition eq_by_expressions
+      {hjf : hypothetical_form}
+      {γ : σ} {Γ Γ' : γ -> raw_type Σ γ}
+      {J J' : hypothetical_judgement Σ hjf γ}
+      (e_Γ : forall i, Γ i = Γ' i)
+      (e_J : forall i, J i = J' i)
+    : Build_judgement_total _ (@Build_judgement _ _
+        (form_hypothetical hjf) (Build_raw_context γ Γ) J)
+    = Build_judgement_total _ (@Build_judgement _ _
+        (form_hypothetical hjf) (Build_raw_context γ Γ') J').
+  Proof.
+    apply (ap (Build_judgement_total _)).
+    refine (@ap _ _
+                (fun ΓJ : (_ * hypothetical_judgement _ _ γ)
+                 => @Build_judgement _ _ (form_hypothetical _)
+                       (Build_raw_context γ (fst ΓJ)) (snd ΓJ))
+            (_,_) (_,_) _).
+    apply path_prod; apply path_forall; auto.
+  Defined.
+
+End Equality_Lemmas.
+
 Section JudgementFmap.
 
   Context {σ : shape_system}.
 
-  Local Definition fmap_hypothetical_boundary
+  Definition fmap_hypothetical_boundary
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {hjf} {γ}
     : hypothetical_boundary Σ hjf γ -> hypothetical_boundary Σ' hjf γ.
@@ -207,7 +338,7 @@ Section JudgementFmap.
     apply (Expression.fmap f), hjbi.
   Defined.
 
-  Local Definition fmap_hypothetical_judgement
+  Definition fmap_hypothetical_judgement
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {hjf} {γ}
     : hypothetical_judgement Σ hjf γ -> hypothetical_judgement Σ' hjf γ.
@@ -235,6 +366,40 @@ Section JudgementFmap.
     intros J.
     exists (form_of_judgement_total J).
     exact (fmap f J).
+  Defined.
+
+  Context `{Funext}.
+
+  Definition fmap_hypothetical_boundary_idmap
+      {Σ} {hjf} {γ}
+    : @fmap_hypothetical_boundary _ _ (Signature.idmap Σ) hjf γ = idmap.
+  Proof. 
+    apply path_forall; intros b; apply path_forall; intros i.
+    refine (ap10 (Expression.fmap_idmap) _).
+  Defined.
+
+  Definition fmap_hypothetical_judgement_idmap
+      {Σ} {hjf} {γ}
+    : @fmap_hypothetical_judgement _ _ (Signature.idmap Σ) hjf γ = idmap.
+  Proof.
+    apply path_forall; intros b; apply path_forall; intros i.
+    refine (ap10 (Expression.fmap_idmap) _).
+  Defined.
+
+  Local Definition fmap_idmap
+      {Σ} {jf}
+    : @fmap _ _ (Signature.idmap Σ) jf = idmap.
+  Proof.
+    apply path_forall; intros J.
+    (* TODO: generalise [eq_by_expressions], then use [Expression.fmap_idmap] *)
+  Admitted.
+
+  Definition fmap_judgement_total_idmap {Σ}
+    : fmap_judgement_total (Signature.idmap Σ) = idmap.
+  Proof.
+    apply path_forall; intros J.
+    apply (ap (Build_judgement_total _)).
+    refine (ap10 fmap_idmap _).
   Defined.
 
 End JudgementFmap.
@@ -427,137 +592,6 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
   := presupposition_of_boundary (boundary_of_judgement j).
 
 End Presupposition.
-
-(** A tactic that is often handy working with syntax, especially slots:
-recursively destruct some object of an iterated inductive type.
-
-Currently only supports specific inductive types hand-coded here. *)
-(* TODO: can this be generalised to work for arbitrary inductive types? *)
-Ltac recursive_destruct x :=
-    cbn in x;
-    try match type of x with
-    | form =>
-      let hf := fresh "hf" in
-      destruct x as [ | hf ]; [idtac | recursive_destruct hf]
-    | hypothetical_form =>
-      let cl := fresh "cl" in
-      destruct x as [ cl | cl ]; recursive_destruct cl
-    | syntactic_class => destruct x as [ | ]
-    | option _ =>
-      let y := fresh "y" in
-      destruct x as [ y | ]; [recursive_destruct y | idtac ]
-    | Empty => destruct x
-    | Unit => destruct x as []
-    | sum _ _ =>
-      let y := fresh "y" in
-      destruct x as [ y | y ]; recursive_destruct y
-    | sig _ =>
-      let x1 := fresh "x1" in
-      let x2 := fresh "x2" in
-      destruct x as [ x1 x2 ]; recursive_destruct x1; recursive_destruct x2
-    | term_boundary_slot_index => destruct x as []
-    | object_slot_index _ =>
-      let slot := fresh "slot" in
-      destruct x as [ slot | ] ; [ recursive_destruct slot | idtac ]
-    | equality_boundary_slot_index _ =>
-      let slot := fresh "slot" in
-      destruct x as [ slot | | ] ; [ recursive_destruct slot | idtac | idtac ]
-    | _ => idtac
-    end.
-
-Section Equality_Lemmas.
-(** If judgements were record types, rather than function types over their finite set of slots, they would have judgemental eta, which would be very convenient.
-
-In lieu of that, we give explicit lemmas for judgement equality:
-- one [eq_by_eta] analogous to eta-expansion and the eta rule,
-- one [eq_by_expressions] analogous to general function extensionality. *)
-
-  Context {σ : shape_system} {Σ : signature σ} `{Funext}.
-
-  Local Definition eta_expand (j : judgement_total Σ)
-    : judgement_total Σ.
-  Proof.
-    destruct j as [jf j].
-    exists jf.
-    exists (context_of_judgement j).
-    destruct jf as [ | hf].
-    - (* note: could use [constructor] here, but this keeps this case
-         literally equal to [j]. *)
-      exact (hypothetical_part j).
-    - intros i.
-      set (i_keep := i).
-      recursive_destruct hf;
-        recursive_destruct i;
-        exact (hypothetical_part j i_keep).
-  Defined.
-
-  Local Definition eta (j : judgement_total Σ)
-    : eta_expand j = j.
-  Proof.
-    apply (ap (Build_judgement_total _)).
-    destruct j as [jf j].
-    destruct jf as [ | hf]; try apply idpath.
-    destruct j as [Γ hj].
-    apply (ap (Build_judgement _)).
-    apply path_forall; intros i.
-    recursive_destruct hf;
-      recursive_destruct i;
-      apply idpath.
-  Defined.
-
-  (** To give something for a judgement (e.g. to derive it), one can always eta-expand the judgement first. *)
-  Local Definition canonicalise
-      (P : judgement_total Σ -> Type)
-      (j : judgement_total Σ)
-    : P (eta_expand j) -> P j.
-  Proof.
-    apply transport, eta.
-  Defined.
-
-  (* TODO: consider naming *)
-  (** To check two judgements are equal, it’s enough to check their eta-expansions.
-   Convenient for when modulo eta expansion, judgements are literally equal:
-   [apply Judgement.eq_by_eta, idpath.] 
-
-   For other cases, [eq_by_expressions] may be clearer. *)
-  Local Definition eq_by_eta
-      (j j' : judgement_total Σ)
-    : eta_expand j = eta_expand j' -> j = j'.
-  Proof.
-    intros e.
-    exact ((eta j)^ @ e @ eta j').
-  Defined.
-
-  (** When two judgements have the same form and are over the same shape, 
-  then they are equal if all expressions involved (in both the context and
-  the hypothetical part) are equal.
-
-  Often useful in cases where the equality of expressions is for a uniform
-  reason, such as functoriality/naturality lemmas. 
-
-  For cases where the specific form of the judgement is involved in the 
-  difference, [eq_by_eta] may be cleaner. *)
-  Local Definition eq_by_expressions
-      {hjf : hypothetical_form}
-      {γ : σ} {Γ Γ' : γ -> raw_type Σ γ}
-      {J J' : hypothetical_judgement Σ hjf γ}
-      (e_Γ : forall i, Γ i = Γ' i)
-      (e_J : forall i, J i = J' i)
-    : Build_judgement_total _ (@Build_judgement _ _
-        (form_hypothetical hjf) (Build_raw_context γ Γ) J)
-    = Build_judgement_total _ (@Build_judgement _ _
-        (form_hypothetical hjf) (Build_raw_context γ Γ') J').
-  Proof.
-    apply (ap (Build_judgement_total _)).
-    refine (@ap _ _
-                (fun ΓJ : (_ * hypothetical_judgement _ _ γ)
-                 => @Build_judgement _ _ (form_hypothetical _)
-                       (Build_raw_context γ (fst ΓJ)) (snd ΓJ))
-            (_,_) (_,_) _).
-    apply path_prod; apply path_forall; auto.
-  Defined.
-
-End Equality_Lemmas.
 
 Section Rename_Variables.
 (** As discussed in [Raw.Syntax.Context], one can rename the variables of a judgement along an isomorphism of shapes. *)

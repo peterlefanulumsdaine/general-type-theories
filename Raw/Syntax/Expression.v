@@ -80,6 +80,13 @@ Section Signature_Maps.
         exact ((ap snd (Family.map_commutes _ _))^).
   Defined.
 
+  Context `{Funext}.
+
+  Definition fmap_idmap {Σ} {cl} {γ}
+    : @fmap _ _ (Signature.idmap Σ) cl γ = idmap.
+  Proof.
+  Admitted.
+
 End Signature_Maps.
 
 Arguments fmap : simpl nomatch.

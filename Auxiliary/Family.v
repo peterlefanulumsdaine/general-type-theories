@@ -168,6 +168,48 @@ Section FamilyMap.
       forall i : K, L (f i) = K i
   := pr2.
 
+  (* TODO: generalise to “over” version? *)
+  Definition map_eq `{Funext} {X} {K L : family X} {f g : map K L}
+    (e_map : forall k:K, f k = g k)
+    (e_comm : forall k:K,
+        map_commutes f k = ap L (e_map k) @ map_commutes g k)
+    : f = g.
+  Proof.
+    destruct f as [f f_comm], g as [g g_comm].
+    simple refine (path_sigma _ _ _ _ _); cbn.
+    - apply path_forall. exact e_map. 
+    - assert (transport_lemma : forall e : f = g,
+                 transport (fun h => forall k, L (h k) = K k) e f_comm
+                 = (fun k => (ap L (ap10 e^ k)) @ (f_comm k))).
+      { destruct e; cbn.
+        apply inverse, path_forall; intros k; apply concat_1p.
+      }
+      eapply concat. { apply transport_lemma. }
+      apply path_forall; intros k.
+      eapply concat. { apply ap, e_comm. }
+      eapply concat.
+      { eapply whiskerR.
+        eapply concat. { apply ap, ap10_V. }
+        apply ap_V.
+      }
+      apply moveR_Vp.
+      apply whiskerR.
+      apply ap, inverse.
+      apply ap10_path_forall.
+  Defined.
+
+  (* TODO: generalise to “over” version? *)
+  Local Definition map_eq' `{Funext} {X} {K L : family X} {f g : map K L}
+    : (forall k:K, { e : f k = g k
+         & map_commutes f k = ap L e @ map_commutes g k } )
+    -> f = g.
+  Proof.
+    intros e.
+    simple refine (map_eq _ _); intros k.
+    - exact (e k).1.
+    - exact (e k).2.
+  Defined.
+
   Local Definition idmap {X} (K : family X)
     : map K K.
   Proof.

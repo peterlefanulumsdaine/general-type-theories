@@ -86,7 +86,8 @@ Section PresuppositionClosure.
 
   Context {σ : shape_system} `{Funext}.
 
-
+  
+  
   (** For any raw type theory [T] and a rule [r] of the flattened [T], every
       presupposition in the boundary of the conclusion of [r] can be derived. *)
   Lemma presupposition_closed_flatten
@@ -101,6 +102,7 @@ Section PresuppositionClosure.
     - assert (r_WT := T_WT r).
       admit.
   (* Detailed sketch:
+
 We need to get from
 
   TypedRule.is_well_typed_rule
@@ -150,6 +152,18 @@ then by a commutativity, this is
     (RawTypeTheory.flatten T)
 
 which we can map the well-typedness along.
+
+  NOTE: the names of these signatures and signature morphisms are all a bit unintuitive!  This is probably the point to try to think of more intuitive names for them.
+
+  [ RawTypeTheory.subtheory ] : the subtheory _below_ a given rule.  Better name: [ subtheory_below_rule ]?
+  
+  [ RawTypeTheory.subtheory_signature]: is the _isomorphism_ from the signature of the subtheory of T below i, to the signature for the rule i.  Better name: [ rule_signature_iso_subtheory_signature ]?  (Note: the redundant definition is probably necessary, since [rule_signature] needs to be defined mutually with [raw_type_theory], whereas [RawTypeTheory.subtheory] and [RawTypeTheory.signature] are defined afterwards.)
+
+  Infrastructure needed:
+
+  - fmap of well-typedness of these, along a raw type theory map over a signature map
+  - functoriality of the former, in signature maps
+  - commutativity of the triangle involved here.
   *)
     - admit. (* TODO: same as the above, plus lemma that associated congruence rule is well-typed *)
   Admitted.

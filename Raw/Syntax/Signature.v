@@ -29,4 +29,12 @@ Section Map.
 
   Identity Coercion family_map_of_map : map >-> Family.map.
 
+  Local Definition idmap (Σ : signature σ)
+    : map Σ Σ
+  := Family.idmap Σ.
+  
+  Local Definition compose {Σ Σ' Σ'' : signature σ}
+    : map Σ' Σ'' -> map Σ Σ' -> map Σ Σ''
+  := Family.compose.
+  
 End Map.
