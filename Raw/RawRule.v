@@ -110,8 +110,7 @@ Record rule
   Context `{Funext}.
 
   Local Definition fmap_idmap
-      {Σ} {a} {hjf_concl}
-      (R : rule Σ a hjf_concl)
+      {Σ} {a} {hjf_concl} (R : rule Σ a hjf_concl)
     : fmap (Signature.idmap _) R = R.
   Proof.
     apply rule_eq.
@@ -120,8 +119,30 @@ Record rule
       eapply concat.
       { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
         apply Metavariable.fmap1_idmap. }
-      exact (ap10 fmap_hypothetical_boundary_idmap _).
+      apply fmap_hypothetical_boundary_idmap.
   Admitted.
+
+  Local Definition fmap_compose
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {a} {hjf_concl} (R : rule Σ a hjf_concl)
+    : fmap (Signature.compose f' f) R = fmap f' (fmap f R).
+  Proof.
+    apply rule_eq.
+    - admit. (* TODO: [algebraic_extension_eq]. *)
+    - cbn. 
+      eapply concat.
+      { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+        apply Metavariable.fmap1_compose. }
+      apply fmap_hypothetical_boundary_compose.
+  Admitted.
+
+  Local Definition fmap_fmap
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {a} {hjf_concl} (R : rule Σ a hjf_concl)
+    : fmap f' (fmap f R) = fmap (Signature.compose f' f) R.
+  Proof.
+    apply inverse, fmap_compose.
+  Defined.
 
 End WellShapedRule.
 

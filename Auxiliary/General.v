@@ -6,4 +6,3 @@ Require Import HoTT.
 Definition flip {X Y Z : Type}
   : (X -> Y -> Z) -> Y -> X -> Z
 := fun f y x => f x y.
-

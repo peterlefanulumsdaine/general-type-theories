@@ -371,35 +371,104 @@ Section JudgementFmap.
   Context `{Funext}.
 
   Definition fmap_hypothetical_boundary_idmap
-      {Σ} {hjf} {γ}
-    : @fmap_hypothetical_boundary _ _ (Signature.idmap Σ) hjf γ = idmap.
+      {Σ} {hjf} {γ} (B : hypothetical_boundary Σ hjf γ)
+    : fmap_hypothetical_boundary (Signature.idmap Σ) B = B.
   Proof. 
-    apply path_forall; intros b; apply path_forall; intros i.
-    refine (ap10 (Expression.fmap_idmap) _).
+    apply path_forall; intros i.
+    apply Expression.fmap_idmap.
+  Defined.
+
+  Definition fmap_fmap_hypothetical_boundary
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {hjf} {γ} (B : hypothetical_boundary Σ hjf γ)
+    : fmap_hypothetical_boundary f' (fmap_hypothetical_boundary f B)
+      = fmap_hypothetical_boundary (Signature.compose f' f) B.
+  Proof. 
+    apply path_forall; intros i.
+    apply Expression.fmap_fmap.
+  Defined.
+
+  Definition fmap_hypothetical_boundary_compose
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {hjf} {γ} (B : hypothetical_boundary Σ hjf γ)
+    : fmap_hypothetical_boundary (Signature.compose f' f) B
+      = fmap_hypothetical_boundary f' (fmap_hypothetical_boundary f B).
+  Proof.
+    apply inverse, fmap_fmap_hypothetical_boundary.
   Defined.
 
   Definition fmap_hypothetical_judgement_idmap
-      {Σ} {hjf} {γ}
-    : @fmap_hypothetical_judgement _ _ (Signature.idmap Σ) hjf γ = idmap.
+      {Σ} {hjf} {γ} (J : hypothetical_judgement Σ hjf γ)
+    : fmap_hypothetical_judgement  (Signature.idmap Σ) J = J.
   Proof.
-    apply path_forall; intros b; apply path_forall; intros i.
-    refine (ap10 (Expression.fmap_idmap) _).
+    apply path_forall; intros i.
+    apply Expression.fmap_idmap.
+  Defined.
+
+  Definition fmap_fmap_hypothetical_judgement
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {hjf} {γ} (B : hypothetical_judgement Σ hjf γ)
+    : fmap_hypothetical_judgement f' (fmap_hypothetical_judgement f B)
+      = fmap_hypothetical_judgement (Signature.compose f' f) B.
+  Proof. 
+    apply path_forall; intros i.
+    apply Expression.fmap_fmap.
+  Defined.
+
+  Definition fmap_hypothetical_judgement_compose
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {hjf} {γ} (B : hypothetical_judgement Σ hjf γ)
+    : fmap_hypothetical_judgement (Signature.compose f' f) B
+      = fmap_hypothetical_judgement f' (fmap_hypothetical_judgement f B).
+  Proof.
+    apply inverse, fmap_fmap_hypothetical_judgement.
   Defined.
 
   Local Definition fmap_idmap
-      {Σ} {jf}
-    : @fmap _ _ (Signature.idmap Σ) jf = idmap.
+      {Σ} {jf} (J : judgement Σ jf)
+    : fmap (Signature.idmap Σ) J = J.
   Proof.
-    apply path_forall; intros J.
     (* TODO: generalise [eq_by_expressions], then use [Expression.fmap_idmap] *)
   Admitted.
 
-  Definition fmap_judgement_total_idmap {Σ}
-    : fmap_judgement_total (Signature.idmap Σ) = idmap.
+  Local Definition fmap_compose
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {jf} (J : judgement Σ jf)
+    : fmap (Signature.compose f' f) J = fmap f' (fmap f J).
   Proof.
-    apply path_forall; intros J.
-    apply (ap (Build_judgement_total _)).
-    refine (ap10 fmap_idmap _).
+    (* TODO: generalise [eq_by_expressions], then use [Expression.fmap_compose] *)
+  Admitted.
+
+  Local Definition fmap_fmap
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {jf} (J : judgement Σ jf)
+    : fmap f' (fmap f J) = fmap (Signature.compose f' f) J.
+  Proof.
+    apply inverse, fmap_compose.
+  Defined.
+
+  Definition fmap_judgement_total_idmap {Σ} (J : judgement_total Σ)
+    : fmap_judgement_total (Signature.idmap Σ) J = J.
+  Proof.
+    apply (ap (Build_judgement_total _)), fmap_idmap.
+  Defined.
+
+  Local Definition fmap_judgement_total_compose
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      (J : judgement_total Σ)
+    : fmap_judgement_total (Signature.compose f' f) J
+      = fmap_judgement_total f' (fmap_judgement_total f J).
+  Proof.
+    apply (ap (Build_judgement_total _)), fmap_compose.
+  Defined.
+
+  Local Definition fmap_fmap_judgement_total
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      (J : judgement_total Σ)
+    : fmap_judgement_total f' (fmap_judgement_total f J)
+      = fmap_judgement_total (Signature.compose f' f) J.
+  Proof.
+    apply inverse, fmap_judgement_total_compose.
   Defined.
 
 End JudgementFmap.

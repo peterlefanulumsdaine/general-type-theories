@@ -80,13 +80,67 @@ Section Signature_Maps.
         exact ((ap snd (Family.map_commutes _ _))^).
   Defined.
 
+  Global Arguments fmap : simpl nomatch.
+
   Context `{Funext}.
 
-  Definition fmap_idmap {Σ} {cl} {γ}
-    : @fmap _ _ (Signature.idmap Σ) cl γ = idmap.
+  Local Definition fmap_idmap {Σ} {cl} {γ} (e : raw_expression Σ cl γ)
+    : fmap (Signature.idmap Σ) e = e.
   Proof.
-  Admitted.
+    induction e as [ γ i | γ S e_args IH_e_args ].
+    - apply idpath.
+    - simpl. apply ap.
+      apply path_forall; intros i.
+      apply IH_e_args.
+  Defined.
+
+  Local Lemma fmap_transport 
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {cl cl'} (p : cl = cl') {γ} (e : raw_expression Σ cl γ)
+    : fmap f (transport (fun cl => raw_expression _ cl _) p e)
+      = transport (fun cl => raw_expression _ cl _) p (fmap f e).
+  Proof.
+    destruct p; apply idpath.
+  Defined.
+
+  Local Definition fmap_fmap
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {cl} {γ} (e : raw_expression Σ cl γ)
+    : fmap f' (fmap f e) = fmap (Signature.compose f' f) e.
+  Proof.
+    induction e as [ γ i | γ S e_args IH ]; simpl.
+    - apply idpath.
+    - eapply concat. { apply fmap_transport. }
+      simpl. eapply concat. { refine (transport_pp _ _ _ _)^. }
+      eapply concat. { refine (ap (fun p => transport _ p _) _).
+                       refine (ap_pp fst _ _)^. }
+      eapply concat.
+      2: { refine (ap (fun p => transport _ p _) _).
+           apply ap, ap, inverse, ap_idmap. }
+      apply ap, ap.
+      (* Now that we are under the [raw_symbol], we can abstract and destruct
+      the [map_commutes] equalities, and so eliminate the transports. *)
+      set (ΣS := Σ S); set (ΣfS := Σ' (f S)); set (ΣffS := Σ'' (f' (f S))). 
+      change (Family.map_over_commutes f') with (Family.map_commutes f').
+      change (Family.map_over_commutes f) with (Family.map_commutes f).
+      set (p' := Family.map_commutes f' (f S) : ΣffS = ΣfS).
+      set (p := Family.map_commutes f S : ΣfS = ΣS).
+      (* unfold some functions that occur within implicit subterms,
+      blocking folding: *)
+      unfold Family.map_over_of_map, symbol_arity in *.
+      fold p p' ΣffS ΣfS ΣS. fold ΣS in e_args, IH.
+      clearbody p' p ΣS ΣfS ΣffS.
+      destruct p, p'; simpl.
+      apply path_forall; intros i. apply IH.
+  Defined.
+
+  Local Definition fmap_compose
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {cl} {γ} (e : raw_expression Σ cl γ)
+    : fmap (Signature.compose f' f) e = fmap f' (fmap f e).
+  Proof.
+    apply inverse, fmap_fmap.
+  Defined.
 
 End Signature_Maps.
 
-Arguments fmap : simpl nomatch.
