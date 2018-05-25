@@ -194,14 +194,64 @@ Section Functoriality.
       {Σ} {a} (A : algebraic_extension Σ a)
     : fmap (Signature.idmap _) A = A.
   Proof.
-  Admitted.
+    destruct A as [A_premises A_lt ? ?].
+    simple refine (eq _ _ _ _).
+    - apply idpath.
+    - apply idpath.
+    - unfold transport; simpl. intros i j.
+      eapply concat.
+      { refine (ap (fun f => Expression.fmap f _) _).
+        apply Metavariable.fmap2_idmap. }
+      eapply concat. { apply Expression.fmap_idmap. }
+      eapply concat.
+      { refine (ap (fun f => Expression.fmap f _) _).
+        apply Metavariable.fmap1_idmap. }
+      eapply concat. { apply Expression.fmap_idmap. }
+      apply inverse, rename_idmap.
+    - unfold transport; simpl. intros i.
+      eapply concat.
+      { apply rename_hypothetical_boundary_idmap. }
+      eapply concat.
+      { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+        apply Metavariable.fmap2_idmap. }
+      eapply concat. { apply fmap_hypothetical_boundary_idmap. }
+      eapply concat.
+      { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+        apply Metavariable.fmap1_idmap. }
+      apply fmap_hypothetical_boundary_idmap.
+  Defined.
 
   Local Definition fmap_compose
       {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
       {a} (A : algebraic_extension Σ a)
     : fmap (Signature.compose f' f) A = fmap f' (fmap f A).
   Proof.
-  Admitted.
+    destruct A as [A_premises A_lt ? ?].
+    simple refine (eq _ _ _ _).
+    - apply idpath.
+    - apply idpath.
+    - unfold transport; simpl. intros i j.
+      eapply concat.
+      { refine (ap (fun f => Expression.fmap f _) _).
+        apply Metavariable.fmap2_idmap. }
+      eapply concat. { apply Expression.fmap_idmap. }
+      eapply concat.
+      { refine (ap (fun f => Expression.fmap f _) _).
+        apply Metavariable.fmap1_compose. }
+      eapply concat. { apply Expression.fmap_compose. }
+      apply inverse, rename_idmap.
+    - unfold transport; simpl. intros i.
+      eapply concat.
+      { apply rename_hypothetical_boundary_idmap. }
+      eapply concat.
+      { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+        apply Metavariable.fmap2_idmap. }
+      eapply concat. { apply fmap_hypothetical_boundary_idmap. }
+      eapply concat.
+      { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+        apply Metavariable.fmap1_compose. }
+      apply fmap_hypothetical_boundary_compose.
+  Defined.
 
   Local Definition fmap_fmap
       {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
