@@ -428,8 +428,22 @@ Section JudgementFmap.
       {Σ} {jf} (J : judgement Σ jf)
     : fmap (Signature.idmap Σ) J = J.
   Proof.
-    (* TODO: generalise [eq_by_expressions], then use [Expression.fmap_idmap] *)
-  Admitted.
+    destruct jf as [ | hjf].
+    - (* cxt judgement *)
+      destruct J as [ Γ []].
+      unfold fmap. apply ap10, ap, (ap (Build_raw_context _)).
+      cbn. apply path_forall; intros i.
+      apply Expression.fmap_idmap.
+    - (* hypothetical judgement *)
+      destruct J. eapply concat.
+      2: { apply ap, path_forall; intros i.
+           apply Expression.fmap_idmap. }
+      unfold fmap. cbn.
+      refine (ap (fun Γ => Build_judgement (Build_raw_context _ Γ) _) _).
+      apply path_forall; intros i.
+      apply Expression.fmap_idmap.
+    (* TODO: easier if we generalise [eq_by_expressions]? *)
+  Defined.
 
   Local Definition fmap_compose
       {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')

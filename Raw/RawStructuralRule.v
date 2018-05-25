@@ -859,7 +859,10 @@ Section StructuralRuleMap.
              (equality_flat_rule _ r_keep))
           ΓI)).
         (* [e] is almost right for every case, modulo knowing that
-           [FlatRule.fmap f (equality_flat_rule Σ) = equality_flat_rule Σ'] *) 
+           [FlatRule.fmap f (equality_flat_rule Σ) = equality_flat_rule Σ'] *)
+        (* This lemma would follow automatically from functoriality lemmas,
+         if we defined the equality flat rules over the empty signature,
+         and then put them in as their translations to arbitrary sigs. *)
         admit.
   Admitted.
 
