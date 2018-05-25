@@ -667,7 +667,17 @@ Section Rename_Variables.
 
   Context {σ : shape_system} {Σ : signature σ}.
 
+  (** Note: argument order follows general [rename] for expressions, not  [Context.rename]. *)
+  Definition rename_hypothetical_boundary
+      {γ γ' : σ} (f : γ -> γ')
+      {hjf} (B : hypothetical_boundary Σ hjf γ)
+    : hypothetical_boundary Σ hjf γ'.
+  Proof.
+    exact (fun j => rename f (B j)).
+  Defined.
+
   (** Note: argument order follows [Context.rename], not general [rename] for expressions. *)
+  (* TODO: consistentise with [rename_hypothetical_boundary]? *)
   Definition rename_hypothetical_judgement
       {γ} {hjf} (J : hypothetical_judgement Σ hjf γ)
       {γ' : shape_carrier σ} (f : γ' <~> γ)

@@ -41,7 +41,7 @@ Section WellTypedRule.
       * (* case: i an equality premise *)
         destruct H_i_obj. (* ruled out by assumption *)
     }
-    set (r_bdry := AlgebraicExtension.judgement_boundary r).
+    set (r_bdry := AlgebraicExtension.premise_boundary r).
     refine (forall (i : presupposition_of_boundary r_bdry),
                FlatTypeTheory.derivation
                  (FlatTypeTheory.fmap include_symbol T)

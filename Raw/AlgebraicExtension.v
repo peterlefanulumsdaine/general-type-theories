@@ -4,10 +4,13 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Proto.ShapeSystem.
 Require Import Raw.Syntax.
+Require Import Raw.SyntaxLemmas.
+
+Section Algebraic_Extensions.
+
+Context {σ : shape_system} {Σ : signature σ}.
 
 Record algebraic_extension
-  {σ : shape_system}
-  {Σ : signature σ}
   {a : arity σ} (* arity listing the _object_ premises of the extension *)
 :=
   {
@@ -27,15 +30,15 @@ Record algebraic_extension
     := fun i => snd (ae_premise i)
   (* the ordering relation on the premises *)
   ; ae_lt : well_founded_order ae_premise
-  (* for each premise, the arity specifying what metavariables are available in the syntax
-     for this premise; i.e., the family of type/term arguments already introduced by earlier
-     premises *)
+  (* for each premise, the arity specifying what metavariables are available
+  in the syntax for this premise; i.e., the type/term arguments already
+  introduced by earlier premises *)
   ; ae_metas : ae_premise -> arity _
     := fun i => Family.subfamily a (fun j => ae_lt (inl j) i)
   ; ae_signature : ae_premise -> signature _
     := fun i => Metavariable.extend Σ (ae_metas i)
   (* syntactic part of context of premise *)
-  (* NOTE: this should never be used directly, always through [ae_raw_context] *)
+  (* NOTE: should never be used directly, always through [ae_raw_context] *)
   ; ae_raw_context_type
     : forall (i : ae_premise) (v : ae_shape i),
         raw_type
@@ -55,13 +58,12 @@ Record algebraic_extension
           (ae_shape i)
   }.
 
-Arguments algebraic_extension {_} _ _.
+Arguments algebraic_extension _ : clear implicits.
+
 (* TODO: make the record argument implicit in most fields. *)
 
-Local Definition judgement_boundary
-    {σ : shape_system}
-    {Σ : signature σ} {a}
-    {A : algebraic_extension Σ a} (r : A)
+Local Definition premise_boundary
+    {a} {A : algebraic_extension a} (r : A)
   : Judgement.boundary (ae_signature _ r)
                        (form_hypothetical (ae_form _ r)).
 Proof.
@@ -69,6 +71,99 @@ Proof.
   apply (ae_hypothetical_boundary).
 Defined.
 
+Local Definition eq_premise {a : arity σ}
+    {A_eqp A'_eqp : arity σ} (e : A_eqp = A'_eqp)
+    (f_ob : (_ -> _) := (fun cl_γ => (form_object (fst cl_γ), snd cl_γ)))
+    (f_eq : (_ -> _) := (fun cl_γ => (form_equality (fst cl_γ), snd cl_γ)))
+  : Family.map (Family.fmap f_ob a + Family.fmap f_eq A_eqp)
+               (Family.fmap f_ob a + Family.fmap f_eq A'_eqp).
+Proof.
+  destruct e. apply Family.idmap.
+Defined.
+
+Local Definition eq_metas {a : arity _}
+    {A_eqp A'_eqp : arity σ} (e_eqp : A_eqp = A'_eqp) 
+    {A_lt : well_founded_order (a + A_eqp)}
+    {A'_lt : well_founded_order (a + A'_eqp)}
+    (e_lt : transport (fun K => well_founded_order (Family.sum _ K))
+                      e_eqp A_lt = A'_lt)
+  : forall i : (a + A_eqp),
+    Family.map (Family.subfamily a (fun j => A_lt (inl j) i))
+      (Family.subfamily a (fun j => A'_lt (inl j)
+        (eq_premise e_eqp i))).                  
+Proof.
+  destruct e_eqp, e_lt. intros; apply Family.idmap.
+Defined.
+
+(*TODO: upstream to [SyntaxLemmas] *)
+Local Lemma rename_hypothetical_boundary_idmap `{Funext}
+      {Σ'} {γ : σ} {hjf} (B : Judgement.hypothetical_boundary Σ' hjf γ)
+    : rename_hypothetical_boundary idmap B = B.
+Proof.
+  apply path_forall; intros i.
+  apply rename_idmap.
+Defined.
+
+Local Definition eq `{Funext} {a}
+    {A A' : algebraic_extension a}
+    (e_premises : ae_equality_premise A = ae_equality_premise A')
+    (e_lt : transport
+              (fun K => well_founded_order (_ + Family.fmap _ K))
+              e_premises
+              (ae_lt A)
+            = ae_lt A')
+    (equiv_premise : ae_premise A -> ae_premise A' := eq_premise e_premises)
+    (fe_signature : forall i : ae_premise A,
+      Signature.map (ae_signature A i) (ae_signature A' (equiv_premise i))
+      := fun i => Metavariable.fmap2 _ (eq_metas e_premises e_lt i))
+    (fe_shape : forall i : ae_premise A,
+        (ae_shape A i <~> ae_shape A' (equiv_premise i))
+      := fun i => equiv_path _ _ (ap _ (ap _ (Family.map_commutes _ i)^)))
+    (e_raw_context : forall (i : ae_premise A) (j : _),
+        Expression.fmap (fe_signature i) (ae_raw_context A i j)
+        = rename (equiv_inverse (fe_shape i))
+                 (ae_raw_context A' _ (fe_shape i j)))
+    (e_hypothetical_boundary
+       : forall i : ae_premise A,
+        rename_hypothetical_boundary (fe_shape i)
+        (fmap_hypothetical_boundary (fe_signature i)
+        (transport (fun hjf => Judgement.hypothetical_boundary _ hjf _)
+                   (ap fst (Family.map_commutes (eq_premise e_premises) i)^)
+        (ae_hypothetical_boundary A i)))
+        = ae_hypothetical_boundary A' (equiv_premise i))
+  : A = A'.
+Proof.
+  destruct A, A'; cbn in e_premises, e_lt.
+  destruct e_premises, e_lt; simpl in *.
+  refine
+    (ap (Build_algebraic_extension _ _ _ _) _
+    @ ap (fun rc => Build_algebraic_extension _ _ _ rc _) _).
+  - clear ae_raw_context0 ae_raw_context1 e_raw_context.
+    apply path_forall; intros i.
+    refine (_ @ e_hypothetical_boundary i). apply inverse.
+    eapply concat.
+    { unfold transport. apply rename_hypothetical_boundary_idmap. }
+    unfold fe_signature.
+    eapply concat.
+    { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+      apply Metavariable.fmap2_idmap. }
+    apply fmap_hypothetical_boundary_idmap.
+  - clear e_hypothetical_boundary.
+    apply path_forall; intros i.
+    apply path_forall; intros j.  
+    refine (_ @ e_raw_context i j @ _).
+    + unfold fe_signature.
+    eapply inverse, concat.
+    { refine (ap (fun f => Expression.fmap f _) _).
+      apply Metavariable.fmap2_idmap. }
+    apply Expression.fmap_idmap.
+    + unfold equiv_premise, transport.
+      apply rename_idmap.
+Defined.
+
+End Algebraic_Extensions.
+
+Arguments algebraic_extension {_} _ _.
 
 Section Flattening.
 
