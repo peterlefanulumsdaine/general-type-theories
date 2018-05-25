@@ -69,7 +69,7 @@ Record rule
     : Judgement.boundary (Metavariable.extend Σ a) (form_hypothetical hjf)
   := ([::]; rule_conclusion_hypothetical_boundary R).
 
-  Lemma rule_eq 
+  Local Lemma eq 
       {Σ} {a} {hjf_concl} (R R' : rule Σ a hjf_concl)
       (e_prem : rule_premise R = rule_premise R')
       (e_concl : rule_conclusion_hypothetical_boundary R
@@ -88,19 +88,9 @@ Record rule
     : rule Σ' a hjf_concl.
   Proof.
     simple refine (Build_rule Σ' a hjf_concl _ _).
-    simple refine {| ae_equality_premise := ae_equality_premise (rule_premise R) ;
-                     ae_lt := ae_lt (rule_premise R) |}.
-    - (* ae_raw_context_type *)
-      intros i v.
-      refine (_ (ae_raw_context_type _ i v)).
-      apply Expression.fmap, Metavariable.fmap1, f.
-    - (* ae_hypothetical_boundary *)
-      intros i.
-      simple refine
-        (fmap_hypothetical_boundary
-          _ (ae_hypothetical_boundary _ i)).
-      apply Metavariable.fmap1, f.
-    - (* rule_conclusion_hypothetical_boundary *)
+    - (* premises *)
+      exact (AlgebraicExtension.fmap f (rule_premise R)).
+    - (* conclusion *)
       simple refine
         (fmap_hypothetical_boundary
           _ (rule_conclusion_hypothetical_boundary R)).
@@ -113,28 +103,28 @@ Record rule
       {Σ} {a} {hjf_concl} (R : rule Σ a hjf_concl)
     : fmap (Signature.idmap _) R = R.
   Proof.
-    apply rule_eq.
-    - admit. (* TODO: [algebraic_extension_eq]. *)
+    apply eq.
+    - apply AlgebraicExtension.fmap_idmap.
     - cbn. 
       eapply concat.
       { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
         apply Metavariable.fmap1_idmap. }
       apply fmap_hypothetical_boundary_idmap.
-  Admitted.
+  Defined.
 
   Local Definition fmap_compose
       {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
       {a} {hjf_concl} (R : rule Σ a hjf_concl)
     : fmap (Signature.compose f' f) R = fmap f' (fmap f R).
   Proof.
-    apply rule_eq.
-    - admit. (* TODO: [algebraic_extension_eq]. *)
+    apply eq.
+    - apply AlgebraicExtension.fmap_compose.
     - cbn. 
       eapply concat.
       { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
         apply Metavariable.fmap1_compose. }
       apply fmap_hypothetical_boundary_compose.
-  Admitted.
+  Defined.
 
   Local Definition fmap_fmap
       {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
@@ -147,7 +137,6 @@ Record rule
 End WellShapedRule.
 
 (* globalise argument declarations *)
-Arguments algebraic_extension {_} _ _.
 Arguments rule {_} _ _ _.
 
 

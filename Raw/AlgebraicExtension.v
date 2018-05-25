@@ -165,6 +165,54 @@ End Algebraic_Extensions.
 
 Arguments algebraic_extension {_} _ _.
 
+Section Functoriality.
+
+  Context {σ : shape_system}.
+
+  Local Definition fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} (A : algebraic_extension Σ a)
+    : algebraic_extension Σ' a.
+  Proof.
+    simple refine {| ae_equality_premise := ae_equality_premise A ;
+                     ae_lt := ae_lt A |}.
+    - (* ae_raw_context_type *)
+      intros i v.
+      refine (_ (ae_raw_context_type _ i v)).
+      apply Expression.fmap, Metavariable.fmap1, f.
+    - (* ae_hypothetical_boundary *)
+      intros i.
+      simple refine
+        (fmap_hypothetical_boundary
+          _ (ae_hypothetical_boundary _ i)).
+      apply Metavariable.fmap1, f.
+  Defined.
+
+  Context `{Funext}.
+
+  Local Definition fmap_idmap
+      {Σ} {a} (A : algebraic_extension Σ a)
+    : fmap (Signature.idmap _) A = A.
+  Proof.
+  Admitted.
+
+  Local Definition fmap_compose
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {a} (A : algebraic_extension Σ a)
+    : fmap (Signature.compose f' f) A = fmap f' (fmap f A).
+  Proof.
+  Admitted.
+
+  Local Definition fmap_fmap
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {a} (A : algebraic_extension Σ a)
+    : fmap f' (fmap f A) = fmap (Signature.compose f' f) A.
+  Proof.
+    apply inverse, fmap_compose.
+  Defined.
+
+End Functoriality.
+
 Section Flattening.
 
   Context {σ : shape_system} {Σ : signature σ}.
