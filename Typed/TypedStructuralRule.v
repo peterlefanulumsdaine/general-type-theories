@@ -471,7 +471,7 @@ Section TypedStructuralRule.
        -------------
        ⊢ u = u' : B
        *)
-    set (metas := flat_rule_metas _ (tmeq_convert_rule Σ)).
+    set (metas := flat_rule_metas (tmeq_convert_rule Σ)).
     pose (A := Some (Some (Some tt)) : metas).
     pose (B := Some (Some None) : metas).
     pose (u := Some None : metas).
@@ -574,7 +574,7 @@ Section TypedStructuralRule.
     - admit. (* tyeq_trans *)
     - admit. (* tmeq_refl *)
     - (* tmeq_sym :  |- a = b : A //  |- b = a : A *)
-      set (metas := flat_rule_metas _ (tmeq_sym_rule Σ)).
+      set (metas := flat_rule_metas (tmeq_sym_rule Σ)).
       set (A := Some (Some tt) : metas).
       set (a := Some None : metas).
       set (b := None : metas).

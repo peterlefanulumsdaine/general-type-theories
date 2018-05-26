@@ -16,7 +16,7 @@ Section WellTypedRule.
 
   Context {σ : shape_system}.
 
-  (* TODO: upstream to [TypedAlgebraicExtension]. *)
+  (* TODO: upstream to new file [TypedAlgebraicExtension]. *)
   Definition is_well_typed_algebraic_extension
       {Σ : signature σ} (T : flat_type_theory Σ)
       {a} (A : algebraic_extension Σ a)
@@ -82,191 +82,7 @@ End WellTypedRule.
 
 Section Functoriality.
 
-  Context {σ : shape_system} `{H_funext : Funext}.
-
-  (* TODO: upstream *)
-  Definition fmap_judgement_boundary
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {jf} (B : Judgement.boundary Σ jf)
-    : Judgement.boundary Σ' jf.
-  Proof.
-    destruct jf as [ | hjf].
-    - exact B.
-    - exists (Context.fmap f B.1).
-      exact (fmap_hypothetical_boundary f B.2).
-  Defined.
- 
-  Arguments fmap_judgement_total : simpl nomatch.
-  Arguments fmap_judgement_boundary : simpl nomatch.
-  Arguments presupposition_of_boundary : simpl nomatch.
-  Arguments Judgement.boundary_slot_from_presupposition : simpl nomatch.
-
-  (* TODO: upstream *)
-  Definition presupposition_fmap_judgement_boundary
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {jf} (B : Judgement.boundary Σ jf)
-    : Family.map
-        (presupposition_of_boundary (fmap_judgement_boundary f B))
-        (Family.fmap (fmap_judgement_total f) (presupposition_of_boundary B)).
-  Proof.
-    exists idmap.
-    intros i.
-    destruct jf as [ | hjf].
-    - (* context *) destruct i. (* no presups *)
-    - (* hyp *)
-      recursive_destruct hjf; recursive_destruct i; try apply idpath;
-        apply Judgement.eq_by_expressions;
-        intros j; recursive_destruct j; apply idpath.
-  Defined.
-
-  (* TODO: upstream; consider name *)
-  Lemma flat_type_theory_deduce_rule
-      {Σ : signature σ} (T : flat_type_theory Σ)
-      (r : T)
-    : FlatTypeTheory.flat_rule_derivation T (T r).
-  Proof.
-  Admitted.
-
-  (* TODO: upstream *)
-  Lemma flat_type_theory_map_from_family_map
-      {Σ Σ' : signature σ} {f : Signature.map Σ Σ'}
-      {T : flat_type_theory Σ} {T' : flat_type_theory Σ'}
-      (ff : Family.map_over (FlatRule.fmap f) T T')
-    : FlatTypeTheory.map_over f T T'.
-  Proof.
-    intros R.
-    refine (transport _ (Family.map_over_commutes ff R) _).
-    apply flat_type_theory_deduce_rule.
-  Defined.
-
-  (* TODO: upstream; consider name *)
-  Lemma family_map_to_fmap
-      {X X'} (f : X -> X') (K : family X)
-    : Family.map_over f K (Family.fmap f K).
-  Proof.
-    exists idmap.
-    intros i; apply idpath.
-  Defined.
-
-  (* TODO: upstream; consider name *)
-  Lemma flat_type_theory_map_to_fmap
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      (T : flat_type_theory Σ)
-    : FlatTypeTheory.map_over f T (FlatTypeTheory.fmap f T).
-  Proof.
-    apply flat_type_theory_map_from_family_map.
-    apply family_map_to_fmap.
-  Defined.
-
-  Lemma flat_type_theory_fmap_derivation
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {T : flat_type_theory Σ} {H : family (judgement_total Σ)} {J}
-      (D : FlatTypeTheory.derivation T H J)
-    : FlatTypeTheory.derivation
-        (FlatTypeTheory.fmap f T)
-        (Family.fmap (fmap_judgement_total f) H)
-        (fmap_judgement_total f J).
-  Proof.
-    refine (Closure.fmap_derivation_over _ D).
-    apply FlatTypeTheory.fmap_closure_system.
-    apply flat_type_theory_map_to_fmap.
-  Defined.
-  
-  (* TODO: upstream! and check if duplicate? *)
-  Local Definition closure_derivation_fmap_hyps
-      {X} {T : Closure.system X} {H H'} (f : Family.map H H') {x}
-      (D : Closure.derivation T H x)
-    : Closure.derivation T H' x.
-  Proof.
-    refine (Closure.graft _ D _); intros i.
-    apply (Closure.hypothesis' (f i)).
-    apply Family.map_commutes.
-  Defined.
-  
-  (* TODO: upstream, as [FlatTypeTheory.fmap_closure_system];
-     change existing lemma of that name to [fmap_closure_system_over].
-   Also abstract [FlatTypeTheory.map]. *)
-  Definition flat_type_theory_fmap_closure_system
-      {Σ : signature σ} {T T' : flat_type_theory Σ}
-      (f : FlatTypeTheory.map_over (Signature.idmap _) T T')
-    : Closure.map (FlatTypeTheory.closure_system T)
-                  (FlatTypeTheory.closure_system T').
-  Proof.
-    refine (transport (fun g => Closure.map_over g _ _) _
-             (FlatTypeTheory.fmap_closure_system f)).
-    apply path_forall; intros i. apply fmap_judgement_total_idmap.
-  Defined.
-
-  (* TODO: upstream *)
-  (* TODO: make [Σ] implicit in fields of [flat_rule] *)
-  (* TODO: rename [flat_rule_premises] to [flat_rule_premise] *)
-  Lemma flat_rule_eq
-      {Σ : signature σ} {R R' : flat_rule Σ}
-      (e_metas : flat_rule_metas _ R = flat_rule_metas _ R')
-      (e_premises
-       : transport (fun a => family (_ (_ _ a))) e_metas
-                   (flat_rule_premises _ R)
-         = flat_rule_premises _ R')
-      (e_conclusion
-       : transport (fun a => judgement_total (_ _ a)) e_metas
-                   (flat_rule_conclusion _ R)
-         = flat_rule_conclusion _ R')
-    : R = R'.
-  Proof.
-    destruct R, R'; cbn in *.
-    destruct e_metas, e_premises, e_conclusion.
-    apply idpath.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma family_fmap_idmap
-      {X} (K : family X)
-    : Family.fmap idmap K = K.
-  Proof.
-    apply idpath.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma flat_rule_fmap_idmap
-      {Σ : signature σ} (R : flat_rule Σ)
-    : FlatRule.fmap (Signature.idmap _) R = R.
-  Proof.
-    simple refine (flat_rule_eq _ _ _).
-    - apply idpath.
-    - cbn.
-      eapply concat.
-      { refine (ap (fun f => Family.fmap f _) _).
-        eapply concat. { apply ap, Metavariable.fmap1_idmap. }
-        apply path_forall; intros i.
-        apply Judgement.fmap_judgement_total_idmap. }
-      apply family_fmap_idmap.
-    - cbn.
-      eapply concat. 2: { apply fmap_judgement_total_idmap. }
-      apply ap10, ap. apply Metavariable.fmap1_idmap.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma flat_rule_fmap_compose
-      {Σ Σ' Σ'' : signature σ}
-      (f : Signature.map Σ Σ') (f' : Signature.map Σ' Σ'')
-      (R : flat_rule Σ)
-    : FlatRule.fmap (Signature.compose f' f) R
-      = FlatRule.fmap f' (FlatRule.fmap f R).
-  Proof.
-    simple refine (flat_rule_eq _ _ _).
-    - apply idpath.
-    - cbn.
-      eapply concat. 2: { apply Family.fmap_comp. }
-      refine (ap (fun f => Family.fmap f _) _).
-      eapply concat. { apply ap, Metavariable.fmap1_compose. }
-    (* TODO: rename [Family.fmap_comp] to [Family.fmap_compose], for consistency *)
-      apply path_forall; intros i.
-      apply Judgement.fmap_judgement_total_compose.
-    (* TODO: [Judgement.fmap_judgement_total_compose] shouldn’t be local! *)
-    - cbn.
-      eapply concat. 2: { apply Judgement.fmap_judgement_total_compose. }
-      apply ap10, ap, Metavariable.fmap1_compose.
-  Defined.
+  Context {σ : shape_system} `{Funext}.
 
   Local Definition fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
@@ -282,34 +98,35 @@ Section Functoriality.
       admit.
     - (* conclusion *)
       set (fR_concl := RawRule.conclusion_boundary (RawRule.fmap f R)).
-      assert (e_concl : fR_concl = fmap_judgement_boundary
+      assert (e_concl : fR_concl = Judgement.fmap_boundary
                                (Metavariable.fmap1 f _)
                                (RawRule.conclusion_boundary R)). 
         { admit. } (* TODO: lemma for this. *)
       clearbody fR_concl. destruct e_concl^.
       intros i.
-      set (Di := (snd D) (presupposition_fmap_judgement_boundary _ _ i)).
+      set (Di := (snd D) (Judgement.presupposition_fmap_boundary _ _ i)).
       (* [Di] is essentially what we want, modulo some translation. *)
       refine (transport _
-        (Family.map_commutes (presupposition_fmap_judgement_boundary _ _) i) _).
+        (Family.map_commutes (Judgement.presupposition_fmap_boundary _ _) i) _).
       match goal with
       | [|- FlatTypeTheory.derivation _ _ ?JJ ] => set (J := (JJ)) in *
       | _ => fail
       end.
       unfold Family.fmap, family_element in J.
       subst J.
-      assert (fDi := flat_type_theory_fmap_derivation (Metavariable.fmap1 f a) Di).
+      assert (fDi :=
+        FlatTypeTheory.fmap_derivation (Metavariable.fmap1 f a) Di).
       clear D Di e_concl. (* just tidying up *)
-      refine (Closure.fmap_derivation _ (closure_derivation_fmap_hyps _ fDi)).
+      refine (Closure.fmap_derivation _ (Closure.derivation_fmap2 _ fDi)).
       + (* commutativity in type theory *)
-        apply flat_type_theory_fmap_closure_system.
-        apply flat_type_theory_map_from_family_map.
+        apply FlatTypeTheory.fmap_closure_system.
+        apply FlatTypeTheory.map_from_family_map.
         (* TODO: abstract the follwing as lemma? *)
         exists idmap.
         intros r; simpl.
-        eapply concat. { apply inverse, flat_rule_fmap_compose. }
-        eapply concat. 2: { apply inverse, flat_rule_fmap_idmap. }
-        eapply concat. 2: { apply flat_rule_fmap_compose. }
+        eapply concat. { apply inverse, FlatRule.fmap_compose. }
+        eapply concat. 2: { apply inverse, FlatRule.fmap_idmap. }
+        eapply concat. 2: { apply FlatRule.fmap_compose. }
         apply ap10, ap.
         (* TODO: lemma about naturality of [include_symbol]. *)
         admit.
@@ -343,7 +160,7 @@ Section Flattening.
         RawRule.conclusion_boundary R
         =
         boundary_of_judgement
-          (flat_rule_conclusion _ (RawRule.flatten R Sr))).
+          (flat_rule_conclusion (RawRule.flatten R Sr))).
       { recursive_destruct hjf_concl; apply idpath. }
       (* TODO: perhaps try to improve defs of boundary/judgt slots
        so that the above computes on the nose? *)

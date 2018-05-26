@@ -27,7 +27,14 @@ Proof.
   exact (fun i => f (K i)).
 Defined.
 
-Local Lemma fmap_comp {X Y Z} (f : X -> Y) (g : Y -> Z) (K : family X)
+Local Lemma fmap_idmap
+    {X} (K : family X)
+  : fmap idmap K = K.
+Proof.
+  apply idpath.
+Defined.
+
+Local Lemma fmap_compose {X Y Z} (f : X -> Y) (g : Y -> Z) (K : family X)
   : fmap (g o f) K = fmap g (fmap f K).
 Proof.
   apply idpath.
@@ -230,6 +237,14 @@ Section FamilyMap.
   Local Definition compose {X} {K L M : family X} (g : map L M) (f : map K L)
     : map K M
   := compose_over g f.
+
+  Local Lemma map_to_fmap
+      {X X'} (f : X -> X') (K : family X)
+    : map_over f K (fmap f K).
+  Proof.
+    exists Overture.idmap.
+    intros i; apply idpath.
+  Defined.
 
   (* TODO: we have a conflict of naming conventions here!
 

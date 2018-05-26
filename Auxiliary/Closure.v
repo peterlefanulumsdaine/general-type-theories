@@ -168,6 +168,17 @@ Local Definition fmap_derivation
 
 Arguments fmap_derivation : simpl nomatch.
 
+(** Derivations are also functorial in their hypotheses. *)
+Local Definition derivation_fmap2
+    {X} {T : system X} {H H'} (f : Family.map H H') {x}
+    (D : derivation T H x)
+  : derivation T H' x.
+Proof.
+  refine (graft _ D _); intros i.
+  apply (hypothesis' (f i)).
+  apply Family.map_commutes.
+Defined.
+
 Local Definition inl {X} {C D : system X}
   : map C (C + D)
 := map_from_family_map Family.inl.

@@ -50,8 +50,17 @@ Section Derivations.
     : Type
   := derivation 
        (fmap include_symbol T)
-       (flat_rule_premises _ R)
-       (flat_rule_conclusion _ R).
+       (flat_rule_premises R)
+       (flat_rule_conclusion R).
+
+  (* TODO: consider name *)
+  Lemma flat_type_theory_deduce_rule
+      (T : flat_type_theory Σ) (r : T)
+    : flat_rule_derivation T (T r).
+  Proof.
+    unfold flat_rule_derivation.
+    (* Will involve renaming… but a little systematically, at least. *)
+  Admitted.
 
 End Derivations.
 
@@ -106,7 +115,7 @@ Section Instantiation.
           (Metavariable.instantiate_judgement Δ J
             (fmap_judgement_total
               (Metavariable.fmap1 include_symbol _)
-              (flat_rule_premises _ r p)))).
+              (flat_rule_premises r p)))).
       refine (_ ; (equiv_inverse (shape_assoc _ _ _))).
     }
     { apply inverse, instantiate_instantiate_judgement. }
@@ -158,7 +167,7 @@ End Instantiation.
   
 Section Maps.
 
-  Context `{H : Funext}.
+  Context `{H_funext : Funext}.
   Context {σ : shape_system}.
 
   (* A flat type theory map [ff : T -> T'] over a map [f : Σ -> Σ'] of their signatures consists of derivations exhibiting the translation of each rule of [T] as a derivable rule of [T']. *)
@@ -168,7 +177,11 @@ Section Maps.
   := forall R : T,
       flat_rule_derivation T' (FlatRule.fmap f (T R)).
 
-  Local Definition fmap_closure_system
+  Local Definition map
+    {Σ} (T T' : flat_type_theory Σ)
+  := map_over (Signature.idmap Σ) T T'.
+
+  Local Definition fmap_closure_system_over
     {Σ Σ': signature σ} {f : Signature.map Σ Σ'}
     {T : flat_type_theory Σ} {T' : flat_type_theory Σ'}
     (ff : map_over f T T')
@@ -189,15 +202,60 @@ Section Maps.
     eapply transport. { apply inverse, fmap_instantiate_judgement. }
     eapply (transport (fun H => derivation _ H _)).
     { apply inverse.
-      eapply concat. { apply inverse, Family.fmap_comp. }
+      eapply concat. { apply inverse, Family.fmap_compose. }
       eapply concat.
       { refine (ap10 _ _). apply ap, path_forall; intros i.
         apply fmap_instantiate_judgement. }
-      apply Family.fmap_comp.
+      apply Family.fmap_compose.
     }
     apply instantiate_derivation.
     apply ff.
   Defined.
 
-  (* TODO: maps of type theories preserve derivability. *)
+  (* Abstract [FlatTypeTheory.map]. *)
+  Local Definition fmap_closure_system
+      {Σ : signature σ} {T T' : flat_type_theory Σ}
+      (f : map_over (Signature.idmap _) T T')
+    : Closure.map (closure_system T) (closure_system T').
+  Proof.
+    refine (transport (fun g => Closure.map_over g _ _) _
+             (fmap_closure_system_over f)).
+    apply path_forall; intros i. apply fmap_judgement_total_idmap.
+  Defined.
+
+  Local Lemma map_from_family_map
+      {Σ Σ' : signature σ} {f : Signature.map Σ Σ'}
+      {T : flat_type_theory Σ} {T' : flat_type_theory Σ'}
+      (ff : Family.map_over (FlatRule.fmap f) T T')
+    : map_over f T T'.
+  Proof.
+    intros R.
+    refine (transport _ (Family.map_over_commutes ff R) _).
+    apply flat_type_theory_deduce_rule.
+  Defined.
+
+  Local Lemma map_to_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      (T : flat_type_theory Σ)
+    : map_over f T (fmap f T).
+  Proof.
+    apply map_from_family_map.
+    apply Family.map_to_fmap.
+  Defined.
+
+  (* TODO: careful with naming: this should really be the actual functoriality in flat type theory maps. *)
+  Local Lemma fmap_derivation
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {T : flat_type_theory Σ} {H : family (judgement_total Σ)} {J}
+      (D : derivation T H J)
+    : derivation
+        (fmap f T)
+        (Family.fmap (fmap_judgement_total f) H)
+        (fmap_judgement_total f J).
+  Proof.
+    refine (Closure.fmap_derivation_over _ D).
+    apply fmap_closure_system_over.
+    apply map_to_fmap.
+  Defined.
+
 End Maps.

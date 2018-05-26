@@ -19,10 +19,10 @@ Section WellTyped.
   Local Definition weakly_well_typed (T : flat_type_theory Σ)
       (r : flat_rule Σ)
     : Type
-  := forall c_presup : presupposition (flat_rule_conclusion _ r),
+  := forall c_presup : presupposition (flat_rule_conclusion r),
       (FlatTypeTheory.derivation
          (FlatTypeTheory.fmap include_symbol T)
-         (let H := flat_rule_premises _ r in H + Family.bind H presupposition)
+         (let H := flat_rule_premises r in H + Family.bind H presupposition)
          (presupposition _ c_presup)).
 
   (** Note: we could give (as we have for closure rules) a stronger notion of
@@ -43,7 +43,7 @@ Section Instantiations.
   Local Lemma closure_system_weakly_well_typed
        (T : flat_type_theory Σ)
        (r : flat_rule Σ) (D_r : weakly_well_typed T r)
-       {Γ : raw_context Σ} (I : Metavariable.instantiation (flat_rule_metas _ r) Σ Γ)
+       {Γ : raw_context Σ} (I : Metavariable.instantiation (flat_rule_metas r) Σ Γ)
     : TypedClosure.weakly_well_typed_rule presupposition
         (FlatTypeTheory.closure_system T)
         (FlatRule.closure_system r (Γ;I)).
@@ -69,3 +69,4 @@ Section Instantiations.
 
 
 End Instantiations.
+

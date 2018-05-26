@@ -46,7 +46,7 @@ Section JudgementDefinitions.
             end)
     |}.
 
-  (* The boundary of a term or a type. *)
+  (* The boundary slots of a term or type judgement. *)
   Local Definition object_boundary_slot (cl : syntactic_class) : family syntactic_class
   := match cl with
        (* No hypothetical part in boundary of a type judgement *)
@@ -338,6 +338,17 @@ Section JudgementFmap.
     apply (Expression.fmap f), hjbi.
   Defined.
 
+  Local Definition fmap_boundary
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {jf} (B : boundary Σ jf)
+    : boundary Σ' jf.
+  Proof.
+    destruct jf as [ | hjf].
+    - exact B.
+    - exists (Context.fmap f B.1).
+      exact (fmap_hypothetical_boundary f B.2).
+  Defined.
+
   Definition fmap_hypothetical_judgement
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {hjf} {γ}
@@ -482,7 +493,7 @@ Section JudgementFmap.
     apply (ap (Build_judgement_total _)), fmap_idmap.
   Defined.
 
-  Local Definition fmap_judgement_total_compose
+  Definition fmap_judgement_total_compose
       {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
       (J : judgement_total Σ)
     : fmap_judgement_total (Signature.compose f' f) J
@@ -491,7 +502,7 @@ Section JudgementFmap.
     apply (ap (Build_judgement_total _)), fmap_compose.
   Defined.
 
-  Local Definition fmap_fmap_judgement_total
+  Definition fmap_fmap_judgement_total
       {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
       (J : judgement_total Σ)
     : fmap_judgement_total f' (fmap_judgement_total f J)
@@ -689,6 +700,25 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
     : family (judgement_total Σ)
   := presupposition_of_boundary (boundary_of_judgement j).
 
+  (** Interactions between [fmap] along signature maps,
+   and taking presuppositions. *)
+  Local Definition presupposition_fmap_boundary `{Funext}
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {jf} (B : boundary Σ jf)
+    : Family.map
+        (presupposition_of_boundary (fmap_boundary f B))
+        (Family.fmap (fmap_judgement_total f) (presupposition_of_boundary B)).
+  Proof.
+    exists idmap.
+    intros i.
+    destruct jf as [ | hjf].
+    - (* context *) destruct i. (* no presups *)
+    - (* hyp *)
+      recursive_destruct hjf; recursive_destruct i; try apply idpath;
+        apply eq_by_expressions;
+        intros j; recursive_destruct j; apply idpath.
+  Defined.
+
 End Presupposition.
 
 Section Rename_Variables.
@@ -730,3 +760,4 @@ Section Rename_Variables.
   Defined.
 
 End Rename_Variables.
+

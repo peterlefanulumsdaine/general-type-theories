@@ -9,7 +9,7 @@ Require Import Raw.SyntaxLemmas.
 Section FlatRule.
 
   Context {σ : shape_system}.
-  Context (Σ : signature σ).
+  Context {Σ : signature σ}.
 
   (* TODO: Is it right that we allow arbitrary judgements, or should we allow
      only _hypothetical_ judgements? *)
@@ -21,6 +21,25 @@ Section FlatRule.
     ; flat_rule_conclusion :
         (judgement_total (Metavariable.extend Σ flat_rule_metas))
     }.
+
+  (* TODO: rename [flat_rule_premises] to [flat_rule_premise] *)
+  Local Lemma eq
+      {R R' : flat_rule}
+      (e_metas : flat_rule_metas R = flat_rule_metas R')
+      (e_premises
+       : transport (fun a => family (_ (_ _ a))) e_metas
+                   (flat_rule_premises R)
+         = flat_rule_premises R')
+      (e_conclusion
+       : transport (fun a => judgement_total (_ _ a)) e_metas
+                   (flat_rule_conclusion R)
+         = flat_rule_conclusion R')
+    : R = R'.
+  Proof.
+    destruct R, R'; cbn in *.
+    destruct e_metas, e_premises, e_conclusion.
+    apply idpath.
+  Defined.
 
   Local Definition closure_system (R : flat_rule)
     : Closure.system (judgement_total Σ).
@@ -38,6 +57,7 @@ Section FlatRule.
 
 End FlatRule.
 
+Arguments flat_rule {_} _.
 Arguments closure_system {_ _} _.
 
 Section SignatureMaps.
@@ -49,11 +69,11 @@ Section SignatureMaps.
     : flat_rule Σ -> flat_rule Σ'.
   Proof.
     intros R.
-    exists (flat_rule_metas _ R).
-    - refine (Family.fmap _ (flat_rule_premises _ R)).
+    exists (flat_rule_metas R).
+    - refine (Family.fmap _ (flat_rule_premises R)).
       apply fmap_judgement_total.
       apply Metavariable.fmap1, f.
-    - refine (fmap_judgement_total _ (flat_rule_conclusion _ R)).
+    - refine (fmap_judgement_total _ (flat_rule_conclusion R)).
       apply Metavariable.fmap1, f.
   Defined.
 
@@ -71,6 +91,44 @@ Section SignatureMaps.
     - simple refine (Family.eq _ _). { apply idpath. }
       cbn. intros i. apply inverse, fmap_instantiate_judgement.
     - cbn. apply inverse, fmap_instantiate_judgement.
+  Defined.
+
+  Local Lemma fmap_idmap
+      {Σ : signature σ} (R : flat_rule Σ)
+    : fmap (Signature.idmap _) R = R.
+  Proof.
+    simple refine (eq _ _ _).
+    - apply idpath.
+    - cbn.
+      eapply concat.
+      { refine (ap (fun f => Family.fmap f _) _).
+        eapply concat. { apply ap, Metavariable.fmap1_idmap. }
+        apply path_forall; intros i.
+        apply Judgement.fmap_judgement_total_idmap. }
+      apply Family.fmap_idmap.
+    - cbn.
+      eapply concat. 2: { apply fmap_judgement_total_idmap. }
+      apply ap10, ap. apply Metavariable.fmap1_idmap.
+  Defined.
+
+  Local Lemma fmap_compose
+      {Σ Σ' Σ'' : signature σ}
+      (f : Signature.map Σ Σ') (f' : Signature.map Σ' Σ'')
+      (R : flat_rule Σ)
+    : fmap (Signature.compose f' f) R
+      = fmap f' (fmap f R).
+  Proof.
+    simple refine (eq _ _ _).
+    - apply idpath.
+    - cbn.
+      eapply concat. 2: { apply Family.fmap_compose. }
+      refine (ap (fun f => Family.fmap f _) _).
+      eapply concat. { apply ap, Metavariable.fmap1_compose. }
+      apply path_forall; intros i.
+      apply fmap_judgement_total_compose.
+    - cbn.
+      eapply concat. 2: { apply fmap_judgement_total_compose. }
+      apply ap10, ap, Metavariable.fmap1_compose.
   Defined.
 
 End SignatureMaps.
