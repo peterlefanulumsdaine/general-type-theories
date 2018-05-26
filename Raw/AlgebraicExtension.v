@@ -95,15 +95,6 @@ Proof.
   destruct e_eqp, e_lt. intros; apply Family.idmap.
 Defined.
 
-(*TODO: upstream to [SyntaxLemmas] *)
-Local Lemma rename_hypothetical_boundary_idmap `{Funext}
-      {Σ'} {γ : σ} {hjf} (B : Judgement.hypothetical_boundary Σ' hjf γ)
-    : rename_hypothetical_boundary idmap B = B.
-Proof.
-  apply path_forall; intros i.
-  apply rename_idmap.
-Defined.
-
 Local Definition eq `{Funext} {a}
     {A A' : algebraic_extension a}
     (e_premises : ae_equality_premise A = ae_equality_premise A')

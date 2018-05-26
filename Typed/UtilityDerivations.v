@@ -25,27 +25,6 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
 
   Context `{Funext} {σ : shape_system} {Σ : signature σ}.
 
-  Definition shape_sum_empty (γ : σ) : σ
-  := shape_sum γ (shape_empty σ).
-
-  Definition shape_sum_empty_inl_is_equiv (γ : σ)
-    : IsEquiv (coproduct_inj1 shape_is_sum : γ -> shape_sum_empty γ).
-  Proof.
-    simple refine (isequiv_adjointify _ _ _ _).
-    - apply (coproduct_rect shape_is_sum).
-      + intros i; exact i.
-      + apply (empty_rect _ shape_is_empty).
-    - unfold Sect. apply (coproduct_rect shape_is_sum).
-      + intros i. apply ap.
-        refine (coproduct_comp_inj1 _).
-      + apply (empty_rect _ shape_is_empty).
-    - intros i. refine (coproduct_comp_inj1 _).
-  Defined.
-
-  Definition shape_sum_empty_inl (γ : σ)
-    : γ <~> shape_sum_empty γ
-  := BuildEquiv _ _ _ (shape_sum_empty_inl_is_equiv γ).
-
   (** From any judgement [ Γ |- J ],
       one can derive [ Γ+0 |- r^* J ],
    where [Γ+0] is the sum of Γ with the empty shape,

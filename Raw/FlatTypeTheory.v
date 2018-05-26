@@ -1,5 +1,6 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
+Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
 Require Import Raw.Syntax.
 Require Import Raw.SyntaxLemmas.
@@ -53,17 +54,77 @@ Section Derivations.
        (flat_rule_premises R)
        (flat_rule_conclusion R).
 
+End Derivations.
+
+(** A first few utility derivations, usable for building up others. *)
+(* TODO: unify with [UtilityDerivations.v]. *)
+Section UtilityDerivations.
+
+  Context {σ : shape_system} `{H_Funext : Funext}.
+
+  (** Commonly-required analogue of [Closure.deduce']. *)
+  (* TODO: after some use, consider whether this would be more convenient with
+   the equivalence given in the other direction. *)
+  Lemma deduce_modulo_rename {Σ : signature σ}
+      {T : flat_type_theory Σ} {H : family _} {J : judgement_total _}
+      (r : closure_system T)
+      (e : shape_of_judgement J
+          <~> shape_of_judgement (Closure.conclusion (closure_system T r)))
+      (e_J : Judgement.rename (Closure.conclusion (closure_system T r)) e
+             = J)
+      (D : forall p : Closure.premises (closure_system T r),
+          derivation T H (Closure.premises _ p))
+    : derivation T H J.
+  Proof.
+    simple refine (Closure.deduce' _ _ _).
+    - apply inl, RawStructuralRule.rename.
+      exists (Closure.conclusion (closure_system T r)). exact (_;e).
+    - apply e_J.
+    - intros [].
+      exact (Closure.deduce _ _ r D).
+  Defined.
+
+  (** Commonly-required analogue of [Closure.deduce'], similar to [deduce_modulo_rename] above. *)
+  (* TODO: after some use, consider whether this would be more convenient with
+   the equivalence given in the other direction. *)
+  Lemma hypothesis_modulo_rename {Σ : signature σ}
+      {T : flat_type_theory Σ} {H : family (judgement_total _)}
+      {J : judgement_total _}
+      (h : H)
+      (e : shape_of_judgement J <~> shape_of_judgement (H h))
+      (e_J : Judgement.rename (H h) e = J)
+    : derivation T H J.
+  Proof.
+    simple refine (Closure.deduce' _ _ _).
+    - apply inl, RawStructuralRule.rename.
+      exists (H h). exact (_;e).
+    - apply e_J.
+    - intros [].
+      exact (Closure.hypothesis _ _ h).
+  Defined.
+
+  (** Any rule of a type theory is derivable over the theory itself. *)
   (* TODO: consider name *)
-  Lemma flat_type_theory_deduce_rule
-      (T : flat_type_theory Σ) (r : T)
+  Lemma flat_type_theory_derive_rule `{Funext}
+      {Σ : signature σ} (T : flat_type_theory Σ) (r : T)
     : flat_rule_derivation T (T r).
   Proof.
     unfold flat_rule_derivation.
-    (* Will involve renaming… but a little systematically, at least. *)
-  Admitted.
+    simple refine (deduce_modulo_rename _ _ _ _).
+    - apply inr. exists r, [::]. apply unit_instantiation.
+    - apply shape_sum_empty_inr.
+    - cbn. apply judgement_eq_rename_iff_eq_rename_inverse.
+      apply unit_instantiate_judgement.
+    - cbn. intros p.
+      simple refine (hypothesis_modulo_rename _ _ _).
+      + exact p.
+      + apply equiv_inverse, shape_sum_empty_inr.
+      + cbn. apply inverse, unit_instantiate_judgement.
+  Defined.
 
-End Derivations.
+End UtilityDerivations.
 
+(** Interaction between derivations and instantiation of metavariables *) 
 Section Instantiation.
 
   Context `{Funext}.
@@ -212,10 +273,8 @@ Section Maps.
     apply ff.
   Defined.
 
-  (* Abstract [FlatTypeTheory.map]. *)
   Local Definition fmap_closure_system
-      {Σ : signature σ} {T T' : flat_type_theory Σ}
-      (f : map_over (Signature.idmap _) T T')
+      {Σ : signature σ} {T T' : flat_type_theory Σ} (f : map T T')
     : Closure.map (closure_system T) (closure_system T').
   Proof.
     refine (transport (fun g => Closure.map_over g _ _) _
@@ -231,7 +290,7 @@ Section Maps.
   Proof.
     intros R.
     refine (transport _ (Family.map_over_commutes ff R) _).
-    apply flat_type_theory_deduce_rule.
+    apply flat_type_theory_derive_rule.
   Defined.
 
   Local Lemma map_to_fmap

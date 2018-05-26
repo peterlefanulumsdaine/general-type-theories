@@ -62,17 +62,18 @@ Section AlgebraicExtension.
 
   (* Given such an instantiation, one can translate syntax over the extended
      signature into syntax over the base signature. *)
-  Local Definition instantiate_expression
+  Local Fixpoint instantiate_expression
       {cl} {a : @arity σ} {Σ : signature σ} {γ : σ}
       (I : instantiation a Σ γ)
       {δ} (e : raw_expression (extend Σ a) cl δ)
     : raw_expression Σ cl (shape_sum γ δ).
   Proof.
-    induction e as [ δ i | δ [S | M] args inst_arg ].
+    destruct e as [ δ i | δ [S | M] args].
   - refine (raw_variable _).
     exact (coproduct_inj2 (shape_is_sum) i).
   - refine (raw_symbol S _). intros i.
-    refine (Substitution.rename _ (inst_arg i)).
+    refine (Substitution.rename _
+             (instantiate_expression _ _ _ _ I _ (args i))).
     apply (Coproduct.assoc
              shape_is_sum shape_is_sum
              shape_is_sum shape_is_sum).
@@ -81,7 +82,9 @@ Section AlgebraicExtension.
     refine (coproduct_rect shape_is_sum _ _ _).
     + intros i. apply raw_variable, (coproduct_inj1 shape_is_sum), i.
     + intros i.
-      refine (Substitution.rename _ (inst_arg i)). cbn.
+      refine (Substitution.rename _
+             (instantiate_expression _ _ _ _ I _ (args i))).
+      cbn.
       refine (Coproduct.fmap shape_is_sum shape_is_sum _ _).
       exact (fun j => j).
       exact (Coproduct.empty_right shape_is_sum shape_is_empty).
