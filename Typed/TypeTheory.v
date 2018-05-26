@@ -16,7 +16,7 @@ Section WellTypedTypeTheory.
 
   Local Definition is_well_typed (T : raw_type_theory σ) : Type.
   Proof.
-    simple refine (forall R : T, TypedRule.is_well_typed_rule _ (tt_rule R)).
+    simple refine (forall R : T, TypedRule.is_well_typed _ (tt_rule R)).
     refine (FlatTypeTheory.fmap _ _).
     - apply RawTypeTheory.subtheory_signature.
     - apply RawTypeTheory.flatten.

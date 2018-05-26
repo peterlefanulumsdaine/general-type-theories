@@ -95,9 +95,7 @@ Section PresuppositionClosure.
     : presupposition_closed_flat_type_theory (RawTypeTheory.flatten T).
   Proof.
     (* The flattened [T] has logical and congruence rules, two cases to consider. *)
-    (* Hopefully these cases can be treated uniformly by a lemma that [RawRule.flatten]
-       applied to a well-typed rule is presupposition-closed; but that is a bit subtle
-       to state/use, due to the translation between signatures involved. *)
+    (* Do these have to be treated separately, or can they be unified better? *)
     intros [r|r]; apply TypedRule.weakly_well_typed_flatten.
     - assert (r_WT := T_WT r).
       admit.
