@@ -66,39 +66,6 @@ Section Functoriality.
 
   Context {σ : shape_system} `{Funext}.
 
-  Lemma algebraic_extension_premise_boundary_fmap
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {a} {A : algebraic_extension Σ a} (p : A)
-    : @AlgebraicExtension.premise_boundary _ _ _ (AlgebraicExtension.fmap f A) p
-    = Judgement.fmap_boundary (Metavariable.fmap1 f (ae_metas A p))
-                              (AlgebraicExtension.premise_boundary p).
-  Proof.
-  Admitted.
-
-  (* todo: upstream to [Raw.AlgebraicExtension]! *)
-  Lemma algebraic_extension_flatten_fmap
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {a} {A : algebraic_extension Σ a} (i : A)
-    : AlgebraicExtension.flatten (AlgebraicExtension.fmap f A) i
-    = fmap_judgement_total (Metavariable.fmap1 f a)
-         (AlgebraicExtension.flatten A i).
-  Proof.
-  Admitted.
-
-  (* todo: upstream to [Raw.AlgebraicExtension]! *)
-  Lemma algebraic_extension_flatten_initial_segment_fmap
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {a} {A : algebraic_extension Σ a} (p : A)
-      (i : AlgebraicExtension.initial_segment A p)
-    : AlgebraicExtension.flatten
-        (AlgebraicExtension.initial_segment
-          (AlgebraicExtension.fmap f A) p) i
-    = AlgebraicExtension.flatten
-        (AlgebraicExtension.fmap f
-          (AlgebraicExtension.initial_segment A p)) i.
-  Proof.
-  Admitted.
-
   Definition fmap_is_well_typed_algebraic_extension
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {A : algebraic_extension Σ a}
@@ -113,7 +80,7 @@ Section Functoriality.
       = Judgement.fmap_boundary
           (Metavariable.fmap1 f _)
           (@AlgebraicExtension.premise_boundary _ _ _ A p)). 
-        { apply algebraic_extension_premise_boundary_fmap. }
+        { apply AlgebraicExtension.premise_boundary_fmap. }
      clearbody p_bdry. destruct e_bdry^.
      intros i.
     set (Di := D p (Judgement.presupposition_fmap_boundary _ _ i)).
@@ -143,8 +110,8 @@ Section Functoriality.
         apply Metavariable.include_symbol_after_map.
       + (* commutativity in hypotheses *)
         cbn. exists idmap; intros j.
-        eapply concat. 2: { apply algebraic_extension_flatten_fmap. }
-        apply algebraic_extension_flatten_initial_segment_fmap.
+        eapply concat. 2: { apply AlgebraicExtension.flatten_fmap. }
+        apply AlgebraicExtension.flatten_initial_segment_fmap.
    Defined.
 
   Local Definition fmap_is_well_typed
@@ -192,7 +159,7 @@ Section Functoriality.
         apply Metavariable.include_symbol_after_map.
       + (* commutativity in hypotheses *)
         cbn. exists idmap.
-        apply algebraic_extension_fmap_flatten.
+        apply AlgebraicExtension.flatten_fmap.
   Defined.
 
 End Functoriality.

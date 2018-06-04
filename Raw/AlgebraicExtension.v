@@ -252,17 +252,26 @@ Section Functoriality.
     apply inverse, fmap_compose.
   Defined.
 
+  Local Lemma premise_boundary_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {A : algebraic_extension Σ a} (p : A)
+    : @premise_boundary _ _ _ (fmap f A) p
+    = Judgement.fmap_boundary (Metavariable.fmap1 f (ae_metas A p))
+                              (premise_boundary p).
+  Proof.
+  Admitted.
+
 End Functoriality.
 
 Section Flattening.
 
-  Context {σ : shape_system} {Σ : signature σ}.
+  Context {σ : shape_system}.
 
   (* In flattening an algebraic extension (or rule), and in other settings (e.g. type-checking the premises), we often want to extract premises as judgements.
 
    We need to do this into several different signatures, so in this lemma, we isolate exactly what is required: a map from the signature of this premise, plus (in case the premise is an object premise) a symbol to use as the head of the judgement, i.e. the metavariable introduced by the premise. *)
   (* TODO: consider whether the flattening of the conclusion of rules can also be unified with this. *)
-  Local Definition judgement_of_premise
+  Local Definition judgement_of_premise {Σ : signature σ}
       {a} {A : algebraic_extension Σ a} (i : A)
       {Σ'} (f : Signature.map (ae_signature _ i) Σ')
       (Sr : Judgement.is_object (ae_form _ i)
@@ -289,7 +298,7 @@ Section Flattening.
         destruct H_obj. (* ruled out by assumption *)
   Defined.
 
-  Local Definition flatten {a}
+  Local Definition flatten {Σ : signature σ} {a}
     (A : algebraic_extension Σ a)
   : family (judgement_total (Metavariable.extend Σ a)).
   (* This construction involves essentially two aspects:
@@ -313,6 +322,14 @@ Section Flattening.
       * (* case: i an equality premise *)
         destruct H_i_obj. (* ruled out by assumption *)
   Defined.
+
+  Local Lemma flatten_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {A : algebraic_extension Σ a} (i : A)
+    : flatten (fmap f A) i
+    = fmap_judgement_total (Metavariable.fmap1 f a) (flatten A i).
+  Proof.
+  Admitted.
 
 End Flattening.
 
@@ -408,5 +425,14 @@ Section Initial_Segment.
           := initial_segment_include_premise_aux A r i).
         destruct i as [ ? | ? ]; refine (ae_hypothetical_boundary A i_orig x).
   Defined.
+
+  Local Lemma flatten_initial_segment_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {A : algebraic_extension Σ a} (p : A)
+      (i : initial_segment A p)
+    : flatten (initial_segment (fmap f A) p) i
+    = flatten (fmap f (initial_segment A p)) i.
+  Proof.
+  Admitted.
 
 End Initial_Segment.
