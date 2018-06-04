@@ -113,8 +113,46 @@ Section UtilityDerivations.
     simple refine (deduce_modulo_rename _ _ _ _).
     - apply inr. exists r, [::]. apply unit_instantiation.
     - apply shape_sum_empty_inr.
-    - cbn. apply judgement_eq_rename_iff_eq_rename_inverse.
-      apply unit_instantiate_judgement.
+    - cbn.
+      (* TODO: the following should be much simpler, using
+      [unit_instantiate_judgement], but the typing of [Judgement.rename]
+      (in particular, the way it uses [shape_of_judgement]) makes it
+      very difficult.  This would work better if judgements were
+      parametrised over shapes before judgement forms? *)
+      set (J := (T.(family_element) r).(flat_rule_conclusion)).
+      clearbody J. destruct J as [ [ | hjf ] J].
+      + (* context judgement *)
+        apply (ap (Build_judgement_total _)).
+        destruct J as [ Γ [] ].
+        apply (ap (fun Γ => Build_judgement Γ _)).
+        apply (ap (Build_raw_context _)).
+        apply path_forall; intros i.
+        cbn. eapply concat.
+        { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap, unit_instantiate_expression. }
+        eapply concat. { apply inverse, rename_comp. }
+        eapply concat. 2: { apply rename_idmap. }
+        apply (ap (fun f => rename f _)).
+        apply path_forall; intros j.
+        refine (coproduct_comp_inj2 _).
+      + (* hypothetical judgement *)
+        apply Judgement.eq_by_expressions; intros i.
+        * (* context part *)
+        cbn. eapply concat.
+        { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap, unit_instantiate_expression. }
+        eapply concat. { apply inverse, rename_comp. }
+        eapply concat. 2: { apply rename_idmap. }
+        apply (ap (fun f => rename f _)).
+        apply path_forall; intros j.
+        refine (coproduct_comp_inj2 _).          
+        * cbn.
+        eapply concat. { apply ap, unit_instantiate_expression. }
+        eapply concat. { apply inverse, rename_comp. }
+        eapply concat. 2: { apply rename_idmap. }
+        apply (ap (fun f => rename f _)).
+        apply path_forall; intros j.
+        refine (coproduct_comp_inj2 _).
     - cbn. intros p.
       simple refine (hypothesis_modulo_rename _ _ _).
       + exact p.

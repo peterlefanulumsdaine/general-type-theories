@@ -319,15 +319,6 @@ Section Derived_Lemmas.
     apply ap, ecompose_Ve.
   Defined.
 
-  Lemma judgement_eq_rename_iff_eq_rename_inverse
-      (J J' : judgement_total Σ)
-      (e : shape_of_judgement J <~> shape_of_judgement J')
-    : J' = Judgement.rename J (e^-1)
-      <-> Judgement.rename J' e = J.
-  Proof.
-    (* surprisingly subtle *)
-  Admitted.
-
   Lemma rename_hypothetical_boundary_idmap
       {Σ'} {γ : σ} {hjf} (B : Judgement.hypothetical_boundary Σ' hjf γ)
     : rename_hypothetical_boundary idmap B = B.
