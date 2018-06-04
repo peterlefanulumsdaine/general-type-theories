@@ -142,7 +142,7 @@ Section FamilyMap.
     := map_over idmap K L.
 
   (* Re-grouping of [Build_map]: useful when the map and equality components for each input are most easily given together, e.g. if they involve an induction on the input. *)
-  Definition Build_map' {A B} (f : A -> B) (K : family A) (L : family B)
+  Local Definition Build_map' {A B} (f : A -> B) (K : family A) (L : family B)
       (g : forall i:K, { j:L & L j = f (K i) })
     : map_over f K L.
   Proof.

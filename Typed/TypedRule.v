@@ -5,9 +5,10 @@ Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
 Require Import Raw.Syntax.
 Require Import Raw.AlgebraicExtension.
-Require Import Raw.RawRule.
 Require Import Raw.FlatRule.
 Require Import Raw.FlatTypeTheory.
+Require Import Raw.RawRule.
+Require Import Raw.RawTypeTheory.
 Require Import Typed.TypedFlatRule.
 
 (** In this file: definition of well-typedness of an algebraic extension, and a (well-presented) rule. *)
@@ -23,31 +24,12 @@ Section WellTypedRule.
     : Type.
   Proof.
     refine (forall r : A, _).
-    assert (H : family (judgement_total (ae_signature A r))).
-    { (* open hypotheses to allow in the derivation of each premise *)
-      exists {i : ae_premise A & ae_lt _ i r }.
-      intros [i lt_i_r].
-      apply (AlgebraicExtension.judgement_of_premise i).
-      + apply Metavariable.fmap2.
-        simple refine (_;_).
-        * intros [j lt_j_i].
-          simpl. exists j. apply (WellFounded.transitive (ae_lt A) _ i r); assumption.
-        * intro; apply idpath.
-      + intros H_i_obj.
-        destruct i as [ i | i ]; simpl in i.
-      * (* case: i an object premise *)
-        simple refine (_;_). 
-        -- apply include_metavariable. exists i. assumption.
-        -- split; apply idpath.
-      * (* case: i an equality premise *)
-        destruct H_i_obj. (* ruled out by assumption *)
-    }
     set (r_bdry := AlgebraicExtension.premise_boundary r).
-    refine (forall (i : presupposition_of_boundary r_bdry),
-               FlatTypeTheory.derivation
-                 (FlatTypeTheory.fmap include_symbol T)
-                 H
-                 (presupposition_of_boundary _ i)).
+    exact (forall (i : presupposition_of_boundary r_bdry),
+      FlatTypeTheory.derivation
+        (FlatTypeTheory.fmap include_symbol T)
+        (AlgebraicExtension.flatten (AlgebraicExtension.initial_segment A r))
+        (presupposition_of_boundary _ i)).
   Defined.
   (* NOTE: when checking we want to add the earlier premises of [A] to [T], and typecheck [r] over that.  There are (at least) three ways to do this:
   (1) take earlier premises just as judgements, and allow them as hypotheses in the derivation;
@@ -102,9 +84,11 @@ Section Functoriality.
     : is_well_typed_algebraic_extension
         (FlatTypeTheory.fmap f T) (AlgebraicExtension.fmap f A).
   Proof.
+    unfold is_well_typed_algebraic_extension.
+    intros p.
   Admitted.
 
-  Local Definition fmap
+  Local Definition fmap_is_well_typed
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {hjf_concl} {R : rule Σ a hjf_concl}
       {T} (D : is_well_typed T R)

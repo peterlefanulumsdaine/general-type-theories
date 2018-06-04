@@ -315,3 +315,98 @@ Section Flattening.
   Defined.
 
 End Flattening.
+
+Section Initial_Segment.
+
+  Context {σ : shape_system}.
+
+  (** Next few definitions are auxiliary for [initial_segment] below *)
+  Local Definition initial_segment_premise_aux
+      {Σ : signature σ} {a} (A : algebraic_extension Σ a) (r : A)
+    : family (hypothetical_form * σ.(shape_carrier))
+  := Family.fmap (fun cl_γ : syntactic_class * σ.(shape_carrier) =>
+                    (form_object cl_γ.(fst), cl_γ.(snd))) (ae_metas A r)
+   + Family.fmap (fun cl_γ : syntactic_class * σ.(shape_carrier) =>
+                    (form_equality cl_γ.(fst), cl_γ.(snd)))
+       (Family.subfamily (ae_equality_premise A)
+                         (fun j => ae_lt A (inr j) r)).
+
+  Local Definition initial_segment_include_premise_aux
+      {Σ : signature σ} {a} (A : algebraic_extension Σ a) (r : A)
+    : Family.map
+        (initial_segment_premise_aux A r)
+        (ae_premise A).
+  Proof.
+    apply Family.Build_map'.
+    intros [ [i_ob lt_i_r] | [i_eq lt_i_r] ].
+    + exists (inl i_ob); apply idpath.
+    + exists (inr i_eq); apply idpath.
+  Defined.
+
+  Arguments initial_segment_include_premise_aux : simpl never.
+
+  Local Definition initial_segment_lt_aux
+      {Σ : signature σ} {a} (A : algebraic_extension Σ a) (r : A)
+    : well_founded_order (initial_segment_premise_aux A r)
+  := WellFounded.pullback
+       (initial_segment_include_premise_aux A r)
+       (ae_lt A).
+
+  Local Definition initial_segment_include_premise_lt_aux
+      {Σ : signature σ} {a} {A : algebraic_extension Σ a} {r : A}
+      (i : initial_segment_premise_aux A r)
+    : ae_lt A (initial_segment_include_premise_aux _ _ i) r.
+  Proof.
+    destruct i as [ [ i_ob e ] | [i_eq e] ]; apply e.
+  Defined.
+
+  (* TODO: rename [ae_metas], [ae_signature] to [ae_premise_metas], [ae_premise_signature]? *)
+  (** Auxiliary definition for [initial_segment] below *)
+  Definition initial_segment_compare_signature
+      {Σ : signature σ} {a} {A : algebraic_extension Σ a} {r : A}
+      (i : initial_segment_premise_aux A r)
+    : Signature.map
+        (ae_signature A
+           (initial_segment_include_premise_aux _ _ i))
+        (Metavariable.extend Σ
+           (Family.subfamily (ae_metas A r) (fun j =>
+           initial_segment_lt_aux _ _ (inl j) i))).
+  Proof.
+    apply Metavariable.fmap2.
+    apply Family.Build_map'.
+    intros [ j j_lt_i ].
+    simple refine (((j;_);_);_).
+    - cbn. eapply WellFounded.transitive. 
+      + exact j_lt_i.
+      + apply initial_segment_include_premise_lt_aux.
+    - destruct i as [ ? | ? ]; exact j_lt_i.
+    - apply idpath. 
+  Defined.
+
+  Local Definition initial_segment
+      {Σ : signature σ} {a} (A : algebraic_extension Σ a) (r : A)
+    : algebraic_extension Σ (ae_metas A r).
+  Proof.
+    simple refine (Build_algebraic_extension _ _ _ _ _).
+    - (* ae_equality_premise *)
+      exact (Family.subfamily (ae_equality_premise A)
+                              (fun j => ae_lt A (inr j) r)).
+    - (* ae_lt *)
+      apply initial_segment_lt_aux.
+    - (* ae_raw_context_type *)
+      intros i x.
+      refine (Expression.fmap _ _).
+      + apply initial_segment_compare_signature.
+      + set (i_orig
+          := initial_segment_include_premise_aux A r i).
+        destruct i as [ ? | ? ]; refine (ae_raw_context_type A i_orig x).
+    - (* ae_hypothetical_boundary *)
+      intros i x.
+      refine (Expression.fmap _ _).
+      + apply initial_segment_compare_signature.
+      + set (i_orig
+          := initial_segment_include_premise_aux A r i).
+        destruct i as [ ? | ? ]; refine (ae_hypothetical_boundary A i_orig x).
+  Defined.
+
+End Initial_Segment.
