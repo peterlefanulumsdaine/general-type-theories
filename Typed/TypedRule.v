@@ -66,14 +66,36 @@ Section Functoriality.
 
   Context {σ : shape_system} `{Funext}.
 
-  (* todo: upstream to [Raw.AlgebraicExtension]! *)
-  Lemma algebraic_extension_fmap_flatten
+  Lemma algebraic_extension_premise_boundary_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {a} {A : algebraic_extension Σ a}
-      (i : A)
+      {a} {A : algebraic_extension Σ a} (p : A)
+    : @AlgebraicExtension.premise_boundary _ _ _ (AlgebraicExtension.fmap f A) p
+    = Judgement.fmap_boundary (Metavariable.fmap1 f (ae_metas A p))
+                              (AlgebraicExtension.premise_boundary p).
+  Proof.
+  Admitted.
+
+  (* todo: upstream to [Raw.AlgebraicExtension]! *)
+  Lemma algebraic_extension_flatten_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {A : algebraic_extension Σ a} (i : A)
     : AlgebraicExtension.flatten (AlgebraicExtension.fmap f A) i
     = fmap_judgement_total (Metavariable.fmap1 f a)
          (AlgebraicExtension.flatten A i).
+  Proof.
+  Admitted.
+
+  (* todo: upstream to [Raw.AlgebraicExtension]! *)
+  Lemma algebraic_extension_flatten_initial_segment_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {A : algebraic_extension Σ a} (p : A)
+      (i : AlgebraicExtension.initial_segment A p)
+    : AlgebraicExtension.flatten
+        (AlgebraicExtension.initial_segment
+          (AlgebraicExtension.fmap f A) p) i
+    = AlgebraicExtension.flatten
+        (AlgebraicExtension.fmap f
+          (AlgebraicExtension.initial_segment A p)) i.
   Proof.
   Admitted.
 
@@ -86,7 +108,44 @@ Section Functoriality.
   Proof.
     unfold is_well_typed_algebraic_extension.
     intros p.
-  Admitted.
+    set (p_bdry := AlgebraicExtension.premise_boundary p).
+    assert (e_bdry : p_bdry
+      = Judgement.fmap_boundary
+          (Metavariable.fmap1 f _)
+          (@AlgebraicExtension.premise_boundary _ _ _ A p)). 
+        { apply algebraic_extension_premise_boundary_fmap. }
+     clearbody p_bdry. destruct e_bdry^.
+     intros i.
+    set (Di := D p (Judgement.presupposition_fmap_boundary _ _ i)).
+    (* [Di] is essentially what we want, modulo some translation. *)
+    refine (transport _
+      (Family.map_commutes (Judgement.presupposition_fmap_boundary _ _) i) _).
+    match goal with
+    | [|- FlatTypeTheory.derivation _ _ ?JJ ] => set (J := (JJ)) in *
+    | _ => fail
+    end.
+    unfold Family.fmap, family_element in J.
+    subst J.
+    assert (fDi :=
+      FlatTypeTheory.fmap_derivation (Metavariable.fmap1 f _) Di).
+    clear D Di e_bdry. (* just tidying up *)
+    refine (Closure.fmap_derivation _ (Closure.derivation_fmap2 _ fDi)).
+      + (* commutativity in type theory *)
+        apply FlatTypeTheory.fmap_closure_system.
+        apply FlatTypeTheory.map_from_family_map.
+        (* TODO: abstract the follwing as lemma? *)
+        exists idmap.
+        intros r; simpl.
+        eapply concat. { apply inverse, FlatRule.fmap_compose. }
+        eapply concat. 2: { apply inverse, FlatRule.fmap_idmap. }
+        eapply concat. 2: { apply FlatRule.fmap_compose. }
+        apply ap10, ap.
+        apply Metavariable.include_symbol_after_map.
+      + (* commutativity in hypotheses *)
+        cbn. exists idmap; intros j.
+        eapply concat. 2: { apply algebraic_extension_flatten_fmap. }
+        apply algebraic_extension_flatten_initial_segment_fmap.
+   Defined.
 
   Local Definition fmap_is_well_typed
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
@@ -96,9 +155,6 @@ Section Functoriality.
   Proof.
     split.
     - (* premises *)
-      (* should go via a lemma [AlgebraicExtension.fmap], which should be
-         similar to the conclusion case here but with a little extra work
-         to deal with the ordering on premises *)
       apply fmap_is_well_typed_algebraic_extension.
       exact (fst D).
     - (* conclusion *)
