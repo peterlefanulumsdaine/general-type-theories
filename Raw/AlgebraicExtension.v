@@ -259,7 +259,8 @@ Section Functoriality.
     = Judgement.fmap_boundary (Metavariable.fmap1 f (ae_metas A p))
                               (premise_boundary p).
   Proof.
-  Admitted.
+    apply idpath.
+  Defined.
 
 End Functoriality.
 

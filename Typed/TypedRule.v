@@ -75,14 +75,11 @@ Section Functoriality.
   Proof.
     unfold is_well_typed_algebraic_extension.
     intros p.
-    set (p_bdry := AlgebraicExtension.premise_boundary p).
-    assert (e_bdry : p_bdry
-      = Judgement.fmap_boundary
-          (Metavariable.fmap1 f _)
-          (@AlgebraicExtension.premise_boundary _ _ _ A p)). 
-        { apply AlgebraicExtension.premise_boundary_fmap. }
-     clearbody p_bdry. destruct e_bdry^.
-     intros i.
+    change (AlgebraicExtension.premise_boundary p)
+    with (Judgement.fmap_boundary
+            (Metavariable.fmap1 f _)
+            (@AlgebraicExtension.premise_boundary _ _ _ A p)). 
+    intros i.
     set (Di := D p (Judgement.presupposition_fmap_boundary _ _ i)).
     (* [Di] is essentially what we want, modulo some translation. *)
     refine (transport _
@@ -95,7 +92,7 @@ Section Functoriality.
     subst J.
     assert (fDi :=
       FlatTypeTheory.fmap_derivation (Metavariable.fmap1 f _) Di).
-    clear D Di e_bdry. (* just tidying up *)
+    clear D Di. (* just tidying up *)
     refine (Closure.fmap_derivation _ (Closure.derivation_fmap2 _ fDi)).
       + (* commutativity in type theory *)
         apply FlatTypeTheory.fmap_closure_system.
@@ -112,7 +109,7 @@ Section Functoriality.
         cbn. exists idmap; intros j.
         eapply concat. 2: { apply AlgebraicExtension.flatten_fmap. }
         apply AlgebraicExtension.flatten_initial_segment_fmap.
-   Defined.
+  Defined.
 
   Local Definition fmap_is_well_typed
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
@@ -121,45 +118,44 @@ Section Functoriality.
     : is_well_typed (FlatTypeTheory.fmap f T) (RawRule.fmap f R).
   Proof.
     split.
-    - (* premises *)
-      apply fmap_is_well_typed_algebraic_extension.
-      exact (fst D).
-    - (* conclusion *)
-      set (fR_concl := RawRule.conclusion_boundary (RawRule.fmap f R)).
-      assert (e_concl : fR_concl = Judgement.fmap_boundary
-                               (Metavariable.fmap1 f _)
-                               (RawRule.conclusion_boundary R)). 
-        { apply RawRule.conclusion_boundary_fmap. }
-      clearbody fR_concl. destruct e_concl^.
-      intros i.
-      set (Di := (snd D) (Judgement.presupposition_fmap_boundary _ _ i)).
-      (* [Di] is essentially what we want, modulo some translation. *)
-      refine (transport _
-        (Family.map_commutes (Judgement.presupposition_fmap_boundary _ _) i) _).
-      match goal with
-      | [|- FlatTypeTheory.derivation _ _ ?JJ ] => set (J := (JJ)) in *
-      | _ => fail
-      end.
-      unfold Family.fmap, family_element in J.
-      subst J.
-      assert (fDi :=
-        FlatTypeTheory.fmap_derivation (Metavariable.fmap1 f a) Di).
-      clear D Di e_concl. (* just tidying up *)
-      refine (Closure.fmap_derivation _ (Closure.derivation_fmap2 _ fDi)).
-      + (* commutativity in type theory *)
-        apply FlatTypeTheory.fmap_closure_system.
-        apply FlatTypeTheory.map_from_family_map.
-        (* TODO: abstract the follwing as lemma? *)
-        exists idmap.
-        intros r; simpl.
-        eapply concat. { apply inverse, FlatRule.fmap_compose. }
-        eapply concat. 2: { apply inverse, FlatRule.fmap_idmap. }
-        eapply concat. 2: { apply FlatRule.fmap_compose. }
-        apply ap10, ap.
-        apply Metavariable.include_symbol_after_map.
-      + (* commutativity in hypotheses *)
-        cbn. exists idmap.
-        apply AlgebraicExtension.flatten_fmap.
+    (* premises *)
+    { apply fmap_is_well_typed_algebraic_extension, (fst D). }
+    (* conclusion *)
+    set (fR_concl := RawRule.conclusion_boundary (RawRule.fmap f R)).
+    assert (e_concl : fR_concl = Judgement.fmap_boundary
+                             (Metavariable.fmap1 f _)
+                             (RawRule.conclusion_boundary R)). 
+      { apply RawRule.conclusion_boundary_fmap. }
+    clearbody fR_concl. destruct e_concl^.
+    intros i.
+    set (Di := (snd D) (Judgement.presupposition_fmap_boundary _ _ i)).
+    (* [Di] is essentially what we want, modulo some translation. *)
+    refine (transport _
+      (Family.map_commutes (Judgement.presupposition_fmap_boundary _ _) i) _).
+    match goal with
+    | [|- FlatTypeTheory.derivation _ _ ?JJ ] => set (J := (JJ)) in *
+    | _ => fail
+    end.
+    unfold Family.fmap, family_element in J.
+    subst J.
+    assert (fDi :=
+      FlatTypeTheory.fmap_derivation (Metavariable.fmap1 f a) Di).
+    clear D Di e_concl. (* just tidying up *)
+    refine (Closure.fmap_derivation _ (Closure.derivation_fmap2 _ fDi)).
+    - (* commutativity in type theory *)
+      apply FlatTypeTheory.fmap_closure_system.
+      apply FlatTypeTheory.map_from_family_map.
+      (* TODO: abstract the follwing as lemma? *)
+      exists idmap.
+      intros r; simpl.
+      eapply concat. { apply inverse, FlatRule.fmap_compose. }
+      eapply concat. 2: { apply inverse, FlatRule.fmap_idmap. }
+      eapply concat. 2: { apply FlatRule.fmap_compose. }
+      apply ap10, ap.
+      apply Metavariable.include_symbol_after_map.
+    - (* commutativity in hypotheses *)
+      cbn. exists idmap.
+      apply AlgebraicExtension.flatten_fmap.
   Defined.
 
 End Functoriality.
