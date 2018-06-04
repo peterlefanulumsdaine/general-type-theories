@@ -304,4 +304,19 @@ Section Signature_Maps.
     refine (fmap_compose (Signature.idmap _) (Signature.idmap _) _ _).
   Defined.
 
+  (** Naturality of [include_symbol] w.r.t. signature maps *)
+  (* TODO: consider naming *)
+  Local Lemma include_symbol_after_map
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      (a : arity _)
+    : Signature.compose include_symbol f
+      = Signature.compose (fmap1 f a) include_symbol.
+  Proof.
+    apply Family.map_eq'; intros S.
+    exists (idpath _); cbn.
+    apply ap.
+    eapply concat. { apply ap_idmap. }
+    apply inverse, concat_p1.
+  Defined.
+
 End Signature_Maps.

@@ -134,6 +134,18 @@ Record rule
     apply inverse, fmap_compose.
   Defined.
 
+  Local Lemma conclusion_boundary_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {hjf_concl} (R : rule Σ a hjf_concl)
+    : conclusion_boundary (fmap f R)
+      = Judgement.fmap_boundary (Metavariable.fmap1 f a)
+                                (conclusion_boundary R).
+  Proof.
+    apply Judgement.boundary_eq_by_expressions.
+    - refine (empty_rect _ shape_is_empty _).
+    - intros i; apply idpath.
+  Defined.
+
 End WellShapedRule.
 
 (* globalise argument declarations *)

@@ -314,12 +314,38 @@ In lieu of that, we give explicit lemmas for judgement equality:
     = Build_judgement_total _ (@Build_judgement _ _
         (form_hypothetical hjf) (Build_raw_context γ Γ') J').
   Proof.
-    apply (ap (Build_judgement_total _)).
+    apply ap.
     refine (@ap _ _
                 (fun ΓJ : (_ * hypothetical_judgement _ _ γ)
                  => @Build_judgement _ _ (form_hypothetical _)
                        (Build_raw_context γ (fst ΓJ)) (snd ΓJ))
             (_,_) (_,_) _).
+    apply path_prod; apply path_forall; auto.
+  Defined.
+
+  (** When two judgements have the same form and are over the same shape, 
+  then they are equal if all expressions involved (in both the context and
+  the hypothetical part) are equal.
+
+  Often useful in cases where the equality of expressions is for a uniform
+  reason, such as functoriality/naturality lemmas. 
+
+  For cases where the specific form of the judgement is involved in the 
+  difference, [eq_by_eta] may be cleaner. *)
+  Local Definition boundary_eq_by_expressions
+      {hjf : hypothetical_form}
+      {γ : σ} {Γ Γ' : γ -> raw_type Σ γ}
+      {B B' : hypothetical_boundary Σ hjf γ}
+      (e_Γ : forall i, Γ i = Γ' i)
+      (e_B : forall i, B i = B' i) 
+    : (Build_raw_context γ Γ ; B)
+      = ((Build_raw_context γ Γ' ; B')
+          : boundary _ (form_hypothetical hjf)).
+  Proof.
+    refine (@ap _ _
+              (fun ΓB : (_ * hypothetical_boundary _ _ γ)
+               => (Build_raw_context γ (fst ΓB) ; (snd ΓB)))
+           (_,_) (_,_) _).
     apply path_prod; apply path_forall; auto.
   Defined.
 

@@ -62,7 +62,7 @@ Section WellTypedRule.
   We currently take option (1).
   *)
 
-  (* TODO: consider naming.  Currently rather misleading: this is the type of derivations showing that the rule is well-formed, not “derivations of the rule” in the usual sense of derivations showing it’s a derivable rule. *) 
+  (* TODO: consider naming.  Currently a bit out of step with our general convention of using e.g. [derivation] not [is_derivable]; but [derivation] would be misleading here, since this is the type of derivations showing that the rule is well-formed, not “derivations of the rule” in the usual sense of derivations showing it’s a derivable rule. *) 
   Local Definition is_well_typed
       {Σ : signature σ} (T : flat_type_theory Σ)
       {a} {hjf_concl}
@@ -84,6 +84,26 @@ Section Functoriality.
 
   Context {σ : shape_system} `{Funext}.
 
+  (* todo: upstream to [Raw.AlgebraicExtension]! *)
+  Lemma algebraic_extension_fmap_flatten
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {A : algebraic_extension Σ a}
+      (i : A)
+    : AlgebraicExtension.flatten (AlgebraicExtension.fmap f A) i
+    = fmap_judgement_total (Metavariable.fmap1 f a)
+         (AlgebraicExtension.flatten A i).
+  Proof.
+  Admitted.
+
+  Definition fmap_is_well_typed_algebraic_extension
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {A : algebraic_extension Σ a}
+      {T} (D : is_well_typed_algebraic_extension T A)
+    : is_well_typed_algebraic_extension
+        (FlatTypeTheory.fmap f T) (AlgebraicExtension.fmap f A).
+  Proof.
+  Admitted.
+
   Local Definition fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {hjf_concl} {R : rule Σ a hjf_concl}
@@ -95,13 +115,14 @@ Section Functoriality.
       (* should go via a lemma [AlgebraicExtension.fmap], which should be
          similar to the conclusion case here but with a little extra work
          to deal with the ordering on premises *)
-      admit.
+      apply fmap_is_well_typed_algebraic_extension.
+      exact (fst D).
     - (* conclusion *)
       set (fR_concl := RawRule.conclusion_boundary (RawRule.fmap f R)).
       assert (e_concl : fR_concl = Judgement.fmap_boundary
                                (Metavariable.fmap1 f _)
                                (RawRule.conclusion_boundary R)). 
-        { admit. } (* TODO: lemma for this. *)
+        { apply RawRule.conclusion_boundary_fmap. }
       clearbody fR_concl. destruct e_concl^.
       intros i.
       set (Di := (snd D) (Judgement.presupposition_fmap_boundary _ _ i)).
@@ -128,12 +149,11 @@ Section Functoriality.
         eapply concat. 2: { apply inverse, FlatRule.fmap_idmap. }
         eapply concat. 2: { apply FlatRule.fmap_compose. }
         apply ap10, ap.
-        (* TODO: lemma about naturality of [include_symbol]. *)
-        admit.
+        apply Metavariable.include_symbol_after_map.
       + (* commutativity in hypotheses *)
         cbn. exists idmap.
-        admit. (* TODO: lemma for this, together with [e_concl] above. *) 
-  Admitted.
+        apply algebraic_extension_fmap_flatten.
+  Defined.
 
 End Functoriality.
 
