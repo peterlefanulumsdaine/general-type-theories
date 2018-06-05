@@ -86,21 +86,6 @@ Section PresuppositionClosure.
 
   Context {σ : shape_system} `{Funext}.
 
-  (* TODO: upstream *)
-  (** Note that these are in fact judgementally equal! But it’s often clearer to make the conversion explicit. *)
-  Lemma family_map_vs_map_over
-        {X X'} (f : X -> X')
-        (K : family X) (K' : family X')
-    : Family.map (Family.fmap f K) K'
-    <~> Family.map_over f K K'.
-  Proof.
-    simple refine (equiv_adjointify _ _ _ _).
-    - intros ff. exact ff.
-    - intros ff. exact ff.
-    - intros ff; apply idpath.
-    - intros ff; apply idpath.
-  Defined.
-
   (* TODO: refactor this better? *)
   Lemma raw_type_theory_flatten_subtheory
       (T : raw_type_theory σ) (r : T)
@@ -134,7 +119,7 @@ Section PresuppositionClosure.
       eapply FlatTypeTheory.compose.
       2: { eapply FlatTypeTheory.map_from_eq, inverse, FlatTypeTheory.fmap_compose. }
       apply FlatTypeTheory.map_from_family_map.
-      apply (family_map_vs_map_over _ _ _)^-1.
+      apply (Family.map_vs_map_over _ _ _)^-1.
       apply raw_type_theory_flatten_subtheory.
     - admit. (* TODO: same as the above, plus lemma that associated congruence rule is well-typed *)
   Admitted.

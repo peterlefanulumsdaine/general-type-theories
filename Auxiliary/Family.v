@@ -175,6 +175,19 @@ Section FamilyMap.
       forall i : K, L (f i) = K i
   := pr2.
 
+  (** Note that these are in fact judgementally equal! But it’s often clearer to make the conversion explicit. *)
+  Local Lemma map_vs_map_over
+      {X X'} (f : X -> X')
+      (K : family X) (K' : family X')
+    : map (fmap f K) K' <~> map_over f K K'.
+  Proof.
+    simple refine (equiv_adjointify _ _ _ _).
+    - intros ff. exact ff.
+    - intros ff. exact ff.
+    - intros ff; apply idpath.
+    - intros ff; apply idpath.
+  Defined.
+
   (* TODO: generalise to “over” version? *)
   Definition map_eq `{Funext} {X} {K L : family X} {f g : map K L}
     (e_map : forall k:K, f k = g k)
@@ -237,6 +250,15 @@ Section FamilyMap.
   Local Definition compose {X} {K L M : family X} (g : map L M) (f : map K L)
     : map K M
   := compose_over g f.
+
+  Local Lemma id_left `{Funext}
+      {X} {K K' : family X} {f : map K K'}
+    : compose (idmap K') f = f.
+  Proof.
+    apply map_eq'.
+    intros i. exists (idpath _); cbn.
+    apply ap, ap_idmap.
+  Defined.
 
   Local Lemma map_to_fmap
       {X X'} (f : X -> X') (K : family X)

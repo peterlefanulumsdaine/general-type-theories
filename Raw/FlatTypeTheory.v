@@ -30,6 +30,18 @@ Section FlatTypeTheory.
     apply Family.fmap, FlatRule.fmap, f.
   Defined.
 
+  (* TODO: consider naming; consider whether would be easier as an equality. *)
+  Local Definition fmap_compose `{Funext}
+      {Σ Σ' Σ'' : signature σ}
+      (f : Signature.map Σ Σ') (f' : Signature.map Σ' Σ'')
+      (T : flat_type_theory Σ)
+    : fmap (Signature.compose f' f) T = fmap f' (fmap f T).
+  Proof.
+    simple refine (Family.eq _ _).
+    - apply idpath.
+    - intros i; cbn. apply FlatRule.fmap_compose.
+  Defined.
+
 End FlatTypeTheory.
 
 Section Derivations.
@@ -263,13 +275,14 @@ Section Instantiation.
   Defined.
 
 End Instantiation.
-  
+
+(* TODO: this section is currently rather disorganised. Would probably benefit from sitting down and thinking about its organisation, with respect to flat type theory maps as something like Kleisli maps. *)
 Section Maps.
 
   Context `{H_funext : Funext}.
   Context {σ : shape_system}.
 
-  (* A flat type theory map [ff : T -> T'] over a map [f : Σ -> Σ'] of their signatures consists of derivations exhibiting the translation of each rule of [T] as a derivable rule of [T']. *)
+  (** A flat type theory map [ff : T -> T'] over a map [f : Σ -> Σ'] of their signatures consists of derivations exhibiting the translation of each rule of [T] as a derivable rule of [T']. *)
   Local Definition map_over
     {Σ Σ': signature σ} (f : Signature.map Σ Σ')
     (T : flat_type_theory Σ) (T' : flat_type_theory Σ')
@@ -312,23 +325,21 @@ Section Maps.
     apply map_from_family_map, Family.idmap.
   Defined.
 
-  (* TODO: give [map_over] version *)
-  Local Definition compose
-      {Σ : signature σ} {T T' T'' : flat_type_theory Σ}
-      (f' : map T' T'') (f : map T T')
-    : map T T''.
+  Local Lemma map_from_eq
+      {Σ} {T T' : flat_type_theory Σ} (e : T = T')
+    : map T T'.
   Proof.
-    (* Will probably be a bit non-trivial!
-       Should use infrastructure of closure system maps. *)
-  Admitted.
+    destruct e. apply idmap.
+  Defined.
 
-  (* TODO: upstream *)
-  Local Lemma map_vs_map_over
-        {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-        (T : flat_type_theory Σ) (T' : flat_type_theory Σ')
-    : map (fmap f T) T' <~> map_over f T T'.
+  Local Lemma map_to_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      (T : flat_type_theory Σ)
+    : map_over f T (fmap f T).
   Proof.
-  Admitted.
+    apply map_over_from_family_map_over.
+    apply Family.map_to_fmap.
+  Defined.
 
   (** The [closure_system] construction is functorial in maps of flat TT’s.
    This is what will allow translation of derivations under such maps. *)
@@ -372,34 +383,6 @@ Section Maps.
     apply path_forall; intros i. apply fmap_judgement_total_idmap.
   Defined.
 
-  Local Lemma map_from_eq
-      {Σ} {T T' : flat_type_theory Σ} (e : T = T')
-    : map T T'.
-  Proof.
-    destruct e. apply idmap.
-  Defined.
-
-  Local Lemma map_to_fmap
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      (T : flat_type_theory Σ)
-    : map_over f T (fmap f T).
-  Proof.
-    apply map_over_from_family_map_over.
-    apply Family.map_to_fmap.
-  Defined.
-
-  (* TODO: consider naming; consider whether would be easier as an equality. *)
-  Local Definition fmap_compose
-      {Σ Σ' Σ'' : signature σ}
-      (f : Signature.map Σ Σ') (f' : Signature.map Σ' Σ'')
-      (T : flat_type_theory Σ)
-    : fmap (Signature.compose f' f) T = fmap f' (fmap f T).
-  Proof.
-    simple refine (Family.eq _ _).
-    - apply idpath.
-    - intros i; cbn. apply FlatRule.fmap_compose.
-  Defined.
-
   (* TODO: consider naming of this and following lemma. *)
   Local Lemma fmap_derivation
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
@@ -415,13 +398,23 @@ Section Maps.
     apply map_to_fmap.
   Defined.
 
-  (* TODO: consider naming; of this and preceding lemma!
-     Also: try to inline where reconstructed in [TypedRule]! (Search for [Closure.fmap_derivation]. ) *)
+  (* TODO: consider naming; of this and preceding lemma! *)
   Local Definition fmap_derivation_in_theory
       {Σ} {T T' : flat_type_theory Σ} (f : map T T') {H} {J}
     : derivation T H J -> derivation T' H J.
   Proof.
     apply Closure.fmap_derivation, fmap_closure_system, f.
+  Defined.
+
+  Local Definition fmap_derivation_in_theory_over
+      {Σ Σ' : signature σ} {f : Signature.map Σ Σ'}
+      {T} {T'} (ff : map_over f T T') {H} {J}
+    : derivation T H J
+    -> derivation T'
+         (Family.fmap (fmap_judgement_total f) H)
+         (fmap_judgement_total f J).
+  Proof.
+    apply Closure.fmap_derivation_over, fmap_closure_system_over, ff.
   Defined.
 
   Local Definition fmap_flat_rule_derivation
@@ -439,6 +432,7 @@ Section Maps.
     apply ap10, ap, inverse, Metavariable.include_symbol_after_map.
   Defined.
 
+
   (** Maps of flat TT’s also translate under signature maps *)
   (* TODO: consider naming! *)
   Local Definition fmap_map
@@ -446,11 +440,54 @@ Section Maps.
       {T T' : flat_type_theory Σ} (g : map T T')
     : map (fmap f T) (fmap f T').
   Proof.
-    intros R. set (gr := g R).
+    intros R.
     refine (transport _ _ _). { apply inverse, FlatRule.fmap_idmap. }
     apply fmap_flat_rule_derivation. 
     refine (transport _ _ _). { apply FlatRule.fmap_idmap. }
     apply g.
+  Defined.
+
+  Local Lemma map_vs_map_over
+        {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+        (T : flat_type_theory Σ) (T' : flat_type_theory Σ')
+    : map (fmap f T) T' <~> map_over f T T'.
+  Proof.
+  Admitted.
+
+  Local Definition fmap_flat_rule_derivation_over
+      {Σ Σ' : signature σ} {f : Signature.map Σ Σ'}
+      {T} {T'} (ff : map_over f T T')
+      {R : flat_rule Σ} (D : flat_rule_derivation T R)
+    : flat_rule_derivation T' (FlatRule.fmap f R).
+  Proof.
+    unfold flat_rule_derivation in *.
+    refine (fmap_derivation_in_theory_over _ D).
+    apply map_vs_map_over.
+    refine (transport (fun T0 => map T0 _) _ (fmap_map _ _)).
+    - eapply concat. 2: { apply fmap_compose. }
+      eapply concat. { eapply inverse, fmap_compose. }
+      apply ap10, ap. apply Metavariable.include_symbol_after_map.
+    - apply (map_vs_map_over _ _ _)^-1, ff.
+  Defined.
+
+  Local Definition compose_over
+      {Σ Σ' Σ'' : signature σ} {f' : Signature.map Σ' Σ''} {f : Signature.map Σ Σ'}
+      {T : flat_type_theory Σ} {T' : flat_type_theory Σ'} {T'' : flat_type_theory Σ''}
+      (ff' : map_over f' T' T'') (ff : map_over f T T')
+    : map_over (Signature.compose f' f) T T''.
+  Proof.
+    intros r.
+    refine (transport _ _ _). { apply inverse, FlatRule.fmap_compose. }
+    refine (fmap_flat_rule_derivation_over ff' (ff r)).
+  Defined.
+
+  Local Definition compose
+      {Σ : signature σ} {T T' T'' : flat_type_theory Σ}
+      (f' : map T' T'') (f : map T T')
+    : map T T''.
+  Proof.
+    refine (transport (fun g => map_over g _ _) _ (compose_over f' f)).
+    apply Family.id_left.
   Defined.
 
 
