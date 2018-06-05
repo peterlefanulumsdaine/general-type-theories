@@ -24,8 +24,8 @@ Section WellTypedRule.
     : Type.
   Proof.
     refine (forall r : A, _).
-    set (r_bdry := AlgebraicExtension.premise_boundary r).
-    exact (forall (i : presupposition_of_boundary r_bdry),
+    exact (forall
+     (i : presupposition_of_boundary (AlgebraicExtension.premise_boundary r)),
       FlatTypeTheory.derivation
         (FlatTypeTheory.fmap include_symbol T)
         (AlgebraicExtension.flatten (AlgebraicExtension.initial_segment A r))
@@ -93,15 +93,13 @@ Section Functoriality.
     assert (fDi :=
       FlatTypeTheory.fmap_derivation (Metavariable.fmap1 f _) Di).
     clear D Di. (* just tidying up *)
-    refine (Closure.fmap_derivation _ (Closure.derivation_fmap2 _ fDi)).
+    refine (FlatTypeTheory.fmap_derivation_in_theory _ (Closure.derivation_fmap2 _ fDi)).
       + (* commutativity in type theory *)
-        apply FlatTypeTheory.fmap_closure_system.
         apply FlatTypeTheory.map_from_family_map.
         (* TODO: abstract the follwing as lemma? *)
         exists idmap.
         intros r; simpl.
         eapply concat. { apply inverse, FlatRule.fmap_compose. }
-        eapply concat. 2: { apply inverse, FlatRule.fmap_idmap. }
         eapply concat. 2: { apply FlatRule.fmap_compose. }
         apply ap10, ap.
         apply Metavariable.include_symbol_after_map.
@@ -111,6 +109,7 @@ Section Functoriality.
         apply AlgebraicExtension.flatten_initial_segment_fmap.
   Defined.
 
+  (** Well-typedness is _covariant_ in the signature *)
   Local Definition fmap_is_well_typed
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {hjf_concl} {R : rule Σ a hjf_concl}
@@ -141,21 +140,46 @@ Section Functoriality.
     assert (fDi :=
       FlatTypeTheory.fmap_derivation (Metavariable.fmap1 f a) Di).
     clear D Di e_concl. (* just tidying up *)
-    refine (Closure.fmap_derivation _ (Closure.derivation_fmap2 _ fDi)).
+    refine (FlatTypeTheory.fmap_derivation_in_theory _ (Closure.derivation_fmap2 _ fDi)).
     - (* commutativity in type theory *)
-      apply FlatTypeTheory.fmap_closure_system.
       apply FlatTypeTheory.map_from_family_map.
       (* TODO: abstract the follwing as lemma? *)
       exists idmap.
       intros r; simpl.
       eapply concat. { apply inverse, FlatRule.fmap_compose. }
-      eapply concat. 2: { apply inverse, FlatRule.fmap_idmap. }
       eapply concat. 2: { apply FlatRule.fmap_compose. }
       apply ap10, ap.
       apply Metavariable.include_symbol_after_map.
     - (* commutativity in hypotheses *)
       cbn. exists idmap.
       apply AlgebraicExtension.flatten_fmap.
+  Defined.
+
+  (** Well-typedness is _contravariantly_ functorial in the ambient theory. *)
+  (* TODO: consider naming! *)
+  Definition fmap_is_well_typed_algebraic_extension_in_theory {Σ : signature σ}
+      {T T' : flat_type_theory Σ} (f : FlatTypeTheory.map T T')
+      {a} {A : algebraic_extension Σ a}
+    : is_well_typed_algebraic_extension T A
+      -> is_well_typed_algebraic_extension T' A.
+  Proof.
+    intros A_WT r p.
+    refine (FlatTypeTheory.fmap_derivation_in_theory _ (A_WT r p)).
+    apply FlatTypeTheory.fmap_map, f.
+  Defined.
+
+  (** Well-typedness is _contravariantly_ functorial in the ambient theory. *)
+  (* TODO: consider naming! *)
+  Definition fmap_is_well_typed_in_theory {Σ : signature σ}
+      {T T' : flat_type_theory Σ} (f : FlatTypeTheory.map T T')
+      {a} {hjf_concl} {R : rule Σ a hjf_concl}
+    : is_well_typed T R -> is_well_typed T' R.
+  Proof.
+    intros R_WT.
+    split. { exact (fmap_is_well_typed_algebraic_extension_in_theory f (fst R_WT)). }
+    intros p.
+    refine (FlatTypeTheory.fmap_derivation_in_theory _ (snd R_WT p)).
+    apply FlatTypeTheory.fmap_map, f.
   Defined.
 
 End Functoriality.

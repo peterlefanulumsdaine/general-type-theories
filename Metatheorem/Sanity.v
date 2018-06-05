@@ -86,42 +86,6 @@ Section PresuppositionClosure.
 
   Context {σ : shape_system} `{Funext}.
 
-  (* TODO: upstream; consider naming! *)
-  Definition typed_rule_is_well_typed_fmap1 {Σ : signature σ}
-      {T T' : flat_type_theory Σ} (f : FlatTypeTheory.map T T')
-      {a} {hjf_concl} {R : rule Σ a hjf_concl}
-    : TypedRule.is_well_typed T R -> TypedRule.is_well_typed T' R.
-  Proof.
-  Admitted.
-
-  (* TODO: upstream; consider naming; consider whether would be easier as an equality. *)
-  Definition flat_type_theory_fmap_compose
-      {Σ Σ' Σ'' : signature σ}
-      (f : Signature.map Σ Σ') (f' : Signature.map Σ' Σ'')
-      (T : flat_type_theory Σ)
-    : FlatTypeTheory.map
-        (FlatTypeTheory.fmap f' (FlatTypeTheory.fmap f T))
-        (FlatTypeTheory.fmap (Signature.compose f' f) T).
-  Proof.
-  Admitted.
-
-  (* TODO: upstream; consider naming; consider whether would be easier as an equality. *)
-  Definition flat_type_theory_compose
-      {Σ : signature σ} {T T' T'' : flat_type_theory Σ}
-      (f' : FlatTypeTheory.map T' T'') (f : FlatTypeTheory.map T T')
-    : FlatTypeTheory.map T T''.
-  Proof.
-  Admitted.
-
-  (* TODO: upstream *)
-  Lemma flat_type_theory_map_vs_map_over
-        {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-        (T : flat_type_theory Σ) (T' : flat_type_theory Σ')
-    : FlatTypeTheory.map (FlatTypeTheory.fmap f T) T'
-    <~> FlatTypeTheory.map_over f T T'.
-  Proof.
-  Admitted.
-
   (* TODO: upstream *)
   (** Note that these are in fact judgementally equal! But it’s often clearer to make the conversion explicit. *)
   Lemma family_map_vs_map_over
@@ -166,18 +130,12 @@ Section PresuppositionClosure.
     - assert (r_WT := T_WT r).
       assert (r'_WT := TypedRule.fmap_is_well_typed
                       (RawTypeTheory.include_rule_signature _) r_WT).
-      refine (typed_rule_is_well_typed_fmap1 _ r'_WT).
-      eapply flat_type_theory_compose.
-      2: { eapply flat_type_theory_fmap_compose. }
+      refine (TypedRule.fmap_is_well_typed_in_theory _ r'_WT).
+      eapply FlatTypeTheory.compose.
+      2: { eapply FlatTypeTheory.map_from_eq, inverse, FlatTypeTheory.fmap_compose. }
       apply FlatTypeTheory.map_from_family_map.
-      (* TODO: rename [FlatTypeTheory.map_from_family_map] to include [over],
-         and give a version that’s truly for […map] *)
-      refine (transport (fun f => Family.map_over f _ _) _ _).
-      + apply inverse.
-        apply path_forall; intros i.
-        apply FlatRule.fmap_idmap.
-      + apply (family_map_vs_map_over _ _ _)^-1.
-        apply raw_type_theory_flatten_subtheory.
+      apply (family_map_vs_map_over _ _ _)^-1.
+      apply raw_type_theory_flatten_subtheory.
     - admit. (* TODO: same as the above, plus lemma that associated congruence rule is well-typed *)
   Admitted.
 
