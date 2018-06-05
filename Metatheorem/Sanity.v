@@ -86,8 +86,74 @@ Section PresuppositionClosure.
 
   Context {σ : shape_system} `{Funext}.
 
-  
-  
+  (* TODO: upstream; consider naming! *)
+  Definition typed_rule_is_well_typed_fmap1 {Σ : signature σ}
+      {T T' : flat_type_theory Σ} (f : FlatTypeTheory.map T T')
+      {a} {hjf_concl} {R : rule Σ a hjf_concl}
+    : TypedRule.is_well_typed T R -> TypedRule.is_well_typed T' R.
+  Proof.
+  Admitted.
+
+  (* TODO: upstream; consider naming; consider whether would be easier as an equality. *)
+  Definition flat_type_theory_fmap_compose
+      {Σ Σ' Σ'' : signature σ}
+      (f : Signature.map Σ Σ') (f' : Signature.map Σ' Σ'')
+      (T : flat_type_theory Σ)
+    : FlatTypeTheory.map
+        (FlatTypeTheory.fmap f' (FlatTypeTheory.fmap f T))
+        (FlatTypeTheory.fmap (Signature.compose f' f) T).
+  Proof.
+  Admitted.
+
+  (* TODO: upstream; consider naming; consider whether would be easier as an equality. *)
+  Definition flat_type_theory_compose
+      {Σ : signature σ} {T T' T'' : flat_type_theory Σ}
+      (f' : FlatTypeTheory.map T' T'') (f : FlatTypeTheory.map T T')
+    : FlatTypeTheory.map T T''.
+  Proof.
+  Admitted.
+
+  (* TODO: upstream *)
+  Lemma flat_type_theory_map_vs_map_over
+        {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+        (T : flat_type_theory Σ) (T' : flat_type_theory Σ')
+    : FlatTypeTheory.map (FlatTypeTheory.fmap f T) T'
+    <~> FlatTypeTheory.map_over f T T'.
+  Proof.
+  Admitted.
+
+  (* TODO: upstream *)
+  (** Note that these are in fact judgementally equal! But it’s often clearer to make the conversion explicit. *)
+  Lemma family_map_vs_map_over
+        {X X'} (f : X -> X')
+        (K : family X) (K' : family X')
+    : Family.map (Family.fmap f K) K'
+    <~> Family.map_over f K K'.
+  Proof.
+    simple refine (equiv_adjointify _ _ _ _).
+    - intros ff. exact ff.
+    - intros ff. exact ff.
+    - intros ff; apply idpath.
+    - intros ff; apply idpath.
+  Defined.
+
+  (* TODO: refactor this better? *)
+  Lemma raw_type_theory_flatten_subtheory
+      (T : raw_type_theory σ) (r : T)
+    : Family.map_over
+        (FlatRule.fmap
+           (Signature.compose (RawTypeTheory.include_rule_signature r)
+                              (RawTypeTheory.subtheory_signature T r)))
+        (RawTypeTheory.flatten (RawTypeTheory.subtheory T r))
+        (RawTypeTheory.flatten T).
+  Proof.
+    apply Family.Build_map'; intros [ [i lt_i_r] | [ [ i lt_i_r] i_is_ob] ].
+    - (* main rule *)
+      admit.
+    - (* congruence rule *)
+      admit.
+  Admitted.
+
   (** For any raw type theory [T] and a rule [r] of the flattened [T], every
       presupposition in the boundary of the conclusion of [r] can be derived. *)
   Lemma presupposition_closed_flatten
@@ -98,71 +164,20 @@ Section PresuppositionClosure.
     (* Do these have to be treated separately, or can they be unified better? *)
     intros [r|r]; apply TypedRule.weakly_well_typed_flatten.
     - assert (r_WT := T_WT r).
-      admit.
-  (* Detailed sketch:
-
-We need to get from
-
-  TypedRule.is_well_typed_rule
-    (FlatTypeTheory.fmap (RawTypeTheory.subtheory_signature T r)
-       (RawTypeTheory.flatten (RawTypeTheory.subtheory T r))) 
-    (T.(tt_rule) r)
-
-to
-
-  TypedRule.is_well_typed_rule (RawTypeTheory.flatten T)
-    (RawRule.fmap (RawTypeTheory.include_rule_signature r) (T.(tt_rule) r)).
-
-We have signature maps
-
-  RawTypeTheory.subtheory_signature
-    : (RawTypeTheory.signature (RawTypeTheory.subtheory T i))
-    -> (tt_rule_signature i)
-
-  RawTypeTheory.include_rule_signature 
-    : (tt_rule_signature i)
-    -> (RawTypeTheory.signature (RawTypeTheory.subtheory T i))
-
-So from fmap of rule well-typedness along the latter, get
-
-  TypedRule.is_well_typed_rule
-    (FlatTypeTheory.fmap (RawTypeTheory.subtheory_signature T r)
-       (RawTypeTheory.flatten (RawTypeTheory.subtheory T r))) 
-    (T.(tt_rule) r)
-  ->
-  TypedRule.is_well_typed_rule
-    (FlatTypeTheory.fmap (RawTypeTheory.include_rule_signature r)
-    (FlatTypeTheory.fmap (RawTypeTheory.subtheory_signature T r)
-       (RawTypeTheory.flatten (RawTypeTheory.subtheory T r))))
-    (RawRule.fmap (RawTypeTheory.include_rule_signature r) (T.(tt_rule) r))
-
-then by a commutativity, this is
-
-  TypedRule.is_well_typed_rule
-    (FlatTypeTheory.fmap (RawTypeTheory.include_subtheory_signature T r)
-       (RawTypeTheory.flatten (RawTypeTheory.subtheory T r))))
-    (RawRule.fmap (RawTypeTheory.include_rule_signature r) (T.(tt_rule) r))
-
-  and then there should be a flat type theory map 
-    (FlatTypeTheory.fmap (RawTypeTheory.include_subtheory_signature T r)
-       (RawTypeTheory.flatten (RawTypeTheory.subtheory T r))))
-  -> 
-    (RawTypeTheory.flatten T)
-
-which we can map the well-typedness along.
-
-  NOTE: the names of these signatures and signature morphisms are all a bit unintuitive!  This is probably the point to try to think of more intuitive names for them.
-
-  [ RawTypeTheory.subtheory ] : the subtheory _below_ a given rule.  Better name: [ subtheory_below_rule ]?
-  
-  [ RawTypeTheory.subtheory_signature]: is the _isomorphism_ from the signature of the subtheory of T below i, to the signature for the rule i.  Better name: [ rule_signature_iso_subtheory_signature ]?  (Note: the redundant definition is probably necessary, since [rule_signature] needs to be defined mutually with [raw_type_theory], whereas [RawTypeTheory.subtheory] and [RawTypeTheory.signature] are defined afterwards.)
-
-  Infrastructure needed:
-
-  - fmap of well-typedness of these, along a raw type theory map over a signature map
-  - functoriality of the former, in signature maps
-  - commutativity of the triangle involved here.
-  *)
+      assert (r'_WT := TypedRule.fmap_is_well_typed
+                      (RawTypeTheory.include_rule_signature _) r_WT).
+      refine (typed_rule_is_well_typed_fmap1 _ r'_WT).
+      eapply flat_type_theory_compose.
+      2: { eapply flat_type_theory_fmap_compose. }
+      apply FlatTypeTheory.map_from_family_map.
+      (* TODO: rename [FlatTypeTheory.map_from_family_map] to include [over],
+         and give a version that’s truly for […map] *)
+      refine (transport (fun f => Family.map_over f _ _) _ _).
+      + apply inverse.
+        apply path_forall; intros i.
+        apply FlatRule.fmap_idmap.
+      + apply (family_map_vs_map_over _ _ _)^-1.
+        apply raw_type_theory_flatten_subtheory.
     - admit. (* TODO: same as the above, plus lemma that associated congruence rule is well-typed *)
   Admitted.
 
