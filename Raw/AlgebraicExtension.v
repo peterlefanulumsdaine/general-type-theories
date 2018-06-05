@@ -594,6 +594,24 @@ Section Initial_Segment.
     destruct i as [ [ i_ob e ] | [i_eq e] ]; apply e.
   Defined.
 
+  Definition initial_segment_compare_premise_metas
+      {Σ : signature σ} {a} {A : algebraic_extension Σ a} {r : A}
+      (i : initial_segment_premise_aux A r)
+    : Family.map
+        (ae_metas A (initial_segment_include_premise_aux _ _ i))
+        (Family.subfamily (ae_metas A r) (fun j =>
+           initial_segment_lt_aux _ _ (inl j) i)).
+  Proof.
+    apply Family.Build_map'.
+    intros [ j j_lt_i ].
+    simple refine (((j;_);_);_).
+    - cbn. eapply WellFounded.transitive. 
+      + exact j_lt_i.
+      + apply initial_segment_include_premise_lt_aux.
+    - destruct i as [ ? | ? ]; exact j_lt_i.
+    - apply idpath. 
+  Defined.
+
   (* TODO: rename [ae_metas], [ae_signature] to [ae_premise_metas], [ae_premise_signature]? *)
   (** Auxiliary definition for [initial_segment] below *)
   Definition initial_segment_compare_signature
@@ -606,15 +624,7 @@ Section Initial_Segment.
            (Family.subfamily (ae_metas A r) (fun j =>
            initial_segment_lt_aux _ _ (inl j) i))).
   Proof.
-    apply Metavariable.fmap2.
-    apply Family.Build_map'.
-    intros [ j j_lt_i ].
-    simple refine (((j;_);_);_).
-    - cbn. eapply WellFounded.transitive. 
-      + exact j_lt_i.
-      + apply initial_segment_include_premise_lt_aux.
-    - destruct i as [ ? | ? ]; exact j_lt_i.
-    - apply idpath. 
+    apply Metavariable.fmap2, initial_segment_compare_premise_metas.
   Defined.
 
   Local Definition initial_segment
@@ -643,6 +653,111 @@ Section Initial_Segment.
         destruct i as [ ? | ? ]; refine (ae_hypothetical_boundary A i_orig x).
   Defined.
 
+  (* Perhaps better as map (we’d have to define the notion of map first…)? *)
+  Local Lemma initial_segment_fmap `{Funext}
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {A : algebraic_extension Σ a} (p : A)
+    : initial_segment (fmap f A) p
+    = fmap f (initial_segment A p).
+  Proof.
+    simple refine (eq _ _ _ _); try apply idpath.
+    - (* rule contexts *)
+      intros i j. simpl in j.
+      eapply concat. { apply Expression.fmap_fmap. }
+      eapply concat. { apply inverse, rename_idmap. }
+      apply (ap2 (fun f e => rename f e)).
+      + apply idpath.
+      + (* there’s got to be a better way here
+           than this 20 lines of duplicated code… *)
+        destruct i as [ i_ob | i_eq ].
+        * eapply concat. { apply Expression.fmap_fmap. }
+          eapply concat.
+          { apply ap. unfold initial_segment_include_premise_aux; cbn.
+            apply idpath. }
+          apply inverse. 
+          eapply concat. { apply Expression.fmap_fmap. }
+          eapply concat.
+          { apply ap. unfold initial_segment_include_premise_aux; cbn.
+            apply idpath. }
+          apply (ap (fun f => Expression.fmap f _)).
+          eapply concat.
+          2: { apply ap. unfold initial_segment_include_premise_aux; cbn. 
+               apply idpath. }
+          unfold initial_segment_compare_signature.
+          eapply concat. { apply inverse, Metavariable.fmap_compose. }
+          eapply concat. 2: { eapply ap10, ap, Metavariable.fmap_compose. }
+          eapply concat. 2: { apply Metavariable.fmap_compose. }
+          apply (ap2 (fun f g => Metavariable.fmap f g)).
+          -- eapply concat. { apply Family.id_right. }
+             apply inverse.
+             eapply concat. 2: { apply Family.id_left. }
+             apply ap10, ap. apply Family.id_right.
+          -- apply idpath.
+        * eapply concat. { apply Expression.fmap_fmap. }
+          eapply concat.
+          { apply ap. unfold initial_segment_include_premise_aux; cbn.
+            apply idpath. }
+          apply inverse. 
+          eapply concat. { apply Expression.fmap_fmap. }
+          eapply concat.
+          { apply ap. unfold initial_segment_include_premise_aux; cbn.
+            apply idpath. }
+          apply (ap (fun f => Expression.fmap f _)).
+          eapply concat.
+          2: { apply ap. unfold initial_segment_include_premise_aux; cbn. 
+               apply idpath. }
+          unfold initial_segment_compare_signature.
+          eapply concat. { apply inverse, Metavariable.fmap_compose. }
+          eapply concat. 2: { eapply ap10, ap, Metavariable.fmap_compose. }
+          eapply concat. 2: { apply Metavariable.fmap_compose. }
+          apply (ap2 (fun f g => Metavariable.fmap f g)).
+          -- eapply concat. { apply Family.id_right. }
+             apply inverse.
+             eapply concat. 2: { apply Family.id_left. }
+             apply ap10, ap. apply Family.id_right.
+          -- apply idpath.
+    - (* rule boundaries *)
+      intros i.
+      eapply concat. 2: { eapply rename_hypothetical_boundary_idmap. }
+      apply (ap2 (fun f b => rename_hypothetical_boundary f b)).
+      + apply idpath. 
+      + simpl ap. apply path_forall; intros x.
+        destruct i as [ i_ob | i_eq ].
+        * simpl. unfold fmap_hypothetical_boundary.
+          eapply concat.
+          { eapply (ap (fun f => Expression.fmap f _)). 
+            apply Metavariable.fmap_idmap. }
+          eapply concat. { apply Expression.fmap_idmap. }
+          eapply concat. { apply Expression.fmap_fmap. }
+          apply inverse. 
+          eapply concat. { apply Expression.fmap_fmap. }
+          apply (ap (fun f => Expression.fmap f _)).
+          eapply concat. { apply inverse, Metavariable.fmap_compose. }
+          eapply concat. 2: { eapply Metavariable.fmap_compose. }
+          apply (ap2 (fun f g => Metavariable.fmap f g)).
+          -- eapply concat. { apply Family.id_right. }
+             apply inverse.
+             apply Family.id_left.
+          -- apply idpath.
+        * simpl. unfold fmap_hypothetical_boundary.
+          eapply concat.
+          { eapply (ap (fun f => Expression.fmap f _)). 
+            apply Metavariable.fmap_idmap. }
+          eapply concat. { apply Expression.fmap_idmap. }
+          eapply concat. { apply Expression.fmap_fmap. }
+          apply inverse. 
+          eapply concat. { apply Expression.fmap_fmap. }
+          apply (ap (fun f => Expression.fmap f _)).
+          eapply concat. { apply inverse, Metavariable.fmap_compose. }
+          eapply concat. 2: { eapply Metavariable.fmap_compose. }
+          apply (ap2 (fun f g => Metavariable.fmap f g)).
+          -- eapply concat. { apply Family.id_right. }
+             apply inverse.
+             apply Family.id_left.
+          -- apply idpath.
+  Time Defined.
+
+  (* Really… probably better  *)
   Local Lemma flatten_initial_segment_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {A : algebraic_extension Σ a} (p : A)
@@ -650,6 +765,7 @@ Section Initial_Segment.
     : flatten (initial_segment (fmap f A) p) i
     = flatten (fmap f (initial_segment A p)) i.
   Proof.
+    admit.
   Admitted.
 
 End Initial_Segment.
