@@ -260,6 +260,16 @@ Section FamilyMap.
     apply ap, ap_idmap.
   Defined.
 
+  Local Lemma id_right `{Funext}
+      {X} {K K' : family X} {f : map K K'}
+    : compose f (idmap K) = f.
+  Proof.
+    apply map_eq'.
+    intros i. exists (idpath _); cbn.
+    eapply concat. { apply concat_p1. }
+    apply inverse, concat_1p.
+  Defined.
+
   Local Lemma map_to_fmap
       {X X'} (f : X -> X') (K : family X)
     : map_over f K (fmap f K).

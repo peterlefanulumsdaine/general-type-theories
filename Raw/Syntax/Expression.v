@@ -49,7 +49,7 @@ Section RawSyntax.
       (args : arguments (symbol_arity S) γ)
     : raw_expression cl γ.
   Proof.
-    destruct e.
+    refine (transport (fun cl => raw_expression cl _) e _).
     now apply raw_symbol.
   Defined.
 
