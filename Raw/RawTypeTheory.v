@@ -136,8 +136,7 @@ Section Flattening.
       intros [r Hr].
       refine (RawRule.flatten _ _).
       + simple refine
-        (CongruenceRule.associated
-           (RawRule.fmap _ (tt_rule r)) _ _ _ _).
+        (congruence_rule (RawRule.fmap _ (tt_rule r)) _ _ _ _).
         * apply include_rule_signature.
         * exact Hr.
         * exact (r;Hr). (* head symbol of original rule *)

@@ -10,8 +10,10 @@ Require Import Raw.RawTypeTheory.
 Require Import Raw.RawStructuralRule.
 Require Import Raw.FlatRule.
 Require Import Raw.FlatTypeTheory.
+Require Import Raw.CongruenceRule.
 Require Import Typed.TypedClosure.
 Require Import Typed.TypedStructuralRule.
+Require Import Typed.TypedRule.
 Require Import Typed.TypeTheory.
 
 (** The main goal of this file is the metatheorem that all presuppositions
@@ -103,6 +105,23 @@ Section PresuppositionClosure.
       admit.
   Admitted.
 
+  Lemma rule_of_well_typed_type_theory_is_well_typed
+      {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
+      (r : T)
+    : TypedRule.is_well_typed (RawTypeTheory.flatten T)
+        (RawRule.fmap (RawTypeTheory.include_rule_signature r) (tt_rule r)).
+  Proof.
+    assert (r_WT := T_WT r).
+    assert (r'_WT := TypedRule.fmap_is_well_typed
+                    (RawTypeTheory.include_rule_signature _) r_WT).
+    refine (TypedRule.fmap_is_well_typed_in_theory _ r'_WT).
+    eapply FlatTypeTheory.compose.
+    2: { eapply FlatTypeTheory.map_from_eq, inverse, FlatTypeTheory.fmap_compose. }
+    apply FlatTypeTheory.map_from_family_map.
+    apply (Family.map_vs_map_over _ _ _)^-1.
+    apply raw_type_theory_flatten_subtheory.
+  Time Defined.
+
   (** For any raw type theory [T] and a rule [r] of the flattened [T], every
       presupposition in the boundary of the conclusion of [r] can be derived. *)
   Lemma presupposition_closed_flatten
@@ -112,17 +131,13 @@ Section PresuppositionClosure.
     (* The flattened [T] has logical and congruence rules, two cases to consider. *)
     (* Do these have to be treated separately, or can they be unified better? *)
     intros [r|r]; apply TypedRule.weakly_well_typed_flatten.
-    - assert (r_WT := T_WT r).
-      assert (r'_WT := TypedRule.fmap_is_well_typed
-                      (RawTypeTheory.include_rule_signature _) r_WT).
-      refine (TypedRule.fmap_is_well_typed_in_theory _ r'_WT).
-      eapply FlatTypeTheory.compose.
-      2: { eapply FlatTypeTheory.map_from_eq, inverse, FlatTypeTheory.fmap_compose. }
-      apply FlatTypeTheory.map_from_family_map.
-      apply (Family.map_vs_map_over _ _ _)^-1.
-      apply raw_type_theory_flatten_subtheory.
-    - admit. (* TODO: same as the above, plus lemma that associated congruence rule is well-typed *)
-  Admitted.
+    - (* logical rules *)
+      apply rule_of_well_typed_type_theory_is_well_typed, T_WT.
+    - (* congruence rules *)
+      apply congruence_rule_is_well_typed.
+      Time apply rule_of_well_typed_type_theory_is_well_typed, T_WT.
+  Time Defined.
+  (* NOTE: very strange timing issue here (also in [rule_of_well_typed_type_theory_is_well_typed] above).  The [Defined] seems to take about 15–30sec to typecheck, both in Emacs and from coqc, but [Time Defined] only reports about 1.5sec for it.  [Time] on last line of proof here is so that one can see the actual time of the [Defined] when compiling from [coqc]. *)
 
   (** Working in a type theory [T], given a judgement [j] which is derivable
       from hypotheses [hyps], suppose every presupposition [q] of every hypothesis [h : hyps]

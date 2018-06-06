@@ -9,6 +9,7 @@ Require Import Raw.FlatRule.
 Require Import Raw.FlatTypeTheory.
 Require Import Raw.RawRule.
 Require Import Raw.RawTypeTheory.
+Require Import Raw.CongruenceRule.
 Require Import Typed.TypedFlatRule.
 
 (** In this file: definition of well-typedness of an algebraic extension, and a (well-presented) rule. *)
@@ -218,4 +219,21 @@ Section Flattening.
   (* TODO: in fact, we should be able to extend this to showing
    that [flatten R] is _strongly_ well-typed. *)
   
- End Flattening.
+End Flattening.
+
+Section Congruence_Rules.
+
+  Context {σ : shape_system} `{Funext}.
+
+  Definition congruence_rule_is_well_typed
+      {Σ : signature σ} {T : flat_type_theory Σ}
+      {a} {hjf_concl} {R : rule Σ a hjf_concl} (R_WT : is_well_typed T R)
+      (R_is_ob : Judgement.is_object hjf_concl)
+      (S : Σ)
+      (e_a : symbol_arity S = a)
+      (e_cl : symbol_class S = Judgement.class_of hjf_concl)
+    : is_well_typed T (congruence_rule R R_is_ob S e_a e_cl).
+  Proof.
+  Admitted.
+
+End Congruence_Rules.

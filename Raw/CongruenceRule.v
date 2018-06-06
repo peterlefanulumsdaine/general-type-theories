@@ -90,7 +90,7 @@ eq_new i   0        0        0        0        i < j
       repeat destruct p as [ p | p ]; apply idpath.
   Defined.
 
-  Local Definition associated
+  Definition congruence_rule
     {a} {hjf_concl} (R : rule Σ a hjf_concl)
     (H : Judgement.is_object hjf_concl)
     (S : Σ)
