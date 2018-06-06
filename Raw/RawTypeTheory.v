@@ -91,7 +91,8 @@ Section TypeTheory.
   Defined.
 
   (* NOTE: in fact, this map should be an isomorphism *)
-  Local Definition initial_segment_signature (T : raw_type_theory) (i : T)
+  Local Definition initial_segment_signature_to_rule_signature
+        (T : raw_type_theory) (i : T)
     : Signature.map
         (TypeTheory.signature (initial_segment T i))
         (tt_rule_signature _ i).
@@ -99,6 +100,17 @@ Section TypeTheory.
     simple refine (_;_).
     - intros [[j lt_j_i] j_obj]. exists j. split; assumption.
     - intros ?; apply idpath.
+  Defined.
+
+  Local Definition include_initial_segment_signature
+        (T : raw_type_theory) (i : T)
+    : Signature.map
+        (TypeTheory.signature (initial_segment T i))
+        (TypeTheory.signature T).
+  Proof.
+    eapply Signature.compose.
+    - apply include_rule_signature.
+    - apply initial_segment_signature_to_rule_signature.
   Defined.
 
 End TypeTheory.
@@ -145,9 +157,26 @@ Section Flattening.
       + intros []. (* no head symbol, since congs are equality rules *)
   Defined.
 
+  (* Probably should go via a notion of “simple map” of type theories,
+   in which [flatten] is functorial. *)
+  Local Lemma flatten_initial_segment
+      (T : raw_type_theory σ) (r : T)
+    : Family.map_over
+        (FlatRule.fmap
+           (include_initial_segment_signature T r))
+        (flatten (initial_segment T r))
+        (flatten T).
+  Proof.
+    apply Family.Build_map'; intros [ [i lt_i_r] | [ [ i lt_i_r] i_is_ob] ].
+    - (* main rule *)
+      admit.
+    - (* congruence rule *)
+      admit.
+  Admitted.
+
 End Flattening.
 
 Local Definition derivation {σ : shape_system} (T : raw_type_theory σ) H
-  : judgement_total (signature T) -> Type
+    : judgement_total (signature T) -> Type
   := FlatTypeTheory.derivation (flatten T) H.
 

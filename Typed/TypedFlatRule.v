@@ -22,7 +22,7 @@ Section WellTyped.
   := forall c_presup : presupposition (flat_rule_conclusion r),
       (FlatTypeTheory.derivation
          (FlatTypeTheory.fmap include_symbol T)
-         (let H := flat_rule_premises r in H + Family.bind H presupposition)
+         (let H := flat_rule_premise r in H + Family.bind H presupposition)
          (presupposition _ c_presup)).
 
   (** Note: we could give (as we have for closure rules) a stronger notion of

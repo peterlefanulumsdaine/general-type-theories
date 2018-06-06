@@ -88,23 +88,6 @@ Section PresuppositionClosure.
 
   Context {σ : shape_system} `{Funext}.
 
-  (* TODO: refactor this better? *)
-  Lemma raw_type_theory_flatten_initial_segment
-      (T : raw_type_theory σ) (r : T)
-    : Family.map_over
-        (FlatRule.fmap
-           (Signature.compose (RawTypeTheory.include_rule_signature r)
-                              (RawTypeTheory.initial_segment_signature T r)))
-        (RawTypeTheory.flatten (RawTypeTheory.initial_segment T r))
-        (RawTypeTheory.flatten T).
-  Proof.
-    apply Family.Build_map'; intros [ [i lt_i_r] | [ [ i lt_i_r] i_is_ob] ].
-    - (* main rule *)
-      admit.
-    - (* congruence rule *)
-      admit.
-  Admitted.
-
   Lemma rule_of_well_typed_type_theory_is_well_typed
       {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
       (r : T)
@@ -119,7 +102,7 @@ Section PresuppositionClosure.
     2: { eapply FlatTypeTheory.map_from_eq, inverse, FlatTypeTheory.fmap_compose. }
     apply FlatTypeTheory.map_from_family_map.
     apply (Family.map_vs_map_over _ _ _)^-1.
-    apply raw_type_theory_flatten_initial_segment.
+    apply RawTypeTheory.flatten_initial_segment.
   Admitted.
   (* Proof here is complete; [Admitted] is just to avoid universe
   proliferation causing terrible slowdown downstream. *)

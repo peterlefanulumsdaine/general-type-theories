@@ -151,7 +151,6 @@ End WellShapedRule.
 (* globalise argument declarations *)
 Arguments rule {_} _ _ _.
 
-
 Module Span.
 (** Some auxiliary constructions for defining the ordering of the premises in the
     associated congruence rule of a constructor. *)

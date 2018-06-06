@@ -63,7 +63,7 @@ Section Derivations.
     : Type
   := derivation 
        (fmap include_symbol T)
-       (flat_rule_premises R)
+       (flat_rule_premise R)
        (flat_rule_conclusion R).
 
 End Derivations.
@@ -226,7 +226,7 @@ Section Instantiation.
           (Metavariable.instantiate_judgement Δ J
             (fmap_judgement_total
               (Metavariable.fmap1 include_symbol _)
-              (flat_rule_premises r p)))).
+              (flat_rule_premise r p)))).
       refine (_ ; (equiv_inverse (shape_assoc _ _ _))).
     }
     { apply inverse, instantiate_instantiate_judgement. }

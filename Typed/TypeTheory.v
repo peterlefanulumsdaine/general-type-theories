@@ -18,7 +18,7 @@ Section WellTypedTypeTheory.
   Proof.
     simple refine (forall R : T, TypedRule.is_well_typed _ (tt_rule R)).
     refine (FlatTypeTheory.fmap _ _).
-    - apply RawTypeTheory.initial_segment_signature.
+    - apply RawTypeTheory.initial_segment_signature_to_rule_signature.
     - apply RawTypeTheory.flatten.
   Defined.
 

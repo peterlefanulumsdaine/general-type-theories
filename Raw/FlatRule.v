@@ -16,20 +16,19 @@ Section FlatRule.
   Record flat_rule
   :=
     { flat_rule_metas : arity _
-    ; flat_rule_premises :
+    ; flat_rule_premise :
         family (judgement_total (Metavariable.extend Σ flat_rule_metas))
     ; flat_rule_conclusion :
         (judgement_total (Metavariable.extend Σ flat_rule_metas))
     }.
 
-  (* TODO: rename [flat_rule_premises] to [flat_rule_premise] *)
   Local Lemma eq
       {R R' : flat_rule}
       (e_metas : flat_rule_metas R = flat_rule_metas R')
       (e_premises
        : transport (fun a => family (_ (_ _ a))) e_metas
-                   (flat_rule_premises R)
-         = flat_rule_premises R')
+                   (flat_rule_premise R)
+         = flat_rule_premise R')
       (e_conclusion
        : transport (fun a => judgement_total (_ _ a)) e_metas
                    (flat_rule_conclusion R)
@@ -49,7 +48,7 @@ Section FlatRule.
     intros [Γ I].
     split.
     - (* premises *)
-      refine (Family.fmap _ (flat_rule_premises R)).
+      refine (Family.fmap _ (flat_rule_premise R)).
       apply (Metavariable.instantiate_judgement _ I).
     - apply (Metavariable.instantiate_judgement _ I).
       apply (flat_rule_conclusion R).
@@ -70,7 +69,7 @@ Section SignatureMaps.
   Proof.
     intros R.
     exists (flat_rule_metas R).
-    - refine (Family.fmap _ (flat_rule_premises R)).
+    - refine (Family.fmap _ (flat_rule_premise R)).
       apply fmap_judgement_total.
       apply Metavariable.fmap1, f.
     - refine (fmap_judgement_total _ (flat_rule_conclusion R)).

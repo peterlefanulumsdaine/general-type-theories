@@ -60,7 +60,7 @@ eq_new i   0        0        0        0        i < j
     (p : (a + a) +
          (ae_equality_premise (rule_premise R) + ae_equality_premise (rule_premise R) + a))
     : Signature.map
-        (ae_signature (rule_premise R) (original_premise p))
+        (ae_signature_of_premise (rule_premise R) (original_premise p))
         (Metavariable.extend Σ (Family.subfamily (a + a)
            (fun j => lt (ae_lt _) (inl j) p))).
   Proof.

@@ -270,6 +270,13 @@ Section FamilyMap.
     apply inverse, concat_1p.
   Defined.
 
+  Local Lemma map_from_eq
+      {X} {K K' : family X} (e : K = K')
+    : map K K'.
+  Proof.
+    destruct e. apply idmap.
+  Defined.
+
   Local Lemma map_to_fmap
       {X X'} (f : X -> X') (K : family X)
     : map_over f K (fmap f K).
