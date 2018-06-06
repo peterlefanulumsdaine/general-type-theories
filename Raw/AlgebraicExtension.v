@@ -661,7 +661,7 @@ Section Initial_Segment.
   Defined.
 
   (* Perhaps better as map (we’d have to define the notion of map first…)? *)
-  Local Lemma initial_segment_fmap `{Funext}
+  Local Lemma initial_segment_fmap_eq `{Funext}
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {A : algebraic_extension Σ a} (p : A)
     : initial_segment (fmap f A) p
@@ -764,6 +764,16 @@ Section Initial_Segment.
           -- apply idpath.
   Time Defined.
 
+  Local Lemma initial_segment_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {A : algebraic_extension Σ a} (p : A)
+    : simple_map
+        (initial_segment (fmap f A) p)
+        (fmap f (initial_segment A p)).
+  Proof.
+    (* should be mostly copy-paste from [initial_segment_fmap_eq] above *)
+  Admitted.
+
   Local Lemma flatten_initial_segment_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {A : algebraic_extension Σ a} (p : A)
@@ -772,8 +782,10 @@ Section Initial_Segment.
         (flatten (initial_segment (fmap f A) p))
         (flatten (fmap f (initial_segment A p))).
   Proof.
-    admit.
-    (* TODO: go via functoriality of [flatten]. *)
+    simple refine (transport (fun f => Family.map_over f _ _) _
+                      (fmap_flatten_simple_map _)).
+    - admit. (* should be trivial once the map given *)
+    - refine (initial_segment_fmap f p).
   Admitted.
 
   Local Lemma flatten_initial_segment_fmap_applied
