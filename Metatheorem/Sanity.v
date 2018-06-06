@@ -120,7 +120,9 @@ Section PresuppositionClosure.
     apply FlatTypeTheory.map_from_family_map.
     apply (Family.map_vs_map_over _ _ _)^-1.
     apply raw_type_theory_flatten_initial_segment.
-  Time Defined.
+  Admitted.
+  (* Proof here is complete; [Admitted] is just to avoid universe
+  proliferation causing terrible slowdown downstream. *)
 
   (** For any raw type theory [T] and a rule [r] of the flattened [T], every
       presupposition in the boundary of the conclusion of [r] can be derived. *)
@@ -135,9 +137,8 @@ Section PresuppositionClosure.
       apply rule_of_well_typed_type_theory_is_well_typed, T_WT.
     - (* congruence rules *)
       apply congruence_rule_is_well_typed.
-      Time apply rule_of_well_typed_type_theory_is_well_typed, T_WT.
-  Time Defined.
-  (* NOTE: very strange timing issue here (also in [rule_of_well_typed_type_theory_is_well_typed] above).  The [Defined] seems to take about 15–30sec to typecheck, both in Emacs and from coqc, but [Time Defined] only reports about 1.5sec for it.  [Time] on last line of proof here is so that one can see the actual time of the [Defined] when compiling from [coqc]. *)
+      apply rule_of_well_typed_type_theory_is_well_typed, T_WT.
+  Defined.
 
   (** Working in a type theory [T], given a judgement [j] which is derivable
       from hypotheses [hyps], suppose every presupposition [q] of every hypothesis [h : hyps]
