@@ -188,46 +188,56 @@ Section FamilyMap.
     - intros ff; apply idpath.
   Defined.
 
-  (* TODO: generalise to “over” version? *)
+  Local Definition map_over_eq `{Funext}
+      {X X'} {f : X -> X'}
+      {K} {L} {ff gg : map_over f K L}
+      (e_map : forall k:K, ff k = gg k)
+      (e_comm : forall k:K,
+        map_over_commutes ff k
+        = ap L (e_map k) @ map_over_commutes gg k)
+    : ff = gg.
+  Proof.
+    destruct ff as [ff_ob ff_comm], gg as [gg_ob gg_comm].
+    set (e_map' := path_forall _ _ e_map : ff_ob = gg_ob).
+    assert (ee : e_map == ap10 e_map').
+      { intros i; apply inverse, ap10_path_forall. }
+    destruct e_map'. apply ap.
+    apply path_forall; intros k.
+    cbn in e_comm.
+    eapply concat. { apply e_comm. }
+    eapply concat. { eapply ap10, ap, ap, ee. }
+    apply concat_1p.
+  Defined.
+
   Definition map_eq `{Funext} {X} {K L : family X} {f g : map K L}
     (e_map : forall k:K, f k = g k)
     (e_comm : forall k:K,
         map_commutes f k = ap L (e_map k) @ map_commutes g k)
     : f = g.
   Proof.
-    destruct f as [f f_comm], g as [g g_comm].
-    simple refine (path_sigma _ _ _ _ _); cbn.
-    - apply path_forall. exact e_map. 
-    - assert (transport_lemma : forall e : f = g,
-                 transport (fun h => forall k, L (h k) = K k) e f_comm
-                 = (fun k => (ap L (ap10 e^ k)) @ (f_comm k))).
-      { destruct e; cbn.
-        apply inverse, path_forall; intros k; apply concat_1p.
-      }
-      eapply concat. { apply transport_lemma. }
-      apply path_forall; intros k.
-      eapply concat. { apply ap, e_comm. }
-      eapply concat.
-      { eapply whiskerR.
-        eapply concat. { apply ap, ap10_V. }
-        apply ap_V.
-      }
-      apply moveR_Vp.
-      apply whiskerR.
-      apply ap, inverse.
-      apply ap10_path_forall.
+    exact (map_over_eq e_map e_comm).
   Defined.
 
-  (* TODO: generalise to “over” version? *)
+  Local Definition map_over_eq' `{Funext}
+      {X X'} {f : X -> X'}
+      {K} {L} {ff gg : map_over f K L}
+    : (forall k:K, { e : ff k = gg k
+         & map_over_commutes ff k
+           = ap L e @ map_over_commutes gg k } )
+    -> ff = gg.
+  Proof.
+    intros e.
+    simple refine (map_over_eq _ _); intros k.
+    - exact (e k).1.
+    - exact (e k).2.
+  Defined.
+
   Local Definition map_eq' `{Funext} {X} {K L : family X} {f g : map K L}
     : (forall k:K, { e : f k = g k
          & map_commutes f k = ap L e @ map_commutes g k } )
     -> f = g.
   Proof.
-    intros e.
-    simple refine (map_eq _ _); intros k.
-    - exact (e k).1.
-    - exact (e k).2.
+    intros e. exact (map_over_eq' e).
   Defined.
 
   Local Definition idmap {X} (K : family X)
@@ -291,7 +301,7 @@ Section FamilyMap.
 
    On the other hand, lemma above with conclusion [fmap f (sum K L) = …] also reasonably deserves the name [fmap_sum], by general convention for equational reasoning lemmas.
 
-   Current name [fmap_of_sum] is a bad ad hoc solution to the clash. TODO: discuss and find a better solution. *)
+   Current name [fmap_of_sum] is a bad ad hoc solution to the clash. TODO: discuss, find a better solution, rename… *)
   Local Definition fmap_of_sum
       {X Y} {f : X -> Y}
       {K} {K'} (gg : map_over f K K')
@@ -304,6 +314,28 @@ Section FamilyMap.
       + apply inr, hh, j.
     - intros [ i | j ];
       simpl; apply map_over_commutes.
+  Defined.
+
+  Local Lemma compose_fmap_of_sum_over `{Funext}
+      {X X' X''} {f' : X' -> X''} {f : X -> X'}
+      {K} {K'} {K''} (g' : map_over f' K' K'') (g : map_over f K K')
+      {L} {L'} {L''} (h' : map_over f' L' L'') (h : map_over f L L')
+    : compose_over (fmap_of_sum g' h') (fmap_of_sum g h)
+      = fmap_of_sum (compose_over g' g) (compose_over h' h).
+  Proof.
+    simple refine (map_over_eq' _).
+    intros [k | l]; exists (idpath _);
+      apply inverse, concat_1p.
+  Defined.
+
+  Local Lemma compose_fmap_of_sum `{Funext}
+      {X}
+      {K K' K'' : family X} (g' : map K' K'') (g : map K K')
+      {L L' L'' : family X} (h' : map L' L'') (h : map L L')
+    : compose (fmap_of_sum g' h') (fmap_of_sum g h)
+      = fmap_of_sum (compose g' g) (compose h' h).
+  Proof.
+    exact (compose_fmap_of_sum_over g' g h' h).
   Defined.
 
   Local Definition inl {X} {K K' : family X}
@@ -343,6 +375,22 @@ Section FamilyMap.
   Proof.
     exists g.
     intros i. cbn. apply ap. apply map_commutes.
+  Defined.
+
+  Local Lemma map_fmap_compose `{Funext}
+      {X Y} (f : X -> Y)
+      {K K' K'' : family X} (g' : map K' K'') (g : map K K')
+    : compose (map_fmap f g') (map_fmap f g)
+      = map_fmap f (compose g' g). 
+  Proof.
+    apply map_eq'.
+    intros k; exists (idpath _); cbn.
+    apply inverse.
+    eapply concat. { apply concat_1p. }
+    eapply concat. { apply ap_pp. }
+    apply ap.
+    eapply concat. {apply ap, ap_idmap. }
+    apply inverse, ap_idmap.
   Defined.
 
   Local Definition inclusion

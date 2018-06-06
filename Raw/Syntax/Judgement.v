@@ -537,6 +537,21 @@ Section JudgementFmap.
     apply inverse, fmap_judgement_total_compose.
   Defined.
 
+  Definition fmap_hypothetical_instance_from_boundary_and_head
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {hjf} {γ : σ} (B : hypothetical_boundary Σ hjf γ)
+      (e : is_object hjf -> raw_expression Σ (class_of hjf) γ)
+    : fmap_hypothetical_judgement f
+        (hypothetical_instance_from_boundary_and_head _ B e)
+      = hypothetical_instance_from_boundary_and_head _
+          (fmap_hypothetical_boundary f B)
+          (fun hjf_ob => Expression.fmap f (e hjf_ob)).
+  Proof.
+    destruct hjf as [ocl | ecl].
+    - apply path_forall; intros [ ? | ]; apply idpath.
+    - apply idpath.
+  Defined.
+
 End JudgementFmap.
 
 Section JudgementNotations.

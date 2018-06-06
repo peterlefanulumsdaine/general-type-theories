@@ -326,120 +326,6 @@ Section Flattening.
         destruct H_i_obj. (* ruled out by assumption *)
   Defined.
 
-  (* TODO: upstream! *)
-  Definition family_map_over_eq `{Funext}
-      {X X'} {f : X -> X'}
-      {K} {L} {ff gg : Family.map_over f K L}
-      (e_map : forall k:K, ff k = gg k)
-      (e_comm : forall k:K,
-        Family.map_over_commutes ff k
-        = ap L (e_map k) @ Family.map_over_commutes gg k)
-    : ff = gg.
-  Proof.
-    destruct ff as [ff_ob ff_comm], gg as [gg_ob gg_comm].
-    set (e_map' := path_forall _ _ e_map : ff_ob = gg_ob).
-    assert (ee : e_map == ap10 e_map').
-      { intros i; apply inverse, ap10_path_forall. }
-    destruct e_map'. apply ap.
-    apply path_forall; intros k.
-    cbn in e_comm.
-    eapply concat. { apply e_comm. }
-    eapply concat. { eapply ap10, ap, ap, ee. }
-    apply concat_1p.
-  Defined.
-
-  (* TODO: upstream! *)
-  Definition family_map_over_eq' `{Funext}
-      {X X'} {f : X -> X'}
-      {K} {L} {ff gg : Family.map_over f K L}
-    : (forall k:K, { e : ff k = gg k
-         & Family.map_over_commutes ff k
-           = ap L e @ Family.map_over_commutes gg k } )
-    -> ff = gg.
-  Proof.
-    intros e.
-    simple refine (family_map_over_eq _ _); intros k.
-    - exact (e k).1.
-    - exact (e k).2.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma family_sum_fmap_compose_over `{Funext}
-      {X X' X''} {f' : X' -> X''} {f : X -> X'}
-      {K} {K'} {K''} (g' : Family.map_over f' K' K'') (g : Family.map_over f K K')
-      {L} {L'} {L''} (h' : Family.map_over f' L' L'') (h : Family.map_over f L L')
-    : Family.compose_over (Family.fmap_of_sum g' h') (Family.fmap_of_sum g h)
-      = Family.fmap_of_sum (Family.compose_over g' g) (Family.compose_over h' h).
-  Proof.
-    simple refine (family_map_over_eq' _).
-    intros [k | l]; exists (idpath _);
-      apply inverse, concat_1p.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma family_sum_fmap_compose `{Funext}
-      {X}
-      {K K' K'' : family X} (g' : Family.map K' K'') (g : Family.map K K')
-      {L L' L'' : family X} (h' : Family.map L' L'') (h : Family.map L L')
-    : Family.compose (Family.fmap_of_sum g' h') (Family.fmap_of_sum g h)
-      = Family.fmap_of_sum (Family.compose g' g) (Family.compose h' h).
-  Proof.
-    exact (family_sum_fmap_compose_over g' g h' h).
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma family_map_fmap_compose `{Funext}
-      {X Y} (f : X -> Y)
-      {K K' K'' : family X} (g' : Family.map K' K'') (g : Family.map K K')
-    : Family.compose (Family.map_fmap f g') (Family.map_fmap f g)
-      = Family.map_fmap f (Family.compose g' g). 
-  Proof.
-    apply Family.map_eq'.
-    intros k; exists (idpath _); cbn.
-    apply inverse.
-    eapply concat. { apply concat_1p. }
-    eapply concat. { apply ap_pp. }
-    apply ap.
-    eapply concat. {apply ap, ap_idmap. }
-    apply inverse, ap_idmap.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma metavariable_fmap_compose `{Funext}
-        {Σ Σ' Σ'' : signature σ} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
-        {a a' a'' : arity σ} (g' : Family.map a' a'') (g : Family.map a a')
-      : Signature.compose (Metavariable.fmap f' g') (Metavariable.fmap f g)
-        = Metavariable.fmap (Signature.compose f' f) (Family.compose g' g).
-  Proof.
-    unfold Signature.compose, Metavariable.fmap.
-    eapply concat. { apply family_sum_fmap_compose. }
-    apply ap. apply family_map_fmap_compose.
-  Defined.
-
-  (* TODO: upstream *)
-  Definition fmap_hypothetical_instance_from_boundary_and_head `{Funext}
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {hjf} {γ : σ} (B : Judgement.hypothetical_boundary Σ hjf γ)
-      (e : Judgement.is_object hjf -> raw_expression Σ (Judgement.class_of hjf) γ)
-    : fmap_hypothetical_judgement f
-        (Judgement.hypothetical_instance_from_boundary_and_head _ B e)
-      = Judgement.hypothetical_instance_from_boundary_and_head _
-          (Judgement.fmap_hypothetical_boundary f B)
-          (fun hjf_ob => Expression.fmap f (e hjf_ob)).
-  Proof.
-    destruct hjf as [ocl | ecl].
-    - apply path_forall; intros [ ? | ]; apply idpath.
-    - apply idpath.
-  Defined.
-
-  (* TODO: upstream to [auxiliary] *)
-  Definition ap2 {X Y Z} (f : X -> Y -> Z)
-      {x x'} (e_x : x = x') {y y'} (e_y : y = y')
-    : f x y = f x' y'.
-  Proof.
-    exact (ap _ e_y @ ap (fun x => f x _) e_x).
-  Defined.
-
   Local Definition judgement_of_premise_fmap1 `{Funext}
       {Σ Σ' : signature σ} {f : Signature.map Σ Σ'}
       {a} {A : algebraic_extension Σ a} {i : A}
@@ -537,8 +423,8 @@ Section Flattening.
     intros i.
     eapply concat. 2: { apply inverse, fmap_judgement_of_premise. }
     apply inverse, judgement_of_premise_fmap1.
-    - eapply concat. { apply metavariable_fmap_compose. }
-      eapply concat. 2: { apply inverse, metavariable_fmap_compose. }
+    - eapply concat. { apply inverse, Metavariable.fmap_compose. }
+      eapply concat. 2: { apply Metavariable.fmap_compose. }
       eapply concat. { apply ap, Family.id_left. }
       eapply concat. { eapply (ap (fun f => Metavariable.fmap f _)), Family.id_right. }
       apply inverse.                     
