@@ -71,7 +71,7 @@ Section TypeTheory.
   Defined.
 
   (* NOTE: could easily be generalised to give the sub-type-theory on any down-closed subset of the rules, if that’s ever needed. *)
-  Local Definition subtheory (T : raw_type_theory) (i : T)
+  Local Definition initial_segment (T : raw_type_theory) (i : T)
     : raw_type_theory.
   Proof.
     simple refine (Build_raw_type_theory _ _ _ ).
@@ -91,9 +91,9 @@ Section TypeTheory.
   Defined.
 
   (* NOTE: in fact, this map should be an isomorphism *)
-  Local Definition subtheory_signature (T : raw_type_theory) (i : T)
+  Local Definition initial_segment_signature (T : raw_type_theory) (i : T)
     : Signature.map
-        (TypeTheory.signature (subtheory T i))
+        (TypeTheory.signature (initial_segment T i))
         (tt_rule_signature _ i).
   Proof.
     simple refine (_;_).

@@ -89,13 +89,13 @@ Section PresuppositionClosure.
   Context {σ : shape_system} `{Funext}.
 
   (* TODO: refactor this better? *)
-  Lemma raw_type_theory_flatten_subtheory
+  Lemma raw_type_theory_flatten_initial_segment
       (T : raw_type_theory σ) (r : T)
     : Family.map_over
         (FlatRule.fmap
            (Signature.compose (RawTypeTheory.include_rule_signature r)
-                              (RawTypeTheory.subtheory_signature T r)))
-        (RawTypeTheory.flatten (RawTypeTheory.subtheory T r))
+                              (RawTypeTheory.initial_segment_signature T r)))
+        (RawTypeTheory.flatten (RawTypeTheory.initial_segment T r))
         (RawTypeTheory.flatten T).
   Proof.
     apply Family.Build_map'; intros [ [i lt_i_r] | [ [ i lt_i_r] i_is_ob] ].
@@ -119,7 +119,7 @@ Section PresuppositionClosure.
     2: { eapply FlatTypeTheory.map_from_eq, inverse, FlatTypeTheory.fmap_compose. }
     apply FlatTypeTheory.map_from_family_map.
     apply (Family.map_vs_map_over _ _ _)^-1.
-    apply raw_type_theory_flatten_subtheory.
+    apply raw_type_theory_flatten_initial_segment.
   Time Defined.
 
   (** For any raw type theory [T] and a rule [r] of the flattened [T], every
