@@ -266,6 +266,114 @@ Section Functoriality.
 
 End Functoriality.
 
+(** We distinguish between:
+
+-  _simple_ maps of algebraic extensions, which are roughly just like family maps between their flattenings, and so interpret each symbol/premise of the source elg. ext. by a corresponding symbol/premise of the target alg. ext.;
+
+- _maps_, i.e. more general Kleisli-like maps (not given yet), which will be like maps of type theories between their flattenings, and so may interpret each symbol/premise of the source by a suitable _derivable expression_ of the target.  *)
+Section Simple_Maps.
+
+  Context {σ : shape_system}.
+  
+  Local Record simple_map_aux
+      {Σ : signature σ} {a a'}
+      {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
+    : Type
+  :=
+    { arity_map_of_simple_map : Family.map a a'
+    ; equality_premise_map_of_simple_map
+        : Family.map (ae_equality_premise A) (ae_equality_premise A')
+    ; premise_map_of_simple_map
+        :> Family.map A A'
+        := Family.fmap_of_sum
+             (Family.map_fmap _ arity_map_of_simple_map)
+             (Family.map_fmap _ equality_premise_map_of_simple_map)
+    ; well_order_map_of_simple_map
+      : forall p p' : A, (ae_lt A p p'
+      <~> ae_lt A' (premise_map_of_simple_map p) (premise_map_of_simple_map p'))
+  }.
+
+  Arguments simple_map_aux {_ _ _} _ _.
+
+  Local Definition simple_map_form_commutes
+      {Σ : signature σ} {a a'}
+      {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
+      (f : simple_map_aux A A')
+      (p : A)
+    : ae_form A p = ae_form A' (f p).
+  Proof.
+    apply (ap fst), inverse, Family.map_commutes.
+  Defined.
+
+  Local Definition simple_map_premise_shape
+      {Σ : signature σ} {a a'}
+      {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
+      (f : simple_map_aux A A')
+      {p : A}
+    : ae_shape A p <~> ae_shape A' (f p).
+  Proof.
+    refine (equiv_transport _ _ _ _).
+    apply (ap snd), inverse, Family.map_commutes. 
+  Defined.
+
+  Local Definition simple_map_metavariables_of_premise
+      {Σ : signature σ} {a a'}
+      {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
+      (f : simple_map_aux A A')
+      {p : A}
+    : Family.map (ae_metavariables_of_premise A p)
+                 (ae_metavariables_of_premise A' (f p)).
+  Proof.
+    (* NOTE: could be abstracted using functoriality of “subfamily”? *)
+    apply Family.Build_map'.
+    intros [i lt_i_p].
+    simple refine ((arity_map_of_simple_map f i;_);_).
+    { apply (well_order_map_of_simple_map f (inl i) p), lt_i_p. }
+    cbn. apply Family.map_commutes.
+  Defined.
+
+  Local Definition simple_map_signature_of_premise
+      {Σ : signature σ} {a a'}
+      {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
+      (f : simple_map_aux A A')
+      {p : A}
+    : Signature.map (ae_signature_of_premise A p)
+                    (ae_signature_of_premise A' (f p)).
+  Proof.
+    apply Metavariable.fmap2, simple_map_metavariables_of_premise.
+  Defined.
+
+  (** See note at beginning of section for explanation of this definition. *)
+  (* Perhaps we will need [simple_map_over] involving signature maps, at some
+  point. For now we just give [simple_map].
+   (Or we could break out the dependency over arity maps?  But that seems unlikely to be needed.) *)
+  Local Record simple_map
+      {Σ : signature σ} {a a'}
+      (A : algebraic_extension Σ a) (A' : algebraic_extension Σ a')
+    : Type
+  :=
+  { simple_map_aux_part :> simple_map_aux A A'
+  ; simple_map_context_commutes
+    : forall (p : A) (i : _),
+      ae_raw_context_type A'
+       (simple_map_aux_part p) (simple_map_premise_shape _ i)
+      = rename (simple_map_premise_shape _)
+       (Expression.fmap (simple_map_signature_of_premise _)
+         (ae_raw_context_type A p i))
+  ; simple_map_hypothetical_boundary_commutes
+    : forall (p : A),
+      ae_hypothetical_boundary A' (simple_map_aux_part p) 
+      = transport (fun hjf => Judgement.hypothetical_boundary _ hjf _)
+                  (simple_map_form_commutes _ _)
+       (rename_hypothetical_boundary (simple_map_premise_shape _)
+       (fmap_hypothetical_boundary
+           (simple_map_signature_of_premise _)
+         (ae_hypothetical_boundary A p)))
+  }.
+
+End Simple_Maps.
+
+
 Section Flattening.
 
   Context {σ : shape_system}.
@@ -359,7 +467,6 @@ Section Flattening.
         apply idpath.
   Defined.
 
-  (* TODO: upstream *)
   Definition fmap_judgement_of_premise `{Funext}
       {Σ} {a} {A : algebraic_extension Σ a} {i : A}
       {Σ' Σ''} (f' : Signature.map Σ' Σ'')
@@ -435,6 +542,17 @@ Section Flattening.
       + apply idpath.
       + destruct i_is_ob.
   Defined.
+
+  Definition fmap_flatten_simple_map 
+      {Σ : signature σ} {a a'}
+      {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
+      (f : simple_map A A')
+    : Family.map_over
+        (fmap_judgement_total
+           (Metavariable.fmap2 _ (arity_map_of_simple_map f)))
+        (flatten A) (flatten A').
+    Proof.
+    Admitted.
 
 End Flattening.
 
@@ -646,8 +764,19 @@ Section Initial_Segment.
           -- apply idpath.
   Time Defined.
 
-  (* Really… probably better  *)
   Local Lemma flatten_initial_segment_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {A : algebraic_extension Σ a} (p : A)
+      (i : initial_segment A p)
+    : Family.map
+        (flatten (initial_segment (fmap f A) p))
+        (flatten (fmap f (initial_segment A p))).
+  Proof.
+    admit.
+    (* TODO: go via functoriality of [flatten]. *)
+  Admitted.
+
+  Local Lemma flatten_initial_segment_fmap_applied
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {A : algebraic_extension Σ a} (p : A)
       (i : initial_segment A p)
@@ -655,6 +784,9 @@ Section Initial_Segment.
     = flatten (fmap f (initial_segment A p)) i.
   Proof.
     admit.
+    (* Once [flatten_initial_segment_fmap] above completely proved, this will
+     be just that.  However, this relies on the actual witness for that,
+     so can’t be given in terms of that while that’s just admitted. *)
   Admitted.
 
 End Initial_Segment.

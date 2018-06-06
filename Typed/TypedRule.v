@@ -107,7 +107,7 @@ Section Functoriality.
       + (* commutativity in hypotheses *)
         cbn. exists idmap; intros j.
         eapply concat. 2: { apply AlgebraicExtension.flatten_fmap. }
-        apply AlgebraicExtension.flatten_initial_segment_fmap.
+        apply AlgebraicExtension.flatten_initial_segment_fmap_applied.
   Defined.
 
   (** Well-typedness is _covariant_ in the signature *)
