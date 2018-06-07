@@ -158,7 +158,8 @@ Section Flattening.
   Defined.
 
   (* Probably should go via a notion of “simple map” of type theories,
-   in which [flatten] is functorial. *)
+   in which [flatten] is functorial,
+   based on simple maps of algebraic extensions. *)
   Local Lemma flatten_initial_segment
       (T : raw_type_theory σ) (r : T)
     : Family.map_over

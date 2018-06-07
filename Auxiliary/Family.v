@@ -240,6 +240,38 @@ Section FamilyMap.
     intros e. exact (map_over_eq' e).
   Defined.
 
+  (** This lemma [map_transport] is essentially transport for [map_over] in
+  the base map, but given in a form that provides better computational 
+  behaviour: the action on indices is not stuck under a transport. 
+
+  The next lemma, [transport_map], shows that this is indeed equal to the
+  transport. Where possible, though, one should simply avoid using that
+  [transport] by using this [map_transport] instead. *)
+  (* TODO: consider naming *)
+  Local Definition map_transport
+      {X Y} {f f' : X -> Y} (e : f = f')
+      {K} {L} (ff : map_over f K L)
+    : map_over f' K L.
+  Proof.
+    exists ff.
+    intros k.
+    exact (map_over_commutes ff _ @ ap10 e _).
+  Defined.
+
+  (* TODO: consider naming *)
+  Local Lemma transport_map `{Funext}
+      {X Y} {f f' : X -> Y} (e : f = f')
+      {K} {L} (ff : map_over f K L)
+    : transport (fun g => map_over g _ _) e ff
+      = map_transport e ff.
+  Proof.
+    destruct e. apply map_over_eq'; intros k.
+    exists (idpath _); cbn.
+    apply inverse.
+    eapply concat. { apply concat_1p. }
+    apply concat_p1.
+  Defined.
+
   Local Definition idmap {X} (K : family X)
     : map K K.
   Proof.

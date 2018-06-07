@@ -13,3 +13,13 @@ Definition ap2 {X Y Z} (f : X -> Y -> Z)
 Proof.
   exact (ap _ e_y @ ap (fun x => f x _) e_x).
 Defined.
+
+Lemma inverse_sufficient {X} {x y:X} (P : x = y -> Type)
+  : (forall e, P (e^)^) -> (forall e, P e).
+Proof.
+  intros H e.
+  eapply transport.
+  - eapply inv_V.
+  - apply H.
+Defined.
+

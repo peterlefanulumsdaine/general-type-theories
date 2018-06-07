@@ -1,4 +1,5 @@
 Require Import HoTT.
+Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
@@ -335,16 +336,6 @@ Section Naturality.
   Context `{H_Funext : Funext}.
   Context {σ : shape_system}.
   Context {Σ Σ' : signature σ} (f : Signature.map Σ Σ').
-
-  (* ad hoc lemma, used for [fmap_rename], [fmap_substitute]. *)
-  Local Lemma inverse_sufficient {X} {x y:X} (P : x = y -> Type)
-    : (forall e, P (e^)^) -> (forall e, P e).
-  Proof.
-    intros H e.
-    eapply transport.
-    - eapply inv_V.
-    - apply H.
-  Defined.
 
   Local Fixpoint fmap_rename {γ γ' : σ} (g : γ -> γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)

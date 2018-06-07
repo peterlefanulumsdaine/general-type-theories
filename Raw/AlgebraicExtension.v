@@ -1,4 +1,5 @@
 Require Import HoTT.
+Require Import Auxiliary.General.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
@@ -523,9 +524,9 @@ Section Flattening.
         set (e_S := Family.map_commutes f' _ : ΣfS = ΣS).
         clearbody e_S ΣfS ΣS; destruct e_S.
         destruct ΣfS as [cS aS] in *; cbn in *.
-        revert e_cS; apply SyntaxLemmas.inverse_sufficient;
+        revert e_cS; apply inverse_sufficient;
           intro e; destruct e^; clear e.          
-        revert e_aS; apply SyntaxLemmas.inverse_sufficient;
+        revert e_aS; apply inverse_sufficient;
           intro e; destruct e^; clear e.
         apply idpath.
   Defined.
@@ -594,7 +595,7 @@ Section Flattening.
       set (Sr_i := Sr i_is_ob) in *. clearbody Sr_i; clear Sr.
       destruct Sr_i as [S e_aS e_cS]; cbn in e_Sr.
       destruct e_Sr as [e_S [e_e_aS e_e_cS]].
-      revert e_S e_e_aS e_e_cS. refine (SyntaxLemmas.inverse_sufficient _ _).
+      revert e_S e_e_aS e_e_cS. refine (inverse_sufficient _ _).
       intros e_S e_e_aS e_e_cS.
       destruct e_S^; cbn in *.
       apply ap, path_prod; cbn.
@@ -953,31 +954,6 @@ Section Initial_Segment.
         * apply idpath.
   Time Defined.
 
-  (* TODO: upstream; consider naming *)
-  Definition family_map_transport
-      {X Y} {f f' : X -> Y} (e : f = f')
-      {K} {L} (ff : Family.map_over f K L)
-    : Family.map_over f' K L.
-  Proof.
-    exists ff.
-    intros k.
-    exact (Family.map_over_commutes ff _ @ ap10 e _).
-  Defined.
-
-  (* TODO: upstream; consider naming *)
-  Definition family_tramport_map `{Funext}
-      {X Y} {f f' : X -> Y} (e : f = f')
-      {K} {L} (ff : Family.map_over f K L)
-    : transport (fun g => Family.map_over g _ _) e ff
-      = family_map_transport e ff.
-  Proof.
-    destruct e. apply Family.map_over_eq'; intros k.
-    exists (idpath _); cbn.
-    apply inverse.
-    eapply concat. { apply concat_1p. }
-    apply concat_p1.
-  Defined.
-
   Local Lemma flatten_initial_segment_fmap `{Funext}
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {A : algebraic_extension Σ a} (p : A)
@@ -985,7 +961,7 @@ Section Initial_Segment.
         (flatten (initial_segment (fmap f A) p))
         (flatten (fmap f (initial_segment A p))).
   Proof.
-    simple refine (family_map_transport _ (fmap_flatten_simple_map _)).
+    simple refine (Family.map_transport _ (fmap_flatten_simple_map _)).
     2: { refine (initial_segment_fmap f p). }
     eapply concat. { apply ap, Metavariable.fmap_idmap. }
     apply path_forall; intros i. apply fmap_judgement_total_idmap. 
