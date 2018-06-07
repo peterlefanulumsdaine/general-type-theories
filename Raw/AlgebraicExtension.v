@@ -305,6 +305,16 @@ Section Simple_Maps.
     apply (ap fst), inverse, Family.map_commutes.
   Defined.
 
+  Local Definition simple_map_shape_commutes
+      {Σ : signature σ} {a a'}
+      {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
+      (f : simple_map_aux A A')
+      (p : A)
+    : ae_shape A p = ae_shape A' (f p).
+  Proof.
+    apply (ap snd), inverse, Family.map_commutes.
+  Defined.
+
   Local Definition simple_map_premise_shape
       {Σ : signature σ} {a a'}
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
@@ -313,7 +323,7 @@ Section Simple_Maps.
     : ae_shape A p <~> ae_shape A' (f p).
   Proof.
     refine (equiv_transport _ _ _ _).
-    apply (ap snd), inverse, Family.map_commutes. 
+    apply simple_map_shape_commutes.
   Defined.
 
   Local Definition simple_map_metavariables_of_premise
@@ -543,7 +553,65 @@ Section Flattening.
       + destruct i_is_ob.
   Defined.
 
-  Definition fmap_flatten_simple_map 
+  (* TODO: rename [simple_map_signature_of_premise]
+   to [fmap_signature_of_premise_simple_map], etc. *)
+  Definition fmap_judgement_of_premise_simple_map `{Funext}
+      {Σ : signature σ} {a a'}
+      {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
+      (g : simple_map A A') (i : A)
+      {Σ'}
+      {f : Signature.map (ae_signature_of_premise A i) Σ'}
+      {f' : Signature.map (ae_signature_of_premise A' (g i)) Σ'}
+      (e_f : f = Signature.compose f'
+                    (simple_map_signature_of_premise g)) 
+      {Sr : Judgement.is_object (ae_form A i)
+           -> { S : Σ'
+             & (symbol_arity S = Arity.simple (ae_shape A i))
+             * (symbol_class S = Judgement.class_of (ae_form A i))}}
+      {Sr' : Judgement.is_object (ae_form A' (g i))
+           -> { S : Σ'
+             & (symbol_arity S = Arity.simple (ae_shape A' (g i)))
+             * (symbol_class S = Judgement.class_of (ae_form A' (g i)))}}
+      (e_Sr : forall i_is_ob,
+         let Sr_i := Sr i_is_ob
+      in let Sr_gi := Sr' (transport _ (simple_map_form_commutes _ _) i_is_ob)
+      in { e_S : Sr_i.1 = Sr_gi.1
+         & (fst Sr_i.2 = (ap _ e_S) @ (fst Sr_gi.2)
+                                   @ ap _ (simple_map_shape_commutes _ _)^)
+         * (snd Sr_i.2 =  (ap _ e_S) @ (snd Sr_gi.2)
+                                   @ ap _ (simple_map_form_commutes _ _)^)})
+    : judgement_of_premise i f Sr
+    = judgement_of_premise (g i) f' Sr'.
+  Proof.
+    destruct e_f^. 
+    assert (e : Sr = fun i_is_ob =>
+         let Sr_i := Sr i_is_ob
+      in let Sr_gi := Sr' (transport _ (simple_map_form_commutes _ _) i_is_ob)
+      in (Sr_gi.1 ; ( (fst Sr_gi.2) @ ap _ (simple_map_shape_commutes _ _)^
+                    , (snd Sr_gi.2) @ ap _ (simple_map_form_commutes _ _)^))).
+    { apply path_forall; intros i_is_ob. cbn. 
+      specialize e_Sr with i_is_ob. 
+      set (Sr_i := Sr i_is_ob) in *. clearbody Sr_i; clear Sr.
+      destruct Sr_i as [S e_aS e_cS]; cbn in e_Sr.
+      destruct e_Sr as [e_S [e_e_aS e_e_cS]].
+      revert e_S e_e_aS e_e_cS. refine (SyntaxLemmas.inverse_sufficient _ _).
+      intros e_S e_e_aS e_e_cS.
+      destruct e_S^; cbn in *.
+      apply ap, path_prod; cbn.
+      - eapply concat. { apply e_e_aS. }
+        eapply concat. { apply concat_pp_p. }
+        apply concat_1p.
+      - eapply concat. { apply e_e_cS. }
+        eapply concat. { apply concat_pp_p. }
+        apply concat_1p.
+    }
+    (* why doesn’t [destruct e^] work here? *)
+    apply inverse in e. clear e_Sr. revert Sr e.
+    refine (paths_rect _ _ _ _).
+    (* this is terrible. We really need some kind of “master lemma” about [judgement_of_premise] giving the master conditions under which two instances are equal; and ideally perhaps also some factoring of [judgement_of_premise] to enable proving that. *)
+  Admitted.
+
+  Definition fmap_flatten_simple_map `{Funext}
       {Σ : signature σ} {a a'}
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
       (f : simple_map A A')
@@ -552,7 +620,36 @@ Section Flattening.
            (Metavariable.fmap2 _ (arity_map_of_simple_map f)))
         (flatten A) (flatten A').
     Proof.
-    Admitted.
+      exists f.
+      intros i.
+      apply inverse.
+      eapply concat. { apply fmap_judgement_of_premise. }
+      apply fmap_judgement_of_premise_simple_map.
+      - eapply concat. { apply inverse, Metavariable.fmap_compose. }
+        eapply concat. 2: { apply Metavariable.fmap_compose. }
+        (* TODO: abstract the following as naturality lemma for
+           subfamily inclusion w.r.t. functoriality of subfamilies 
+        (and make [arity_map_of_simple_map] use that functoriality) *)
+        apply ap, Family.map_eq'. intros [j lt_j_i].
+        exists (idpath _). cbn.
+        eapply concat. { apply concat_p1. }
+        apply inverse. eapply concat. { apply concat_1p. }
+        eapply concat. { apply concat_1p. }
+        apply ap_idmap.
+      - intros i_is_ob. destruct i as [ i | i ]; destruct i_is_ob.
+        cbn.
+        unfold simple_map_form_commutes, simple_map_shape_commutes,
+          ae_form, ae_shape.        
+        set (e := Family.map_commutes f (inl i)). 
+        set (Ai := ae_premise A (inl i)) in *.
+        set (Ai' := ae_premise A' (f (inl i))) in *.
+        clearbody e Ai Ai'.
+        destruct e.
+        exists (idpath _).
+        cbn. set (fi := Family.map_commutes (arity_map_of_simple_map f) i).
+        set (ai := a i) in *. destruct fi.
+        split; apply idpath.
+    Defined.
 
 End Flattening.
 
@@ -764,41 +861,147 @@ Section Initial_Segment.
           -- apply idpath.
   Time Defined.
 
-  Local Lemma initial_segment_fmap
+  (* TODO: try to abstract some bits of this out, to:
+   - improve timing of [Defined];
+   - improve clarity of proof;
+   - remove code duplication. *)
+  Local Lemma initial_segment_fmap `{Funext}
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {A : algebraic_extension Σ a} (p : A)
     : simple_map
         (initial_segment (fmap f A) p)
         (fmap f (initial_segment A p)).
   Proof.
-    (* should be mostly copy-paste from [initial_segment_fmap_eq] above *)
-  Admitted.
+    simple refine (Build_simple_map _ _ _ _ _ _ _ _).
+    simple refine (Build_simple_map_aux _ _ _ _ _ _ _ _).
+    - (* object premises *) apply Family.idmap.
+    - (* equality premises *) apply Family.idmap.
+    - (* well-ordering *) intros i j.
+      cbn. recursive_destruct i; recursive_destruct j; apply equiv_idmap.
+    - (* premise contexts *)
+      intros i j. cbn in j.
+      eapply concat. { apply Expression.fmap_fmap. }
+      eapply concat. { apply inverse, rename_idmap. }
+      destruct i as [ i_ob | i_eq ];
+      apply (ap2 (fun f e => rename f e)); try apply idpath.
+      + simpl. apply inverse. 
+        eapply concat. { apply Expression.fmap_fmap. }
+        eapply concat. { apply Expression.fmap_fmap. }
+        apply (ap (fun f => Expression.fmap f _)).
+        unfold simple_map_signature_of_premise.
+        unfold initial_segment_compare_signature.
+        eapply concat. { eapply ap10, ap, inverse, Metavariable.fmap_compose. }
+        eapply concat. { apply inverse, Metavariable.fmap_compose. }
+        eapply concat. 2: { apply Metavariable.fmap_compose. }
+        apply (ap2 (fun f g => Metavariable.fmap f g)).
+        * eapply concat. { apply Family.id_left. }
+          apply inverse, Family.id_right.
+        * apply idpath. (* I don’t know how but I won’t question this *)
+      + simpl. apply inverse. 
+        eapply concat. { apply Expression.fmap_fmap. }
+        eapply concat. { apply Expression.fmap_fmap. }
+        apply (ap (fun f => Expression.fmap f _)).
+        unfold simple_map_signature_of_premise.
+        unfold initial_segment_compare_signature.
+        eapply concat. { eapply ap10, ap, inverse, Metavariable.fmap_compose. }
+        eapply concat. { apply inverse, Metavariable.fmap_compose. }
+        eapply concat. 2: { apply Metavariable.fmap_compose. }
+        apply (ap2 (fun f g => Metavariable.fmap f g)).
+        * eapply concat. { apply Family.id_left. }
+          apply inverse, Family.id_right.
+        * apply idpath.
+    - (* premise hypothetical boundaries *)
+      intros i.
+      destruct i as [ i_ob | i_eq ]; simpl.
+      + eapply concat. 2: { apply inverse, rename_hypothetical_boundary_idmap. }
+        apply inverse.
+        simpl ap. apply path_forall; intros x.
+        simpl. unfold fmap_hypothetical_boundary.
+        eapply concat.
+        { eapply (ap (fun f => Expression.fmap f _)). 
+          apply Metavariable.fmap_idmap. }
+        eapply concat. { apply Expression.fmap_idmap. }
+        eapply concat. { apply Expression.fmap_fmap. }
+        apply inverse. 
+        eapply concat. { apply Expression.fmap_fmap. }
+        apply (ap (fun f => Expression.fmap f _)).
+        eapply concat. { apply inverse, Metavariable.fmap_compose. }
+        eapply concat. 2: { eapply Metavariable.fmap_compose. }
+        apply (ap2 (fun f g => Metavariable.fmap f g)).
+        * eapply concat. { apply Family.id_right. }
+          apply inverse.
+          apply Family.id_left.
+        * apply idpath.
+      + eapply concat. 2: { apply inverse, rename_hypothetical_boundary_idmap. }
+        apply inverse.
+        simpl ap. apply path_forall; intros x.
+        simpl. unfold fmap_hypothetical_boundary.
+        eapply concat.
+        { eapply (ap (fun f => Expression.fmap f _)). 
+          apply Metavariable.fmap_idmap. }
+        eapply concat. { apply Expression.fmap_idmap. }
+        eapply concat. { apply Expression.fmap_fmap. }
+        apply inverse. 
+        eapply concat. { apply Expression.fmap_fmap. }
+        apply (ap (fun f => Expression.fmap f _)).
+        eapply concat. { apply inverse, Metavariable.fmap_compose. }
+        eapply concat. 2: { eapply Metavariable.fmap_compose. }
+        apply (ap2 (fun f g => Metavariable.fmap f g)).
+        * eapply concat. { apply Family.id_right. }
+          apply inverse.
+          apply Family.id_left.
+        * apply idpath.
+  Time Defined.
 
-  Local Lemma flatten_initial_segment_fmap
+  (* TODO: upstream; consider naming *)
+  Definition family_map_transport
+      {X Y} {f f' : X -> Y} (e : f = f')
+      {K} {L} (ff : Family.map_over f K L)
+    : Family.map_over f' K L.
+  Proof.
+    exists ff.
+    intros k.
+    exact (Family.map_over_commutes ff _ @ ap10 e _).
+  Defined.
+
+  (* TODO: upstream; consider naming *)
+  Definition family_tramport_map `{Funext}
+      {X Y} {f f' : X -> Y} (e : f = f')
+      {K} {L} (ff : Family.map_over f K L)
+    : transport (fun g => Family.map_over g _ _) e ff
+      = family_map_transport e ff.
+  Proof.
+    destruct e. apply Family.map_over_eq'; intros k.
+    exists (idpath _); cbn.
+    apply inverse.
+    eapply concat. { apply concat_1p. }
+    apply concat_p1.
+  Defined.
+
+  Local Lemma flatten_initial_segment_fmap `{Funext}
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {A : algebraic_extension Σ a} (p : A)
-      (i : initial_segment A p)
     : Family.map
         (flatten (initial_segment (fmap f A) p))
         (flatten (fmap f (initial_segment A p))).
   Proof.
-    simple refine (transport (fun f => Family.map_over f _ _) _
-                      (fmap_flatten_simple_map _)).
-    - admit. (* should be trivial once the map given *)
-    - refine (initial_segment_fmap f p).
-  Admitted.
+    simple refine (family_map_transport _ (fmap_flatten_simple_map _)).
+    2: { refine (initial_segment_fmap f p). }
+    eapply concat. { apply ap, Metavariable.fmap_idmap. }
+    apply path_forall; intros i. apply fmap_judgement_total_idmap. 
+  Defined.
 
-  Local Lemma flatten_initial_segment_fmap_applied
+  Local Lemma flatten_initial_segment_fmap_applied `{Funext}
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {A : algebraic_extension Σ a} (p : A)
       (i : initial_segment A p)
     : flatten (initial_segment (fmap f A) p) i
     = flatten (fmap f (initial_segment A p)) i.
   Proof.
-    admit.
-    (* Once [flatten_initial_segment_fmap] above completely proved, this will
-     be just that.  However, this relies on the actual witness for that,
-     so can’t be given in terms of that while that’s just admitted. *)
-  Admitted.
+    apply inverse.
+    eapply concat.
+    2: { exact (Family.map_commutes (flatten_initial_segment_fmap f p) i). }
+    destruct i; apply idpath.
+  Defined.
 
 End Initial_Segment.
