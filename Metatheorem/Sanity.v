@@ -100,6 +100,13 @@ Section PresuppositionClosure.
     refine (TypedRule.fmap_is_well_typed_in_theory _ r'_WT).
     eapply FlatTypeTheory.compose.
     2: { eapply FlatTypeTheory.map_from_eq, inverse, FlatTypeTheory.fmap_compose. }
+    (* - simple map of raw TT’s 
+       - induces a map (not nec fam map) of raw tt’s
+       - simple map f : T —> T':
+         for each r : T, some (f r) : T', and something implying flatten
+         (T r) derivable from flatten (T r'), stably (i.e. regardless of
+         ambient theory) 
+       - so: simple map of _raw rules_: f : R' —> R: must implies R stably derivable from R'; so, is simple map (premises R —> premises R'), and then conclusion must agree. *)
     apply FlatTypeTheory.map_from_family_map.
     apply (Family.map_vs_map_over _ _ _)^-1.
     apply RawTypeTheory.flatten_initial_segment.

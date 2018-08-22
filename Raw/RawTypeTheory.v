@@ -64,7 +64,7 @@ Section TypeTheory.
                     (signature T).
   Proof.
     simple refine (_;_).
-    - intros s_isob_lt.
+    - intros s_isob_lt. cbn in s_isob_lt.
       exact (pr1 s_isob_lt ; fst (pr2 (s_isob_lt))).
       (* TODO: introduce access functions for the signature components above? *)
     - intros s. apply idpath.
