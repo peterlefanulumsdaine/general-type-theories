@@ -452,7 +452,7 @@ Section Maps.
         (T : flat_type_theory Σ) (T' : flat_type_theory Σ')
     : map (fmap f T) T' <~> map_over f T T'.
   Proof.
-  Admitted.
+  Admitted. (* [map_vs_map_over]: medium-sized, should be totally self-contained *)
 
   Local Definition fmap_flat_rule_derivation_over
       {Σ Σ' : signature σ} {f : Signature.map Σ Σ'}

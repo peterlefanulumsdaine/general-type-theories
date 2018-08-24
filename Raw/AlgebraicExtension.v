@@ -610,7 +610,7 @@ Section Flattening.
     apply inverse in e. clear e_Sr. revert Sr e.
     refine (paths_rect _ _ _ _).
     (* this is terrible. We really need some kind of “master lemma” about [judgement_of_premise] giving the master conditions under which two instances are equal; and ideally perhaps also some factoring of [judgement_of_premise] to enable proving that. *)
-  Admitted.
+  Admitted. (* [fmap_judgement_of_premise_simple_map]: nasty and difficult (sticking point is equality of judgements), but hopefully self-contained *)
 
   Definition fmap_flatten_simple_map `{Funext}
       {Σ : signature σ} {a a'}

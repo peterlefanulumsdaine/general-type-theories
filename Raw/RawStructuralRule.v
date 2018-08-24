@@ -690,7 +690,7 @@ Section Instantiation.
     (* Sketch: do this by hand for the ones given as closure conditions;
      for the ones given as flat rules, use [instantiate_flat_rule]. *)
     (* Query: can this be unified with [RawStructuralRule.fmap] below? *)
-  Admitted.
+  Admitted. (* [instantiate]: probably large, but self-contained. *)
 
 End Instantiation.
 
@@ -864,6 +864,6 @@ Section StructuralRuleMap.
          if we defined the equality flat rules over the empty signature,
          and then put them in as their translations to arbitrary sigs. *)
         admit.
-  Admitted.
+  Admitted. (* [fmap], just the flat rule ones missing; small, self-contained *)
 
 End StructuralRuleMap.

@@ -173,7 +173,7 @@ Section Flattening.
       admit.
     - (* congruence rule *)
       admit.
-  Admitted.
+  Admitted. (* [flatten_initial_segment]: large and significant, possible complicated dependency structure *)
 
 End Flattening.
 

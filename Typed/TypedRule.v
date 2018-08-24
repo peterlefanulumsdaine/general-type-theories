@@ -234,6 +234,6 @@ Section Congruence_Rules.
       (e_cl : symbol_class S = Judgement.class_of hjf_concl)
     : is_well_typed T (congruence_rule R R_is_ob S e_a e_cl).
   Proof.
-  Admitted.
+  Admitted. (* [congruence_rule_is_well_typed]: large, key stress test of functoriality framework for derivability *)
 
 End Congruence_Rules.
