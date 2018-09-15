@@ -4,7 +4,7 @@ Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Syntax.
+Require Import RawSyntax.All.
 Require Import Raw.SyntaxLemmas.
 
 Section Algebraic_Extensions.

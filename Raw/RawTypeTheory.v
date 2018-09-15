@@ -4,7 +4,7 @@ Require Import Auxiliary.WellFounded.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
-Require Import Raw.Syntax.
+Require Import RawSyntax.All.
 Require Import Raw.RawRule.
 Require Import Raw.CongruenceRule.
 Require Import Raw.FlatTypeTheory.

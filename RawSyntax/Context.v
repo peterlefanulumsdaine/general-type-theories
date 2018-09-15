@@ -1,9 +1,9 @@
 Require Import HoTT.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Syntax.Signature.
-Require Import Raw.Syntax.Expression.
-Require Import Raw.Syntax.Substitution.
+Require Import RawSyntax.Signature.
+Require Import RawSyntax.Expression.
+Require Import RawSyntax.Substitution.
 
 Section RawContext.
 

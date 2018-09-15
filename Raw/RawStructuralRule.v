@@ -3,7 +3,7 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Closure.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
-Require Import Raw.Syntax.
+Require Import RawSyntax.All.
 Require Import Raw.SyntaxLemmas.
 Require Import Raw.FlatRule.
 

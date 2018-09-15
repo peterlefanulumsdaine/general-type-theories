@@ -3,7 +3,7 @@ Require Import HoTT.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Syntax.
+Require Import RawSyntax.All.
 Require Import Raw.SyntaxLemmas.
 Require Import Raw.RawStructuralRule.
 

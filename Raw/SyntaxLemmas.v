@@ -3,7 +3,7 @@ Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Syntax.
+Require Import RawSyntax.All.
 
 (* Substitution on raw syntax [substitute] is defined in [Raw.Syntax].
   In this file we prove key properties of it; in particular, that raw context maps form a category (modulo truncation assumptions).
@@ -789,7 +789,7 @@ Section Instantiations.
 
   (* NOTE: it feels like there should be a more systematic way to present the following lemmas — some kind of monadic structure on extensions/instantiations. Contemplate this, and try to figure it out? *)
 
-  (* TODO: upstream to [Raw.Syntax.Metavariable]? *)
+  (* TODO: upstream to [RawSyntax.Metavariable]? *)
   Definition unit_instantiation (a : arity σ)
     : Metavariable.instantiation a (Metavariable.extend Σ a) (shape_empty σ).
   Proof.
@@ -882,7 +882,7 @@ Section Instantiations.
   Defined.
 
 
-  (* TODO: upstream to [Raw.Syntax.Metavariable]? *)
+  (* TODO: upstream to [RawSyntax.Metavariable]? *)
   Definition instantiate_instantiation
       {γ} {a} (I : Metavariable.instantiation a Σ γ)
       {δ} {b} (J : Metavariable.instantiation b (Metavariable.extend Σ a) δ)

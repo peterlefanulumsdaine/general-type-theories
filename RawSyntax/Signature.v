@@ -1,7 +1,7 @@
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
-Require Import Raw.Syntax.SyntacticClass.
-Require Import Raw.Syntax.Arity.
+Require Import RawSyntax.SyntacticClass.
+Require Import RawSyntax.Arity.
 
 Section Signature.
 

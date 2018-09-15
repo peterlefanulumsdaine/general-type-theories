@@ -2,13 +2,13 @@ Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Syntax.SyntacticClass.
-Require Import Raw.Syntax.Arity.
-Require Import Raw.Syntax.Signature.
-Require Import Raw.Syntax.Expression.
-Require Import Raw.Syntax.Context.
-Require Import Raw.Syntax.Substitution.
-Require Import Raw.Syntax.Judgement.
+Require Import RawSyntax.SyntacticClass.
+Require Import RawSyntax.Arity.
+Require Import RawSyntax.Signature.
+Require Import RawSyntax.Expression.
+Require Import RawSyntax.Context.
+Require Import RawSyntax.Substitution.
+Require Import RawSyntax.Judgement.
 
 Section AlgebraicExtension.
 

@@ -15,15 +15,15 @@ MODULES := \
 	Auxiliary/Coproduct \
 	Auxiliary/Closure \
 	Proto/ShapeSystem \
-	Raw/Syntax/SyntacticClass \
-	Raw/Syntax/Arity \
-	Raw/Syntax/Signature \
-	Raw/Syntax/Expression \
-	Raw/Syntax/Substitution \
-	Raw/Syntax/Context \
-	Raw/Syntax/Judgement \
-	Raw/Syntax/Metavariable \
-	Raw/Syntax \
+	RawSyntax/SyntacticClass \
+	RawSyntax/Arity \
+	RawSyntax/Signature \
+	RawSyntax/Expression \
+	RawSyntax/Substitution \
+	RawSyntax/Context \
+	RawSyntax/Judgement \
+	RawSyntax/Metavariable \
+	RawSyntax/All \
 	Raw/SyntaxLemmas \
 	Raw/RawStructuralRule \
 	Raw/AlgebraicExtension \

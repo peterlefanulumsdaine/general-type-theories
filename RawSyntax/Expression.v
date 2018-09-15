@@ -1,9 +1,9 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Syntax.SyntacticClass.
-Require Import Raw.Syntax.Arity.
-Require Import Raw.Syntax.Signature.
+Require Import RawSyntax.SyntacticClass.
+Require Import RawSyntax.Arity.
+Require Import RawSyntax.Signature.
 
 Section RawSyntax.
 

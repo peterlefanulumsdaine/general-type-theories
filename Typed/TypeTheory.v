@@ -3,7 +3,7 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
-Require Import Raw.Syntax.
+Require Import RawSyntax.All.
 Require Import Raw.RawRule.
 Require Import Raw.RawTypeTheory.
 Require Import Typed.TypedRule.

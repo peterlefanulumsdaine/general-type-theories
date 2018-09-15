@@ -1,7 +1,7 @@
 
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
-Require Import Raw.Syntax.
+Require Import RawSyntax.All.
 Require Import Raw.RawTypeTheory.
 Require Import Typed.TypeTheory.
 
