@@ -88,7 +88,7 @@ End Rename_Variables.
 Section Instantiation.
 (** Interaction with instantiation of metavariables. *)
 
-  Context {σ : shape_system}.
+  Context {σ : shape_system} `{Funext}.
 
   Local Definition instantiate
       {a : arity σ} {Σ : signature σ} (Γ : raw_context Σ)
@@ -103,6 +103,27 @@ Section Instantiation.
           exact (coproduct_inj1 shape_is_sum).
         + intros i.
           exact (Metavariable.instantiate_expression I (Δ i)).
+  Defined.
+
+  Local Definition fmap_instantiate
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {Γ : raw_context Σ} (I : Metavariable.instantiation a Σ Γ)
+      (Δ : raw_context (Metavariable.extend Σ a))
+    : fmap f (instantiate Γ I Δ)
+    = instantiate
+        (fmap f Γ)
+        (fmap_instantiation f I)
+        (fmap (Metavariable.fmap1 f a) Δ).
+  Proof.
+    apply (ap (Build_raw_context _)), path_forall.
+    refine (coproduct_rect shape_is_sum _ _ _); intros i;
+      unfold instantiate.
+    - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+      eapply concat. 2: {apply inverse. refine (coproduct_comp_inj1 _). }
+      apply fmap_rename.
+    - eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+      eapply concat. 2: {apply inverse. refine (coproduct_comp_inj2 _). }
+      apply fmap_instantiate_expression.
   Defined.
 
 End Instantiation.

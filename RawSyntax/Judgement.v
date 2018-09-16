@@ -1,5 +1,6 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
+Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
 Require Import RawSyntax.Arity.
 Require Import RawSyntax.Signature.
@@ -13,7 +14,7 @@ Section JudgementDefinitions.
   Context {σ : shape_system}.
   Context (Σ : signature σ).
 
-  (* The basic hypothetical judgments forms. *)
+  (* The basic hypothetical judgment forms. *)
   Inductive hypothetical_form : Type :=
   | form_object (cl : syntactic_class) (* a thing is a term, a thing is a type *)
   | form_equality (cl : syntactic_class). (* terms are equal, types are equal *)
@@ -869,7 +870,7 @@ End Rename_Variables.
 Section Instantiation.
 (** Interaction of judgements with metavariable instantiations *)
 
-  Context {σ : shape_system}.
+  Context {σ : shape_system} `{Funext}.
 
   Local Definition instantiate
       {a : arity σ} {Σ : signature σ} (Γ : raw_context Σ)
@@ -883,6 +884,35 @@ Section Instantiation.
     - constructor.
     - simpl. intro i.
       apply (instantiate_expression I (hypothetical_part J i)).
+  Defined.
+
+  Local Lemma fmap_instantiate
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a : @arity σ} (Γ : raw_context Σ)
+      (I : Metavariable.instantiation a Σ Γ)
+      (J : judgement_total (Metavariable.extend _ _))
+    : fmap_judgement_total f (instantiate Γ I J)
+    = instantiate
+        (Context.fmap f Γ) 
+        (fmap_instantiation f I)
+        (fmap_judgement_total (Metavariable.fmap1 f a) J).
+  Proof.
+    destruct J as [[ | ] J].
+    - (* context judgement *)
+      apply (ap (Build_judgement_total _)), (ap (fun Γ => Build_judgement Γ _)).
+      cbn. apply Context.fmap_instantiate.
+    - (* hypothetical judgement *)
+      apply eq_by_expressions. 
+      + (* context part *)
+        refine (coproduct_rect shape_is_sum _ _ _); intros i;
+          unfold Context.instantiate.
+        * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+          eapply concat. 2: {apply inverse. refine (coproduct_comp_inj1 _). }
+          apply fmap_rename.
+        * eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+          eapply concat. 2: {apply inverse. refine (coproduct_comp_inj2 _). }
+          apply fmap_instantiate_expression.
+      + intros i; apply fmap_instantiate_expression.
   Defined.
 
   (** The instantiation under [I] of any presupposition of a judgement [j]

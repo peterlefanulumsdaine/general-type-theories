@@ -88,8 +88,8 @@ Section SignatureMaps.
     exists (Context.fmap f Γ ; fmap_instantiation f I_R).
     apply Closure.rule_eq.
     - simple refine (Family.eq _ _). { apply idpath. }
-      cbn. intros i. apply inverse, fmap_instantiate_judgement.
-    - cbn. apply inverse, fmap_instantiate_judgement.
+      cbn. intros i. apply inverse, Judgement.fmap_instantiate.
+    - cbn. apply inverse, Judgement.fmap_instantiate.
   Defined.
 
   Local Lemma fmap_idmap

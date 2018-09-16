@@ -361,13 +361,13 @@ Section Maps.
     intros [r [Γ I]]. cbn.
     (* From here, want to get goal into a form where it can be obtained
      by [instantiate_derivation]. *)
-    eapply transport. { apply inverse, fmap_instantiate_judgement. }
+    eapply transport. { apply inverse, Judgement.fmap_instantiate. }
     eapply (transport (fun H => derivation _ H _)).
     { apply inverse.
       eapply concat. { apply inverse, Family.fmap_compose. }
       eapply concat.
       { refine (ap10 _ _). apply ap, path_forall; intros i.
-        apply fmap_instantiate_judgement. }
+        apply Judgement.fmap_instantiate. }
       apply Family.fmap_compose.
     }
     apply instantiate_derivation.
