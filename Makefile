@@ -24,7 +24,6 @@ MODULES := \
 	RawSyntax/Judgement \
 	RawSyntax/Metavariable \
 	RawSyntax/All \
-	Raw/SyntaxLemmas \
 	Raw/RawStructuralRule \
 	Raw/AlgebraicExtension \
 	Raw/CongruenceRule \

@@ -4,7 +4,6 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
 Require Import Proto.ShapeSystem.
 Require Import RawSyntax.All.
-Require Import Raw.SyntaxLemmas.
 
 Section FlatRule.
 

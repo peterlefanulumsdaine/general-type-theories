@@ -5,7 +5,6 @@ Require Import Proto.ShapeSystem.
 Require Import RawSyntax.All.
 Require Import Raw.FlatRule.
 Require Import Raw.FlatTypeTheory.
-Require Import Raw.SyntaxLemmas.
 Require Import Raw.RawStructuralRule.
 Require Import Typed.UtilityDerivations.
 Require Import Typed.TypedClosure.

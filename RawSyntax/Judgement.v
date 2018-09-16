@@ -915,11 +915,61 @@ Section Instantiation.
       + intros i; apply fmap_instantiate_expression.
   Defined.
 
+  Context {Σ : signature σ}.
+
+  Local Lemma unit_instantiate
+      {a} (J : judgement_total (Metavariable.extend Σ a))
+    : instantiate [::] (unit_instantiation a)
+        (fmap_judgement_total (Metavariable.fmap1 include_symbol _) J)
+      = rename J (shape_sum_empty_inr _)^-1.
+  Proof.
+    destruct J as [ [ | hjf ] J ].
+    - (* context judgement *)
+      destruct J as [J []].
+      simpl. unfold instantiate, rename. 
+      apply ap, ap10, ap.
+      apply Context.unit_instantiate.
+    - (* hypothetical judgement *)
+      apply eq_by_expressions.
+      + refine (coproduct_rect shape_is_sum _ _ _).
+        * apply (empty_rect _ shape_is_empty).
+        * intros x.
+          eapply concat. { refine (coproduct_comp_inj2 _). }
+          eapply concat. { apply unit_instantiate_expression. }
+          apply ap, ap, inverse. cbn.
+          refine (coproduct_comp_inj2 _).
+      + intros i; apply unit_instantiate_expression.
+  Defined.
+
+  Local Lemma instantiate_instantiate
+      {Γ : raw_context _} {a} (I : Metavariable.instantiation a Σ Γ)
+      {Δ : raw_context _} {b}
+      (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
+      (j : judgement_total (Metavariable.extend Σ b))
+    : instantiate
+        (Context.instantiate _ I Δ)
+        (instantiate_instantiation I J) j
+    = rename
+        (instantiate Γ I
+          (instantiate Δ J
+            (fmap_judgement_total (Metavariable.fmap1 include_symbol _) j)))
+         (shape_assoc _ _ _)^-1.
+  Proof.
+    destruct j as [[ | jf ] j].
+    - apply (ap (Build_judgement_total _)),
+            (ap (fun Γ => Build_judgement Γ _)),
+            (ap (fun A => Build_raw_context _ A)).
+      apply path_forall.
+      intros i; apply @Context.instantiate_instantiate_pointwise; auto.
+    - apply eq_by_expressions.
+      + apply @Context.instantiate_instantiate_pointwise; auto.
+      + intros i. refine (instantiate_instantiate_expression _ _ _).
+  Defined.
+
   (** The instantiation under [I] of any presupposition of a judgement [j]
       is equal to the corresponding presupposition of the instantiation of [j]
       itself under [I]. *)
-  Definition instantiate_presupposition `{Funext}
-      {Σ : signature σ}
+  Definition instantiate_presupposition
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
       (j : judgement_total _)
       (i : presupposition (instantiate _ I j))

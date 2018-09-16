@@ -126,6 +126,88 @@ Section Instantiation.
       apply fmap_instantiate_expression.
   Defined.
 
+  Context {Σ : signature σ}.
+
+  Local Lemma unit_instantiate
+      {a} (Γ : raw_context (Metavariable.extend Σ a))
+    : instantiate [::] (unit_instantiation a)
+        (fmap (Metavariable.fmap1 include_symbol _) Γ)
+      = rename Γ (shape_sum_empty_inr _)^-1.
+  Proof.
+    apply (ap (Build_raw_context _)), path_forall.
+    refine (coproduct_rect shape_is_sum _ _ _).
+    - apply (empty_rect _ shape_is_empty).
+    - intros x.
+      eapply concat. { refine (coproduct_comp_inj2 _). }
+      eapply concat. { apply unit_instantiate_expression. }
+      apply ap, ap, inverse. cbn.
+      refine (coproduct_comp_inj2 _).
+  Defined.
+
+  Local Lemma instantiate_instantiate_pointwise
+      {Γ : raw_context _} {a} (I : Metavariable.instantiation a Σ Γ)
+      {Δ : raw_context _} {b}
+      (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
+      (K : raw_context (Metavariable.extend Σ b))
+    : forall i,
+      instantiate
+        (instantiate _ I Δ)
+        (instantiate_instantiation I J) K i
+    = rename
+        (instantiate Γ I
+          (instantiate Δ J
+            (fmap (Metavariable.fmap1 include_symbol _) K)))
+        (shape_assoc _ _ _)^-1
+        i.
+  Proof.
+  repeat refine (coproduct_rect shape_is_sum _ _ _).
+    - intros i; cbn.
+      eapply concat. { refine (coproduct_comp_inj1 _). }
+      eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+      eapply concat. { apply inverse, rename_comp. }
+      apply inverse.
+      eapply concat.
+      { apply ap.
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        refine (coproduct_comp_inj1 _).
+      }
+      eapply concat. { apply inverse, rename_comp. }
+      refine (ap (fun f => Expression.rename f _) _).
+      clear i. apply path_forall; intros x.
+      refine (coproduct_comp_inj1 _).
+    - intros i; cbn.
+      eapply concat. { refine (coproduct_comp_inj1 _). }
+      eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+      apply inverse.
+      eapply concat.
+      { apply ap.
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        refine (coproduct_comp_inj2 _).
+      }
+      eapply concat. { apply ap, ap. refine (coproduct_comp_inj1 _). }
+      eapply concat. { apply ap, instantiate_rename. }
+      eapply concat. { apply inverse, rename_comp. }
+      refine (ap (fun f => Expression.rename f _) _).
+      clear i. apply path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _); intros i.
+      + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        refine (coproduct_comp_inj1 _).
+      + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { refine (coproduct_comp_inj2 _). }
+        refine (coproduct_comp_inj1 _).
+    - intros i.
+      eapply concat. { refine (coproduct_comp_inj2 _). }
+      eapply concat. { apply instantiate_instantiate_expression. }
+      refine ((ap (fun f => Expression.rename f _) _) @ ap _ _).
+      + apply ap, inverse, einv_V. 
+      + apply inverse.
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        eapply concat. { refine (coproduct_comp_inj2 _). }
+        apply ap. refine (coproduct_comp_inj2 _).
+  Defined.
+
 End Instantiation.
 
 Arguments instantiate : simpl nomatch.

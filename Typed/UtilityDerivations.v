@@ -4,7 +4,6 @@ Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
 Require Import RawSyntax.All.
-Require Import Raw.SyntaxLemmas.
 Require Import Raw.RawStructuralRule.
 
 (** Some “utility derivations”: small bits of infrastructure frequently used for all sorts of derivations. *)

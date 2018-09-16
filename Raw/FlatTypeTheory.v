@@ -3,7 +3,6 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
 Require Import RawSyntax.All.
-Require Import Raw.SyntaxLemmas.
 Require Import Raw.RawStructuralRule.
 Require Import Raw.FlatRule.
 
@@ -127,7 +126,7 @@ Section UtilityDerivations.
     - apply shape_sum_empty_inr.
     - cbn.
       (* TODO: the following should be much simpler, using
-      [unit_instantiate_judgement], but the typing of [Judgement.rename]
+      [Judgement.unit_instantiate], but the typing of [Judgement.rename]
       (in particular, the way it uses [shape_of_judgement]) makes it
       very difficult.  This would work better if judgements were
       parametrised over shapes before judgement forms? *)
@@ -169,7 +168,7 @@ Section UtilityDerivations.
       simple refine (hypothesis_modulo_rename _ _ _).
       + exact p.
       + apply equiv_inverse, shape_sum_empty_inr.
-      + cbn. apply inverse, unit_instantiate_judgement.
+      + cbn. apply inverse, Judgement.unit_instantiate.
   Defined.
 
 End UtilityDerivations.
@@ -217,7 +216,7 @@ Section Instantiation.
       exists (Context.instantiate _ I Δ).
       exact (instantiate_instantiation I J).
     }
-    { apply instantiate_instantiate_judgement. }
+    { apply Judgement.instantiate_instantiate. }
     cbn. intros p.
     simple refine (Closure.deduce' _ _ _).
     { apply inl, RawStructuralRule.rename. cbn.
@@ -229,7 +228,7 @@ Section Instantiation.
               (flat_rule_premise r p)))).
       refine (_ ; (equiv_inverse (shape_assoc _ _ _))).
     }
-    { apply inverse, instantiate_instantiate_judgement. }
+    { apply inverse, Judgement.instantiate_instantiate. }
     intros [].
     simple refine (Closure.hypothesis' _ _).
     { exact p. }
