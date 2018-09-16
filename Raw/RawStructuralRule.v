@@ -143,7 +143,7 @@ Definition subst_apply_instance : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ
     & { Γ' : raw_context Σ
-    & { f : Context.map Σ Γ' Γ
+    & { f : raw_context_map Σ Γ' Γ
     & { hjf : Judgement.hypothetical_form
     & hypothetical_judgement Σ hjf Γ}}}}.
   intros [Γ [Γ' [f [hjf hjfi]]]].
@@ -178,8 +178,8 @@ Definition subst_equal_instance : Closure.system (judgement_total Σ).
 Proof.
   exists {   Γ : raw_context Σ
     & { Γ' : raw_context Σ
-    & { f : Context.map Σ Γ' Γ
-    & { f' : Context.map Σ Γ' Γ
+    & { f : raw_context_map Σ Γ' Γ
+    & { f' : raw_context_map Σ Γ' Γ
     & { cl : syntactic_class
     & hypothetical_judgement Σ (form_object cl) Γ}}}}}.
   intros [Γ [Γ' [f [f' [cl hjfi]]]]].
@@ -747,12 +747,12 @@ Section StructuralRuleMap.
           -- eapply concat. { refine (plusone_comp_one _ _ _ _ _ _). }
              eapply concat.
                2: { apply ap. refine (plusone_comp_one _ _ _ _ _ _)^. }
-             apply inverse. apply SyntaxLemmas.fmap_rename.
+             apply inverse. apply fmap_rename.
           -- intros x. cbn in x.
              eapply concat. { refine (plusone_comp_inj _ _ _ _ _ _ _). }
              eapply concat.
                2: { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. }
-             apply inverse. apply SyntaxLemmas.fmap_rename.
+             apply inverse. apply fmap_rename.
     - (* rename *)
       destruct i_rename as [J [γ' e]].
       simple refine (_;_).

@@ -72,7 +72,7 @@ Section AlgebraicExtension.
   - refine (raw_variable _).
     exact (coproduct_inj2 (shape_is_sum) i).
   - refine (raw_symbol S _). intros i.
-    refine (Substitution.rename _
+    refine (Expression.rename _
              (instantiate_expression _ _ _ _ I _ (args i))).
     apply (Coproduct.assoc
              shape_is_sum shape_is_sum
@@ -82,7 +82,7 @@ Section AlgebraicExtension.
     refine (coproduct_rect shape_is_sum _ _ _).
     + intros i. apply raw_variable, (coproduct_inj1 shape_is_sum), i.
     + intros i.
-      refine (Substitution.rename _
+      refine (Expression.rename _
              (instantiate_expression _ _ _ _ I _ (args i))).
       cbn.
       refine (Coproduct.fmap shape_is_sum shape_is_sum _ _).
@@ -106,7 +106,7 @@ Section AlgebraicExtension.
      exists (shape_sum Γ Δ).
         apply (coproduct_rect shape_is_sum).
         + intros i.
-          refine (Substitution.rename _ (Γ i)).
+          refine (Expression.rename _ (Γ i)).
           exact (coproduct_inj1 shape_is_sum).
         + intros i.
           exact (instantiate_type I (Δ i)).
@@ -198,7 +198,7 @@ Local Definition extend_args {γ δ : σ}
 Proof.
   intros ts t.
   simple refine (plusone_rect _ _ (shape_is_extend _ δ) _ _ _); cbn.
-  - refine (Substitution.rename _ t).
+  - refine (Expression.rename _ t).
     exact (coproduct_inj1 shape_is_sum).
   - exact ts.
 Defined.

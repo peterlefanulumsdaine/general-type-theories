@@ -17,9 +17,6 @@ Section RawContext.
        ; raw_context_type :> raw_context_carrier -> raw_type Σ raw_context_carrier
        }.
 
-  Local Definition map Σ (γ δ : σ)
-    := δ -> raw_term Σ γ.
-
   (** The empty context. *)
   Local Definition empty : raw_context.
   Proof.
@@ -33,11 +30,11 @@ Section RawContext.
   Proof.
     exists (shape_extend _ Γ).
     apply (plusone_rect _ _ (shape_is_extend _ _)).
-    - refine (Substitution.rename _ A).
+    - refine (Expression.rename _ A).
       (* As we put the type into the context, we weaken it to live over the extended context. *)
     apply (plusone_inj _ _ (shape_is_extend _ _)).
     - intros i.
-      refine (Substitution.rename _ (Γ i)).
+      refine (Expression.rename _ (Γ i)).
       apply (plusone_inj _ _ (shape_is_extend _ _)).
   Defined.
 
@@ -63,15 +60,8 @@ Section Signature_Maps.
     apply (Expression.fmap f).
   Defined.
 
-  (* TODO: consider naming of this.  Perhaps put this and similar things into a module [Map] in this file, so it can be e.g. [Context.Map.fmap] ?  *)
-  Definition fmap_raw_context_map
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {γ γ'} (g : map Σ γ' γ)
-    : map Σ' γ' γ
-  := fun i => (Expression.fmap f (g i)).
 
 End Signature_Maps.
-
 Section Rename_Variables.
 (** The action of variable-renaming on contexts (and, later, judgements) is a bit subtler than on expressions: one can only rename an _isomorphism_ of shapes, not an arbitrary map.
 
