@@ -60,7 +60,7 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
   Defined.
 
   (* TODO: generalise this to arbitrary judgements, and add function
-   [rename_judgement] (both to make this more general, and to make
+   [Judgement.rename] (both to make this more general, and to make
    the statement cleaner). *)
   (* NOTE: test whether this or [derivation_of_reindexing_to_empty_sum]
    is easier to use in practice; maybe get rid of whichever is less

@@ -802,6 +802,68 @@ Section Rename_Variables.
       exact (rename_hypothetical_judgement (hypothetical_part J) f).
   Defined.
 
+  Context `{H_Funext : Funext}.
+
+  Local Definition rename_rename
+      (J : judgement_total Σ)
+      {γ' : shape_carrier σ} (e : γ' <~> shape_of_judgement J)
+      {γ'' : shape_carrier σ} (e' : γ'' <~> γ')
+    : rename (rename J e) e'
+      = rename J (equiv_compose e e').
+  Proof.
+    destruct J as [ [ | hjf ] J].
+    - (* context judgement *)
+      apply (ap (Build_judgement_total _)),
+            (ap make_context_judgement),
+            (ap (Build_raw_context _)).
+      apply path_forall; cbn; intros i.
+      apply inverse, rename_comp.
+    - (* hypothetical judgement *)
+      apply eq_by_expressions; cbn.
+      + intros i. apply inverse, rename_comp.
+      + intros i. unfold rename_hypothetical_judgement; cbn.
+        apply inverse, rename_comp.
+  Defined.
+
+  Local Definition rename_idmap
+      (J : judgement_total Σ)
+    : rename J (equiv_idmap _)
+      = J.
+  Proof.
+    destruct J as [ [ | hjf ] J].
+    - (* context judgement *)
+      apply (ap (Build_judgement_total _)).
+      eapply concat.
+      { eapply (ap make_context_judgement),
+               (ap (Build_raw_context _)).
+        apply path_forall; cbn; intros i.
+        apply rename_idmap. }
+      apply (ap (Build_judgement _)), contr_unit.
+    - (* hypothetical judgement *)
+      apply eq_by_expressions; cbn.
+      + intros i. apply rename_idmap.
+      + intros i. unfold rename_hypothetical_judgement; cbn.
+        apply rename_idmap.
+  Defined.
+
+  Local Definition rename_inverse
+      (J : judgement_total Σ)
+      {γ' : shape_carrier σ} (e : shape_of_judgement J <~> γ')
+    : rename (rename J (e^-1)) e = J.
+  Proof.
+    eapply concat. { apply rename_rename. }
+    eapply concat. 2: { apply rename_idmap. }
+    apply ap, ecompose_Ve.
+  Defined.
+
+  Lemma rename_hypothetical_boundary_idmap
+      {γ : σ} {hjf} (B : hypothetical_boundary _ hjf γ)
+    : rename_hypothetical_boundary idmap B = B.
+  Proof.
+    apply path_forall; intros i.
+    apply Expression.rename_idmap.
+  Defined.
+
 End Rename_Variables.
 
 Section Instantiation.

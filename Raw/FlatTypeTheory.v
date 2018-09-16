@@ -210,7 +210,7 @@ Section Instantiation.
       exists (Judgement.rename j (shape_assoc _ _ _)^-1).
       refine (_ ; shape_assoc _ _ _).
     }
-    { apply rename_judgement_inverse. }
+    { apply Judgement.rename_inverse. }
     intros []; cbn.
     simple refine (Closure.deduce' _ _ _).
     { apply inr. 
