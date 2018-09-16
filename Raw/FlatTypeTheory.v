@@ -3,8 +3,8 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
 Require Import RawSyntax.All.
-Require Import Raw.RawStructuralRule.
 Require Import Raw.FlatRule.
+Require Import Raw.RawStructuralRule.
 
 Section FlatTypeTheory.
 

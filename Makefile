@@ -20,16 +20,16 @@ MODULES := \
 	RawSyntax/Signature \
 	RawSyntax/Expression \
 	RawSyntax/Substitution \
+	RawSyntax/Metavariable \
 	RawSyntax/Context \
 	RawSyntax/Judgement \
-	RawSyntax/Metavariable \
 	RawSyntax/All \
-	Raw/RawStructuralRule \
-	Raw/AlgebraicExtension \
-	Raw/CongruenceRule \
 	Raw/FlatRule \
+	Raw/RawStructuralRule \
 	Raw/FlatTypeTheory \
+	Raw/AlgebraicExtension \
 	Raw/RawRule \
+	Raw/CongruenceRule \
 	Raw/RawTypeTheory \
 	Typed/TypedClosure \
 	Typed/UtilityDerivations \

@@ -5,9 +5,9 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import RawSyntax.All.
+Require Import Raw.FlatTypeTheory.
 Require Import Raw.RawRule.
 Require Import Raw.CongruenceRule.
-Require Import Raw.FlatTypeTheory.
 
 (** Main definition in this file: [raw_type_theory], the data one gives to specify a type theory (but before typechecking it) *)
 
