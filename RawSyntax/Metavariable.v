@@ -6,27 +6,28 @@ Require Import RawSyntax.SyntacticClass.
 Require Import RawSyntax.Arity.
 Require Import RawSyntax.Signature.
 Require Import RawSyntax.Expression.
-Require Import RawSyntax.Context.
 Require Import RawSyntax.Substitution.
-Require Import RawSyntax.Judgement.
 
 Section AlgebraicExtension.
 
-  (* The extension of a signature by symbols representing metavariables, as used to write
-     each rule.
+  (* The extension of a signature by symbols representing metavariables, as used
+  to write each rule.
 
-     The *arity* here would be the overall argument of the constructor that the rule
-     introduces: the metavariable symbols introduced correspond to the arguments of the
-     arity.
+  The *arity* here would be the overall argument of the constructor that the
+  rule introduces: the metavariable symbols introduced correspond to the
+  arguments of the arity.
 
-     E.g. lambda-abstraction has arity < (Ty,•), (Ty,{x}), (Tm,{x}) >. So in the
-     metavariable extension by this arity, we add three symbols — call them A, B, and b —
-     with arities as follows:
+  E.g. lambda-abstraction has arity < (Ty,•), (Ty,{x}), (Tm,{x}) >. So in the
+  metavariable extension by this arity, we add three symbols — call them A, B,
+  and b — with arities as follows:
 
-     Symbol Class Arity A Ty < > B Ty <(Tm,•)> b Tm <(Tm,•)>
+     Symbol Class Arity
+     A      Ty    < >
+     B      Ty    <(Tm,•)>
+     b      Tm    <(Tm,•)>
 
-     allowing us to write expressions like x:A |– b(x) : B(x).
-   *)
+  allowing us to write judgements like x:A |– b(x) : B(x).
+  *)
 
   Context {σ : shape_system}.
 
@@ -90,74 +91,11 @@ Section AlgebraicExtension.
       exact (Coproduct.empty_right shape_is_sum shape_is_empty).
   Defined.
 
-  Local Definition instantiate_type := @instantiate_expression class_type.
-  Local Definition instantiate_term := @instantiate_expression class_term.
-
-  Global Arguments instantiate_expression {_ _ _ _} _ [_] _.
-  Global Arguments instantiate_type {_ _ _} _ [_] _.
-  Global Arguments instantiate_term {_ _ _} _ [_] _.
-
-  Local Definition instantiate_context
-      {a : @arity σ} {Σ : signature σ} (Γ : raw_context Σ)
-      (I : instantiation a Σ Γ)
-      (Δ : raw_context (extend Σ a))
-    : raw_context Σ.
-  Proof.
-     exists (shape_sum Γ Δ).
-        apply (coproduct_rect shape_is_sum).
-        + intros i.
-          refine (Expression.rename _ (Γ i)).
-          exact (coproduct_inj1 shape_is_sum).
-        + intros i.
-          exact (instantiate_type I (Δ i)).
-  Defined.
-
-  Local Definition instantiate_judgement
-      {a : arity σ} {Σ : signature σ} (Γ : raw_context Σ)
-      (I : instantiation a Σ Γ)
-      (j : judgement_total (extend Σ a))
-    : judgement_total Σ.
-  Proof.
-    exists (form_of_judgement_total j).
-    exists (instantiate_context _ I (context_of_judgement j)).
-    destruct j as [jf J]; destruct jf; simpl in *.
-    - constructor.
-    - simpl. intro i.
-      apply (instantiate_expression I (hypothetical_part J i)).
-  Defined.
-
-  (** The instantiation under [I] of any presupposition of a judgement [j]
-      is equal to the corresponding presupposition of the instantiation of [j]
-      itself under [I]. *)
-  Definition instantiate_presupposition `{Funext}
-      {Σ : signature σ}
-      {Γ : raw_context Σ} {a : arity σ} (I : instantiation a Σ Γ)
-      (j : judgement_total _)
-      (i : presupposition (instantiate_judgement _ I j))
-    : instantiate_judgement _ I (presupposition j i)
-      = presupposition (instantiate_judgement _ I j) i.
-  Proof.
-    apply (ap (Build_judgement_total _)). (* judgement form of presup unchanged *)
-    destruct j as [[ | hjf] j].
-    - destruct i. (* [j] is context judgement: no presuppositions. *)
-    - (* [j] is a hypothetical judgement *)
-      apply (ap (Build_judgement _)). (* context of presup unchanged *)
-      destruct i as [ i | ].
-      + (* hypothetical presupposition *)
-        apply path_forall; intros k.
-        recursive_destruct hjf;
-        recursive_destruct i;
-        recursive_destruct k;
-        try apply idpath.
-      + (* raw context *)
-        apply idpath.
-  Defined.
+  Arguments instantiate_expression {_ _ _ _} _ [_] _.
 
 End AlgebraicExtension.
 
 Arguments instantiate_expression : simpl nomatch.
-Arguments instantiate_judgement : simpl nomatch.
-Arguments instantiate_context : simpl nomatch.
 
 Section MetavariableNotations.
 

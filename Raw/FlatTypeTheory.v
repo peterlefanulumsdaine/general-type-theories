@@ -192,19 +192,19 @@ Section Instantiation.
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
       (r : flat_rule Σ)
     : Closure.map_over
-        (Metavariable.instantiate_judgement Γ I)
+        (Judgement.instantiate Γ I)
         (FlatRule.closure_system (FlatRule.fmap include_symbol r))
         (structural_rule Σ + FlatRule.closure_system r).
   Proof.
     intros [Δ J].
     (* The derivation essentially consists of the instance
-     [(Metavariable.instantiate_context _ I Δ
+     [(Context.instantiate _ I Δ
      ; instantiate_instantiation I J)]
      wrapped in renamings along [shape_assoc].
      *)
     simple refine (Closure.deduce' _ _ _).
     { apply inl. apply RawStructuralRule.rename. cbn.
-      set (j := Metavariable.instantiate_judgement Γ I
+      set (j := Judgement.instantiate Γ I
          (Closure.conclusion
             (FlatRule.closure_system (FlatRule.fmap include_symbol r) (Δ;J)))).
       exists (Judgement.rename j (shape_assoc _ _ _)^-1).
@@ -214,7 +214,7 @@ Section Instantiation.
     intros []; cbn.
     simple refine (Closure.deduce' _ _ _).
     { apply inr. 
-      exists (Metavariable.instantiate_context _ I Δ).
+      exists (Context.instantiate _ I Δ).
       exact (instantiate_instantiation I J).
     }
     { apply instantiate_instantiate_judgement. }
@@ -222,8 +222,8 @@ Section Instantiation.
     simple refine (Closure.deduce' _ _ _).
     { apply inl, RawStructuralRule.rename. cbn.
       exists
-        (Metavariable.instantiate_judgement Γ I
-          (Metavariable.instantiate_judgement Δ J
+        (Judgement.instantiate Γ I
+          (Judgement.instantiate Δ J
             (fmap_judgement_total
               (Metavariable.fmap1 include_symbol _)
               (flat_rule_premise r p)))).
@@ -244,7 +244,7 @@ Section Instantiation.
   Local Definition instantiate
       (T : flat_type_theory Σ)
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
-   : Closure.map_over (Metavariable.instantiate_judgement Γ I)
+   : Closure.map_over (Judgement.instantiate Γ I)
        (closure_system (fmap include_symbol T)) 
        (closure_system T).
   Proof.
@@ -267,8 +267,8 @@ Section Instantiation.
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
       {hyps : family _} (j : judgement_total (Metavariable.extend Σ a))
       (d : derivation (fmap include_symbol T) hyps j)
-    : derivation T (Family.fmap (Metavariable.instantiate_judgement _ I) hyps)
-                   (Metavariable.instantiate_judgement _ I j).
+    : derivation T (Family.fmap (Judgement.instantiate _ I) hyps)
+                   (Judgement.instantiate _ I j).
   Proof.
     simple refine (Closure.fmap_derivation_over _ d).
     apply instantiate.

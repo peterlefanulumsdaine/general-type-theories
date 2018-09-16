@@ -683,7 +683,7 @@ Section Instantiation.
   Local Definition instantiate
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
     : Family.map_over
-        (Closure.fmap (@Metavariable.instantiate_judgement σ _ Σ Γ I))
+        (Closure.fmap (@Judgement.instantiate σ _ Σ Γ I))
         (structural_rule (Metavariable.extend Σ a))
         (structural_rule Σ).
   Proof.

@@ -133,15 +133,15 @@ Section Fmap_Instantiation.
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {Γ : raw_context Σ} (I : Metavariable.instantiation a Σ Γ)
       (Δ : raw_context (Metavariable.extend Σ a))
-    : Context.fmap f (Metavariable.instantiate_context Γ I Δ)
-    = Metavariable.instantiate_context
+    : Context.fmap f (Context.instantiate Γ I Δ)
+    = Context.instantiate
         (Context.fmap f Γ)
         (fmap_instantiation f I)
         (Context.fmap (Metavariable.fmap1 f a) Δ).
   Proof.
     apply (ap (Build_raw_context _)), path_forall.
     refine (coproduct_rect shape_is_sum _ _ _); intros i;
-      unfold Metavariable.instantiate_context.
+      unfold Context.instantiate.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       eapply concat. 2: {apply inverse. refine (coproduct_comp_inj1 _). }
       apply fmap_rename.
@@ -155,8 +155,8 @@ Section Fmap_Instantiation.
       {a : @arity σ} (Γ : raw_context Σ)
       (I : Metavariable.instantiation a Σ Γ)
       (J : judgement_total (Metavariable.extend _ _))
-    : fmap_judgement_total f (Metavariable.instantiate_judgement Γ I J)
-    = Metavariable.instantiate_judgement
+    : fmap_judgement_total f (Judgement.instantiate Γ I J)
+    = Judgement.instantiate
         (Context.fmap f Γ) 
         (fmap_instantiation f I)
         (fmap_judgement_total (Metavariable.fmap1 f a) J).
@@ -169,7 +169,7 @@ Section Fmap_Instantiation.
       apply Judgement.eq_by_expressions. 
       + (* context part *)
         refine (coproduct_rect shape_is_sum _ _ _); intros i;
-          unfold Metavariable.instantiate_context.
+          unfold Context.instantiate.
         * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
           eapply concat. 2: {apply inverse. refine (coproduct_comp_inj1 _). }
           apply fmap_rename.
@@ -516,7 +516,7 @@ Section Instantiations.
 
   Lemma unit_instantiate_context
       {a} (Γ : raw_context (Metavariable.extend Σ a))
-    : Metavariable.instantiate_context [::] (unit_instantiation a)
+    : Context.instantiate [::] (unit_instantiation a)
         (Context.fmap (Metavariable.fmap1 include_symbol _) Γ)
       = Context.rename Γ (shape_sum_empty_inr _)^-1.
   Proof.
@@ -532,14 +532,14 @@ Section Instantiations.
 
   Lemma unit_instantiate_judgement
       {a} (J : judgement_total (Metavariable.extend Σ a))
-    : Metavariable.instantiate_judgement [::] (unit_instantiation a)
+    : Judgement.instantiate [::] (unit_instantiation a)
         (fmap_judgement_total (Metavariable.fmap1 include_symbol _) J)
       = Judgement.rename J (shape_sum_empty_inr _)^-1.
   Proof.
     destruct J as [ [ | hjf ] J ].
     - (* context judgement *)
       destruct J as [J []].
-      simpl. unfold Metavariable.instantiate_judgement, Judgement.rename. 
+      simpl. unfold Judgement.instantiate, Judgement.rename. 
       apply ap, ap10, ap.
       apply unit_instantiate_context.
     - (* hypothetical judgement *)
@@ -716,13 +716,13 @@ Section Instantiations.
       (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
       (j : judgement_total (Metavariable.extend Σ b))
   : shape_of_judgement
-      (Metavariable.instantiate_judgement
-        (Metavariable.instantiate_context _ I Δ)
+      (Judgement.instantiate
+        (Context.instantiate _ I Δ)
         (instantiate_instantiation I J) j)
   <~>
     shape_of_judgement
-      (Metavariable.instantiate_judgement Γ I
-        (Metavariable.instantiate_judgement Δ J
+      (Judgement.instantiate Γ I
+        (Judgement.instantiate Δ J
           (fmap_judgement_total (Metavariable.fmap1 include_symbol _) j))).
   Proof.
     apply equiv_inverse,shape_assoc.
@@ -734,12 +734,12 @@ Section Instantiations.
       (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
       (K : raw_context (Metavariable.extend Σ b))
     : forall i,
-      Metavariable.instantiate_context
-        (Metavariable.instantiate_context _ I Δ)
+      Context.instantiate
+        (Context.instantiate _ I Δ)
         (instantiate_instantiation I J) K i
     = Context.rename
-        (Metavariable.instantiate_context Γ I
-          (Metavariable.instantiate_context Δ J
+        (Context.instantiate Γ I
+          (Context.instantiate Δ J
             (Context.fmap (Metavariable.fmap1 include_symbol _) K)))
         (shape_assoc _ _ _)^-1
         i.
@@ -797,12 +797,12 @@ Section Instantiations.
       {Δ : raw_context _} {b}
       (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
       (j : judgement_total (Metavariable.extend Σ b))
-    : Metavariable.instantiate_judgement
-        (Metavariable.instantiate_context _ I Δ)
+    : Judgement.instantiate
+        (Context.instantiate _ I Δ)
         (instantiate_instantiation I J) j
     = Judgement.rename
-        (Metavariable.instantiate_judgement Γ I
-          (Metavariable.instantiate_judgement Δ J
+        (Judgement.instantiate Γ I
+          (Judgement.instantiate Δ J
             (fmap_judgement_total (Metavariable.fmap1 include_symbol _) j)))
          (shape_assoc _ _ _)^-1.
   Proof.

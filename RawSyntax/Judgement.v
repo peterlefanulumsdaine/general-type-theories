@@ -1,11 +1,13 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
+Require Import RawSyntax.Arity.
 Require Import RawSyntax.Signature.
 Require Import RawSyntax.SyntacticClass.
 Require Import RawSyntax.Expression.
 Require Import RawSyntax.Substitution.
 Require Import RawSyntax.Context.
+Require Import RawSyntax.Metavariable.
 
 Section JudgementDefinitions.
   Context {σ : shape_system}.
@@ -763,7 +765,7 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
 End Presupposition.
 
 Section Rename_Variables.
-(** As discussed in [RawSyntax.Context], one can rename the variables of a judgement along an isomorphism of shapes. *)
+(** As discussed in [RawSyntax.Context], one can rename the variables of a judgement along an _isomorphism_ of shapes. *)
 
   Context {σ : shape_system} {Σ : signature σ}.
 
@@ -802,3 +804,52 @@ Section Rename_Variables.
 
 End Rename_Variables.
 
+Section Instantiation.
+(** Interaction of judgements with metavariable instantiations *)
+
+  Context {σ : shape_system}.
+
+  Local Definition instantiate
+      {a : arity σ} {Σ : signature σ} (Γ : raw_context Σ)
+      (I : Metavariable.instantiation a Σ Γ)
+      (j : judgement_total (Metavariable.extend Σ a))
+    : judgement_total Σ.
+  Proof.
+    exists (form_of_judgement_total j).
+    exists (Context.instantiate _ I (context_of_judgement j)).
+    destruct j as [jf J]; destruct jf; simpl in *.
+    - constructor.
+    - simpl. intro i.
+      apply (instantiate_expression I (hypothetical_part J i)).
+  Defined.
+
+  (** The instantiation under [I] of any presupposition of a judgement [j]
+      is equal to the corresponding presupposition of the instantiation of [j]
+      itself under [I]. *)
+  Definition instantiate_presupposition `{Funext}
+      {Σ : signature σ}
+      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
+      (j : judgement_total _)
+      (i : presupposition (instantiate _ I j))
+    : instantiate _ I (presupposition j i)
+      = presupposition (instantiate _ I j) i.
+  Proof.
+    apply (ap (Build_judgement_total _)). (* judgement form of presup unchanged *)
+    destruct j as [[ | hjf] j].
+    - destruct i. (* [j] is context judgement: no presuppositions. *)
+    - (* [j] is a hypothetical judgement *)
+      apply (ap (Build_judgement _)). (* context of presup unchanged *)
+      destruct i as [ i | ].
+      + (* hypothetical presupposition *)
+        apply path_forall; intros k.
+        recursive_destruct hjf;
+        recursive_destruct i;
+        recursive_destruct k;
+        try apply idpath.
+      + (* raw context *)
+        apply idpath.
+Defined.
+
+End Instantiation.
+
+Arguments instantiate : simpl nomatch.

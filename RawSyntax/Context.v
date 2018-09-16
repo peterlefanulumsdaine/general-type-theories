@@ -1,9 +1,11 @@
 Require Import HoTT.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
+Require Import RawSyntax.Arity.
 Require Import RawSyntax.Signature.
 Require Import RawSyntax.Expression.
 Require Import RawSyntax.Substitution.
+Require Import RawSyntax.Metavariable.
 
 Section RawContext.
 
@@ -62,12 +64,13 @@ Section Signature_Maps.
 
 
 End Signature_Maps.
+
 Section Rename_Variables.
 (** The action of variable-renaming on contexts (and, later, judgements) is a bit subtler than on expressions: one can only rename an _isomorphism_ of shapes, not an arbitrary map.
 
   Precisely, given a raw context [Γ] and an _isomorphic_ shape [f : γ' <~> Γ], one can rename the variables of [Γ] according to [f], to get a raw context with shape [γ']; and similarly for judgements; and this will in each case preserve derivability/well-typedness.
 
- (NOTE: in fact this all seems to make sense more generally for _retractions_ [f : γ' <~> Γ] of shapes, not just isomorphisms. However. we have no use-case for the more general version, so we give these for now just for the case of isomorphisms.) *)
+  (NOTE: in fact this all seems to make sense more generally for _retractions_ [f : γ' <~> Γ] of shapes, not just isomorphisms. However. we have no use-case for the more general version, so we give these for now just for the case of isomorphisms.) *)
 
   Context {σ : shape_system} {Σ : signature σ}.
 
@@ -81,3 +84,27 @@ Section Rename_Variables.
   Defined.
 
 End Rename_Variables.
+
+Section Instantiation.
+(** Interaction with instantiation of metavariables. *)
+
+  Context {σ : shape_system}.
+
+  Local Definition instantiate
+      {a : arity σ} {Σ : signature σ} (Γ : raw_context Σ)
+      (I : Metavariable.instantiation a Σ Γ)
+      (Δ : raw_context (Metavariable.extend Σ a))
+    : raw_context Σ.
+  Proof.
+     exists (shape_sum Γ Δ).
+        apply (coproduct_rect shape_is_sum).
+        + intros i.
+          refine (Expression.rename _ (Γ i)).
+          exact (coproduct_inj1 shape_is_sum).
+        + intros i.
+          exact (Metavariable.instantiate_expression I (Δ i)).
+  Defined.
+
+End Instantiation.
+
+Arguments instantiate : simpl nomatch.
