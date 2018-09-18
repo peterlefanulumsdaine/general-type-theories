@@ -3,11 +3,11 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
 Require Import Proto.ShapeSystem.
 Require Import Typed.TypedClosure.
-Require Import RawSyntax.All.
+Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Raw.FlatRule.
-Require Import Raw.FlatTypeTheory.
+Require Import Typing.FlatRule.
+Require Import Typing.FlatTypeTheory.
 
 Section WellTyped.
 

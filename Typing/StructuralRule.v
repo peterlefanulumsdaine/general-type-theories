@@ -3,10 +3,10 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Closure.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
-Require Import RawSyntax.All.
+Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Raw.FlatRule.
+Require Import Typing.FlatRule.
 
 (**
   This module defines the _standard structural rules_ — the rules which are not
@@ -690,7 +690,7 @@ Section Instantiation.
   Proof.
     (* Sketch: do this by hand for the ones given as closure conditions;
      for the ones given as flat rules, use [instantiate_flat_rule]. *)
-    (* Query: can this be unified with [RawStructuralRule.fmap] below? *)
+    (* Query: can this be unified with [StructuralRule.fmap] below? *)
   Admitted. (* [instantiate]: probably large, but self-contained. *)
 
 End Instantiation.

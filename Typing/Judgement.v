@@ -2,12 +2,12 @@ Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
-Require Import RawSyntax.Arity.
-Require Import RawSyntax.Signature.
-Require Import RawSyntax.SyntacticClass.
-Require Import RawSyntax.Expression.
-Require Import RawSyntax.Substitution.
-Require Import RawSyntax.Metavariable.
+Require Import Syntax.Arity.
+Require Import Syntax.Signature.
+Require Import Syntax.SyntacticClass.
+Require Import Syntax.Expression.
+Require Import Syntax.Substitution.
+Require Import Syntax.Metavariable.
 Require Import Typing.Context.
 
 Section JudgementDefinitions.
@@ -766,7 +766,7 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
 End Presupposition.
 
 Section Rename_Variables.
-(** As discussed in [RawSyntax.Context], one can rename the variables of a judgement along an _isomorphism_ of shapes. *)
+(** As discussed in [Syntax.Context], one can rename the variables of a judgement along an _isomorphism_ of shapes. *)
 
   Context {σ : shape_system} {Σ : signature σ}.
 

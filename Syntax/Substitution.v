@@ -3,10 +3,10 @@ Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
-Require Import RawSyntax.SyntacticClass.
-Require Import RawSyntax.Arity.
-Require Import RawSyntax.Signature.
-Require Import RawSyntax.Expression.
+Require Import Syntax.SyntacticClass.
+Require Import Syntax.Arity.
+Require Import Syntax.Signature.
+Require Import Syntax.Expression.
 
 
 Section RawSubstitution.

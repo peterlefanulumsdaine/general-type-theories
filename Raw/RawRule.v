@@ -6,11 +6,11 @@ Require Import Auxiliary.WellFounded.
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
-Require Import RawSyntax.All.
+Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
 Require Import Raw.AlgebraicExtension.
-Require Import Raw.FlatRule.
+Require Import Typing.FlatRule.
 
 (** A well-shaped rule is given by the following data:
 

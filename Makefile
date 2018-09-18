@@ -15,18 +15,18 @@ MODULES := \
 	Auxiliary/Coproduct \
 	Auxiliary/Closure \
 	Proto/ShapeSystem \
-	RawSyntax/SyntacticClass \
-	RawSyntax/Arity \
-	RawSyntax/Signature \
-	RawSyntax/Expression \
-	RawSyntax/Substitution \
-	RawSyntax/Metavariable \
-	RawSyntax/All \
+	Syntax/SyntacticClass \
+	Syntax/Arity \
+	Syntax/Signature \
+	Syntax/Expression \
+	Syntax/Substitution \
+	Syntax/Metavariable \
+	Syntax/All \
 	Typing/Context \
 	Typing/Judgement \
-	Raw/FlatRule \
-	Raw/RawStructuralRule \
-	Raw/FlatTypeTheory \
+	Typing/FlatRule \
+	Typing/StructuralRule \
+	Typing/FlatTypeTheory \
 	Raw/AlgebraicExtension \
 	Raw/RawRule \
 	Raw/CongruenceRule \

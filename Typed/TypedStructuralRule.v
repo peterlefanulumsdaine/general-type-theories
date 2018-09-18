@@ -2,12 +2,12 @@ Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
-Require Import RawSyntax.All.
+Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Raw.FlatRule.
-Require Import Raw.FlatTypeTheory.
-Require Import Raw.RawStructuralRule.
+Require Import Typing.FlatRule.
+Require Import Typing.FlatTypeTheory.
+Require Import Typing.StructuralRule.
 Require Import Typed.UtilityDerivations.
 Require Import Typed.TypedClosure.
 Require Import Typed.TypedFlatRule.
@@ -73,7 +73,7 @@ Section TypedStructuralRule.
     destruct p as [ p | ].
     - (* hypothetical presupposition *)
       simple refine (Closure.deduce' _ _ _).
-      + apply inl, RawStructuralRule.rename.
+      + apply inl, StructuralRule.rename.
         exact (presupposition _ p_orig; (γ'; f)).
       + apply (ap (Build_judgement_total _)).
         apply (ap (Build_judgement _)).
@@ -87,7 +87,7 @@ Section TypedStructuralRule.
         * apply idpath.
     - (* context presupposition *)
       simple refine (Closure.deduce' _ _ _). 
-      + apply inl, RawStructuralRule.rename.
+      + apply inl, StructuralRule.rename.
         exists [! |- Γ !], γ'; exact f.
       + apply idpath.
       + intros []. 

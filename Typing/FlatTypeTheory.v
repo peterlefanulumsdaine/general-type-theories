@@ -2,11 +2,11 @@ Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
-Require Import RawSyntax.All.
+Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Raw.FlatRule.
-Require Import Raw.RawStructuralRule.
+Require Import Typing.FlatRule.
+Require Import Typing.StructuralRule.
 
 Section FlatTypeTheory.
 
@@ -90,7 +90,7 @@ Section UtilityDerivations.
     : derivation T H J.
   Proof.
     simple refine (Closure.deduce' _ _ _).
-    - apply inl, RawStructuralRule.rename.
+    - apply inl, StructuralRule.rename.
       exists (Closure.conclusion (closure_system T r)). exact (_;e).
     - apply e_J.
     - intros [].
@@ -109,7 +109,7 @@ Section UtilityDerivations.
     : derivation T H J.
   Proof.
     simple refine (Closure.deduce' _ _ _).
-    - apply inl, RawStructuralRule.rename.
+    - apply inl, StructuralRule.rename.
       exists (H h). exact (_;e).
     - apply e_J.
     - intros [].
@@ -188,7 +188,7 @@ Section Instantiation.
    any instance of [R] over the extended signature [extend Σ a] gets translated
    under [I] into an instance of [R] over [Σ], modulo renaming. 
 
-   Note: this can’t be in [Raw.FlatRule], since it uses the structural rules. *)
+   Note: this can’t be in [Typing.FlatRule], since it uses the structural rules. *)
   Local Definition instantiate_flat_rule
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
       (r : flat_rule Σ)
@@ -204,7 +204,7 @@ Section Instantiation.
      wrapped in renamings along [shape_assoc].
      *)
     simple refine (Closure.deduce' _ _ _).
-    { apply inl. apply RawStructuralRule.rename. cbn.
+    { apply inl. apply StructuralRule.rename. cbn.
       set (j := Judgement.instantiate Γ I
          (Closure.conclusion
             (FlatRule.closure_system (FlatRule.fmap include_symbol r) (Δ;J)))).
@@ -221,7 +221,7 @@ Section Instantiation.
     { apply Judgement.instantiate_instantiate. }
     cbn. intros p.
     simple refine (Closure.deduce' _ _ _).
-    { apply inl, RawStructuralRule.rename. cbn.
+    { apply inl, StructuralRule.rename. cbn.
       exists
         (Judgement.instantiate Γ I
           (Judgement.instantiate Δ J
@@ -251,7 +251,7 @@ Section Instantiation.
   Proof.
     apply Closure.sum_rect.
     - apply Closure.map_from_family_map.
-      refine (Family.compose_over (Family.inl) (RawStructuralRule.instantiate _)).
+      refine (Family.compose_over (Family.inl) (StructuralRule.instantiate _)).
     - intros [r I_r].
       refine (Closure.fmap_derivation _ (instantiate_flat_rule I (T r) I_r)).
       clear I_r.
@@ -356,7 +356,7 @@ Section Maps.
     { (* structural rules *)
       apply Closure.map_from_family_map.
       refine (Family.compose_over (Family.inl) _).
-      apply RawStructuralRule.fmap.
+      apply StructuralRule.fmap.
     }
     (* Logical rules *)
     intros [r [Γ I]]. cbn.

@@ -3,10 +3,10 @@ Require Import HoTT.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
-Require Import RawSyntax.All.
+Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Raw.RawStructuralRule.
+Require Import Typing.StructuralRule.
 
 (** Some “utility derivations”: small bits of infrastructure frequently used for all sorts of derivations. *)
 
@@ -39,7 +39,7 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
         (Judgement.rename J_tot (equiv_inverse (shape_sum_empty_inl _))).
   Proof.
     simple refine (Closure.deduce' _ _ _).
-    - apply inl, RawStructuralRule.rename. 
+    - apply inl, StructuralRule.rename. 
       exists J_tot.
       exact (_ ; equiv_inverse (shape_sum_empty_inl _)).
     - apply idpath.
@@ -79,7 +79,7 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
         J_tot.
   Proof.
     simple refine (Closure.deduce' _ _ _).
-    - apply inl, RawStructuralRule.rename.
+    - apply inl, StructuralRule.rename.
       exists J'_tot. cbn.
       exact (_ ; equiv_inverse (shape_sum_empty_inl _)).
     - apply Judgement.eq_by_expressions. 
@@ -134,7 +134,7 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
     functoriality lemma for renaming to show that the conclusion
     of that is the original judgement. *)
     simple refine (Closure.deduce' _ _ _).
-    - apply inl, RawStructuralRule.rename.
+    - apply inl, StructuralRule.rename.
       exists (Judgement.rename J_tot (equiv_inverse (shape_sum_empty_inl _))).
       exists Γ. apply shape_sum_empty_inl. 
     - apply Judgement.eq_by_expressions; intros i.

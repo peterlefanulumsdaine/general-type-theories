@@ -1,11 +1,11 @@
 Require Import HoTT.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
-Require Import RawSyntax.Arity.
-Require Import RawSyntax.Signature.
-Require Import RawSyntax.Expression.
-Require Import RawSyntax.Substitution.
-Require Import RawSyntax.Metavariable.
+Require Import Syntax.Arity.
+Require Import Syntax.Signature.
+Require Import Syntax.Expression.
+Require Import Syntax.Substitution.
+Require Import Syntax.Metavariable.
 
 Section RawContext.
 

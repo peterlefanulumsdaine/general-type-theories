@@ -1,5 +1,5 @@
 Require Import HoTT.
-Require Import RawSyntax.All.
+Require Import Syntax.All.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
 

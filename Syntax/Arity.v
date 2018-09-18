@@ -1,6 +1,6 @@
 Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
-Require Import RawSyntax.SyntacticClass.
+Require Import Syntax.SyntacticClass.
 
 Section Arity.
   Context `{σ : shape_system}.

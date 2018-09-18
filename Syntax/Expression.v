@@ -3,11 +3,11 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Coproduct.
 Require Import Proto.ShapeSystem.
-Require Import RawSyntax.SyntacticClass.
-Require Import RawSyntax.Arity.
-Require Import RawSyntax.Signature.
+Require Import Syntax.SyntacticClass.
+Require Import Syntax.Arity.
+Require Import Syntax.Signature.
 
-Section RawSyntax.
+Section Syntax.
 
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
@@ -54,7 +54,7 @@ Section RawSyntax.
     now apply raw_symbol.
   Defined.
 
-End RawSyntax.
+End Syntax.
 
 Global Arguments raw_expression {_} _ _ _.
 Global Arguments raw_type {_} _ _.
@@ -65,7 +65,7 @@ Section Renaming.
 
   Context {σ : shape_system} {Σ : signature σ}.
 
-  (* General substitution will be defined in [RawSyntax.Substitution] below.
+  (* General substitution will be defined in [Syntax.Substitution] below.
      Here we define the special case of substituting variables for variables.
      This already subsumes weakening, contraction, and exchange, and gives
      will be used to move under binders in general substitution. 

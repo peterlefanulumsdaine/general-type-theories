@@ -3,12 +3,12 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
-Require Import RawSyntax.All.
+Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
 Require Import Raw.AlgebraicExtension.
-Require Import Raw.FlatRule.
-Require Import Raw.FlatTypeTheory.
+Require Import Typing.FlatRule.
+Require Import Typing.FlatTypeTheory.
 Require Import Raw.RawRule.
 Require Import Raw.RawTypeTheory.
 Require Import Raw.CongruenceRule.
