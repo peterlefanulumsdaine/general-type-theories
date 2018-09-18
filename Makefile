@@ -21,9 +21,9 @@ MODULES := \
 	RawSyntax/Expression \
 	RawSyntax/Substitution \
 	RawSyntax/Metavariable \
-	RawSyntax/Context \
-	RawSyntax/Judgement \
 	RawSyntax/All \
+	Typing/Context \
+	Typing/Judgement \
 	Raw/FlatRule \
 	Raw/RawStructuralRule \
 	Raw/FlatTypeTheory \

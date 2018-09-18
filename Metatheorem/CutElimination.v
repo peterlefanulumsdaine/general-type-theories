@@ -3,6 +3,8 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
 Require Import RawSyntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
 Require Import Raw.RawRule.
 Require Import Raw.FlatTypeTheory.
 

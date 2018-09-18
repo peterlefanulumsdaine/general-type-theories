@@ -4,6 +4,8 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
 Require Import RawSyntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
 Require Import Raw.RawRule.
 Require Import Raw.RawTypeTheory.
 Require Import Typed.TypedRule.

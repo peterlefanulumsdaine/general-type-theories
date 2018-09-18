@@ -2,6 +2,8 @@
 Require Import Auxiliary.Family.
 Require Import Proto.ShapeSystem.
 Require Import RawSyntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
 Require Import Raw.RawTypeTheory.
 Require Import Typed.TypeTheory.
 

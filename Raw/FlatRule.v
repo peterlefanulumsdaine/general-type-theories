@@ -4,6 +4,9 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
 Require Import Proto.ShapeSystem.
 Require Import RawSyntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
+
 
 Section FlatRule.
 

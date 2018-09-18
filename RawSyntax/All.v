@@ -6,6 +6,4 @@ Require Export RawSyntax.Arity.
 Require Export RawSyntax.Signature.
 Require Export RawSyntax.Expression.
 Require Export RawSyntax.Substitution.
-Require Export RawSyntax.Context.
-Require Export RawSyntax.Judgement.
 Require Export RawSyntax.Metavariable.

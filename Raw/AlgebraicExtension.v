@@ -5,6 +5,8 @@ Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Proto.ShapeSystem.
 Require Import RawSyntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
 
 Section Algebraic_Extensions.
 

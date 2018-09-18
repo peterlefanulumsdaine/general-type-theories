@@ -5,6 +5,8 @@ Require Import Proto.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import RawSyntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
 Require Import Raw.FlatTypeTheory.
 Require Import Raw.RawRule.
 Require Import Raw.CongruenceRule.

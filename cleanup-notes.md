@@ -1,6 +1,6 @@
 Not as much large-scale reorganisation this time as in Andrej’s big sweep, but still a fair bit.
 
-# General principles:
+# Large changes:
 
 ## Functoriality/naturality lemmas:
 
@@ -9,6 +9,10 @@ Not as much large-scale reorganisation this time as in Andrej’s big sweep, but
 - exception: when instances of a definition form the objects of a fibered category (e.g. raw tt’s fibred over signatures); then the “functoriality” in base morphisms follows the def of the morphisms of the new objects (since it’s seen as showing that the new category really is a fibration over the old)
 
 This greatly helps with keeping the organisation of lemmas consistent and comprehensible.
+
+## Directory grouping
+
+Very unsure what’s best here.
 
 # Specific spot notes
 

@@ -7,8 +7,8 @@ Require Import RawSyntax.Signature.
 Require Import RawSyntax.SyntacticClass.
 Require Import RawSyntax.Expression.
 Require Import RawSyntax.Substitution.
-Require Import RawSyntax.Context.
 Require Import RawSyntax.Metavariable.
+Require Import Typing.Context.
 
 Section JudgementDefinitions.
   Context {σ : shape_system}.
