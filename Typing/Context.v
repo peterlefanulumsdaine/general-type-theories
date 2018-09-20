@@ -1,6 +1,6 @@
 Require Import HoTT.
 Require Import Auxiliary.Coproduct.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Syntax.Arity.
 Require Import Syntax.Signature.
 Require Import Syntax.Expression.

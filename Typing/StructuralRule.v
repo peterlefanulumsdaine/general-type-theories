@@ -1,5 +1,5 @@
 Require Import HoTT.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Closure.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.

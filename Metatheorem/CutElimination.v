@@ -1,11 +1,11 @@
 Require Import HoTT.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Raw.RawRule.
+Require Import Presented.RawRule.
 Require Import Typing.FlatTypeTheory.
 
 (* TODO: upstream to [Closure]?  Perhaps make some names local? *)

@@ -4,12 +4,12 @@ Require Import HoTT.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Raw.AlgebraicExtension.
-Require Import Raw.RawRule.
+Require Import Presented.AlgebraicExtension.
+Require Import Presented.RawRule.
 
 Section CongruenceRule.
 

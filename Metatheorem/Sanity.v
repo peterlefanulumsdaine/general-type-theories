@@ -1,5 +1,5 @@
 Require Import HoTT.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
@@ -7,16 +7,16 @@ Require Import Auxiliary.Coproduct.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Raw.RawRule.
-Require Import Raw.RawTypeTheory.
+Require Import Presented.RawRule.
+Require Import Presented.RawTypeTheory.
 Require Import Typing.StructuralRule.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
-Require Import Raw.CongruenceRule.
-Require Import Typed.TypedClosure.
-Require Import Typed.TypedStructuralRule.
-Require Import Typed.TypedRule.
-Require Import Typed.TypeTheory.
+Require Import Presented.CongruenceRule.
+Require Import Typing.TypedClosure.
+Require Import Typing.TypedStructuralRule.
+Require Import Presented.TypedRule.
+Require Import Presented.TypeTheory.
 
 (** The main goal of this file is the metatheorem that all presuppositions
     of a derivable judgement are derivable, over any type theory: *)

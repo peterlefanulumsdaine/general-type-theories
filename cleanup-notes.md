@@ -12,7 +12,11 @@ This greatly helps with keeping the organisation of lemmas consistent and compre
 
 ## Directory grouping
 
-Very unsure what’s best here.
+Very unsure what’s best here.  Trying out a new grouping:
+
+- Raw: everything just about the raw syntax, before one considers it as a typed syntax at all.  Pretty much: stuff that might be provided by a library purely about untyped (or maybe multi-sorted) syntax-with-binding.
+- Typing: everything involved in setting up the typing judgements.  Contexts, judgements, structural rules, flat rules and type theories, and derivations over these.
+- Presented: well-presented rules and type theories.
 
 # Specific spot notes
 

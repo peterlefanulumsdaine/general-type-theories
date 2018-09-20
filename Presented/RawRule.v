@@ -3,13 +3,13 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Raw.AlgebraicExtension.
+Require Import Presented.AlgebraicExtension.
 Require Import Typing.FlatRule.
 
 (** A well-shaped rule is given by the following data:

@@ -1,4 +1,4 @@
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Syntax.SyntacticClass.
 Require Import Syntax.Arity.

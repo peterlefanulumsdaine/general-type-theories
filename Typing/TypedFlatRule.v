@@ -1,8 +1,8 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
-Require Import Proto.ShapeSystem.
-Require Import Typed.TypedClosure.
+Require Import Syntax.ShapeSystem.
+Require Import Typing.TypedClosure.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.

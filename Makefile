@@ -14,7 +14,7 @@ MODULES := \
 	Auxiliary/Family \
 	Auxiliary/Coproduct \
 	Auxiliary/Closure \
-	Proto/ShapeSystem \
+	Syntax/ShapeSystem \
 	Syntax/SyntacticClass \
 	Syntax/Arity \
 	Syntax/Signature \
@@ -27,16 +27,16 @@ MODULES := \
 	Typing/FlatRule \
 	Typing/StructuralRule \
 	Typing/FlatTypeTheory \
-	Raw/AlgebraicExtension \
-	Raw/RawRule \
-	Raw/CongruenceRule \
-	Raw/RawTypeTheory \
-	Typed/TypedClosure \
-	Typed/UtilityDerivations \
-	Typed/TypedFlatRule \
-	Typed/TypedRule \
-	Typed/TypedStructuralRule \
-	Typed/TypeTheory \
+	Typing/TypedClosure \
+	Typing/UtilityDerivations \
+	Typing/TypedFlatRule \
+	Typing/TypedStructuralRule \
+	Presented/AlgebraicExtension \
+	Presented/RawRule \
+	Presented/CongruenceRule \
+	Presented/RawTypeTheory \
+	Presented/TypedRule \
+	Presented/TypeTheory \
 	Metatheorem/Sanity \
 	Metatheorem/CutElimination \
 	Metatheorem/UniqueTyping \

@@ -1,18 +1,18 @@
 Require Import HoTT.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Raw.AlgebraicExtension.
+Require Import Presented.AlgebraicExtension.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
-Require Import Raw.RawRule.
-Require Import Raw.RawTypeTheory.
-Require Import Raw.CongruenceRule.
-Require Import Typed.TypedFlatRule.
+Require Import Presented.RawRule.
+Require Import Presented.RawTypeTheory.
+Require Import Presented.CongruenceRule.
+Require Import Typing.TypedFlatRule.
 
 (** In this file: definition of well-typedness of an algebraic extension, and a (well-presented) rule. *)
 

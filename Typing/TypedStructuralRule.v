@@ -1,16 +1,16 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
 Require Import Typing.StructuralRule.
-Require Import Typed.UtilityDerivations.
-Require Import Typed.TypedClosure.
-Require Import Typed.TypedFlatRule.
+Require Import Typing.UtilityDerivations.
+Require Import Typing.TypedClosure.
+Require Import Typing.TypedFlatRule.
 
 (** We show that all the structural rules are well-typed.
 

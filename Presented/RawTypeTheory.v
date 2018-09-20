@@ -1,15 +1,15 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
 Require Import Typing.FlatTypeTheory.
-Require Import Raw.RawRule.
-Require Import Raw.CongruenceRule.
+Require Import Presented.RawRule.
+Require Import Presented.CongruenceRule.
 
 (** Main definition in this file: [raw_type_theory], the data one gives to specify a type theory (but before typechecking it) *)
 
