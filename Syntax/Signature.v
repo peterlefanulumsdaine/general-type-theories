@@ -1,3 +1,4 @@
+Require Import HoTT.
 Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Syntax.SyntacticClass.
@@ -38,3 +39,23 @@ Section Map.
   := Family.compose.
   
 End Map.
+
+Section Examples.
+
+  Context {σ : shape_system}.
+
+  Local Definition empty : signature σ
+  := [<>].
+
+  Local Definition empty_rect Σ : map empty Σ
+  := Family.empty_rect.
+
+  Local Definition empty_rect_unique `{Funext} {Σ} (f : map empty Σ)
+    : f = empty_rect Σ.
+  Proof.
+    apply Family.empty_rect_unique.
+  Defined.
+  
+End Examples.
+
+Arguments empty _ : clear implicits.

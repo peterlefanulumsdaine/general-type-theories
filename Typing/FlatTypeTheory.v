@@ -440,7 +440,6 @@ Section Maps.
     apply ap10, ap, inverse, Metavariable.include_symbol_after_map.
   Defined.
 
-
   (** Maps of flat TT’s also translate under signature maps *)
   (* TODO: consider naming! *)
   Local Definition fmap_map
@@ -501,6 +500,5 @@ Section Maps.
     refine (transport (fun g => map_over g _ _) _ (compose_over f' f)).
     apply Family.id_left.
   Defined.
-
 
 End Maps.

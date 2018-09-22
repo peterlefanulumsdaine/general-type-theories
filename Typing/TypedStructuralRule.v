@@ -462,7 +462,7 @@ Section TypedStructuralRule.
   the particularly long cases beforehand individually. *)
 
   Local Definition tmeq_convert_is_well_typed
-    : TypedFlatRule.weakly_well_typed [<>] (tmeq_convert_rule Σ). 
+    : TypedFlatRule.weakly_well_typed [<>] (@tmeq_convert_rule σ). 
   Proof.
     (* tmeq_convert: 
        ⊢ A, B type
@@ -472,7 +472,7 @@ Section TypedStructuralRule.
        -------------
        ⊢ u = u' : B
        *)
-    set (metas := flat_rule_metas (tmeq_convert_rule Σ)).
+    set (metas := flat_rule_metas (@tmeq_convert_rule σ)).
     pose (A := Some (Some (Some tt)) : metas).
     pose (B := Some (Some None) : metas).
     pose (u := Some None : metas).
@@ -553,8 +553,8 @@ Section TypedStructuralRule.
   Defined.
 
   Local Definition equality_flat_rule_is_well_typed
-      (r : equality_flat_rule Σ)
-    : TypedFlatRule.weakly_well_typed [<>] (equality_flat_rule _ r).
+      (r : @equality_flat_rule σ)
+    : TypedFlatRule.weakly_well_typed [<>] (equality_flat_rule r).
   Proof.
     destruct r as [[[[[[[ ] | ] | ] | ] | ] | ] | ]; cbn.
     - (* tyeq_refl: Γ |- A  // Γ |- A = A *)
@@ -575,7 +575,7 @@ Section TypedStructuralRule.
     - admit. (* tyeq_trans *)
     - admit. (* tmeq_refl *)
     - (* tmeq_sym :  |- a = b : A //  |- b = a : A *)
-      set (metas := flat_rule_metas (tmeq_sym_rule Σ)).
+      set (metas := flat_rule_metas (@tmeq_sym_rule σ)).
       set (A := Some (Some tt) : metas).
       set (a := Some None : metas).
       set (b := None : metas).
@@ -619,11 +619,12 @@ Section TypedStructuralRule.
     : is_well_typed (equality_instance _ r).
   Proof.
     destruct r as [r [Γ I]].
-    set (r_flat_rule := equality_flat_rule _ r).
+    set (r_flat_rule := equality_flat_rule r).
     intros c_presup.
-    apply (TypedFlatRule.closure_system_weakly_well_typed _ _
-           (equality_flat_rule_is_well_typed r) I).
-  Defined.
+    refine (TypedFlatRule.closure_system_weakly_well_typed _ _ _ _ _).
+    (* TODO: [TypedFlatRule.fmap_weakly_well_typed],
+     then apply to [equality_flat_rule_is_well_typed]. *)
+  Admitted.
 
   (** Putting the above components together, we obtain the main result:
       all structural rules are well-typed. *)

@@ -78,22 +78,6 @@ Section SignatureMaps.
       apply Metavariable.fmap1, f.
   Defined.
 
-  Local Definition fmap_closure_system 
-        {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-        (R : flat_rule Σ)
-    : Family.map_over (Closure.fmap (fmap_judgement_total f))
-        (closure_system R)
-        (closure_system (fmap f R)).
-  Proof.
-    apply Family.Build_map'.
-    intros [Γ I_R].
-    exists (Context.fmap f Γ ; fmap_instantiation f I_R).
-    apply Closure.rule_eq.
-    - simple refine (Family.eq _ _). { apply idpath. }
-      cbn. intros i. apply inverse, Judgement.fmap_instantiate.
-    - cbn. apply inverse, Judgement.fmap_instantiate.
-  Defined.
-
   Local Lemma fmap_idmap
       {Σ : signature σ} (R : flat_rule Σ)
     : fmap (Signature.idmap _) R = R.
@@ -130,6 +114,32 @@ Section SignatureMaps.
     - cbn.
       eapply concat. 2: { apply fmap_judgement_total_compose. }
       apply ap10, ap, Metavariable.fmap1_compose.
+  Defined.
+
+  Local Definition fmap_closure_system 
+        {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+        (R : flat_rule Σ)
+    : Family.map_over (Closure.fmap (fmap_judgement_total f))
+        (closure_system R)
+        (closure_system (fmap f R)).
+  Proof.
+    apply Family.Build_map'.
+    intros [Γ I_R].
+    exists (Context.fmap f Γ ; fmap_instantiation f I_R).
+    apply Closure.rule_eq.
+    - simple refine (Family.eq _ _). { apply idpath. }
+      cbn. intros i. apply inverse, Judgement.fmap_instantiate.
+    - cbn. apply inverse, Judgement.fmap_instantiate.
+  Defined.
+
+  Local Definition fmap_closure_system'
+    {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+    {R} {R'} (e : fmap f R = R') 
+  : Family.map_over (Closure.fmap (fmap_judgement_total f))
+      (closure_system R)
+      (closure_system R').
+  Proof.
+    destruct e. apply fmap_closure_system.
   Defined.
 
 End SignatureMaps.

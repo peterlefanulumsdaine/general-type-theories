@@ -393,6 +393,19 @@ Section FamilyMap.
     - intros [ x | x ]; cbn; apply map_over_commutes.
   Defined.
 
+  Local Definition empty_rect {X Y} {f : X -> Y} {K : family Y}
+    : map_over f (empty X) K.
+  Proof.
+    simple refine (_;_); intros [].
+  Defined.
+
+  Local Definition empty_rect_unique `{Funext} {X Y} (f : X -> Y)
+    {K} (ff : map_over f (empty X) K)
+    : ff = empty_rect.
+  Proof.
+    apply map_over_eq'; intros [].
+  Defined.
+
   Local Definition some {X} (K : family X) (x : X)
     : map K (adjoin K x).
   Proof.
