@@ -746,6 +746,23 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
 
   (** Interactions between [fmap] along signature maps,
    and taking presuppositions. *)
+
+  Local Definition fmap_presupposition_of_boundary `{Funext}
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {jf} (B : boundary Σ jf)
+      (p : presupposition_of_boundary B)
+    : fmap_judgement_total f (presupposition_of_boundary B p)
+    = presupposition_of_boundary (fmap_boundary f B) p.
+  Proof.
+    destruct jf as [ | hjf].
+    - (* context *) destruct p. (* no presups *)
+    - (* hyp *)
+      recursive_destruct hjf; recursive_destruct p; try apply idpath;
+        apply eq_by_expressions;
+        intros j; recursive_destruct j; apply idpath.
+  Defined.
+
+  (* TODO: this should be an iso! *)
   Local Definition presupposition_fmap_boundary `{Funext}
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {jf} (B : boundary Σ jf)
@@ -754,13 +771,34 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
         (Family.fmap (fmap_judgement_total f) (presupposition_of_boundary B)).
   Proof.
     exists idmap.
-    intros i.
-    destruct jf as [ | hjf].
-    - (* context *) destruct i. (* no presups *)
+    intros i; apply fmap_presupposition_of_boundary.
+  Defined.
+
+  Local Definition fmap_presupposition `{Funext}
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      (J : judgement_total Σ)
+      (p : presupposition J)
+    : fmap_judgement_total f (presupposition J p)
+    = presupposition (fmap_judgement_total f J) p.
+  Proof.
+    destruct J as [[ | hjf] J].
+    - (* context *) destruct p. (* no presups *)
     - (* hyp *)
-      recursive_destruct hjf; recursive_destruct i; try apply idpath;
+      recursive_destruct hjf; recursive_destruct p; try apply idpath;
         apply eq_by_expressions;
-        intros j; recursive_destruct j; apply idpath.
+        intros j; recursive_destruct j; apply idpath.    
+  Defined.
+
+  (* TODO: this should be an iso!  And consistentise with [presupposition_fmap_boundary]. *)
+  Local Definition fmap_presupposition_family `{Funext}
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      (J : judgement_total Σ)
+    : Family.map
+        (Family.fmap (fmap_judgement_total f) (presupposition J))
+        (presupposition (fmap_judgement_total f J)).
+  Proof.
+    exists (fun p => p).
+    intros p; apply inverse, fmap_presupposition.
   Defined.
 
 End Presupposition.

@@ -8,6 +8,7 @@ Require Import Typing.Context.
 Require Import Typing.Judgement.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
+Require Import Typing.UtilityDerivations.
 
 Section WellTyped.
 
@@ -34,6 +35,75 @@ Section WellTyped.
   *)
 
 End WellTyped.
+
+Section SignatureMaps.
+
+  Context {σ : shape_system} `{Funext}.
+
+  (* TODO: upstream; make an iso *)
+  Lemma fmap_family_bind
+      {B B'} (f : B -> B')
+      {A} (K : family A) (L : A -> family B)
+    : Family.map
+        (Family.fmap f (Family.bind K L))
+        (Family.bind K (fun a => Family.fmap f (L a))).
+  Proof.
+    apply Family.idmap.
+  Defined.
+
+  Lemma family_bind_fmap_mid
+      {A A'} (f : A -> A')
+      {B} (K : family A) (L : A' -> family B)
+    : Family.map
+        (Family.bind K (fun a => L (f a)))
+        (Family.bind (Family.fmap f K) L).
+  Proof.
+    apply Family.idmap.
+  Defined.
+
+  Lemma family_bind_fmap2
+      {A} (K : family A)
+      {B B'} (f : B -> B')
+      {L} {L'} (ff : forall a, Family.map_over f (L a) (L' a))
+    : Family.map_over f
+        (Family.bind K L)
+        (Family.bind K L').
+  Proof.
+    apply Family.Build_map'. intros [i j].
+    exists (i ; ff _ j).
+    apply (Family.map_over_commutes (ff _)).
+  Defined.
+
+  Local Definition fmap_weakly_well_typed
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {T} {T'} (ff : FlatTypeTheory.map_over f T T')
+      (r : flat_rule Σ) (r_wt : weakly_well_typed T r)
+    : weakly_well_typed T' (FlatRule.fmap f r).
+  Proof.
+    intros p.
+    refine (transport _ _ _).
+    - apply Judgement.fmap_presupposition.
+    - simple refine (Closure.derivation_fmap2 _
+        (FlatTypeTheory.fmap_derivation_in_theory_over _ (r_wt p))).
+      + cbn.
+        (* TODO: rewrite [Family.fmap_sum] as an iso, for better behaviour? *)
+        refine (transport (fun K => Family.map K _) _ _).
+        { apply inverse, Family.fmap_sum. }
+        apply (Family.fmap_of_sum (Family.idmap _)).
+        refine (Family.compose _ (fmap_family_bind _ _ _)).
+        refine (Family.compose (family_bind_fmap_mid _ _ _) _).
+        apply family_bind_fmap2. intros a.
+        apply Judgement.fmap_presupposition_family.
+      + (* TODO: the following could possibly be better abstracted in terms of the fibrational properties of flat type theory maps? *)
+        intros R.
+        refine (transport _ _
+          (FlatTypeTheory.fmap_flat_rule_derivation _ (ff R))).
+        refine (_ @ FlatRule.fmap_compose _ _ _).
+        refine ((FlatRule.fmap_compose _ _ _)^ @ _).
+        apply ap10, ap. apply Metavariable.include_symbol_after_map.
+  Defined.
+
+End SignatureMaps.
 
 Section Instantiations.
 
