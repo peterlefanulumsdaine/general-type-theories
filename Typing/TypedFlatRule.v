@@ -40,40 +40,6 @@ Section SignatureMaps.
 
   Context {σ : shape_system} `{Funext}.
 
-  (* TODO: upstream; make an iso *)
-  Lemma fmap_family_bind
-      {B B'} (f : B -> B')
-      {A} (K : family A) (L : A -> family B)
-    : Family.map
-        (Family.fmap f (Family.bind K L))
-        (Family.bind K (fun a => Family.fmap f (L a))).
-  Proof.
-    apply Family.idmap.
-  Defined.
-
-  Lemma family_bind_fmap_mid
-      {A A'} (f : A -> A')
-      {B} (K : family A) (L : A' -> family B)
-    : Family.map
-        (Family.bind K (fun a => L (f a)))
-        (Family.bind (Family.fmap f K) L).
-  Proof.
-    apply Family.idmap.
-  Defined.
-
-  Lemma family_bind_fmap2
-      {A} (K : family A)
-      {B B'} (f : B -> B')
-      {L} {L'} (ff : forall a, Family.map_over f (L a) (L' a))
-    : Family.map_over f
-        (Family.bind K L)
-        (Family.bind K L').
-  Proof.
-    apply Family.Build_map'. intros [i j].
-    exists (i ; ff _ j).
-    apply (Family.map_over_commutes (ff _)).
-  Defined.
-
   Local Definition fmap_weakly_well_typed
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {T} {T'} (ff : FlatTypeTheory.map_over f T T')
@@ -90,9 +56,9 @@ Section SignatureMaps.
         refine (transport (fun K => Family.map K _) _ _).
         { apply inverse, Family.fmap_sum. }
         apply (Family.fmap_of_sum (Family.idmap _)).
-        refine (Family.compose _ (fmap_family_bind _ _ _)).
-        refine (Family.compose (family_bind_fmap_mid _ _ _) _).
-        apply family_bind_fmap2. intros a.
+        refine (Family.compose _ (Family.fmap_bind _ _ _)).
+        refine (Family.compose (Family.bind_fmap_mid _ _ _) _).
+        apply Family.bind_fmap2. intros a.
         apply Judgement.fmap_presupposition_family.
       + (* TODO: the following could possibly be better abstracted in terms of the fibrational properties of flat type theory maps? *)
         intros R.

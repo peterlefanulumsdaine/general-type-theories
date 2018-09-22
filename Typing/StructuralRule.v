@@ -720,7 +720,7 @@ Section SignatureMaps.
        - then use [repeat apply Family.fmap_sum.] or similar?  *)
     apply Family.Build_map'.
     apply structural_rule_rect ; intros.
-    (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
+    (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
     - (* empty context *)
       exists (context_empty).
       cbn. apply Closure.rule_eq.
@@ -871,16 +871,32 @@ Section Instantiation.
 
   Context `{Funext} {σ : shape_system} {Σ : signature σ}.
 
+  (* TODO: the statement of this is wrong; see longer note following. *)
   Local Definition instantiate
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
-    : Family.map_over
-        (Closure.fmap (@Judgement.instantiate σ _ Σ Γ I))
+    : Closure.map_over (@Judgement.instantiate σ _ Σ Γ I)
         (structural_rule (Metavariable.extend Σ a))
         (structural_rule Σ).
   Proof.
-    (* Sketch: do this by hand for the ones given as closure conditions;
-     for the ones given as flat rules, use [instantiate_flat_rule_closure_system]. *)
-    (* Query: can this be unified with [StructuralRule.fmap] below? *)
-  Admitted. (* [StructuralRule.instantiate]: probably large, but self-contained. *)
+    (* TODO: As with [fmap] above, there really should be a more uniform way to do this. *)
+    unfold Closure.map_over.
+    refine (structural_rule_rect _ _ _ _ _ _ _ _).
+    - (* context_empty *) admit.
+    - (* context_extend *) admit.
+    - (* rename*) admit.
+    - (* subst_apply *) admit.
+    - (* subst_equal *) admit.
+    - (* variable_rule *) admit.
+    - (* equality_rule *) admit.
+  Admitted. (* [StructuralRule.instantiate]: statement currently wrong, not totally clear what the right statment should be.
+
+  The point:
+  - to say that “metavariable-instantiations of instances of the structural rules are derivable”, we need to make at least some assumptions on the inputs of the instantiation.  We need to know that the ambient context Г of the instantiation really is a context, in order to derive the instantiation of the “empty context” rule.  Do we need to add typing assumptions on the rest of the instantiation??  Hopefully not I guess?? 
+  - so the statement can’t exactly be a closure map; it needs to at least add a hypothesis (or nullary rule) for the context Г.
+  - also, it can nearly just work for each structural rule individually, but not quite: each structural rule instance should translate into another instance of the same rule, wrapped up in a bunch of variable-renaming steps, required for reassociating context extensions (due to the interaction of any context extensions occurring in the rule with the ambient context extension incurred by the instantiation).
+
+  Maybe clearest to split up into separate lemmas for the individual (groups of) structural rules, and then put those together afterwards.
+
+  In any case: think also about how this is/will be used, and what typing information is available there. *)
 
 End Instantiation.

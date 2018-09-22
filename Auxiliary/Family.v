@@ -446,4 +446,39 @@ Section FamilyMap.
     intros; apply idpath.
   Defined.
 
+  (* TODO: make an iso? *)
+  Lemma fmap_bind
+      {B B'} (f : B -> B')
+      {A} (K : family A) (L : A -> family B)
+    : map
+        (fmap f (bind K L))
+        (bind K (fun a => fmap f (L a))).
+  Proof.
+    apply idmap.
+  Defined.
+
+  (* TODO: make an iso? *)
+  Lemma bind_fmap_mid
+      {A A'} (f : A -> A')
+      {B} (K : family A) (L : A' -> family B)
+    : map
+        (bind K (fun a => L (f a)))
+        (bind (fmap f K) L).
+  Proof.
+    apply idmap.
+  Defined.
+
+  Lemma bind_fmap2
+      {A} (K : family A)
+      {B B'} (f : B -> B')
+      {L} {L'} (ff : forall a, map_over f (L a) (L' a))
+    : map_over f
+        (bind K L)
+        (bind K L').
+  Proof.
+    apply Build_map'. intros [i j].
+    exists (i ; ff _ j).
+    apply (map_over_commutes (ff _)).
+  Defined.
+
 End FamilyMap.
