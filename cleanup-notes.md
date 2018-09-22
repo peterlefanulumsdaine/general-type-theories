@@ -36,8 +36,25 @@ The old name was slightly nicer; but in terms of actual mathematical content and
 
 Previously, `Metavariable.v` came after `Judgement.v`, `Context.v`; now it comes before.  This allows definitions like instantiation of judgements to go with judgements, not with instantiation, fitting the general placement of functoriality-type statements.
 
-STILL TODO:
+# Still to do:
 
-- go through all files to generally get functoriality lemma placement consistent
+General functoriality/categorical conventions:
+
+- pass through all files to generally get functoriality lemma placement consistent
+- ditto to make functoriality section naming consistent
+- consider organisation of categorical structure in [FlatTypeTheory].
+
+Contexts and judgements:
+
+- in Context.v: perhaps make (simple) context maps over shape maps more explicit/methodical (and same with judgements)?
 - organisation in Judgement.v: quite complex, consider it!
 - refactor judgements so that shape parameter less deeply nested
+
+Utility derivations, flat rules, etc:
+
+- move utility derivations upstream of flat type theories (both UtilityDerivations.v and the section currently in FlatTypeTheory.v) 
+- export these utility derivs in a form that works immediately over any flat tt (coming from internal form working over just structural rules)
+
+Presented rules, type theories
+
+- try to unify the files for raw/typed versions of alg exts, presented rules, TT’s (there’s no obvious dependency reason not to).

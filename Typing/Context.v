@@ -7,13 +7,19 @@ Require Import Syntax.Expression.
 Require Import Syntax.Substitution.
 Require Import Syntax.Metavariable.
 
+(** Note: our treatment of contexts is slightly unorthodox in one respect.
+
+In a context such as [ x1 : A1, x2 : A2, x3 : A3 ], we do not record the ordering of the variables and types; and, as such, we do not say “A1 is a closed type expression, A2 is a type expression over {x1}, …”, but instead take A1, A2, A3 all as type expressions over the full set of variables {x1, x2, x3}.
+
+This reflects how contexts are *used* in derivations.  When working in a context, one doesn’t know (and doesn’t need to know) what order or earlier context the types were inserted in; one just extracts the variables and their types, as types in the current context itself.  The ordering/stratification is only needed for meta-theoretic constructions, and it can then be reconstructed from the typing derivation for the context. *)
+
 Section RawContext.
 
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  (* A raw context is a shape and a raw syntactic type expression for each position in
-     the shape. *)
+  (* A raw context consists of a shape, and a raw syntactic type expression
+     for each position of the shape. *)
   Record raw_context
     := { raw_context_carrier :> shape_carrier σ
        ; raw_context_type :> raw_context_carrier -> raw_type Σ raw_context_carrier

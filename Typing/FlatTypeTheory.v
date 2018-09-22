@@ -182,14 +182,20 @@ Section Instantiation.
   Context {σ : shape_system} {Σ : signature σ}.
 
   (** Given a flat rule [R] over a signature [Σ], an arity [a] specifying a
-   metavariable extension, and an instantiation [I] of [a] in [Σ] over some
-   context [Γ],
+  metavariable extension, and an instantiation [I] of [a] in [Σ] over some
+  context [Γ],
 
-   any instance of [R] over the extended signature [extend Σ a] gets translated
-   under [I] into an instance of [R] over [Σ], modulo renaming. 
+  any instance of [R] over the extended signature [extend Σ a] gets translated
+  under [I] into an instance of [R] over [Σ], modulo renaming. 
 
-   Note: this can’t be in [Typing.FlatRule], since it uses the structural rules. *)
-  Local Definition instantiate_flat_rule
+  Note: this can’t be in [Typing.FlatRule], since it uses the structural rules,
+  specifically the rule for renaming along shape isomorphisms.  Morally perhaps
+  that should be seen as more primitive than the other structural rules, and be
+  baked into the notion of derivations earlier, as e.g. “closure systems on a
+  groupoid”.  (Indeed, if the shape system is univalent then this rule _will_
+  come for free.)
+  *)
+  Local Definition instantiate_flat_rule_closure_system
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
       (r : flat_rule Σ)
     : Closure.map_over
@@ -201,7 +207,7 @@ Section Instantiation.
     (* The derivation essentially consists of the instance
      [(Context.instantiate _ I Δ
      ; instantiate_instantiation I J)]
-     wrapped in renamings along [shape_assoc].
+     of the same flat rule, wrapped in renamings along [shape_assoc].
      *)
     simple refine (Closure.deduce' _ _ _).
     { apply inl. apply StructuralRule.rename. cbn.
@@ -242,18 +248,19 @@ Section Instantiation.
   interpretation of [T] over [Σ + a] to the interpretation of [Σ]: any
   rule of [T] instantiated under [Σ + a] translates back under [I] to an
   instantiation over [Σ] of the same rule of [T]. *)
-  Local Definition instantiate
+  Local Definition instantiate_closure_system
       (T : flat_type_theory Σ)
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
-   : Closure.map_over (Judgement.instantiate Γ I)
-       (closure_system (fmap include_symbol T)) 
-       (closure_system T).
+    : Closure.map_over (Judgement.instantiate Γ I)
+        (closure_system (fmap include_symbol T)) 
+        (closure_system T).
   Proof.
     apply Closure.sum_rect.
     - apply Closure.map_from_family_map.
       refine (Family.compose_over (Family.inl) (StructuralRule.instantiate _)).
     - intros [r I_r].
-      refine (Closure.fmap_derivation _ (instantiate_flat_rule I (T r) I_r)).
+      refine (Closure.fmap_derivation _
+        (instantiate_flat_rule_closure_system I (T r) I_r)).
       clear I_r.
       apply Closure.map_from_family_map.
       apply (Family.fmap_of_sum (Family.idmap _)).
@@ -272,7 +279,7 @@ Section Instantiation.
                    (Judgement.instantiate _ I j).
   Proof.
     simple refine (Closure.fmap_derivation_over _ d).
-    apply instantiate.
+    apply instantiate_closure_system.
   Defined.
 
 End Instantiation.

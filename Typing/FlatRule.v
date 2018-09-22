@@ -133,3 +133,8 @@ Section SignatureMaps.
   Defined.
 
 End SignatureMaps.
+
+
+(** Instantiations?  The interaction between flat rules and instantiations — in particular, the interaction with [FlatRule.closure_system] — can’t be given here, since it depends on structural rules, at least on the rule for variable-renaming.  So see [Typing.FlatTypeTheory] downstream for lemmas on this, and the comments at  [instantiate_flat_rule_closure_system] there for a more detailed explanation. *)
+
+(* NOTE: what we could give here, and should if it’s needed anywhere, would be the “functoriality of flat rules under instantiations”: i.e. translating a flat rule over [Σ+a] to a flat rule over [Σ], using [Judgement.instantiate]. *)

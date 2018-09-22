@@ -677,31 +677,13 @@ Defined.
 
 End StructuralRuleInd.
 
-Section Instantiation.
-
-  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
-
-  Local Definition instantiate
-      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
-    : Family.map_over
-        (Closure.fmap (@Judgement.instantiate σ _ Σ Γ I))
-        (structural_rule (Metavariable.extend Σ a))
-        (structural_rule Σ).
-  Proof.
-    (* Sketch: do this by hand for the ones given as closure conditions;
-     for the ones given as flat rules, use [instantiate_flat_rule]. *)
-    (* Query: can this be unified with [StructuralRule.fmap] below? *)
-  Admitted. (* [instantiate]: probably large, but self-contained. *)
-
-End Instantiation.
-
-Section StructuralRuleMap.
+Section SignatureMaps.
 
   Context `{H : Funext}.
   Context {σ : shape_system}.
 
-  (** For a given signature map [f] from [Σ] to [Σ'], give a family map from
-     the structural rules of [Σ] to structural rules of [Σ']. *)
+  (** For a given signature map [f] from [Σ] to [Σ'],
+     the translations of structural rules of [Σ] are structural rules of [Σ']. *)
   Local Definition fmap
       {Σ Σ' : signature σ}
       (f : Signature.map Σ Σ')
@@ -865,6 +847,24 @@ Section StructuralRuleMap.
          if we defined the equality flat rules over the empty signature,
          and then put them in as their translations to arbitrary sigs. *)
         admit.
-  Admitted. (* [fmap], just the flat rule ones missing; small, self-contained *)
+  Admitted. (* [StructuralRule.fmap], just the flat rule ones missing; small, self-contained *)
 
-End StructuralRuleMap.
+End SignatureMaps.
+
+Section Instantiation.
+
+  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
+
+  Local Definition instantiate
+      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
+    : Family.map_over
+        (Closure.fmap (@Judgement.instantiate σ _ Σ Γ I))
+        (structural_rule (Metavariable.extend Σ a))
+        (structural_rule Σ).
+  Proof.
+    (* Sketch: do this by hand for the ones given as closure conditions;
+     for the ones given as flat rules, use [instantiate_flat_rule_closure_system]. *)
+    (* Query: can this be unified with [StructuralRule.fmap] below? *)
+  Admitted. (* [StructuralRule.instantiate]: probably large, but self-contained. *)
+
+End Instantiation.
