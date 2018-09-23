@@ -205,3 +205,27 @@ Local Lemma sum_rect {X} {Y} {f : X -> Y}
 Proof.
   intros [ x | x ]; [apply ff1 | apply ff2].
 Defined.
+
+(** Having a hypothesis of [x] is equivalent to having [x] as an axiom in the closure system. It’s sometimes convenient to have both these options available, and convert between them. *)
+Local Definition axiom {X} (x:X) : rule X
+  := {| premises := [<>]; conclusion := x |}.
+
+Local Definition axioms {X} (H : family X) : system X
+  := Family.fmap axiom H.
+
+Definition axioms_vs_hypotheses {X}
+    (T : system X) (H1 H2 : family X) (x:X)
+  : derivation T (H1 + H2) x
+  <-> derivation (T + axioms H1) H2 x.
+Proof.
+  split.
+  - intro d. refine (graft _ (fmap_derivation inl d) _).
+    intros [h1 | h2].
+    + refine (deduce (T+Family.fmap axiom H1) _ (Datatypes.inr h1) _).
+      intros [].
+    + exact (hypothesis _ _ h2).
+  - intros d; induction d as [ h2 | [r | h1] _ ds ].
+    + exact (hypothesis _ (_+_) (Datatypes.inr h2)).
+    + exact (deduce _ _ r ds). 
+    + exact (hypothesis _ (H1+_) (Datatypes.inl h1)).
+Defined.

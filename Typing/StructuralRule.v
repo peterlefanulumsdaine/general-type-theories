@@ -871,32 +871,30 @@ Section Instantiation.
 
   Context `{Funext} {σ : shape_system} {Σ : signature σ}.
 
-  (* TODO: the statement of this is wrong; see longer note following. *)
+  (** Structural rules in a metavariable extension,
+   translated under an instantiation,
+   can always be derived from structural rules over the base signature,
+   assuming the context of the instantiation is well-typed.
+
+  Essentially, any structural rule gets translated into an instance of the same structural rule, possibly wrapped in a variable-renaming to reassociate iterated context extensions *)
   Local Definition instantiate
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
     : Closure.map_over (@Judgement.instantiate σ _ Σ Γ I)
         (structural_rule (Metavariable.extend Σ a))
-        (structural_rule Σ).
+        (structural_rule Σ + Closure.axioms [< [! |- Γ !] >]).
   Proof.
     (* TODO: As with [fmap] above, there really should be a more uniform way to do this. *)
     unfold Closure.map_over.
     refine (structural_rule_rect _ _ _ _ _ _ _ _).
-    - (* context_empty *) admit.
+    - (* context_empty *)
+      cbn. apply Judgement.canonicalise. 
+      refine (transport _ (idpath _ : _ = [! |- _ !]) _); cbn.
+      admit. (* TODO: need utility derivations. *)
     - (* context_extend *) admit.
     - (* rename*) admit.
     - (* subst_apply *) admit.
     - (* subst_equal *) admit.
     - (* variable_rule *) admit.
     - (* equality_rule *) admit.
-  Admitted. (* [StructuralRule.instantiate]: statement currently wrong, not totally clear what the right statment should be.
-
-  The point:
-  - to say that “metavariable-instantiations of instances of the structural rules are derivable”, we need to make at least some assumptions on the inputs of the instantiation.  We need to know that the ambient context Г of the instantiation really is a context, in order to derive the instantiation of the “empty context” rule.  Do we need to add typing assumptions on the rest of the instantiation??  Hopefully not I guess?? 
-  - so the statement can’t exactly be a closure map; it needs to at least add a hypothesis (or nullary rule) for the context Г.
-  - also, it can nearly just work for each structural rule individually, but not quite: each structural rule instance should translate into another instance of the same rule, wrapped up in a bunch of variable-renaming steps, required for reassociating context extensions (due to the interaction of any context extensions occurring in the rule with the ambient context extension incurred by the instantiation).
-
-  Maybe clearest to split up into separate lemmas for the individual (groups of) structural rules, and then put those together afterwards.
-
-  In any case: think also about how this is/will be used, and what typing information is available there. *)
-
+  Admitted.
 End Instantiation.
