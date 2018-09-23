@@ -171,6 +171,7 @@ Defined.
 (** Substitution respects *equality* of context morphisms:
 
   Γ' |- f(x) = g(x) : A   [for each x in Γ, A := type of x in Γ]
+  ⊢ Γ'     [not a presupposition of the previous premise if Γ is empty]
   Γ |- J   [for J any hypothetical judgement]
   --------------------
   Γ' |- f^*J = g^*J  [ for J any object judgement ]

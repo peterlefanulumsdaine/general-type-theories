@@ -42,6 +42,7 @@ General functoriality/categorical conventions:
 
 - pass through all files to generally get functoriality lemma placement consistent
 - ditto to make functoriality section naming consistent
+- specifically: reorganise [Auxiliary.Family], [Auxiliary.Closure] to put maps first, so functoriality can go with constructions!
 - consider organisation of categorical structure in [FlatTypeTheory].
 
 Contexts and judgements:
@@ -52,7 +53,7 @@ Contexts and judgements:
 
 Utility derivations, flat rules, etc:
 
-- fix the errors related to omitting typing assumptions when instantiating derivations (notably in [FlatRule.closure_system])!
+- fix the errors related to omitting typing assumptions when instantiating derivations.
 - move utility derivations upstream of flat type theories (both UtilityDerivations.v and the section currently in FlatTypeTheory.v) 
 - export these utility derivs in a form that works immediately over any flat tt (coming from internal form working over just structural rules)
 - try out making FlatTypeTheory.closure_system a coercion??

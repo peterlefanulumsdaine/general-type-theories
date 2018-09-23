@@ -50,6 +50,7 @@ Section FlatRule.
     intros [Γ I].
     split.
     - (* premises *)
+      refine ([< [! |- Γ !] >] + _).
       refine (Family.fmap _ (flat_rule_premise R)).
       apply (Judgement.instantiate _ I).
     - apply (Judgement.instantiate _ I).
@@ -128,7 +129,9 @@ Section SignatureMaps.
     exists (Context.fmap f Γ ; fmap_instantiation f I_R).
     apply Closure.rule_eq.
     - simple refine (Family.eq _ _). { apply idpath. }
-      cbn. intros i. apply inverse, Judgement.fmap_instantiate.
+      cbn. intros [[] | i].
+      + apply idpath.
+      + apply inverse, Judgement.fmap_instantiate.
     - cbn. apply inverse, Judgement.fmap_instantiate.
   Defined.
 

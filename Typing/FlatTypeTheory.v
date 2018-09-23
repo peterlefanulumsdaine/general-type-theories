@@ -166,11 +166,15 @@ Section UtilityDerivations.
         apply (ap (fun f => rename f _)).
         apply path_forall; intros j.
         refine (coproduct_comp_inj2 _).
-    - cbn. intros p.
-      simple refine (hypothesis_modulo_rename _ _ _).
-      + exact p.
-      + apply equiv_inverse, shape_sum_empty_inr.
-      + cbn. apply inverse, Judgement.unit_instantiate.
+    - cbn. intros [[] | p].
+      + simple refine (Closure.deduce' _ _ _). 
+        * apply inl, context_empty.
+        * apply idpath.
+        * intros [].
+      + simple refine (hypothesis_modulo_rename _ _ _).
+        * exact p.
+        * apply equiv_inverse, shape_sum_empty_inr.
+        * cbn. apply inverse, Judgement.unit_instantiate.
   Defined.
 
 End UtilityDerivations.
@@ -225,22 +229,25 @@ Section Instantiation.
       exact (instantiate_instantiation I J).
     }
     { apply Judgement.instantiate_instantiate. }
-    cbn. intros p.
-    simple refine (Closure.deduce' _ _ _).
-    { apply inl, StructuralRule.rename. cbn.
-      exists
-        (Judgement.instantiate Γ I
-          (Judgement.instantiate Δ J
-            (fmap_judgement_total
-              (Metavariable.fmap1 include_symbol _)
-              (flat_rule_premise r p)))).
-      refine (_ ; (equiv_inverse (shape_assoc _ _ _))).
-    }
-    { apply inverse, Judgement.instantiate_instantiate. }
-    intros [].
-    simple refine (Closure.hypothesis' _ _).
-    { exact p. }
-    { apply idpath. }
+    cbn. intros [[] | p].
+    - simple refine (Closure.hypothesis' _ _).
+      + apply inl, tt.
+      + cbn. apply idpath.
+    - simple refine (Closure.deduce' _ _ _).
+      { apply inl, StructuralRule.rename. cbn.
+        exists
+          (Judgement.instantiate Γ I
+            (Judgement.instantiate Δ J
+              (fmap_judgement_total
+                (Metavariable.fmap1 include_symbol _)
+                (flat_rule_premise r p)))).
+        refine (_ ; (equiv_inverse (shape_assoc _ _ _))).
+      }
+      { apply inverse, Judgement.instantiate_instantiate. }
+      intros [].
+      simple refine (Closure.hypothesis' _ _).
+      { exact (inr p). }
+      { apply idpath. }
   Defined.
 
   (** For any flat type theory [T], an an instantiation [I] from a metavariable 

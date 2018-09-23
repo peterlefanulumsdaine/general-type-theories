@@ -114,7 +114,6 @@ Section TypedStructuralRule.
       (* Aim here: apply the same substitution rule, with the same substition,
          but with target the presupposition [p] of the original target. *)
       + apply inl, subst_apply.
-        (* TODO: give access functions for locating the structural rules! *)
         exists Γ, Γ', f.
         exists (form_object (Judgement.boundary_slot _ p)).
         exact (hypothetical_part (presupposition _ p')).
@@ -233,107 +232,163 @@ Section TypedStructuralRule.
           apply Judgement.canonicalise.
   (* We want to apply [term_convert], but its conclusion is not exactly
    the judgement we want: its conclusion is t*)
+                  (* TODO: rebullet *)
+
           apply derive_from_reindexing_to_empty_sum.
-          (* TODO: rebullet/reindent the following subproof.
-           (not done for now, to avoid merge conflicts) *)
-            simple refine (Closure.deduce' _ _ _).
+          simple refine (Closure.deduce' _ _ _).
          (*      Γ' |- g^*a : g^*A    Γ' |- g^*A = f^*A  
                ------------------------------------------ 
                         Γ' |- g^*a : f^*A                    *)
-            ++ apply inl, term_convert.
-              exists Γ'. cbn.
-              intros i; recursive_destruct i; cbn.
-              ** refine (rename _ (substitute g A)). (* [g^*A] *)
-                apply shape_sum_empty_inl.
-              ** refine (rename _ (substitute f A)). (* [f^*A] *)
-                apply shape_sum_empty_inl.
-              ** refine (rename _ (substitute g a)). (* [g^*a] *)
-                apply shape_sum_empty_inl.
-            ++ apply Judgement.eq_by_expressions.
-               ** apply (coproduct_rect shape_is_sum).
-                --- intros i. cbn.
-                  eapply concat.
-                  { refine (coproduct_comp_inj1 _). }
-                  apply ap, ap, inverse.
-                  apply (@eissect _ _ _ (shape_sum_empty_inl_is_equiv _)).
-                --- apply (empty_rect _ shape_is_empty).
-              ** intros i; recursive_destruct i; cbn.
-                --- eapply concat.
-                  2: { apply substitute_idmap. }
-                  apply ap10; refine (apD10 _ _); apply ap.
-                  apply path_forall.
-                  refine (coproduct_rect shape_is_sum _ _ _).
-                  2: { refine (empty_rect _ shape_is_empty _). }
-                  intros i. refine (coproduct_comp_inj1 _).
-                --- eapply concat.
-                  2: { apply substitute_idmap. }
-                  apply ap10; refine (apD10 _ _); apply ap.
-                  apply path_forall.
-                  refine (coproduct_rect shape_is_sum _ _ _).
-                  2: { refine (empty_rect _ shape_is_empty _). }
-                  intros i. refine (coproduct_comp_inj1 _).
+          -- apply inl, term_convert.
+            exists Γ'. cbn.
+            intros i; recursive_destruct i; cbn.
+            ++ refine (rename _ (substitute g A)). (* [g^*A] *)
+              apply shape_sum_empty_inl.
+            ++ refine (rename _ (substitute f A)). (* [f^*A] *)
+              apply shape_sum_empty_inl.
+            ++ refine (rename _ (substitute g a)). (* [g^*a] *)
+              apply shape_sum_empty_inl.
+          -- apply Judgement.eq_by_expressions.
+            ++ apply (coproduct_rect shape_is_sum).
+              ** intros i. cbn.
+                eapply concat.
+                { refine (coproduct_comp_inj1 _). }
+                apply ap, ap, inverse.
+                apply (@eissect _ _ _ (shape_sum_empty_inl_is_equiv _)).
+              ** apply (empty_rect _ shape_is_empty).
+            ++ intros i; recursive_destruct i; cbn.
+              ** eapply concat.
+                2: { apply substitute_idmap. }
+                apply ap10; refine (apD10 _ _); apply ap.
+                apply path_forall.
+                refine (coproduct_rect shape_is_sum _ _ _).
+                2: { refine (empty_rect _ shape_is_empty _). }
+                intros i. refine (coproduct_comp_inj1 _).
+              ** eapply concat.
+                2: { apply substitute_idmap. }
+                apply ap10; refine (apD10 _ _); apply ap.
+                apply path_forall.
+                refine (coproduct_rect shape_is_sum _ _ _).
+                2: { refine (empty_rect _ shape_is_empty _). }
+                intros i. refine (coproduct_comp_inj1 _).
    (* TODO: all the above gunk is from a single problem: the instantiation of a rule with empty local contexts doesn’t give you quite what you think it should!
    [derivation_from_reindexing_to_empty_sum] and [derivation_of_reindexing_to_empty_sum] help a bit, but still it’s pretty nasty.  How can we improve this?? *)
-            ++ intros i; recursive_destruct i.
-              ** (* [ Γ' |- g^*A type ] *)
-                apply derive_judgement_over_empty_sum.
-                simple refine (Closure.deduce' _ _ _).
-                { apply inl, subst_apply.
-                  exists Γ, Γ', g, (form_object class_type).
-                  intros [ [] | ]. exact A.
-                }
-                { apply Judgement.eq_by_expressions.
-                  - intros i. apply inverse.
-                    eapply concat.
-                    { apply ap. refine (coproduct_comp_inj1 _). }
-                    eapply concat. 2: { apply rename_idmap. }
-                    eapply concat. 
+          -- intros i; recursive_destruct i.
+            ++ (* [ |- Γ' ] *)
+              simple refine (Closure.hypothesis' _ _).
+              ** apply inl. apply Some, None.
+              ** apply idpath.
+            ++ (* [ Γ' |- g^*A type ] *)
+              apply derive_judgement_over_empty_sum.
+              simple refine (Closure.deduce' _ _ _).
+              { apply inl, subst_apply.
+                exists Γ, Γ', g, (form_object class_type).
+                intros [ [] | ]. exact A.
+              }
+              { apply Judgement.eq_by_expressions.
+                - intros i. apply inverse.
+                  eapply concat.
+                  { apply ap. refine (coproduct_comp_inj1 _). }
+                  eapply concat. 2: { apply rename_idmap. }
+                  eapply concat. 
+                  { apply inverse, rename_comp. }
+                  apply ap10. refine (apD10 _ _). apply ap.
+                  apply path_forall. refine (eissect _).
+                - intros i; recursive_destruct i. apply inverse.
+                  eapply concat.
+                  + cbn. apply ap. refine (_ @ substitute_idmap _).
+                    apply ap10. refine (apD10 _ _). apply ap, path_forall.
+                    refine (coproduct_rect shape_is_sum _ _ _).
+                    * intros x. refine (coproduct_comp_inj1 _).
+                    * apply (empty_rect _ shape_is_empty).
+                  + eapply concat.
                     { apply inverse, rename_comp. }
-                    apply ap10. refine (apD10 _ _). apply ap.
-                    apply path_forall. refine (eissect _).
-                  - intros i; recursive_destruct i. apply inverse.
-                    eapply concat.
-                    + cbn. apply ap. refine (_ @ substitute_idmap _).
-                      apply ap10. refine (apD10 _ _). apply ap, path_forall.
-                      refine (coproduct_rect shape_is_sum _ _ _).
-                      * intros x. refine (coproduct_comp_inj1 _).
-                      * apply (empty_rect _ shape_is_empty).
-                    + eapply concat.
-                      { apply inverse, rename_comp. }
-                      eapply concat. 2: { apply rename_idmap. }
-                      apply ap10. refine (apD10 _ _). apply ap, path_forall. 
-                      refine (@eissect _ _ _ (shape_sum_empty_inl_is_equiv _)).
-                }
-                intros [ [ x | ] | ].
-                --- (* premise: [g] is a context map *)
-                  simple refine (Closure.hypothesis' _ _).
-                  +++ cbn. apply inl, Some, Some, inl, inr, x.
-                  +++ apply idpath.
-                --- (* premise: [Γ'] is a context *)
-                  simple refine (Closure.hypothesis' _ _).
-                  +++ exact (inl (Some None)).
-                  +++ apply idpath.
-                --- (* premise: [Γ |- a : A type ]  *)
-                  simple refine (Closure.hypothesis' _ _).
-                  +++ apply inr. (* use a presupposition… *)
-                      exists None. (* …of the original target judgement… *)
-                      apply Some, the_term_type.
-                  +++ apply Judgement.eq_by_eta, idpath.
-              ** (* [ Γ' |- f^*A type ] *)
-                refine (Closure.graft' _ _ _).
-                { simple refine (derivation_of_reindexing_to_empty_sum _).
-                  - apply form_object, class_type.
-                  - exists Γ'.
-                    intros i. cbn in i. recursive_destruct i.
-                    exact (substitute f A). }
-                { apply Judgement.eq_by_expressions.
-                  - refine (coproduct_rect shape_is_sum _ _ _).
-                    2: { refine (empty_rect _ shape_is_empty _). }
-                    intros i. apply inverse.
-                    eapply concat. { refine (coproduct_comp_inj1 _). }
-                    apply ap, ap, inverse. refine (coproduct_comp_inj1 _).
-                  - intros i; recursive_destruct i.
-                    cbn. apply inverse.
+                    eapply concat. 2: { apply rename_idmap. }
+                    apply ap10. refine (apD10 _ _). apply ap, path_forall. 
+                    refine (@eissect _ _ _ (shape_sum_empty_inl_is_equiv _)).
+              }
+              intros [ [ x | ] | ].
+              ** (* premise: [g] is a context map *)
+                simple refine (Closure.hypothesis' _ _).
+                --- cbn. apply inl, Some, Some, inl, inr, x.
+                --- apply idpath.
+              ** (* premise: [Γ'] is a context *)
+                simple refine (Closure.hypothesis' _ _).
+                --- exact (inl (Some None)).
+                --- apply idpath.
+              ** (* premise: [Γ |- a : A type ]  *)
+                simple refine (Closure.hypothesis' _ _).
+                --- apply inr. (* use a presupposition… *)
+                    exists None. (* …of the original target judgement… *)
+                    apply Some, the_term_type.
+                --- apply Judgement.eq_by_eta, idpath.
+            ++ (* [ Γ' |- f^*A type ] *)
+              refine (Closure.graft' _ _ _).
+              { simple refine (derivation_of_reindexing_to_empty_sum _).
+                - apply form_object, class_type.
+                - exists Γ'.
+                  intros i. cbn in i. recursive_destruct i.
+                  exact (substitute f A). }
+              { apply Judgement.eq_by_expressions.
+                - refine (coproduct_rect shape_is_sum _ _ _).
+                  2: { refine (empty_rect _ shape_is_empty _). }
+                  intros i. apply inverse.
+                  eapply concat. { refine (coproduct_comp_inj1 _). }
+                  apply ap, ap, inverse. refine (coproduct_comp_inj1 _).
+                - intros i; recursive_destruct i.
+                  cbn. apply inverse.
+                  eapply concat.
+                  2: { apply substitute_idmap. }
+                  apply ap10; refine (apD10 _ _); apply ap.
+                  apply path_forall.
+                  refine (coproduct_rect shape_is_sum _ _ _).
+                  2: { refine (empty_rect _ shape_is_empty _). }
+                  intros i. refine (coproduct_comp_inj1 _).
+              }
+              intros [].
+              {
+                transparent assert (instance : (subst_apply_instance Σ)).
+                { exists Γ, Γ', f, (form_object class_type).
+                  intros i. recursive_destruct i. exact A. }
+                
+                simple refine (Closure.deduce'
+                                 (inl (subst_apply instance) : (_ + _)%family)
+                                 _ _).
+                - apply Judgement.eq_by_eta, idpath.
+                - intros premise.
+                  pose premise as p.
+                  destruct premise as [ [ x | ] | ]; rename p into premise;
+                    fold premise; simpl (_ premise).
+                  + admit.    (* the variables have types *)
+                  + admit.    (* Γ' is a context *)
+                  + admit.    (* Γ ⊢ A *)
+              }
+
+  (* This should be almost identical to the preceding derivation of
+     [ Γ' |- f^*A type ]. *)
+            ++ (* [ Γ' |- g^*A = f^*A ] *)
+              admit.
+  (* This should be quite similar to the derivation of [ Γ' |- g^*A = f^*A ]
+   that follows it: essentially two steps, first using
+   [derivation_of_reindexing_to_empty_sum], and then using [subst_equal]. *)
+            ++ (* Γ' |- g^*a : g^*A *)
+              refine (Closure.graft' _ _ _).
+              { simple refine (derivation_of_reindexing_to_empty_sum _).
+                - apply form_object, class_term.
+                - exists Γ'.
+                  intros i; recursive_destruct i.
+                  + exact (substitute g A).
+                  + exact (substitute g a). }
+              { apply Judgement.eq_by_expressions.
+                (* TODO: can we find lemmas/tactics that simplify
+                   something like this? *)
+                - refine (coproduct_rect shape_is_sum _ _ _).
+                  2: { refine (empty_rect _ shape_is_empty _). }
+                  intros i. apply inverse.
+                  eapply concat. { refine (coproduct_comp_inj1 _). }
+                  apply ap, ap, inverse. refine (coproduct_comp_inj1 _).
+                - intros i; recursive_destruct i.
+                  + cbn. apply inverse.
                     eapply concat.
                     2: { apply substitute_idmap. }
                     apply ap10; refine (apD10 _ _); apply ap.
@@ -341,87 +396,35 @@ Section TypedStructuralRule.
                     refine (coproduct_rect shape_is_sum _ _ _).
                     2: { refine (empty_rect _ shape_is_empty _). }
                     intros i. refine (coproduct_comp_inj1 _).
-                }
-                intros [].
-                {
-                  transparent assert (instance : (subst_apply_instance Σ)).
-                  { exists Γ, Γ', f, (form_object class_type).
-                    intros i. recursive_destruct i. exact A. }
-
-                  simple refine (Closure.deduce'
-                                   (inl (subst_apply instance) : (_ + _)%family)
-                                   _ _).
-                  - apply Judgement.eq_by_eta, idpath.
-                  - intros premise.
-                    pose premise as p.
-                    destruct premise as [ [ x | ] | ]; rename p into premise;
-                      fold premise; simpl (_ premise).
-                    + admit.    (* the variables have types *)
-                    + admit.    (* Γ' is a context *)
-                    + admit.    (* Γ ⊢ A *)
-                }
-
-  (* This should be almost identical to the preceding derivation of
-     [ Γ' |- f^*A type ]. *)
-              ** (* [ Γ' |- g^*A = f^*A ] *)
-                admit.
-  (* This should be quite similar to the derivation of [ Γ' |- g^*A = f^*A ]
-   that follows it: essentially two steps, first using
-   [derivation_of_reindexing_to_empty_sum], and then using [subst_equal]. *)
-              ** (* Γ' |- g^*a : g^*A *)
-                refine (Closure.graft' _ _ _).
-                { simple refine (derivation_of_reindexing_to_empty_sum _).
-                  - apply form_object, class_term.
-                  - exists Γ'.
-                    intros i; recursive_destruct i.
-                    + exact (substitute g A).
-                    + exact (substitute g a). }
-                { apply Judgement.eq_by_expressions.
-                  (* TODO: can we find lemmas/tactics that simplify
-                     something like this? *)
-                  - refine (coproduct_rect shape_is_sum _ _ _).
+                  + cbn. apply inverse.
+                    eapply concat.
+                    2: { apply substitute_idmap. }
+                    apply ap10; refine (apD10 _ _); apply ap.
+                    apply path_forall.
+                    refine (coproduct_rect shape_is_sum _ _ _).
                     2: { refine (empty_rect _ shape_is_empty _). }
-                    intros i. apply inverse.
-                    eapply concat. { refine (coproduct_comp_inj1 _). }
-                    apply ap, ap, inverse. refine (coproduct_comp_inj1 _).
-                  - intros i; recursive_destruct i.
-                    + cbn. apply inverse.
-                      eapply concat.
-                      2: { apply substitute_idmap. }
-                      apply ap10; refine (apD10 _ _); apply ap.
-                      apply path_forall.
-                      refine (coproduct_rect shape_is_sum _ _ _).
-                      2: { refine (empty_rect _ shape_is_empty _). }
-                      intros i. refine (coproduct_comp_inj1 _).
-                    + cbn. apply inverse.
-                      eapply concat.
-                      2: { apply substitute_idmap. }
-                      apply ap10; refine (apD10 _ _); apply ap.
-                      apply path_forall.
-                      refine (coproduct_rect shape_is_sum _ _ _).
-                      2: { refine (empty_rect _ shape_is_empty _). }
-                      intros i. refine (coproduct_comp_inj1 _).
-                }
-                intros [].
-                simple refine (Closure.deduce' _ _ _).
-                --- apply inl, subst_apply. (* subst-apply rule:
-                                          substitute g into Γ |- a : A *)
-                  exists Γ, Γ', g. refine (form_object class_term; _).
-                  exact J.
-                --- apply Judgement.eq_by_eta. apply idpath.
-                --- intros [ [ x | ] | ].
-                  +++ (* premise: [g] is a context map *)
-                    simple refine (Closure.hypothesis' _ _).
-                    *** cbn. apply inl, Some, Some, inl, inr, x.
-                    *** apply idpath.
-                  +++ (* premise: [Γ'] is a context *)
-                    simple refine (Closure.hypothesis' _ _).
-                    *** exact (inl (Some None)).
-                    *** apply idpath.
-                  +++ (* premise: [Γ |- a : A type ]  *)
-                    simple refine (Closure.hypothesis' _ _).
-                    *** exact (inl None).
-                    *** apply idpath.
+                    intros i. refine (coproduct_comp_inj1 _).
+              }
+              intros [].
+              simple refine (Closure.deduce' _ _ _).
+              ** apply inl, subst_apply. (* subst-apply rule:
+                                        substitute g into Γ |- a : A *)
+                 exists Γ, Γ', g. refine (form_object class_term; _).
+                 exact J.
+              ** apply Judgement.eq_by_eta. apply idpath.
+              ** intros [ [ x | ] | ].
+                 --- (* premise: [g] is a context map *)
+                   simple refine (Closure.hypothesis' _ _).
+                   +++ cbn. apply inl, Some, Some, inl, inr, x.
+                   +++ apply idpath.
+                 --- (* premise: [Γ'] is a context *)
+                   simple refine (Closure.hypothesis' _ _).
+                   +++ exact (inl (Some None)).
+                   +++ apply idpath.
+                 --- (* premise: [Γ |- a : A type ]  *)
+                   simple refine (Closure.hypothesis' _ _).
+                   +++ exact (inl None).
+                   +++ apply idpath.
     - (* [p] the context presupposition [Γ'] *)
       simple refine (Closure.hypothesis' _ _).
       + exact (inl (Some None)).
@@ -496,10 +499,16 @@ Section TypedStructuralRule.
             exact (empty_rect _ shape_is_empty _).
         * intros [ [] | ]; cbn; apply ap, path_forall;
             exact (empty_rect _ shape_is_empty _).
-      + intros i. set (i_keep := i).
+      + intros [[] | i].
+        { cbn. simple refine (Closure.deduce' _ _ _).
+          - apply inl, context_empty.
+          - apply idpath.
+          - intros [].
+        }
    (* Note: the following chain, though slow, is substantially faster than I (PLL)
    was able to get any other way. To compare this with solving the goals
    individually, see commit f648e3e. *)
+        set (i_keep := i). cbn in i.
         destruct i as [[[[] | ] | ] | ];
           apply derive_judgement_over_empty_sum;
           (simple refine (Closure.hypothesis' _ _);
@@ -524,7 +533,13 @@ Section TypedStructuralRule.
             exact (empty_rect _ shape_is_empty _).
         * intros [ [] | ]; cbn; apply ap, path_forall;
             exact (empty_rect _ shape_is_empty _).
-      + intros i. set (i_keep := i).
+      + intros [[] | i].
+        { cbn. simple refine (Closure.deduce' _ _ _).
+          - apply inl, context_empty.
+          - apply idpath.
+          - intros [].
+        }
+        set (i_keep := i).
         destruct i as [[[[] | ] | ] | ];
           apply derive_judgement_over_empty_sum;
           try (simple refine (Closure.hypothesis' _ _);
