@@ -247,7 +247,15 @@ Section Instantiation.
   extension [Σ + a] of its signature, there is a closure system map from the
   interpretation of [T] over [Σ + a] to the interpretation of [Σ]: any
   rule of [T] instantiated under [Σ + a] translates back under [I] to an
-  instantiation over [Σ] of the same rule of [T]. *)
+  instantiation over [Σ] of the same rule of [T],
+  modulo some context-reassociation isomorphisms. *)
+  (* TODO: this statement is not currently right!
+  The _empty context_ rule in the metavariable extension gets instantiated to [ |– Г cxt ] (up to iso), and so to translate derivations from the extension, this will need to be added as a hypothesis.  So there isn’t quite a closure system map…
+
+  How to account for this?
+  (a) generalise the notion of “closure system maps” to allow adding hyps
+  (b) say that the target of this is “closure_system T, plus a rule giving the required hypothesis”, and then give lemma to convert between derivations over a closure-system-plus-hyp-rules and over the closure system itself but with extra hypotheses
+  (c) add hypothesis in theorem that [ |– Г cxt ] holds.  This would be the simplest change here, but will it suffice in applications? *) 
   Local Definition instantiate_closure_system
       (T : flat_type_theory Σ)
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
@@ -271,9 +279,10 @@ Section Instantiation.
       (* TODO: the following could be a lemma about [Family.bind]? *)
       apply Family.Build_map'.
       intros I_r. exists (r;I_r). apply idpath.
-  Admitted.
+  Admitted. (* [FlatTypeTheory.instantiate_closure_system]: statement needs fixing. *)
 
   (** Instantiate derivation [d] with metavariable instantiation [I]. *)
+  (* Note: like [instantiate_closure_system] above, this is currently mis-stated: needs adding a hypothesis [ |– Г cxt ].  (That’s all that needs adding, though: typing hypothesis for the other metavariables will already be supplied by (the instantiation of) [hyps]. *)
   Local Definition instantiate_derivation
       (T : flat_type_theory Σ)
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
