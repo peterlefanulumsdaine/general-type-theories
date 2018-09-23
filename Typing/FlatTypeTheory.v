@@ -382,26 +382,22 @@ Section Maps.
       apply StructuralRule.fmap.
     }
     (* Logical rules *)
-    intros [r [Γ I]]. cbn.
-    (* TODO: BIG problem upstream: the definition of [FlatRule.closure_system] is wrong! Each closure condition arising as an instantiation of a flat rule should also have the premise that the context of the instantiation is well-typed.
-
-    Following is an old version of the proof, can’t be updated until the problem upstream is fixed. *)
-(*  
+    intros [r [Γ I]].
+    assert (d := @instantiate_derivation _ _ _ _ (Context.fmap f Γ)
+                  _ (fmap_instantiation f I) _ _ (ff r)).
     (* From here, want to get goal into a form where it can be obtained
-     by [instantiate_derivation]. *)
+    from [d]. *)
     eapply transport. { apply inverse, Judgement.fmap_instantiate. }
-    eapply (transport (fun H => derivation _ H _)).
-    { apply inverse.
-      eapply concat. { apply inverse, Family.fmap_compose. }
-      eapply concat.
-      { refine (ap10 _ _). apply ap, path_forall; intros i.
-        apply Judgement.fmap_instantiate. }
-      apply Family.fmap_compose.
-    }
-    apply instantiate_derivation.
-    apply ff.
-*)
-  Admitted. (* [fmap_closure_system_over]. TODO: fix this once [FlatRule.closure_system] fixed! *)
+    refine (Closure.derivation_fmap2 _ d).
+    refine (transport _ (Family.fmap_sum _ _ _)^ _).
+    refine (Family.compose (Family.sum_symmetry _ _) _).
+    apply Family.fmap_of_sum.
+    2: { apply Family.idmap. }
+    refine (transport _ _ (Family.idmap _)).
+    simple refine (Family.eq _ _). { apply idpath. }
+    intros i. cbn.
+    apply inverse, Judgement.fmap_instantiate.
+  Defined.
 
   Local Definition fmap_closure_system
       {Σ : signature σ} {T T' : flat_type_theory Σ} (f : map T T')
