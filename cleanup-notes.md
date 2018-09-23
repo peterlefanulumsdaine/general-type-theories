@@ -52,8 +52,10 @@ Contexts and judgements:
 
 Utility derivations, flat rules, etc:
 
+- fix the errors related to omitting typing assumptions when instantiating derivations (notably in [FlatRule.closure_system])!
 - move utility derivations upstream of flat type theories (both UtilityDerivations.v and the section currently in FlatTypeTheory.v) 
 - export these utility derivs in a form that works immediately over any flat tt (coming from internal form working over just structural rules)
+- try out making FlatTypeTheory.closure_system a coercion??
 
 Presented rules, type theories
 

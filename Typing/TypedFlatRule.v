@@ -94,6 +94,7 @@ Section Instantiations.
       eapply transport. 
       { apply instantiate_presupposition. }
       refine (Closure.graft _ _ _).
+      (* TODO: following can’t be fixed 
       + refine (FlatTypeTheory.instantiate_derivation _ _ _ _).
         apply D_r.
       + intros [ i | [ i i_presup]]. 
@@ -103,7 +104,8 @@ Section Instantiations.
         * simple refine (Closure.hypothesis' _ _).
           -- refine (inr (i;_)). exact i_presup.
           -- apply inverse, instantiate_presupposition.
-  Defined.
+      *) 
+  Admitted. (* [closure_system_weakly_well_typed].  TODO: fix this once [closure_system] fixed! *)
 
 
 End Instantiations.

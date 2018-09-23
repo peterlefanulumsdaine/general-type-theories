@@ -393,6 +393,12 @@ Section FamilyMap.
     - intros [ x | x ]; cbn; apply map_over_commutes.
   Defined.
 
+  Local Definition sum_symmetry {X} (K L : family X)
+    : map (K + L) (L + K).
+  Proof.
+    apply sum_rect; [ apply inr | apply inl ].
+  Defined.
+
   Local Definition empty_rect {X Y} {f : X -> Y} {K : family Y}
     : map_over f (empty X) K.
   Proof.

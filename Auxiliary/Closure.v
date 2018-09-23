@@ -98,6 +98,21 @@ Local Definition graft' {X} {C : system X}
   : derivation C G x
 := transport _ e (graft C d f).
 
+(** Derivations are also functorial in their hypotheses. *)
+Local Definition derivation_fmap2
+    {X} {T : system X} {H H'} (f : Family.map H H') {x}
+    (D : derivation T H x)
+  : derivation T H' x.
+Proof.
+  refine (graft _ D _); intros i.
+  apply (hypothesis' (f i)).
+  apply Family.map_commutes.
+Defined.
+
+
+
+Section Closure_System_Maps.
+
 (** In general, one can consider maps between closure systems _over_ maps between the sets they’re on, in the sense of a _displayed category_ (arXiv:1705.04296).
 
   A map from a closure system [C] on [X] to a closure system [D] on [Y], over [f : X -> Y] gives for each rule [C i] of [C] a derivation in [D] of the conclusion of [C i] from the premises of [C i]. *)
@@ -168,15 +183,20 @@ Local Definition fmap_derivation
 
 Arguments fmap_derivation : simpl nomatch.
 
-(** Derivations are also functorial in their hypotheses. *)
-Local Definition derivation_fmap2
-    {X} {T : system X} {H H'} (f : Family.map H H') {x}
-    (D : derivation T H x)
-  : derivation T H' x.
+Local Definition compose_over {X Y Z} {f : X -> Y} {g : Y -> Z}
+    {K} {L} {M} (ff : map_over f K L) (gg : map_over g L M)
+  : map_over (g o f) K M.
 Proof.
-  refine (graft _ D _); intros i.
-  apply (hypothesis' (f i)).
-  apply Family.map_commutes.
+  intros k.
+  exact (fmap_derivation_over gg (ff k)).
+Defined.
+
+Local Definition compose_over' {X Y Z} (f : X -> Y) (g : Y -> Z)
+    {K} {L} {M} (ff : map_over f K L) (gg : map_over g L M)
+    {h} (e : h = g o f)
+  : map_over h K M.
+Proof.
+  exact (transport (fun m => map_over m K M) e^ (compose_over ff gg)).
 Defined.
 
 Local Definition inl {X} {C D : system X}
@@ -199,12 +219,28 @@ Proof.
   - exact (fmap_derivation inr (ff' _)).
  Defined.
 
+Local Definition fmap1_sum
+    {X} {C D : system X} (ff : map C D) {C'}
+  : map (C + C') (D + C').
+Proof.
+  exact (fmap_sum ff (idmap _)).
+Defined.
+
+Local Definition fmap2_sum
+    {X} {C C' D' : system X} (ff : map C' D')
+  : map (C + C') (C + D').
+Proof.
+  exact (fmap_sum (idmap _) ff).
+Defined.
+
 Local Lemma sum_rect {X} {Y} {f : X -> Y}
     {K1 K2} {L} (ff1 : map_over f K1 L) (ff2 : map_over f K2 L)
   : map_over f (K1 + K2) L.
 Proof.
   intros [ x | x ]; [apply ff1 | apply ff2].
 Defined.
+
+End Closure_System_Maps.
 
 (** Having a hypothesis of [x] is equivalent to having [x] as an axiom in the closure system. It’s sometimes convenient to have both these options available, and convert between them. *)
 Local Definition axiom {X} (x:X) : rule X

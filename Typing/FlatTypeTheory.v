@@ -249,37 +249,29 @@ Section Instantiation.
   rule of [T] instantiated under [Σ + a] translates back under [I] to an
   instantiation over [Σ] of the same rule of [T],
   modulo some context-reassociation isomorphisms. *)
-  (* TODO: this statement is not currently right!
-  The _empty context_ rule in the metavariable extension gets instantiated to [ |– Г cxt ] (up to iso), and so to translate derivations from the extension, this will need to be added as a hypothesis.  So there isn’t quite a closure system map…
-
-  How to account for this?
-  (a) generalise the notion of “closure system maps” to allow adding hyps
-  (b) say that the target of this is “closure_system T, plus a rule giving the required hypothesis”, and then give lemma to convert between derivations over a closure-system-plus-hyp-rules and over the closure system itself but with extra hypotheses
-  (c) add hypothesis in theorem that [ |– Г cxt ] holds.  This would be the simplest change here, but will it suffice in applications? *) 
   Local Definition instantiate_closure_system
       (T : flat_type_theory Σ)
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
     : Closure.map_over (Judgement.instantiate Γ I)
         (closure_system (fmap include_symbol T)) 
-        (closure_system T).
+        (closure_system T + Closure.axioms [< [! |- Γ !] >]).
   Proof.
     apply Closure.sum_rect.
-    - admit. 
-    (* TODO: fix this, since [StructuralRule.instantiate] has changed. *)
-    (* 
-       apply Closure.map_from_family_map.
-       refine (Family.compose_over (Family.inl) (StructuralRule.instantiate _)).
-     *)
+    - refine (Closure.compose_over' _ _ _ _ _).
+      { apply (StructuralRule.instantiate I). }
+      { apply Closure.fmap1_sum. apply Closure.inl. }
+      apply idpath.
     - intros [r I_r].
       refine (Closure.fmap_derivation _
         (instantiate_flat_rule_closure_system I (T r) I_r)).
       clear I_r.
       apply Closure.map_from_family_map.
+      refine (Family.compose Family.inl _).
       apply (Family.fmap_of_sum (Family.idmap _)).
       (* TODO: the following could be a lemma about [Family.bind]? *)
       apply Family.Build_map'.
       intros I_r. exists (r;I_r). apply idpath.
-  Admitted. (* [FlatTypeTheory.instantiate_closure_system]: statement needs fixing. *)
+  Defined.
 
   (** Instantiate derivation [d] with metavariable instantiation [I]. *)
   (* Note: like [instantiate_closure_system] above, this is currently mis-stated: needs adding a hypothesis [ |– Г cxt ].  (That’s all that needs adding, though: typing hypothesis for the other metavariables will already be supplied by (the instantiation of) [hyps]. *)
@@ -288,11 +280,15 @@ Section Instantiation.
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
       {hyps : family _} (j : judgement_total (Metavariable.extend Σ a))
       (d : derivation (fmap include_symbol T) hyps j)
-    : derivation T (Family.fmap (Judgement.instantiate _ I) hyps)
-                   (Judgement.instantiate _ I j).
+    : derivation
+        T
+        (Family.fmap (Judgement.instantiate _ I) hyps + [< [! |- Γ !] >])
+        (Judgement.instantiate _ I j).
   Proof.
-    simple refine (Closure.fmap_derivation_over _ d).
-    apply instantiate_closure_system.
+    apply (Closure.fmap_derivation_over (instantiate_closure_system _ I)) in d.
+    apply Closure.axioms_vs_hypotheses in d.
+    refine (Closure.derivation_fmap2 _ d).
+    apply Family.sum_symmetry.
   Defined.
 
 End Instantiation.
@@ -380,6 +376,10 @@ Section Maps.
     }
     (* Logical rules *)
     intros [r [Γ I]]. cbn.
+    (* TODO: BIG problem upstream: the definition of [FlatRule.closure_system] is wrong! Each closure condition arising as an instantiation of a flat rule should also have the premise that the context of the instantiation is well-typed.
+
+    Following is an old version of the proof, can’t be updated until the problem upstream is fixed. *)
+(*  
     (* From here, want to get goal into a form where it can be obtained
      by [instantiate_derivation]. *)
     eapply transport. { apply inverse, Judgement.fmap_instantiate. }
@@ -393,7 +393,8 @@ Section Maps.
     }
     apply instantiate_derivation.
     apply ff.
-  Defined.
+*)
+  Admitted. (* [fmap_closure_system_over]. TODO: fix this once [FlatRule.closure_system] fixed! *)
 
   Local Definition fmap_closure_system
       {Σ : signature σ} {T T' : flat_type_theory Σ} (f : map T T')
