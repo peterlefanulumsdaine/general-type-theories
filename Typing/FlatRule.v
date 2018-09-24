@@ -120,7 +120,7 @@ Section SignatureMaps.
   Local Definition fmap_closure_system 
         {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
         (R : flat_rule Σ)
-    : Family.map_over (Closure.fmap (fmap_judgement_total f))
+    : Family.map_over (Closure.rule_fmap (fmap_judgement_total f))
         (closure_system R)
         (closure_system (fmap f R)).
   Proof.
@@ -138,7 +138,7 @@ Section SignatureMaps.
   Local Definition fmap_closure_system'
     {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
     {R} {R'} (e : fmap f R = R') 
-  : Family.map_over (Closure.fmap (fmap_judgement_total f))
+  : Family.map_over (Closure.rule_fmap (fmap_judgement_total f))
       (closure_system R)
       (closure_system R').
   Proof.

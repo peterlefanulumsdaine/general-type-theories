@@ -712,7 +712,7 @@ Section SignatureMaps.
   Local Definition fmap
       {Σ Σ' : signature σ}
       (f : Signature.map Σ Σ')
-    : Family.map_over (Closure.fmap (fmap_judgement_total f))
+    : Family.map_over (Closure.rule_fmap (fmap_judgement_total f))
         (structural_rule Σ)
         (structural_rule Σ').
   Proof.

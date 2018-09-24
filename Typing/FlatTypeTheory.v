@@ -269,7 +269,7 @@ Section Instantiation.
       { apply Closure.fmap1_sum. apply Closure.inl. }
       apply idpath.
     - intros [r I_r].
-      refine (Closure.fmap_derivation _
+      refine (Closure.derivation_fmap _
         (instantiate_flat_rule_closure_system I (T r) I_r)).
       clear I_r.
       apply Closure.map_from_family_map.
@@ -292,7 +292,7 @@ Section Instantiation.
         (Family.fmap (Judgement.instantiate _ I) hyps + [< [! |- Γ !] >])
         (Judgement.instantiate _ I j).
   Proof.
-    apply (Closure.fmap_derivation_over (instantiate_closure_system _ I)) in d.
+    apply (Closure.derivation_fmap_over (instantiate_closure_system _ I)) in d.
     apply Closure.axioms_vs_hypotheses in d.
     refine (Closure.derivation_fmap2 _ d).
     apply Family.sum_symmetry.
@@ -409,7 +409,7 @@ Section Maps.
   Defined.
 
   (* TODO: consider naming of this and following lemma. *)
-  Local Lemma fmap_derivation
+  Local Lemma derivation_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {T : flat_type_theory Σ} {H : family (judgement_total Σ)} {J}
       (D : derivation T H J)
@@ -418,20 +418,20 @@ Section Maps.
         (Family.fmap (fmap_judgement_total f) H)
         (fmap_judgement_total f J).
   Proof.
-    refine (Closure.fmap_derivation_over _ D).
+    refine (Closure.derivation_fmap_over _ D).
     apply fmap_closure_system_over.
     apply map_to_fmap.
   Defined.
 
   (* TODO: consider naming; of this and preceding lemma! *)
-  Local Definition fmap_derivation_in_theory
+  Local Definition derivation_fmap_in_theory
       {Σ} {T T' : flat_type_theory Σ} (f : map T T') {H} {J}
     : derivation T H J -> derivation T' H J.
   Proof.
-    apply Closure.fmap_derivation, fmap_closure_system, f.
+    apply Closure.derivation_fmap, fmap_closure_system, f.
   Defined.
 
-  Local Definition fmap_derivation_in_theory_over
+  Local Definition derivation_fmap_in_theory_over
       {Σ Σ' : signature σ} {f : Signature.map Σ Σ'}
       {T} {T'} (ff : map_over f T T') {H} {J}
     : derivation T H J
@@ -439,7 +439,7 @@ Section Maps.
          (Family.fmap (fmap_judgement_total f) H)
          (fmap_judgement_total f J).
   Proof.
-    apply Closure.fmap_derivation_over, fmap_closure_system_over, ff.
+    apply Closure.derivation_fmap_over, fmap_closure_system_over, ff.
   Defined.
 
   Local Definition fmap_flat_rule_derivation
@@ -449,8 +449,8 @@ Section Maps.
   Proof.
     unfold flat_rule_derivation.
     unfold FlatRule.fmap. cbn.
-    refine (fmap_derivation_in_theory _ _).
-    2: { exact (fmap_derivation _ D). }
+    refine (derivation_fmap_in_theory _ _).
+    2: { exact (derivation_fmap _ D). }
     apply map_from_eq.
     eapply concat. 2: { apply fmap_compose. }
     eapply concat. { apply inverse, fmap_compose. } 
@@ -489,7 +489,7 @@ Section Maps.
     : flat_rule_derivation T' (FlatRule.fmap f R).
   Proof.
     unfold flat_rule_derivation in *.
-    refine (fmap_derivation_in_theory_over _ D).
+    refine (derivation_fmap_in_theory_over _ D).
     apply map_vs_map_over.
     refine (transport (fun T0 => map T0 _) _ (fmap_map _ _)).
     - eapply concat. 2: { apply fmap_compose. }

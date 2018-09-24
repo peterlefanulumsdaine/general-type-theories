@@ -94,9 +94,9 @@ Section Functoriality.
     unfold Family.fmap, family_element in J.
     subst J.
     assert (fDi :=
-      FlatTypeTheory.fmap_derivation (Metavariable.fmap1 f _) Di).
+      FlatTypeTheory.derivation_fmap (Metavariable.fmap1 f _) Di).
     clear D Di. (* just tidying up *)
-    refine (FlatTypeTheory.fmap_derivation_in_theory _ (Closure.derivation_fmap2 _ fDi)).
+    refine (FlatTypeTheory.derivation_fmap_in_theory _ (Closure.derivation_fmap2 _ fDi)).
       + (* commutativity in type theory *)
         apply FlatTypeTheory.map_from_family_map.
         (* TODO: abstract the follwing as lemma? *)
@@ -141,9 +141,9 @@ Section Functoriality.
     unfold Family.fmap, family_element in J.
     subst J.
     assert (fDi :=
-      FlatTypeTheory.fmap_derivation (Metavariable.fmap1 f a) Di).
+      FlatTypeTheory.derivation_fmap (Metavariable.fmap1 f a) Di).
     clear D Di e_concl. (* just tidying up *)
-    refine (FlatTypeTheory.fmap_derivation_in_theory _ (Closure.derivation_fmap2 _ fDi)).
+    refine (FlatTypeTheory.derivation_fmap_in_theory _ (Closure.derivation_fmap2 _ fDi)).
     - (* commutativity in type theory *)
       apply FlatTypeTheory.map_from_family_map.
       (* TODO: abstract the follwing as lemma? *)
@@ -167,7 +167,7 @@ Section Functoriality.
       -> is_well_typed_algebraic_extension T' A.
   Proof.
     intros A_WT r p.
-    refine (FlatTypeTheory.fmap_derivation_in_theory _ (A_WT r p)).
+    refine (FlatTypeTheory.derivation_fmap_in_theory _ (A_WT r p)).
     apply FlatTypeTheory.fmap_map, f.
   Defined.
 
@@ -181,7 +181,7 @@ Section Functoriality.
     intros R_WT.
     split. { exact (fmap_is_well_typed_algebraic_extension_in_theory f (fst R_WT)). }
     intros p.
-    refine (FlatTypeTheory.fmap_derivation_in_theory _ (snd R_WT p)).
+    refine (FlatTypeTheory.derivation_fmap_in_theory _ (snd R_WT p)).
     apply FlatTypeTheory.fmap_map, f.
   Defined.
 

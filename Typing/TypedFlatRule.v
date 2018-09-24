@@ -50,7 +50,7 @@ Section SignatureMaps.
     refine (transport _ _ _).
     - apply Judgement.fmap_presupposition.
     - simple refine (Closure.derivation_fmap2 _
-        (FlatTypeTheory.fmap_derivation_in_theory_over _ (r_wt p))).
+        (FlatTypeTheory.derivation_fmap_in_theory_over _ (r_wt p))).
       + cbn.
         (* TODO: rewrite [Family.fmap_sum] as an iso, for better behaviour? *)
         refine (transport (fun K => Family.map K _) _ _).
