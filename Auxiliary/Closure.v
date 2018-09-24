@@ -110,9 +110,41 @@ Local Definition graft' {X} {C : system X}
   : derivation C G x
 := transport _ e (graft C d f).
 
-(* TODO: functoriality of derivations in simple maps of closure systems.  Can be recovered from their later functoriality in (Kleisli) closure system maps, but this is conceptually a simpler and standalone thing. *)
+(** General functoriality of derivations, in simple (non-Kleisli) maps of closure systems.
 
-(** Derivations are functorial in their hypotheses. *)
+Can be recovered from their later functoriality in (Kleisli) closure system maps, but this is conceptually a simpler and standalone thing. *)
+Local Definition derivation_fmap_simple_over
+    {X X'} (f : X -> X')
+    {T : system X} {T' : system X'} (fT : Family.map_over (rule_fmap f) T T')
+    {H H'} (fH : Family.map_over f H H')
+    {x} (D : derivation T H x)
+  : derivation T' H' (f x).
+Proof.
+  induction D as [ h | r _ Ds].
+  - simple refine (hypothesis' _ _).  
+    + exact (fH h).
+    + apply Family.map_over_commutes.
+  - simple refine (deduce' _ _ _).
+    + exact (fT r).
+    + eapply concat. { apply ap, Family.map_over_commutes. }
+      apply idpath.
+    + refine (transport
+        (fun (prems:family _) => forall p : prems, derivation T' H' (prems p))
+        _^ _).
+      apply ap, Family.map_over_commutes.
+      exact Ds.
+Defined.
+
+(** Functoriality of derivations in simple maps of theories *)
+Local Definition derivation_fmap1_simple
+    {X} {T T': system X} (f : Family.map T T') {H} {x}
+    (D : derivation T H x)
+  : derivation T' H x.
+Proof.
+  exact (derivation_fmap_simple_over _ f (Family.idmap H) D).
+Defined.
+
+(** Functoriality of derivations in their hypotheses. *)
 Local Definition derivation_fmap2
     {X} {T : system X} {H H'} (f : Family.map H H') {x}
     (D : derivation T H x)
@@ -242,8 +274,8 @@ Local Definition fmap_sum
   : map_over f (Family.sum C C') (Family.sum D D').
 Proof.
   intros [r | r'].
-  - exact (derivation_fmap inl (ff _)).
-  - exact (derivation_fmap inr (ff' _)).
+  - exact (derivation_fmap1_simple Family.inl (ff _)).
+  - exact (derivation_fmap1_simple Family.inr (ff' _)).
  Defined.
 
 Local Definition fmap1_sum
