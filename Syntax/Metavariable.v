@@ -366,7 +366,7 @@ Section Signature_Maps.
       {a a' : arity σ} (g : Family.map a a')
     : Signature.map (extend Σ a) (extend Σ' a').
   Proof.
-    apply Family.fmap_of_sum.
+    apply Family.sum_fmap.
     - apply f.
     - apply Family.map_fmap, g.
   Defined.

@@ -274,7 +274,7 @@ Section Instantiation.
       clear I_r.
       apply Closure.map_from_family_map.
       refine (Family.compose Family.inl _).
-      apply (Family.fmap_of_sum (Family.idmap _)).
+      apply (Family.sum_fmap (Family.idmap _)).
       (* TODO: the following could be a lemma about [Family.bind]? *)
       apply Family.Build_map'.
       intros I_r. exists (r;I_r). apply idpath.
@@ -391,7 +391,7 @@ Section Maps.
     refine (Closure.derivation_fmap2 _ d).
     refine (transport _ (Family.fmap_sum _ _ _)^ _).
     refine (Family.compose (Family.sum_symmetry _ _) _).
-    apply Family.fmap_of_sum.
+    apply Family.sum_fmap.
     2: { apply Family.idmap. }
     refine (transport _ _ (Family.idmap _)).
     simple refine (Family.eq _ _). { apply idpath. }

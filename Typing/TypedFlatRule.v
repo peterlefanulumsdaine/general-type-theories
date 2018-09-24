@@ -55,7 +55,7 @@ Section SignatureMaps.
         (* TODO: rewrite [Family.fmap_sum] as an iso, for better behaviour? *)
         refine (transport (fun K => Family.map K _) _ _).
         { apply inverse, Family.fmap_sum. }
-        apply (Family.fmap_of_sum (Family.idmap _)).
+        apply (Family.sum_fmap (Family.idmap _)).
         refine (Family.compose _ (Family.fmap_bind _ _ _)).
         refine (Family.compose (Family.bind_fmap_mid _ _ _) _).
         apply Family.bind_fmap2. intros a.

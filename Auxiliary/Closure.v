@@ -207,7 +207,7 @@ Local Definition inr {X} {C D : system X}
   : map D (C + D)
 := map_from_family_map Family.inr.
 
-(** Analogue of [Family.fmap_of_sum] (see note there re naming conventions) *)
+(** Analogue of [Family.sum_fmap] (see note there re naming conventions) *)
 Local Definition fmap_sum
     {X Y} {f : X -> Y}
     {C} {D} (ff : map_over f C D)

@@ -337,14 +337,7 @@ Proof.
   - intros [ x | x ]; cbn; apply map_over_commutes.
 Defined.
 
-(* TODO: we have a conflict of naming conventions here!
-
-On the one hand, short of putting [sum] into a separate module, it’s not clear what we should call this other than [fmap_sum].
-
- On the other hand, lemma above with conclusion [fmap f (sum K L) = …] also reasonably deserves the name [fmap_sum], by general convention for equational reasoning lemmas.
-
- Current name [fmap_of_sum] is a bad ad hoc solution to the clash. TODO: discuss, find a better solution, rename… *)
-Local Definition fmap_of_sum
+Local Definition sum_fmap
     {X Y} {f : X -> Y}
     {K} {K'} (gg : map_over f K K')
     {L} {L'} (hh : map_over f L L')
@@ -358,26 +351,26 @@ Proof.
     simpl; apply map_over_commutes.
 Defined.
 
-Local Lemma compose_fmap_of_sum_over `{Funext}
+Local Lemma sum_fmap_compose_over `{Funext}
     {X X' X''} {f' : X' -> X''} {f : X -> X'}
     {K} {K'} {K''} (g' : map_over f' K' K'') (g : map_over f K K')
     {L} {L'} {L''} (h' : map_over f' L' L'') (h : map_over f L L')
-  : compose_over (fmap_of_sum g' h') (fmap_of_sum g h)
-    = fmap_of_sum (compose_over g' g) (compose_over h' h).
+  : compose_over (sum_fmap g' h') (sum_fmap g h)
+    = sum_fmap (compose_over g' g) (compose_over h' h).
 Proof.
   simple refine (map_over_eq' _).
   intros [k | l]; exists (idpath _);
     apply inverse, concat_1p.
 Defined.
 
-Local Lemma compose_fmap_of_sum `{Funext}
+Local Lemma sum_fmap_compose `{Funext}
     {X}
     {K K' K'' : family X} (g' : map K' K'') (g : map K K')
     {L L' L'' : family X} (h' : map L' L'') (h : map L L')
-  : compose (fmap_of_sum g' h') (fmap_of_sum g h)
-    = fmap_of_sum (compose g' g) (compose h' h).
+  : compose (sum_fmap g' h') (sum_fmap g h)
+    = sum_fmap (compose g' g) (compose h' h).
 Proof.
-  exact (compose_fmap_of_sum_over g' g h' h).
+  exact (sum_fmap_compose_over g' g h' h).
 Defined.
 
 Local Definition sum_symmetry {X} (K L : family X)
@@ -386,10 +379,6 @@ Proof.
   apply sum_rect; [ apply inr | apply inl ].
 Defined.
 
-(* TODO: resolve naming conflict between:
-- this lemma, the interaction of [Family.sum] and [Family.fmap], currently [Family.fmap_sum];
-- functoriality of [Family.sum], currently [Family.fmap_of_sum].
-*)
 Local Lemma fmap_sum `{Funext}
     {X Y} (f : X -> Y)
      (K1 K2 : family X)
@@ -476,7 +465,7 @@ Proof.
   apply (map_over_commutes (ff _)).
 Defined.
 
-(* TODO: make an iso?  Also, as with [fmap_sum], consider naming! *)
+(* TODO: make an iso? *)
 Lemma fmap_bind
     {B B'} (f : B -> B')
     {A} (K : family A) (L : A -> family B)
@@ -498,7 +487,7 @@ Local Definition reindex {A} (K : family A) {X} (f : X -> K) : family A
 Local Definition subfamily {A} (K : family A) (P : K -> Type) : family A
   := reindex K (pr1 : { i:K & P i } -> K).
 
-Local Definition inclusion
+Local Definition subfamily_inclusion
     {A : Type} (K : family A) (P : K -> Type)
   : map (subfamily K P) K.
 Proof.

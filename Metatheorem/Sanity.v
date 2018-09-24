@@ -56,7 +56,7 @@ Section PresuppositionClosureFlat.
       refine (Closure.fmap_derivation _ _).
       2: { apply TypedStructuralRule.well_typed. }
       + apply Closure.map_from_family_map.
-        apply Family.fmap_of_sum.
+        apply Family.sum_fmap.
         * apply Family.idmap.
         * apply Family.Build_map'; intros [[]].
     - destruct r_log as [r r_inst]. cbn in r_inst.

@@ -287,7 +287,7 @@ Section Simple_Maps.
         : Family.map (ae_equality_premise A) (ae_equality_premise A')
     ; premise_map_of_simple_map
         :> Family.map A A'
-        := Family.fmap_of_sum
+        := Family.sum_fmap
              (Family.map_fmap _ arity_map_of_simple_map)
              (Family.map_fmap _ equality_premise_map_of_simple_map)
     ; well_order_map_of_simple_map
@@ -435,7 +435,7 @@ Section Flattening.
     intros i.
     apply (judgement_of_premise i).
     + apply Metavariable.fmap2.
-      apply Family.inclusion.
+      apply Family.subfamily_inclusion.
     + intros H_i_obj.
       destruct i as [ i | i ]; simpl in i.
       * (* case: i an object premise *)
