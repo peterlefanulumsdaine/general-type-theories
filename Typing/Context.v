@@ -118,7 +118,7 @@ Section Instantiation.
     : fmap f (instantiate Γ I Δ)
     = instantiate
         (fmap f Γ)
-        (fmap_instantiation f I)
+        (instantiation_fmap f I)
         (fmap (Metavariable.fmap1 f a) Δ).
   Proof.
     apply (ap (Build_raw_context _)), path_forall.

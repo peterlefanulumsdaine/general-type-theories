@@ -784,7 +784,7 @@ Section SignatureMaps.
       + refine (subst_apply _).
         exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
-        exists (fmap_raw_context_map f g).
+        exists (raw_context_map_fmap f g).
         exists hjf.
         exact (Judgement.fmap_hypothetical_judgement f hjfi).
       + cbn. apply Closure.rule_eq; cbn.
@@ -810,8 +810,8 @@ Section SignatureMaps.
       + refine (subst_equal _).
         exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
-        exists (fmap_raw_context_map f g).
-        exists (fmap_raw_context_map f g').
+        exists (raw_context_map_fmap f g).
+        exists (raw_context_map_fmap f g').
         exists hjf.
         exact (Judgement.fmap_hypothetical_judgement f hjfi).
       + cbn. apply Closure.rule_eq; cbn.

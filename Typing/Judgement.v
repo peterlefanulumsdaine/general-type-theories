@@ -932,7 +932,7 @@ Section Instantiation.
     : fmap_judgement_total f (instantiate Γ I J)
     = instantiate
         (Context.fmap f Γ) 
-        (fmap_instantiation f I)
+        (instantiation_fmap f I)
         (fmap_judgement_total (Metavariable.fmap1 f a) J).
   Proof.
     destruct J as [[ | ] J].

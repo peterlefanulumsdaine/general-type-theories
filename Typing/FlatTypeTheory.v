@@ -266,7 +266,7 @@ Section Instantiation.
     apply Closure.sum_rect.
     - refine (Closure.compose_over' _ _ _ _ _).
       { apply (StructuralRule.instantiate I). }
-      { apply Closure.fmap1_sum. apply Closure.inl. }
+      { apply Closure.sum_fmap1. apply Closure.inl. }
       apply idpath.
     - intros [r I_r].
       refine (Closure.derivation_fmap _
@@ -384,7 +384,7 @@ Section Maps.
     (* Logical rules *)
     intros [r [Γ I]].
     assert (d := @instantiate_derivation _ _ _ _ (Context.fmap f Γ)
-                  _ (fmap_instantiation f I) _ _ (ff r)).
+                  _ (instantiation_fmap f I) _ _ (ff r)).
     (* From here, want to get goal into a form where it can be obtained
     from [d]. *)
     eapply transport. { apply inverse, Judgement.fmap_instantiate. }

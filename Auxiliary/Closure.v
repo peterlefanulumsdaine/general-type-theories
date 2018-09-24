@@ -266,8 +266,8 @@ Proof.
   intros [ x | x ]; [apply ff1 | apply ff2].
 Defined.
 
-(** Analogue of [Family.sum_fmap] (see note there re naming conventions) *)
-Local Definition fmap_sum
+(** Analogue of [Family.sum_fmap] *)
+Local Definition sum_fmap
     {X Y} {f : X -> Y}
     {C} {D} (ff : map_over f C D)
     {C'} {D'} (ff' : map_over f C' D')
@@ -278,18 +278,18 @@ Proof.
   - exact (derivation_fmap1_simple Family.inr (ff' _)).
  Defined.
 
-Local Definition fmap1_sum
+Local Definition sum_fmap1
     {X} {C D : system X} (ff : map C D) {C'}
   : map (C + C') (D + C').
 Proof.
-  exact (fmap_sum ff (idmap _)).
+  exact (sum_fmap ff (idmap _)).
 Defined.
 
-Local Definition fmap2_sum
+Local Definition sum_fmap2
     {X} {C C' D' : system X} (ff : map C' D')
   : map (C + C') (C + D').
 Proof.
-  exact (fmap_sum (idmap _) ff).
+  exact (sum_fmap (idmap _) ff).
 Defined.
 
 End Sums.

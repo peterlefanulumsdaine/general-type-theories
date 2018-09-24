@@ -466,7 +466,7 @@ Proof.
 Defined.
 
 (* TODO: make an iso? *)
-Lemma fmap_bind
+Local Lemma fmap_bind
     {B B'} (f : B -> B')
     {A} (K : family A) (L : A -> family B)
   : map

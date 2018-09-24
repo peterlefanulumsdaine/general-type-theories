@@ -126,7 +126,7 @@ Section SignatureMaps.
   Proof.
     apply Family.Build_map'.
     intros [Γ I_R].
-    exists (Context.fmap f Γ ; fmap_instantiation f I_R).
+    exists (Context.fmap f Γ ; instantiation_fmap f I_R).
     apply Closure.rule_eq.
     - simple refine (Family.eq _ _). { apply idpath. }
       cbn. intros [[] | i].

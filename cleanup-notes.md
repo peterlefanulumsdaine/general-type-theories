@@ -43,9 +43,9 @@ Previously, `Metavariable.v` came after `Judgement.v`, `Context.v`; now it comes
 
 General functoriality/categorical conventions:
 
-- pass through all files to generally get functoriality lemma placement consistent
-- ditto to make functoriality section naming consistent
-- consider organisation of categorical structure in [FlatTypeTheory].
+- pass through all files to generally get functoriality lemma naming (done up to all of [Syntax] group)
+- ditto for functoriality lemma placement/organisation (less important)
+- consider organisation of categorical structure in [FlatTypeTheory], to be more analogous to its organisation in [Closure].
 
 Contexts and judgements:
 

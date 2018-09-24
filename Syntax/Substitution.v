@@ -260,7 +260,7 @@ Section Naturality.
   Context `{H_Funext : Funext}.
   Context {σ : shape_system}.
 
-  Definition fmap_raw_context_map
+  Definition raw_context_map_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {γ γ'} (g : raw_context_map Σ γ' γ)
     : raw_context_map Σ' γ' γ
@@ -269,16 +269,16 @@ Section Naturality.
   Local Definition fmap_extend
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {γ γ' δ : σ} (g : raw_context_map Σ γ' γ)
-    : fmap_raw_context_map f (extend _ _ δ g)
-    = extend _ _ δ (fmap_raw_context_map f g).
+    : raw_context_map_fmap f (extend _ _ δ g)
+    = extend _ _ δ (raw_context_map_fmap f g).
   Proof.
     apply path_forall.
     refine (coproduct_rect shape_is_sum _ _ _).
-    - intros i. unfold fmap_raw_context_map.
+    - intros i. unfold raw_context_map_fmap.
       eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       eapply concat. { apply fmap_rename. }
       apply inverse. refine (coproduct_comp_inj1 _).
-    - intros i. unfold fmap_raw_context_map.
+    - intros i. unfold raw_context_map_fmap.
       eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
       apply inverse. refine (coproduct_comp_inj2 _).
   Defined.
@@ -288,7 +288,7 @@ Section Naturality.
       {γ γ'} (g : raw_context_map Σ γ' γ)
       {cl} (e : raw_expression Σ cl γ)
     : Expression.fmap f (substitute g e)
-    = substitute (fmap_raw_context_map f g) (Expression.fmap f e).
+    = substitute (raw_context_map_fmap f g) (Expression.fmap f e).
   Proof.
     destruct e as [ γ i | γ S args ].
     - apply idpath.

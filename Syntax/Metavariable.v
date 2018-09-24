@@ -383,7 +383,7 @@ Section Signature_Maps.
     : Signature.map (extend Σ a) (extend Σ a')
   := fmap (Family.idmap _) f.
 
-  Definition fmap_instantiation
+  Definition instantiation_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {γ} (I : instantiation a Σ γ)
     : instantiation a Σ' γ
@@ -468,7 +468,7 @@ Section Signature_Maps.
       {cl} {δ} (e : raw_expression (extend Σ a) cl δ)
     : Expression.fmap f (instantiate_expression I e)
     = instantiate_expression
-        (fmap_instantiation f I)
+        (instantiation_fmap f I)
         (Expression.fmap (fmap1 f a) e).
   Proof.
     induction e as [ δ i | δ [S | M] e_args IH_e_args ].
@@ -499,7 +499,7 @@ Section Signature_Maps.
       apply ap. apply IH_e_args.
     - simpl instantiate_expression.
       eapply concat. { apply fmap_substitute. }
-      unfold fmap_raw_context_map, fmap_instantiation.
+      unfold raw_context_map_fmap, instantiation_fmap.
       apply ap10. refine (apD10 _ _). apply ap.
       apply path_forall.
       refine (coproduct_rect shape_is_sum _ _ _); intros i.
