@@ -9,7 +9,7 @@ Not as much large-scale reorganisation this time as in Andrej’s big sweep, but
 - when a construction is functorial in multiple arguments, e.g. [Family.sum], it has a main functoriality lemma [Family.sum_fmap], followed by specialised ones [Family.sum_fmap1], [Family.sum_fmap2] in the arguments individually
 - the functoriality axioms w.r.t. composition, identities are called e.g. [foo_fmap_compose], [foo_fmap_idmap].
 
-- exception: when instances of a definition form the objects of a fibered category (e.g. raw tt’s fibred over signatures); then the “functoriality” in base morphisms follows the def of the morphisms of the new objects (since it’s seen as showing that the new category really is a fibration over the old)
+- exception to the above placement principle: when instances of a definition form the objects of a fibered/displayed category (e.g. raw tt’s fibred over signatures); then the “functoriality” in base morphisms follows the def of the morphisms of the new objects (since it’s seen as showing that the new category is a _fibration_/_opfibration_ over the base)
 
 All this helps significantly with keeping the organisation of lemmas consistent and comprehensible.
 
@@ -51,7 +51,7 @@ Contexts and judgements:
 
 - in Context.v: perhaps make (simple) context maps over shape maps more explicit/methodical (and same with judgements)?
 - organisation in Judgement.v: quite complex, consider it!
-- refactor judgements so that shape parameter less deeply nested
+- refactor judgements so that shape parameter less deeply nested?
 
 Utility derivations, flat rules, etc:
 

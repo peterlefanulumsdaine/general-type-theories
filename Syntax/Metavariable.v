@@ -8,7 +8,7 @@ Require Import Syntax.Signature.
 Require Import Syntax.Expression.
 Require Import Syntax.Substitution.
 
-Section AlgebraicExtension.
+Section MetavariableExtension.
 
   (* The extension of a signature by symbols representing metavariables, as used
   to write each rule.
@@ -54,12 +54,180 @@ Section AlgebraicExtension.
     intros; apply idpath.
   Defined.
 
+  (** Functoriality of metavariable extensions w.r.t. signature maps *)
+  
+  Context `{Funext}.
+
+  (* Metavariable extension is bifunctorial in both arguments (the signature and the arity).
+
+  We give the general bifunctoriality action as [Metavariable.fmap], and the special cases in each argument individually as [fmap1], [fmap2]. *)
+  Local Definition fmap
+      {Σ Σ'  : signature σ} (f : Signature.map Σ Σ')
+      {a a' : arity σ} (g : Family.map a a')
+    : Signature.map (extend Σ a) (extend Σ' a').
+  Proof.
+    apply Family.sum_fmap.
+    - apply f.
+    - apply Family.map_fmap, g.
+  Defined.
+
+  Local Definition fmap1
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      (a : arity σ)
+    : Signature.map (extend Σ a) (extend Σ' a)
+  := fmap f (Family.idmap _).
+
+  Local Definition fmap2
+      (Σ : signature σ)
+      {a a' : arity σ} (f : Family.map a a')
+    : Signature.map (extend Σ a) (extend Σ a')
+  := fmap (Family.idmap _) f.
+
+  Local Definition fmap_idmap {Σ} {a}
+    : fmap (Signature.idmap Σ) (Family.idmap a)
+    = Signature.idmap (extend Σ a).
+  Proof.
+    apply Family.map_eq'.
+    intros [S | i]; exists (idpath _); apply idpath.
+  Defined.
+
+  Local Definition fmap1_idmap {Σ} {a}
+    : fmap1 (Signature.idmap Σ) a
+    = Signature.idmap (extend Σ a).
+  Proof.
+    apply fmap_idmap.
+  Defined.
+
+  Local Definition fmap2_idmap {Σ} {a}
+    : fmap2 Σ (Family.idmap a)
+    = Signature.idmap (extend Σ a).
+  Proof.
+    apply fmap_idmap.
+  Defined.
+
+  Local Definition fmap_compose
+    {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ') 
+    {a a' a''} (g' : Family.map a' a'') (g : Family.map a a')
+    : fmap (Signature.compose f' f) (Family.compose g' g)
+    = Signature.compose (fmap f' g') (fmap f g).
+  Proof.
+    apply Family.map_eq'.
+    intros [S | i]; exists (idpath _).
+    - apply inverse, concat_1p.
+    - cbn. apply inverse.
+      eapply concat. { apply concat_1p. }
+      eapply concat. { apply ap, ap_idmap. }
+      apply inverse.
+      eapply concat. { apply ap, ap, ap_idmap. }
+      refine (ap_pp _ _ _).
+  Defined.
+
+  Local Definition fmap1_compose
+    {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ') 
+    (a : _)
+    : fmap1 (Signature.compose f' f) a
+    = Signature.compose (fmap1 f' a) (fmap1 f a).
+  Proof.
+    refine (fmap_compose _ _ (Family.idmap _) (Family.idmap _)).
+  Defined.
+
+  Local Definition fmap2_compose
+    (Σ : _) 
+    {a a' a''} (g' : Family.map a' a'') (g : Family.map a a')
+    : fmap2 Σ (Family.compose g' g)
+    = Signature.compose (fmap2 Σ g') (fmap2 Σ g).
+  Proof.
+    refine (fmap_compose (Signature.idmap _) (Signature.idmap _) _ _).
+  Defined.
+
+  (** Naturality of [include_symbol] w.r.t. signature maps *)
+  (* TODO: consider naming *)
+  Local Lemma include_symbol_after_map
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      (a : arity _)
+    : Signature.compose include_symbol f
+      = Signature.compose (fmap1 f a) include_symbol.
+  Proof.
+    apply Family.map_eq'; intros S.
+    exists (idpath _); cbn.
+    apply ap.
+    eapply concat. { apply ap_idmap. }
+    apply inverse, concat_p1.
+  Defined.
+ 
+End MetavariableExtension.
+
+Section MetavariableNotations.
+
+(* Arities of symbols will arise in two ways:
+
+  1. Arities we write by hand.
+
+    These will typically use [< … >] notation.
+
+  2. Arities of metavariables, from [Metavariable.extend].
+
+    These will have only (Ty, shape_empty) arguments, and be indexed by the positions of some proto-context, which will itself probably be built up by [shape_extend].
+
+  So we give functions/notations for giving arguments for each of these forms.
+
+  Eventually, one should be able to write e.g.
+
+  [S/ A ; e1 , e2 , e3 /]
+
+  [M/ A ; e1 , e2 , e3 /]
+
+  for the expression consisting of a symbol S (resp. a metavariable symbol M) applied to expressions e1, e2, e3.
+
+  For now we provide the [M/ … /] version, but not yet the general [S/ … /] version.
+*)
+
+Context {σ : shape_system}.
+Context {Σ : signature σ}.
+
+(* Access functions for supplying arguments to arities specified as finite extensions of the empty shape. *)
+Local Definition empty_args {γ}
+  : arguments Σ (Arity.simple (shape_empty _)) γ
+  := empty_rect _ shape_is_empty _.
+
+Local Definition extend_args {γ δ : σ}
+  : arguments Σ (Arity.simple δ) γ
+    -> raw_term Σ γ
+    -> arguments Σ (Arity.simple (shape_extend _ δ)) γ.
+Proof.
+  intros ts t.
+  simple refine (plusone_rect _ _ (shape_is_extend _ δ) _ _ _); cbn.
+  - refine (Expression.rename _ t).
+    exact (coproduct_inj1 shape_is_sum).
+  - exact ts.
+Defined.
+
+End MetavariableNotations.
+
+Notation " '[M/' A /] " := (raw_symbol (include_metavariable A) empty_args) : syntax_scope.
+
+Notation " '[M/' A ; x , .. , z /] "
+  := (raw_symbol (include_metavariable A) (extend_args .. (extend_args (empty_args) x) .. z)) : raw_syntax_scope.
+
+Open Scope syntax_scope.
+
+
+Section Instantiations.
+
+  Context {σ : shape_system}.
+
   (* To use rules, one *instantiates* their metavariables, as raw syntax of the
      ambient signature, over some context. *)
   Local Definition instantiation (a : @arity σ) (Σ : signature σ) (γ : σ)
     : Type
   := forall i : a,
          raw_expression Σ (argument_class i) (shape_sum γ (argument_shape i)).
+
+  Definition instantiation_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {γ} (I : instantiation a Σ γ)
+    : instantiation a Σ' γ
+  := fun i => Expression.fmap f (I i).
 
   (* Given such an instantiation, one can translate syntax over the extended
      signature into syntax over the base signature. *)
@@ -91,74 +259,13 @@ Section AlgebraicExtension.
       exact (Coproduct.empty_right shape_is_sum shape_is_empty).
   Defined.
 
-  Arguments instantiate_expression {_ _ _ _} _ [_] _.
+  Arguments instantiate_expression {_ _ _ _} _ [_] _ : simpl nomatch.
 
-End AlgebraicExtension.
+  (** Interaction of metavariable-instantiation with renaming, substitution. *)
 
-Arguments instantiate_expression : simpl nomatch.
-
-
-Section MetavariableNotations.
-
-(* Arities of symbols will arise in two ways:
-
-  1. Arities we write by hand.
-
-    These will typically use [< … >] notation.
-
-  2. Arities of metavariables, from [Metavariable.extend].
-
-    These will have only (Ty, shape_empty) arguments, and be indexed by the positions of some proto-context, which will itself probably be built up by [shape_extend].
-
-  So we give functions/notations for giving arguments for each of these forms.
-
-  Eventually, one should be able to write e.g.
-
-  [S/ A ; e1 , e2 , e3 /]
-
-  [M/ A ; e1 , e2 , e3 /]
-
-  for the expression consisting of a symbol S (resp. a metavariable symbol M) applied to expressions e1, e2, e3.
-
-  For now we provide the [M/ … /] version, but not yet the general [S/ … /] version.
-*)
-
-Context {σ : shape_system}.
-Context {Σ : signature σ}.
-
-Local Definition empty_args {γ}
-  : arguments Σ (Arity.simple (shape_empty _)) γ
-  := empty_rect _ shape_is_empty _.
-
-Local Definition extend_args {γ δ : σ}
-  : arguments Σ (Arity.simple δ) γ
-    -> raw_term Σ γ
-    -> arguments Σ (Arity.simple (shape_extend _ δ)) γ.
-Proof.
-  intros ts t.
-  simple refine (plusone_rect _ _ (shape_is_extend _ δ) _ _ _); cbn.
-  - refine (Expression.rename _ t).
-    exact (coproduct_inj1 shape_is_sum).
-  - exact ts.
-Defined.
-
-End MetavariableNotations.
-
-Notation " '[M/' A /] " := (raw_symbol (include_metavariable A) empty_args) : syntax_scope.
-
-Notation " '[M/' A ; x , .. , z /] "
-  := (raw_symbol (include_metavariable A) (extend_args .. (extend_args (empty_args) x) .. z)) : raw_syntax_scope.
-
-Open Scope syntax_scope.
-
-
-Section Renaming.
-(** Interaction of metavariable-instantiation with renaming *)
-
-  Context {σ : shape_system} {Σ : signature σ}.
   Context `{Funext}.
 
-  Lemma instantiate_rename
+  Lemma instantiate_rename {Σ : signature σ}
       {cl} {a : @arity σ} {γ : σ}
       (I : instantiation a Σ γ)
       {δ} (e : raw_expression (extend Σ a) cl δ)
@@ -241,16 +348,7 @@ Section Renaming.
         * revert j. apply empty_rect, shape_is_empty.
   Defined.
 
-End Renaming.
-
-
-
-Section Substitution.
-
-  Context {σ : shape_system} {Σ : signature σ}.
-  Context `{Funext}.
-
-  Lemma instantiate_substitute
+  Lemma instantiate_substitute {Σ : signature σ}
       {cl} {a : @arity σ} {γ : σ}
       (I : instantiation a Σ γ)
       {δ} (e : raw_expression (extend Σ a) cl δ)
@@ -350,117 +448,6 @@ Section Substitution.
         * revert j. apply empty_rect, shape_is_empty.
   Defined.
 
-End Substitution.
-
-
-Section Signature_Maps.
-  (** Interaction of metavariable extensions, and instantiation of metavariables, with signature maps *)
-  
-  Context {σ : shape_system} `{Funext}.
-
-  (* Metavariable extension is bifunctorial in both arguments (the signature and the arity).
-
-  We give the general bifunctoriality action as [Fmap_Family], and the special cases in each argument individually as [Fmap1], [Fmap2]. *)
-  Local Definition fmap
-      {Σ Σ'  : signature σ} (f : Signature.map Σ Σ')
-      {a a' : arity σ} (g : Family.map a a')
-    : Signature.map (extend Σ a) (extend Σ' a').
-  Proof.
-    apply Family.sum_fmap.
-    - apply f.
-    - apply Family.map_fmap, g.
-  Defined.
-
-  Local Definition fmap1
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      (a : arity σ)
-    : Signature.map (extend Σ a) (extend Σ' a)
-  := fmap f (Family.idmap _).
-
-  Local Definition fmap2
-      (Σ : signature σ)
-      {a a' : arity σ} (f : Family.map a a')
-    : Signature.map (extend Σ a) (extend Σ a')
-  := fmap (Family.idmap _) f.
-
-  Definition instantiation_fmap
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {a} {γ} (I : instantiation a Σ γ)
-    : instantiation a Σ' γ
-  := fun i => Expression.fmap f (I i).
-
-  Local Definition fmap_idmap {Σ} {a}
-    : fmap (Signature.idmap Σ) (Family.idmap a)
-    = Signature.idmap (extend Σ a).
-  Proof.
-    apply Family.map_eq'.
-    intros [S | i]; exists (idpath _); apply idpath.
-  Defined.
-
-  Local Definition fmap1_idmap {Σ} {a}
-    : fmap1 (Signature.idmap Σ) a
-    = Signature.idmap (extend Σ a).
-  Proof.
-    apply fmap_idmap.
-  Defined.
-
-  Local Definition fmap2_idmap {Σ} {a}
-    : fmap2 Σ (Family.idmap a)
-    = Signature.idmap (extend Σ a).
-  Proof.
-    apply fmap_idmap.
-  Defined.
-
-  Local Definition fmap_compose
-    {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ') 
-    {a a' a''} (g' : Family.map a' a'') (g : Family.map a a')
-    : fmap (Signature.compose f' f) (Family.compose g' g)
-    = Signature.compose (fmap f' g') (fmap f g).
-  Proof.
-    apply Family.map_eq'.
-    intros [S | i]; exists (idpath _).
-    - apply inverse, concat_1p.
-    - cbn. apply inverse.
-      eapply concat. { apply concat_1p. }
-      eapply concat. { apply ap, ap_idmap. }
-      apply inverse.
-      eapply concat. { apply ap, ap, ap_idmap. }
-      refine (ap_pp _ _ _).
-  Defined.
-
-  Local Definition fmap1_compose
-    {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ') 
-    (a : _)
-    : fmap1 (Signature.compose f' f) a
-    = Signature.compose (fmap1 f' a) (fmap1 f a).
-  Proof.
-    refine (fmap_compose _ _ (Family.idmap _) (Family.idmap _)).
-  Defined.
-
-  Local Definition fmap2_compose
-    (Σ : _) 
-    {a a' a''} (g' : Family.map a' a'') (g : Family.map a a')
-    : fmap2 Σ (Family.compose g' g)
-    = Signature.compose (fmap2 Σ g') (fmap2 Σ g).
-  Proof.
-    refine (fmap_compose (Signature.idmap _) (Signature.idmap _) _ _).
-  Defined.
-
-  (** Naturality of [include_symbol] w.r.t. signature maps *)
-  (* TODO: consider naming *)
-  Local Lemma include_symbol_after_map
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      (a : arity _)
-    : Signature.compose include_symbol f
-      = Signature.compose (fmap1 f a) include_symbol.
-  Proof.
-    apply Family.map_eq'; intros S.
-    exists (idpath _); cbn.
-    apply ap.
-    eapply concat. { apply ap_idmap. }
-    apply inverse, concat_p1.
-  Defined.
-
   Lemma fmap_instantiate_expression
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a : @arity σ} {γ : σ}
@@ -511,10 +498,10 @@ Section Signature_Maps.
         eapply inverse. { refine (coproduct_comp_inj2 _). }
   Defined.
 
-End Signature_Maps.
+End Instantiations.
 
 
-Section Composition.
+Section Instantiation_Composition.
 (** Instantiations behave something like the Kleisli maps of a monad: there are unit instantiations and composite instantiations, though at the moment we do not quite systematically package them as a well-defined structure. *)
 
 (* TODO: contemplate this, and try to work out what monad-like structure on extensions/instantiations we are really giving in the following. *)
@@ -727,4 +714,4 @@ Section Composition.
         * revert k. apply empty_rect, shape_is_empty.
   Defined.
 
-End Composition.
+End Instantiation_Composition.

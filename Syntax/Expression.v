@@ -164,7 +164,7 @@ Section Signature_Maps.
     : fmap (Signature.idmap Σ) e = e.
   Proof.
     induction e as [ γ i | γ S e_args IH_e_args ].
-    - apply idpath.
+     - apply idpath.
     - simpl. apply ap.
       apply path_forall; intros i.
       apply IH_e_args.
