@@ -66,3 +66,5 @@ Presented rules, type theories
 Miscellaneous:
 
 - in Context: try making [Context.rename] have more usual argument order by splitting up the raw context argument (relying on coercions)?
+- in Judgement: check if fmap really needs to work by cases, or how it would work to just say a context has 0 hypothetical slots.
+- get rid of bloody [judgement_total]!
