@@ -50,7 +50,7 @@ Section SignatureMaps.
     refine (transport _ _ _).
     - apply Judgement.fmap_presupposition.
     - simple refine (Closure.derivation_fmap2 _
-        (FlatTypeTheory.derivation_fmap_in_theory_over _ (r_wt p))).
+        (FlatTypeTheory.derivation_fmap1_over _ (r_wt p))).
       + cbn.
         (* TODO: rewrite [Family.fmap_sum] as an iso, for better behaviour? *)
         refine (transport (fun K => Family.map K _) _ _).
@@ -63,7 +63,7 @@ Section SignatureMaps.
       + (* TODO: the following could possibly be better abstracted in terms of the fibrational properties of flat type theory maps? *)
         intros R.
         refine (transport _ _
-          (FlatTypeTheory.fmap_flat_rule_derivation _ (ff R))).
+          (FlatTypeTheory.flat_rule_derivation_fmap _ (ff R))).
         refine (_ @ FlatRule.fmap_compose _ _ _).
         refine ((FlatRule.fmap_compose _ _ _)^ @ _).
         apply ap10, ap. apply Metavariable.include_symbol_after_map.

@@ -199,20 +199,34 @@ Proof.
     intro p. apply hypothesis.
 Defined.
 
-(** Given a closure system map from [C] to [D],
-   we can map derivations over [C] to derivations over [D]. *)
+(** Our most general functoriality statement for derivations:
+  given a closure system map from [C] to [D],
+  and a family map of hypotheses [H] to [H'],
+  all over a map [f : X -> Y] of carrier types,
+  we can map derivations over [C] from [H] to derivations over [D] from [H']. *)
 Local Fixpoint derivation_fmap_over
+    {X Y} {f : X -> Y}
+    {C : system X} {C' : system Y} (fC : map_over f C C')
+    {H} {H'} (fH : Family.map_over f H H')
+    {x} (d : derivation C H x)
+  : derivation C' H' (f x).
+Proof.
+  destruct d as [i | r d_prems].
+  - simple refine (hypothesis' _ _). { exact (fH i). }
+    apply Family.map_over_commutes.
+  - refine (graft _ (fC r) _).
+    intro i. apply (derivation_fmap_over _ _ _ _ _ fC _ _ fH), d_prems.
+Defined.
+
+Arguments derivation_fmap_over : simpl nomatch.
+
+Local Fixpoint derivation_fmap1_over
     {X Y} {f : X -> Y} {C : system X} {D : system Y} (ff : map_over f C D)
     {H} {x} (d : derivation C H x)
   : derivation D (Family.fmap f H) (f x).
 Proof.
-  destruct d as [i | r d_prems].
-  - refine (hypothesis _ (Family.fmap f H) i).
-  - refine (graft _ (ff r) _).
-    intro i. apply (derivation_fmap_over _ _ _ _ _ ff), d_prems.
+  exact (derivation_fmap_over ff (Family.map_to_fmap f H) d).
 Defined.
-
-Arguments derivation_fmap_over : simpl nomatch.
 
 (** Although [derivation_fmap] is just a special case of [derivation_fmap_over],
  it is given separately since the specialised statement works better in
@@ -221,20 +235,18 @@ Arguments derivation_fmap_over : simpl nomatch.
  Specifically, while [Family.fmap idmap H] is in fact judgementally
  equal to [H], the unification performed by [apply] doesn’t always recognise
  this. *)
-Local Definition derivation_fmap
+Local Definition derivation_fmap1
     {X} {C D : system X} (f : map C D)
     {H} {x} (d : derivation C H x)
   : derivation D H x
-:= derivation_fmap_over f d.
-
-Arguments derivation_fmap : simpl nomatch.
+:= derivation_fmap1_over f d.
 
 Local Definition compose_over {X Y Z} {f : X -> Y} {g : Y -> Z}
     {K} {L} {M} (ff : map_over f K L) (gg : map_over g L M)
   : map_over (g o f) K M.
 Proof.
   intros k.
-  exact (derivation_fmap_over gg (ff k)).
+  exact (derivation_fmap1_over gg (ff k)).
 Defined.
 
 Local Definition compose_over' {X Y Z} (f : X -> Y) (g : Y -> Z)
@@ -310,7 +322,7 @@ Definition axioms_vs_hypotheses {X}
   <-> derivation (T + axioms H1) H2 x.
 Proof.
   split.
-  - intro d. refine (graft _ (derivation_fmap inl d) _).
+  - intro d. refine (graft _ (derivation_fmap1 inl d) _).
     intros [h1 | h2].
     + refine (deduce (T+Family.fmap axiom H1) _ (Datatypes.inr h1) _).
       intros [].

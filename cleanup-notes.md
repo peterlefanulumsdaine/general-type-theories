@@ -45,7 +45,6 @@ General functoriality/categorical conventions:
 
 - pass through all files to generally get functoriality lemma naming (done up to all of [Syntax] group)
 - ditto for functoriality lemma placement/organisation (less crucial)
-- [FlatTypeTheory]: consistentise naming of the [derivation_fmap] lemmas!
 
 Contexts and judgements:
 
@@ -62,6 +61,12 @@ Utility derivations, flat rules, etc:
 Presented rules, type theories
 
 - try to unify the files for raw/typed versions of alg exts, presented rules, TT’s (there’s no obvious dependency reason not to).
+
+Flat Type Theory maps:
+
+- explicitly develop the simple maps, give the easy functoriality lemmas with respect to them
+- refactor [map_over_from_family_map_over], [map_from_family_map] to go via simple maps
+- downstream, if [map_from_family_map] is immediately followed by a functoriality, change it to the simple functoriality.
 
 Miscellaneous:
 

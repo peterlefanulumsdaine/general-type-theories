@@ -96,7 +96,7 @@ Section Functoriality.
     assert (fDi :=
       FlatTypeTheory.derivation_fmap (Metavariable.fmap1 f _) Di).
     clear D Di. (* just tidying up *)
-    refine (FlatTypeTheory.derivation_fmap_in_theory _ (Closure.derivation_fmap2 _ fDi)).
+    refine (FlatTypeTheory.derivation_fmap1 _ (Closure.derivation_fmap2 _ fDi)).
       + (* commutativity in type theory *)
         apply FlatTypeTheory.map_from_family_map.
         (* TODO: abstract the follwing as lemma? *)
@@ -143,7 +143,7 @@ Section Functoriality.
     assert (fDi :=
       FlatTypeTheory.derivation_fmap (Metavariable.fmap1 f a) Di).
     clear D Di e_concl. (* just tidying up *)
-    refine (FlatTypeTheory.derivation_fmap_in_theory _ (Closure.derivation_fmap2 _ fDi)).
+    refine (FlatTypeTheory.derivation_fmap1 _ (Closure.derivation_fmap2 _ fDi)).
     - (* commutativity in type theory *)
       apply FlatTypeTheory.map_from_family_map.
       (* TODO: abstract the follwing as lemma? *)
@@ -167,8 +167,8 @@ Section Functoriality.
       -> is_well_typed_algebraic_extension T' A.
   Proof.
     intros A_WT r p.
-    refine (FlatTypeTheory.derivation_fmap_in_theory _ (A_WT r p)).
-    apply FlatTypeTheory.fmap_map, f.
+    refine (FlatTypeTheory.derivation_fmap1 _ (A_WT r p)).
+    apply FlatTypeTheory.map_fmap, f.
   Defined.
 
   (** Well-typedness is _contravariantly_ functorial in the ambient theory. *)
@@ -181,8 +181,8 @@ Section Functoriality.
     intros R_WT.
     split. { exact (fmap_is_well_typed_algebraic_extension_in_theory f (fst R_WT)). }
     intros p.
-    refine (FlatTypeTheory.derivation_fmap_in_theory _ (snd R_WT p)).
-    apply FlatTypeTheory.fmap_map, f.
+    refine (FlatTypeTheory.derivation_fmap1 _ (snd R_WT p)).
+    apply FlatTypeTheory.map_fmap, f.
   Defined.
 
 End Functoriality.
