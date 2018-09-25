@@ -7,15 +7,27 @@ Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
 
+(** A _flat rule_ is the simplest analysis of a rule of type theory:
+
+- a collection of judgements as premises and conclusion,
+- written in some metavariable extension of the ambient signature,
+- yielding, for each instantiation of the metavariables, a closure
+  condition on judgements.
+
+This is just what’s required to define derivations and the typing relations.
+
+Using those, we will then be able to define _well-presented_ rules,
+which will carry extra structure ensuring the resulting typing relations
+are well-behaved.
+*)
 
 Section FlatRule.
 
   Context {σ : shape_system}.
-  Context {Σ : signature σ}.
 
   (* TODO: Is it right that we allow arbitrary judgements, or should we allow
      only _hypothetical_ judgements? *)
-  Record flat_rule
+  Record flat_rule {Σ : signature σ}
   :=
     { flat_rule_metas : arity _
     ; flat_rule_premise :
@@ -24,8 +36,10 @@ Section FlatRule.
         (judgement_total (Metavariable.extend Σ flat_rule_metas))
     }.
 
-  Local Lemma eq
-      {R R' : flat_rule}
+  Global Arguments flat_rule _ : clear implicits.
+
+  Local Lemma eq {Σ : signature σ}
+      {R R' : flat_rule Σ}
       (e_metas : flat_rule_metas R = flat_rule_metas R')
       (e_premises
        : transport (fun a => family (_ (_ _ a))) e_metas
@@ -42,29 +56,8 @@ Section FlatRule.
     apply idpath.
   Defined.
 
-  Local Definition closure_system (R : flat_rule)
-    : Closure.system (judgement_total Σ).
-  Proof.
-    exists { Γ : raw_context Σ &
-                 Metavariable.instantiation (flat_rule_metas R) Σ Γ }.
-    intros [Γ I].
-    split.
-    - (* premises *)
-      refine ([< [! |- Γ !] >] + _).
-      refine (Family.fmap _ (flat_rule_premise R)).
-      apply (Judgement.instantiate _ I).
-    - apply (Judgement.instantiate _ I).
-      apply (flat_rule_conclusion R).
-  Defined.
+  Context `{Funext}.
 
-End FlatRule.
-
-Arguments flat_rule {_} _.
-Arguments closure_system {_ _} _.
-
-Section SignatureMaps.
-
-  Context `{Funext} {σ : shape_system}.
 
   Local Definition fmap
         {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
@@ -117,6 +110,29 @@ Section SignatureMaps.
       apply ap10, ap, Metavariable.fmap1_compose.
   Defined.
 
+End FlatRule.
+
+Section ClosureSystem.
+
+  Context {σ : shape_system}.
+
+  Local Definition closure_system {Σ : signature σ} (R : flat_rule Σ)
+    : Closure.system (judgement_total Σ).
+  Proof.
+    exists { Γ : raw_context Σ &
+                 Metavariable.instantiation (flat_rule_metas R) Σ Γ }.
+    intros [Γ I].
+    split.
+    - (* premises *)
+      refine ([< [! |- Γ !] >] + _).
+      refine (Family.fmap _ (flat_rule_premise R)).
+      apply (Judgement.instantiate _ I).
+    - apply (Judgement.instantiate _ I).
+      apply (flat_rule_conclusion R).
+  Defined.
+
+  Context `{Funext}.
+
   Local Definition fmap_closure_system 
         {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
         (R : flat_rule Σ)
@@ -145,9 +161,8 @@ Section SignatureMaps.
     destruct e. apply fmap_closure_system.
   Defined.
 
-End SignatureMaps.
-
+End ClosureSystem.
 
 (** Instantiations?  The interaction between flat rules and instantiations — in particular, the interaction with [FlatRule.closure_system] — can’t be given here, since it depends on structural rules, at least on the rule for variable-renaming.  So see [Typing.FlatTypeTheory] downstream for lemmas on this, and the comments at  [instantiate_flat_rule_closure_system] there for a more detailed explanation. *)
 
-(* NOTE: what we could give here, and should if it’s needed anywhere, would be the “functoriality of flat rules under instantiations”: i.e. translating a flat rule over [Σ+a] to a flat rule over [Σ], using [Judgement.instantiate]. *)
+(* NOTE: what we could give in this file, and should if it’s needed anywhere, would be the “functoriality of flat rules under instantiations”: i.e. translating a flat rule over [Σ+a] to a flat rule over [Σ], using [Judgement.instantiate]. *)
