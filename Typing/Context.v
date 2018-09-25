@@ -16,25 +16,36 @@ This reflects how contexts are *used* in derivations.  When working in a context
 Section RawContext.
 
   Context {σ : shape_system}.
-  Context {Σ : signature σ}.
 
-  (* A raw context consists of a shape, and a raw syntactic type expression
+  (** A raw context consists of a shape, and a raw syntactic type expression
      for each position of the shape. *)
-  Record raw_context
+  Record raw_context {Σ : signature σ}
     := { raw_context_carrier :> shape_carrier σ
        ; raw_context_type :> raw_context_carrier -> raw_type Σ raw_context_carrier
        }.
 
+  Arguments raw_context _ : clear implicits.
+
+  (** Functoriality in signature maps *)
+  Local Definition fmap {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+    : raw_context Σ -> raw_context Σ'.
+  Proof.
+    intros Γ.
+    exists (raw_context_carrier Γ).
+    intros i. refine (_ (raw_context_type Γ i)).
+    apply (Expression.fmap f).
+  Defined.
+
   (** The empty context. *)
-  Local Definition empty : raw_context.
+  Local Definition empty {Σ : signature σ} : raw_context Σ.
   Proof.
     exists (shape_empty _).
     apply (empty_rect _ shape_is_empty).
   Defined.
 
   (** Extend a context by one slot of a given raw type. *)
-  Local Definition extend (Γ : raw_context) (A : raw_type Σ Γ)
-    : raw_context.
+  Local Definition extend {Σ : signature σ} (Γ : raw_context Σ) (A : raw_type Σ Γ)
+    : raw_context Σ.
   Proof.
     exists (shape_extend _ Γ).
     apply (plusone_rect _ _ (shape_is_extend _ _)).
@@ -53,34 +64,19 @@ Notation " [: x ; .. ; z :] " :=
   (extend .. (extend (empty) x) .. z) : context_scope.
 Open Scope context_scope.
 
-Global Arguments raw_context {_} _.
-
-Section Signature_Maps.
-
-  Context {σ : shape_system}.
-
-  Local Definition fmap {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-    : raw_context Σ -> raw_context Σ'.
-  Proof.
-    intros Γ.
-    exists (raw_context_carrier Γ).
-    intros i. refine (_ (raw_context_type Γ i)).
-    apply (Expression.fmap f).
-  Defined.
-
-
-End Signature_Maps.
+Arguments raw_context {_} _.
+Arguments Build_raw_context {_ _} _ _.
 
 Section Rename_Variables.
-(** The action of variable-renaming on contexts (and, later, judgements) is a bit subtler than on expressions: one can only rename an _isomorphism_ of shapes, not an arbitrary map.
+(** The action of variable-renaming on contexts (and, later, judgements) is a bit subtler than on expressions: one can only rename along an _isomorphism_ of shapes, not an arbitrary map of shapes.
 
   Precisely, given a raw context [Γ] and an _isomorphic_ shape [f : γ' <~> Γ], one can rename the variables of [Γ] according to [f], to get a raw context with shape [γ']; and similarly for judgements; and this will in each case preserve derivability/well-typedness.
 
-  (NOTE: in fact this all seems to make sense more generally for _retractions_ [f : γ' <~> Γ] of shapes, not just isomorphisms. However. we have no use-case for the more general version, so we give these for now just for the case of isomorphisms.) *)
+  (NOTE: in fact this all works more generally for _retractions_ [f : γ' <~> Γ] of shapes, not just isomorphisms. However. we have no use-case for the more general version, so we give these for now just for the case of isomorphisms.) *)
 
   Context {σ : shape_system} {Σ : signature σ}.
 
-  (** NOTE: arguments of this are in the opposite order from in renaming of expressions; this is inevitable, unless we split up the context argument into shape and types separately, which would make this cumbersome to apply. *)
+  (** NOTE: arguments of [Context.rename] are in the opposite order from in renaming of expressions; this seems inevitable, unless we split up the context argument into shape and types separately, which would make this cumbersome to apply. *)
   Local Definition rename
       (Γ : raw_context Σ) {γ' : shape_carrier σ} (f : γ' <~> Γ)
     : raw_context Σ.
@@ -166,7 +162,7 @@ Section Instantiation.
         (shape_assoc _ _ _)^-1
         i.
   Proof.
-  repeat refine (coproduct_rect shape_is_sum _ _ _).
+    repeat refine (coproduct_rect shape_is_sum _ _ _).
     - intros i; cbn.
       eapply concat. { refine (coproduct_comp_inj1 _). }
       eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }

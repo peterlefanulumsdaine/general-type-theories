@@ -62,3 +62,7 @@ Utility derivations, flat rules, etc:
 Presented rules, type theories
 
 - try to unify the files for raw/typed versions of alg exts, presented rules, TT’s (there’s no obvious dependency reason not to).
+
+Miscellaneous:
+
+- in Context: try making [Context.rename] have more usual argument order by splitting up the raw context argument (relying on coercions)?
