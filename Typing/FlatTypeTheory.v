@@ -8,20 +8,31 @@ Require Import Typing.Judgement.
 Require Import Typing.FlatRule.
 Require Import Typing.StructuralRule.
 
+(** A _flat type theory_ [flat_type_theory] is just a collection of flat rules.
+
+To any type theory is associated a _closure system_ [FlatTypeTheory.closure_system] on judgements, and hence notions of _derivations_ and _derivability_ of judgements.
+
+Flat type theories are a simple notion, sufficient to define derivations of judgements and ensure that they are in some respects well-behaved.  We will later refine these to the notion of a _well-presented_ type theory.
+*)
+
 Section FlatTypeTheory.
 
   Context {σ : shape_system}.
 
   (** A flat type theory is just a family of flat rules. *)
   Definition flat_type_theory (Σ : signature σ) : Type
-     := family (flat_rule Σ).
+    := family (flat_rule Σ).
 
-  (** The closure system associated to a flat type theory [T]:
-  consists of structural rules for the signature, plus all instantiations
-  of all rules of [T]. *)
-  Local Definition closure_system {Σ : signature σ} (T : flat_type_theory Σ)
-    : Closure.system (judgement_total Σ)
-    := structural_rule Σ + Family.bind T FlatRule.closure_system.
+  (** General maps of flat type theories will send rules of the source theory
+  to _derivable_ rules of the target theory. However, developing these requires
+  preliminary infrastructure on derivations, for which we will want to make use
+  of a notion of _simple maps_ of flat type theories: just a family map between
+  their rules, modulo translation under a signature map. *)
+  Local Definition simple_map_over
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      (T : flat_type_theory Σ) (T' : flat_type_theory Σ')
+    : Type
+  := Family.map_over (FlatRule.fmap f) T T'.
 
   (** One can translate flat type theories under signature maps *)
   Local Definition fmap
@@ -31,7 +42,7 @@ Section FlatTypeTheory.
     apply Family.fmap, FlatRule.fmap, f.
   Defined.
 
-  (* TODO: consider naming; consider whether would be easier as an equality. *)
+  (* TODO: consider naming; consider whether would be easier as a family iso instead of an equality. *)
   Local Definition fmap_compose `{Funext}
       {Σ Σ' Σ'' : signature σ}
       (f : Signature.map Σ Σ') (f' : Signature.map Σ' Σ'')
@@ -44,6 +55,19 @@ Section FlatTypeTheory.
   Defined.
 
 End FlatTypeTheory.
+
+Section ClosureSystem.
+
+  Context {σ : shape_system}.
+
+  (** The closure system associated to a flat type theory [T]:
+  consists of structural rules for the signature, plus all instantiations
+  of all rules of [T]. *)
+  Local Definition closure_system {Σ : signature σ} (T : flat_type_theory Σ)
+    : Closure.system (judgement_total Σ)
+    := structural_rule Σ + Family.bind T FlatRule.closure_system.
+
+End ClosureSystem.
 
 Section Derivations.
   Context {σ : shape_system}.
@@ -70,7 +94,7 @@ Section Derivations.
 End Derivations.
 
 (** A first few utility derivations, usable for building up others. *)
-(* TODO: unify with [UtilityDerivations.v]. *)
+(* TODO: unify with [UtilityDerivations.v]: move whichever ones don’t interact with the rest of the flatt type theory upstream from here to there.  *)
 Section UtilityDerivations.
 
   Context {σ : shape_system} `{H_Funext : Funext}.
@@ -281,7 +305,6 @@ Section Instantiation.
   Defined.
 
   (** Instantiate derivation [d] with metavariable instantiation [I]. *)
-  (* Note: like [instantiate_closure_system] above, this is currently mis-stated: needs adding a hypothesis [ |– Г cxt ].  (That’s all that needs adding, though: typing hypothesis for the other metavariables will already be supplied by (the instantiation of) [hyps]. *)
   Local Definition instantiate_derivation
       (T : flat_type_theory Σ)
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
@@ -408,7 +431,7 @@ Section Maps.
     apply path_forall; intros i. apply fmap_judgement_total_idmap.
   Defined.
 
-  (* TODO: consider naming of this and following lemma. *)
+  (* TODO: consider naming of this and following few lemmas. *)
   Local Lemma derivation_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {T : flat_type_theory Σ} {H : family (judgement_total Σ)} {J}
