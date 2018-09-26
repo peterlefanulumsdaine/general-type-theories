@@ -46,12 +46,6 @@ General functoriality/categorical conventions:
 - pass through all files to generally get functoriality lemma naming (done up to all of [Syntax] group)
 - ditto for functoriality lemma placement/organisation (less crucial)
 
-Contexts and judgements:
-
-- in Context.v: perhaps make (simple) context maps over shape maps more explicit/methodical (and same with judgements)?
-- organisation in Judgement.v: quite complex, consider it!
-- refactor judgements so that shape parameter less deeply nested?
-
 Utility derivations, flat rules, etc:
 
 - move utility derivations upstream of flat type theories (both UtilityDerivations.v and the section currently in FlatTypeTheory.v) 

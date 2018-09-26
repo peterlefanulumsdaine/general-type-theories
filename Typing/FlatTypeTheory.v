@@ -7,6 +7,7 @@ Require Import Typing.Context.
 Require Import Typing.Judgement.
 Require Import Typing.FlatRule.
 Require Import Typing.StructuralRule.
+Require Import Typing.UtilityDerivations.
 
 (** A _flat type theory_ [flat_type_theory] is just a collection of flat rules.
 
@@ -96,51 +97,10 @@ Section Derivations.
 End Derivations.
 
 (** A first few utility derivations, usable for building up others. *)
-(* TODO: unify with [UtilityDerivations.v]: move whichever ones don’t interact with the rest of the flatt type theory upstream from here to there.  *)
+(* TODO: unify with [UtilityDerivations.v]: move whichever ones don’t interact with the rest of the flat type theory upstream from here to there.  *)
 Section UtilityDerivations.
 
   Context {σ : shape_system} `{H_Funext : Funext}.
-
-  (** Commonly-required analogue of [Closure.deduce']. *)
-  (* TODO: after some use, consider whether this would be more convenient with
-   the equivalence given in the other direction. *)
-  Lemma deduce_modulo_rename {Σ : signature σ}
-      {T : flat_type_theory Σ} {H : family _} {J : judgement_total _}
-      (r : closure_system T)
-      (e : shape_of_judgement J
-          <~> shape_of_judgement (Closure.conclusion (closure_system T r)))
-      (e_J : Judgement.rename (Closure.conclusion (closure_system T r)) e
-             = J)
-      (D : forall p : Closure.premises (closure_system T r),
-          derivation T H (Closure.premises _ p))
-    : derivation T H J.
-  Proof.
-    simple refine (Closure.deduce' _ _ _).
-    - apply inl, StructuralRule.rename.
-      exists (Closure.conclusion (closure_system T r)). exact (_;e).
-    - apply e_J.
-    - intros [].
-      exact (Closure.deduce _ _ r D).
-  Defined.
-
-  (** Commonly-required analogue of [Closure.deduce'], similar to [deduce_modulo_rename] above. *)
-  (* TODO: after some use, consider whether this would be more convenient with
-   the equivalence given in the other direction. *)
-  Lemma hypothesis_modulo_rename {Σ : signature σ}
-      {T : flat_type_theory Σ} {H : family (judgement_total _)}
-      {J : judgement_total _}
-      (h : H)
-      (e : shape_of_judgement J <~> shape_of_judgement (H h))
-      (e_J : Judgement.rename (H h) e = J)
-    : derivation T H J.
-  Proof.
-    simple refine (Closure.deduce' _ _ _).
-    - apply inl, StructuralRule.rename.
-      exists (H h). exact (_;e).
-    - apply e_J.
-    - intros [].
-      exact (Closure.hypothesis _ _ h).
-  Defined.
 
   (** Any rule of a type theory is derivable over the theory itself. *)
   (* TODO: consider name *)
