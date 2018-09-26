@@ -98,7 +98,8 @@ Section Functoriality.
     clear D Di. (* just tidying up *)
     refine (FlatTypeTheory.derivation_fmap1 _ (Closure.derivation_fmap2 _ fDi)).
       + (* commutativity in type theory *)
-        apply FlatTypeTheory.map_from_family_map.
+        apply FlatTypeTheory.map_from_simple_map,
+              FlatTypeTheory.simple_map_from_family_map.
         (* TODO: abstract the follwing as lemma? *)
         exists idmap.
         intros r; simpl.
@@ -145,7 +146,8 @@ Section Functoriality.
     clear D Di e_concl. (* just tidying up *)
     refine (FlatTypeTheory.derivation_fmap1 _ (Closure.derivation_fmap2 _ fDi)).
     - (* commutativity in type theory *)
-      apply FlatTypeTheory.map_from_family_map.
+      apply FlatTypeTheory.map_from_simple_map,
+            FlatTypeTheory.simple_map_from_family_map.
       (* TODO: abstract the follwing as lemma? *)
       exists idmap.
       intros r; simpl.

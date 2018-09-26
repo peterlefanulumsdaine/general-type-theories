@@ -51,9 +51,29 @@ Local Definition map_over {A B} (f : A -> B) (K : family A) (L : family B)
   := { ff : K -> L
      & forall i : K, L (ff i) = f (K i) }.
 
+Local Definition map_index_action
+    {A B} (f : A -> B) (K : family A) (L : family B)
+  : map_over f K L -> (K -> L)
+:= pr1.
+Coercion map_index_action : map_over >-> Funclass.
+
+Local Definition map_over_commutes
+  {A B} {f : A -> B} {K : family A} {L : family B}
+  : forall ff : map_over f K L,
+    forall i : K, L (ff i) = f (K i)
+:= pr2.
+
 (** For the special case of a map between families from the same type, a map of families is a map of their indices/elements, commuting with the evaluation map. *)
 Local Definition map {A} (K L : family A)
   := map_over idmap K L.
+
+Identity Coercion map_over_of_map : map >-> map_over.
+
+Local Definition map_commutes
+  {A} {K L : family A}
+  : forall f : map K L,
+    forall i : K, L (f i) = K i
+:= pr2.
 
 (** Re-grouping of constructor function for [map]: useful when the map and equality components for each input are most easily given together, e.g. if they involve an induction on the input. *)
 Local Definition Build_map' {A B} (f : A -> B) (K : family A) (L : family B)
@@ -63,31 +83,6 @@ Proof.
   exists (fun i => pr1 (g i)).
   intros i. exact (pr2 (g i)).
 Defined.
-
-Local Definition map_index_action
-    {A B} (f : A -> B) (K : family A) (L : family B)
-  : map_over f K L -> (K -> L)
-:= pr1.
-Coercion map_index_action : map_over >-> Funclass.
-
-(** Trivial conversion, needed for the coercion [map_index_action] to
- work on [map] as well as [map_over]. *)
-Local Definition map_over_of_map {A} {K L : family A}
-  : map K L -> map_over idmap K L
-:= idmap.
-Coercion map_over_of_map : map >-> map_over.
-
-Local Definition map_over_commutes
-  {A B} {f : A -> B} {K : family A} {L : family B}
-  : forall ff : map_over f K L,
-    forall i : K, L (ff i) = f (K i)
-:= pr2.
-
-Local Definition map_commutes
-  {A} {K L : family A}
-  : forall f : map K L,
-    forall i : K, L (f i) = K i
-:= pr2.
 
 (** Several equality lemmas for maps. *)
 Local Definition map_over_eq `{Funext}
@@ -441,8 +436,22 @@ Proof.
   exact (f (K i) j).
 Defined.
 
+(* TODO: unify the functoriality lemmas for [bind]. *)
+
+Local Lemma bind_fmap1
+    {A} {K K' : family A} (f : map K K')
+    {B} (L : A -> family B)
+  : map (bind K L) (bind K' L).
+Proof.
+  apply Build_map'. intros [k l].
+  simple refine ((f k; _); _).
+  { refine (transport (fun a => L a) _ l).
+    apply inverse, map_commutes. }
+  cbn. destruct (map_commutes f k). apply idpath.
+Defined.
+
 (* TODO: make an iso? *)
-Lemma bind_fmap_mid
+Local Lemma bind_fmap_mid
     {A A'} (f : A -> A')
     {B} (K : family A) (L : A' -> family B)
   : map
@@ -452,7 +461,7 @@ Proof.
   apply idmap.
 Defined.
 
-Lemma bind_fmap2
+Local Lemma bind_fmap2
     {A} (K : family A)
     {B B'} (f : B -> B')
     {L} {L'} (ff : forall a, map_over f (L a) (L' a))

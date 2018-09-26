@@ -109,7 +109,8 @@ Section PresuppositionClosure.
          (T r) derivable from flatten (T r'), stably (i.e. regardless of
          ambient theory) 
        - so: simple map of _raw rules_: f : R' —> R: must implies R stably derivable from R'; so, is simple map (premises R —> premises R'), and then conclusion must agree. *)
-    apply FlatTypeTheory.map_from_family_map.
+    apply FlatTypeTheory.map_from_simple_map,
+          FlatTypeTheory.simple_map_from_family_map.
     apply (Family.map_vs_map_over _ _ _)^-1.
     apply RawTypeTheory.flatten_initial_segment.
   Admitted.
