@@ -2,7 +2,6 @@ Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
 Require Import Syntax.ShapeSystem.
-Require Import Typing.TypedClosure.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
@@ -82,14 +81,14 @@ Section Instantiations.
        (T : flat_type_theory Σ)
        (r : flat_rule Σ) (D_r : weakly_well_typed T r)
        {Γ : raw_context Σ} (I : Metavariable.instantiation (flat_rule_metas r) Σ Γ)
-    : TypedClosure.weakly_well_typed_rule presupposition
+    : Closure.weakly_well_typed_rule presupposition
         (FlatTypeTheory.closure_system T)
         (FlatRule.closure_system r (Γ;I)).
   Proof.
     (* Rough idea: derivations translate along the instantiation of syntax,
     so the derivations provided by well-typedness of [r] translate into 
     the derivations required for well-typedness of its instantiations. *)
-      unfold TypedClosure.weakly_well_typed_rule.
+      unfold Closure.weakly_well_typed_rule.
       intros p.
       eapply transport. 
       { apply instantiate_presupposition. }

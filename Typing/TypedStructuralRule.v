@@ -9,7 +9,6 @@ Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
 Require Import Typing.StructuralRule.
 Require Import Typing.UtilityDerivations.
-Require Import Typing.TypedClosure.
 Require Import Typing.TypedFlatRule.
 
 (** We show that all the structural rules are well-typed.
@@ -32,14 +31,14 @@ Section TypedStructuralRule.
 
   In fact, we ask for derivations not over just the structural rules but over the closure system associated to the empty flat type theory, so that infrastructure for derivations over general flat type theories can be used. *)
   Local Definition is_well_typed : Closure.rule (judgement_total Σ) -> Type
-    := TypedClosure.weakly_well_typed_rule
+    := Closure.weakly_well_typed_rule
          presupposition (FlatTypeTheory.closure_system [<>]).
 
   (** Context rules are well typed. *)
   Local Definition context_is_well_typed (r : context_instance Σ)
     : is_well_typed (context_instance _ r).
   Proof.
-    apply TypedClosure.weakly_from_strongly_well_typed_rule.
+    apply Closure.weakly_from_strongly_well_typed_rule.
     destruct r as [  [Γ A] | ].
     - split. (* context extension *)
       + intros [ [] | ]. (* two premises *)

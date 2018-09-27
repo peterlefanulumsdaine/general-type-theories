@@ -13,7 +13,6 @@ Require Import Typing.StructuralRule.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
 Require Import Presented.CongruenceRule.
-Require Import Typing.TypedClosure.
 Require Import Typing.TypedStructuralRule.
 Require Import Presented.TypedRule.
 Require Import Presented.TypeTheory.
@@ -48,7 +47,7 @@ Section PresuppositionClosureFlat.
   Theorem closure_system_of_presupposition_closed_flat_type_theory
       {Σ : signature σ} {T : flat_type_theory Σ}
       (T_presup_closed : presupposition_closed_flat_type_theory T)
-    : TypedClosure.weakly_well_typed_system presupposition
+    : Closure.weakly_well_typed_system presupposition
         (FlatTypeTheory.closure_system T).
   Proof.
     intros [r_str | r_log ].
@@ -79,7 +78,7 @@ Section PresuppositionClosureFlat.
         (presupposition _ p).
   Proof.
     simple refine
-      (TypedClosure.presupposition_derivation presupposition _ d_j _).
+      (Closure.presupposition_derivation presupposition _ d_j _).
     apply closure_system_of_presupposition_closed_flat_type_theory.
     apply H_T.
   Defined.

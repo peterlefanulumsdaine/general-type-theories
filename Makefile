@@ -27,7 +27,6 @@ MODULES := \
 	Typing/FlatRule \
 	Typing/StructuralRule \
 	Typing/FlatTypeTheory \
-	Typing/TypedClosure \
 	Typing/UtilityDerivations \
 	Typing/TypedFlatRule \
 	Typing/TypedStructuralRule \

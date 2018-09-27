@@ -39,6 +39,10 @@ The old name was slightly nicer; but in terms of actual mathematical content and
 
 Previously, `Metavariable.v` came after `Judgement.v`, `Context.v`; now it comes before.  This allows definitions like instantiation of judgements to go with judgements, not with instantiation, fitting the general placement of functoriality-type statements.
 
+## Rolled [Typing.TypedClosure] into [Auxiliary.Closure]
+
+Having [TypedClosure] grouped with all the things that really depend on syntax just felt wrong: it really is about general closure systems, even though its motivation is more narrowly tied to dependent type theory than the rest of what [Auxiliary.Closure] sets up is.
+
 # Still to do:
 
 General functoriality/categorical conventions:
