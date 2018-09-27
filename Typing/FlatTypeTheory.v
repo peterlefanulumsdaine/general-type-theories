@@ -240,7 +240,7 @@ Section Derivations.
        (flat_rule_conclusion R).
 
   (** Any rule of a type theory is derivable over the theory itself. *)
-  Lemma flat_type_theory_derive_rule
+  Local Lemma derive_rule
       {Σ : signature σ} (T : flat_type_theory Σ) (r : T)
     : flat_rule_derivation T (T r).
   Proof.
@@ -449,7 +449,7 @@ Section Maps.
   Proof.
     intros R.
     refine (transport _ (Family.map_over_commutes ff R) _).
-    apply flat_type_theory_derive_rule.
+    apply derive_rule.
   Defined.
 
   Local Lemma map_from_simple_map
@@ -483,7 +483,10 @@ Section Maps.
   Defined.
 
   (** The [closure_system] construction is functorial in maps of flat TT’s.
-   This is what will allow translation of derivations under such maps. *)
+
+  This is essentially the core of the “monadicity of derivations”:
+  it will allow translation of derivations under such maps,
+  and hence will give the Kleisli composition of such maps.  *)
   Local Definition closure_system_fmap_over
     {Σ Σ': signature σ} {f : Signature.map Σ Σ'}
     {T : flat_type_theory Σ} {T' : flat_type_theory Σ'}
