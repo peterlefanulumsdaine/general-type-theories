@@ -235,6 +235,13 @@ Defined.
  Specifically, while [Family.fmap idmap H] is in fact judgementally
  equal to [H], the unification performed by [apply] doesn’t always recognise
  this. *)
+Local Definition derivation_fmap
+    {X} {C D : system X} (f : map C D)
+    {H H'} (fH : Family.map H H')
+    {x} (d : derivation C H x)
+  : derivation D H' x
+:= derivation_fmap_over f fH d.
+
 Local Definition derivation_fmap1
     {X} {C D : system X} (f : map C D)
     {H} {x} (d : derivation C H x)

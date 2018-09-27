@@ -59,7 +59,14 @@ Section FlatTypeTheory.
     - exact f.
   Defined.
 
-  (** One can translate flat type theories under signature maps *)
+  Local Definition simple_idmap `{Funext}
+      {Σ : signature σ} (T : flat_type_theory Σ)
+    : simple_map T T.
+  Proof.
+    apply simple_map_from_family_map, Family.idmap.
+  Defined.
+
+  (** Translation flat type theories under signature maps *)
   Local Definition fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
     : flat_type_theory Σ -> flat_type_theory Σ'.
@@ -129,6 +136,15 @@ Section ClosureSystem.
       apply (Family.map_over_commutes fr).
   Defined.
 
+  Local Definition closure_system_fmap_simple
+      {Σ : signature σ} {T T' : flat_type_theory Σ} (f : simple_map T T')
+    : Closure.map (closure_system T) (closure_system T').
+  Proof.
+    refine (transport (fun g => Closure.map_over g _ _) _
+                      (closure_system_fmap_over_simple f)).
+    apply path_forall; intros ?. apply fmap_judgement_total_idmap.
+  Defined.
+
 End ClosureSystem.
 
 Section Derivations.
@@ -151,6 +167,17 @@ Section Derivations.
   Proof.
     refine (Closure.derivation_fmap_over _ fH D).
     apply closure_system_fmap_over_simple, fT.
+  Defined.
+
+  Local Lemma derivation_fmap_simple
+      {Σ : signature σ}
+      {T T' : flat_type_theory Σ} (fT : simple_map T T')
+      {H H'} (fH : Family.map H H')
+      {J} (D : derivation T H J)
+    : derivation T' H' J.
+  Proof.
+    refine (Closure.derivation_fmap _ fH D).
+    apply closure_system_fmap_simple, fT.
   Defined.
 
   (** Functoriality of derivations in signature maps *)
@@ -406,7 +433,7 @@ Section Maps.
       {Σ : signature σ} (T : flat_type_theory Σ)
     : map T T.
   Proof.
-    apply map_from_simple_map, simple_map_from_family_map, Family.idmap.
+    apply map_from_simple_map, simple_idmap.
   Defined.
 
   Local Lemma map_from_eq
@@ -421,8 +448,7 @@ Section Maps.
       (T : flat_type_theory Σ)
     : map_over f T (fmap f T).
   Proof.
-    apply map_over_from_simple_map_over.
-    apply simple_map_to_fmap.
+    apply map_over_from_simple_map_over, simple_map_to_fmap.
   Defined.
 
   (** The [closure_system] construction is functorial in maps of flat TT’s.

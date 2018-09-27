@@ -96,21 +96,21 @@ Section Functoriality.
     assert (fDi :=
       FlatTypeTheory.derivation_fmap (Metavariable.fmap1 f _) Di).
     clear D Di. (* just tidying up *)
-    refine (FlatTypeTheory.derivation_fmap1 _ (Closure.derivation_fmap2 _ fDi)).
-      + (* commutativity in type theory *)
-        apply FlatTypeTheory.map_from_simple_map,
-              FlatTypeTheory.simple_map_from_family_map.
-        (* TODO: abstract the follwing as lemma? *)
-        exists idmap.
-        intros r; simpl.
-        eapply concat. { apply inverse, FlatRule.fmap_compose. }
-        eapply concat. 2: { apply FlatRule.fmap_compose. }
-        apply ap10, ap.
-        apply Metavariable.include_symbol_after_map.
-      + (* commutativity in hypotheses *)
-        cbn. exists idmap; intros j.
-        eapply concat. 2: { apply AlgebraicExtension.flatten_fmap. }
-        apply AlgebraicExtension.flatten_initial_segment_fmap_applied.
+    refine (FlatTypeTheory.derivation_fmap_simple _ _ fDi).
+    - (* commutativity in type theory *)
+      apply FlatTypeTheory.simple_map_from_family_map.
+      (* TODO: refactor using [FlatTypeTheory.fmap_compose]?
+         at least once that’s made into an iso instead of equality. *)
+      exists idmap.
+      intros r; simpl.
+      eapply concat. { apply inverse, FlatRule.fmap_compose. }
+      eapply concat. 2: { apply FlatRule.fmap_compose. }
+      apply ap10, ap.
+      apply Metavariable.include_symbol_after_map.
+    - (* commutativity in hypotheses *)
+      cbn. exists idmap; intros j.
+      eapply concat. 2: { apply AlgebraicExtension.flatten_fmap. }
+      apply AlgebraicExtension.flatten_initial_segment_fmap_applied.
   Defined.
 
   (** Well-typedness is _covariant_ in the signature *)
@@ -144,11 +144,10 @@ Section Functoriality.
     assert (fDi :=
       FlatTypeTheory.derivation_fmap (Metavariable.fmap1 f a) Di).
     clear D Di e_concl. (* just tidying up *)
-    refine (FlatTypeTheory.derivation_fmap1 _ (Closure.derivation_fmap2 _ fDi)).
+    refine (FlatTypeTheory.derivation_fmap_simple _ _ fDi).
     - (* commutativity in type theory *)
-      apply FlatTypeTheory.map_from_simple_map,
-            FlatTypeTheory.simple_map_from_family_map.
-      (* TODO: abstract the follwing as lemma? *)
+      apply FlatTypeTheory.simple_map_from_family_map.
+      (* TODO: refactor using [FlatTypeTheory.fmap_compose]? *)
       exists idmap.
       intros r; simpl.
       eapply concat. { apply inverse, FlatRule.fmap_compose. }

@@ -56,12 +56,6 @@ Presented rules, type theories
 
 - try to unify the files for raw/typed versions of alg exts, presented rules, TT’s (there’s no obvious dependency reason not to).
 
-Flat Type Theory maps:
-
-- explicitly develop the simple maps, give the easy functoriality lemmas with respect to them
-- refactor [map_over_from_family_map_over], [map_from_family_map] to go via simple maps
-- downstream, if [map_from_family_map] is immediately followed by a functoriality, change it to the simple functoriality.
-
 Miscellaneous:
 
 - in Context: try making [Context.rename] have more usual argument order by splitting up the raw context argument (relying on coercions)?
