@@ -133,7 +133,7 @@ Section ClosureSystem.
 
   Context `{Funext}.
 
-  Local Definition fmap_closure_system 
+  Local Definition closure_system_fmap 
         {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
         (R : flat_rule Σ)
     : Family.map_over (Closure.rule_fmap (fmap_judgement_total f))
@@ -151,14 +151,14 @@ Section ClosureSystem.
     - cbn. apply inverse, Judgement.fmap_instantiate.
   Defined.
 
-  Local Definition fmap_closure_system'
+  Local Definition closure_system_fmap'
     {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
     {R} {R'} (e : fmap f R = R') 
   : Family.map_over (Closure.rule_fmap (fmap_judgement_total f))
       (closure_system R)
       (closure_system R').
   Proof.
-    destruct e. apply fmap_closure_system.
+    destruct e. apply closure_system_fmap.
   Defined.
 
 End ClosureSystem.

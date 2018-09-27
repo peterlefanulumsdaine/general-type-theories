@@ -858,12 +858,12 @@ Section SignatureMaps.
       destruct i_eq as [r ΓI].
       simple refine (equality_rule _;_).
       + exists r.
-        simple refine (FlatRule.fmap_closure_system' f _ ΓI).
+        simple refine (FlatRule.closure_system_fmap' f _ ΓI).
         refine (_ @ _). { apply inverse, FlatRule.fmap_compose. }
         refine (ap (fun f => FlatRule.fmap f _) _).
         apply Signature.empty_rect_unique.
       + refine (Family.map_over_commutes
-                  (FlatRule.fmap_closure_system' f _) _).
+                  (FlatRule.closure_system_fmap' f _) _).
   Defined.
 
 End SignatureMaps.

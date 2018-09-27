@@ -93,21 +93,16 @@ Section Functoriality.
     end.
     unfold Family.fmap, family_element in J.
     subst J.
-    assert (fDi :=
-      FlatTypeTheory.derivation_fmap (Metavariable.fmap1 f _) Di).
-    clear D Di. (* just tidying up *)
-    refine (FlatTypeTheory.derivation_fmap_simple _ _ fDi).
-    - (* commutativity in type theory *)
-      apply FlatTypeTheory.simple_map_from_family_map.
-      (* TODO: refactor using [FlatTypeTheory.fmap_compose]?
-         at least once that’s made into an iso instead of equality. *)
+    refine (FlatTypeTheory.derivation_fmap_over_simple _ _ _ Di).
+    - (* map in type theory *)
+      (* TODO: refactor to be higher-level, eg using [FlatTypeTheory.fmap_compose]? *)
       exists idmap.
       intros r; simpl.
       eapply concat. { apply inverse, FlatRule.fmap_compose. }
       eapply concat. 2: { apply FlatRule.fmap_compose. }
       apply ap10, ap.
       apply Metavariable.include_symbol_after_map.
-    - (* commutativity in hypotheses *)
+    - (* map in hypotheses *)
       cbn. exists idmap; intros j.
       eapply concat. 2: { apply AlgebraicExtension.flatten_fmap. }
       apply AlgebraicExtension.flatten_initial_segment_fmap_applied.
@@ -141,12 +136,8 @@ Section Functoriality.
     end.
     unfold Family.fmap, family_element in J.
     subst J.
-    assert (fDi :=
-      FlatTypeTheory.derivation_fmap (Metavariable.fmap1 f a) Di).
-    clear D Di e_concl. (* just tidying up *)
-    refine (FlatTypeTheory.derivation_fmap_simple _ _ fDi).
-    - (* commutativity in type theory *)
-      apply FlatTypeTheory.simple_map_from_family_map.
+    refine (FlatTypeTheory.derivation_fmap_over_simple _ _ _ Di).
+    - (* map in type theory *)
       (* TODO: refactor using [FlatTypeTheory.fmap_compose]? *)
       exists idmap.
       intros r; simpl.
@@ -154,7 +145,7 @@ Section Functoriality.
       eapply concat. 2: { apply FlatRule.fmap_compose. }
       apply ap10, ap.
       apply Metavariable.include_symbol_after_map.
-    - (* commutativity in hypotheses *)
+    - (* map in hypotheses *)
       cbn. exists idmap.
       apply AlgebraicExtension.flatten_fmap.
   Defined.
