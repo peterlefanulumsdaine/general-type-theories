@@ -6,7 +6,7 @@ Not as much large-scale reorganisation this time as in Andrej’s big sweep, but
 
 - mostly, functoriality/naturality lemmas for a definition go directly after the definition, certainly in the same file (even if not needed until further downstream)
 - functoriality action on a construction, e.g. derivations, is called [derivation_fmap], or just [FlatRule.fmap] when the construction is the main concept of a file
-- when a construction is functorial in multiple arguments, e.g. [Family.sum], it has a main functoriality lemma [Family.sum_fmap], followed by specialised ones [Family.sum_fmap1], [Family.sum_fmap2] in the arguments individually
+- when a construction is functorial in multiple arguments, e.g. [Family.sum], it has a main functoriality lemma [Family.sum_fmap], followed by specialised ones [Family.sum_fmap1], [Family.sum_fmap2] in the arguments individually; or for disambiguation the individual ones may be named as e.g. [Closure.derivation_fmap_in_theory], [Closure.derivation_fmap_in_hypotheses]. 
 - the functoriality axioms w.r.t. composition, identities are called e.g. [foo_fmap_compose], [foo_fmap_idmap].
 
 - exception to the above placement principle: when instances of a definition form the objects of a fibered/displayed category (e.g. raw tt’s fibred over signatures); then the “functoriality” in base morphisms follows the def of the morphisms of the new objects (since it’s seen as showing that the new category is a _fibration_/_opfibration_ over the base)
@@ -43,8 +43,7 @@ Previously, `Metavariable.v` came after `Judgement.v`, `Context.v`; now it comes
 
 General functoriality/categorical conventions:
 
-- pass through all files to generally get functoriality lemma naming (done up to all of [Syntax] group)
-- ditto for functoriality lemma placement/organisation (less crucial)
+- pass through all files to generally get functoriality lemma naming, placement, organisation consistent (done on all of [Syntax] group, and up to [Typing.FlatTypeTheory])
 
 Utility derivations, flat rules, etc:
 
@@ -57,6 +56,4 @@ Presented rules, type theories
 
 Miscellaneous:
 
-- in Context: try making [Context.rename] have more usual argument order by splitting up the raw context argument (relying on coercions)?
-- in Judgement: check if fmap really needs to work by cases, or how it would work to just say a context has 0 hypothetical slots.
 - get rid of bloody [judgement_total]!

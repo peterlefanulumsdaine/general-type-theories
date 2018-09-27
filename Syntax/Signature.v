@@ -38,6 +38,20 @@ Section Map.
     : map Σ' Σ'' -> map Σ Σ' -> map Σ Σ''
   := Family.compose.
   
+  Local Lemma id_right `{Funext}
+      {Σ Σ' : signature σ} (f : map Σ Σ')
+    : compose f (idmap _) = f.
+  Proof.
+    apply Family.id_right.
+  Defined.
+
+  Local Lemma id_left `{Funext}
+      {Σ Σ' : signature σ} (f : map Σ Σ')
+    : compose (idmap _) f = f.
+  Proof.
+    apply Family.id_left.
+  Defined.
+
 End Map.
 
 Section Examples.
