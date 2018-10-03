@@ -4,7 +4,7 @@ A (formalised) general definition of type theories.
 
 ## What is a general type theory?
 
-We consider general type theories of the *Martin-Löf style*. In this section we lay down
+We call the class of type theories we define *Martin-Löf style*. In this section we lay down
 the basic concepts but do *not* discuss how they are formalized. You will find here the
 *naive mathematical decscription* of the concepts we intend to formalize. For the purposes
 of formalization we may introduce additional intermediate concepts (but it is better if we
@@ -21,7 +21,7 @@ entities which need not be well-formed.
 The theory is **dependent** (types depend on terms) and has **binding operators** (such as ∏, Σ,
 λ). Therefore, we need to describe **shapes** of contexts and binding operators. Two
 possibilities for shapes are *de Bruijn indices* and *named variables*, but these are not the
-only ones. Thus we define a general abstract notion of shapes, which we then use to
+only ones. Thus we define a general abstract notion of *shape systems*, which we then use to
 express the structure of contexts and binding operators.
 
 The raw syntax is generated from a **raw signature** (we use the qualifier "raw" to remind
@@ -158,9 +158,9 @@ Note that when `xyz` is declared global, e.g., it is the field name of a globall
 ## Code structure
 
 * [`Auxiliary`](./Auxiliary) -- mathematical generalities
-* [`Proto`](./Proto) -- shape systems
-* [`Raw`](./Raw) -- raw syntax, raw rules, raw type theories
-* [`Typed`](./Typed) -- typing derivations, (typed) type theories
+* [`Raw`](./Raw) -- raw syntax
+* [`Typing`](./Typing) -- judgements, flat rules, flat type theories, typing derivations
+* [`Presented`](./Presented) -- well-presented rules, type theories
 
 
 ## Authors
