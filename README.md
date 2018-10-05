@@ -2,7 +2,7 @@
 
 A (formalised) general definition of type theories.
 
-## What is a general type theory?
+## Mathematical overview
 
 We call the class of type theories we define *Martin-Löf style*. In this section we lay down
 the basic concepts but do *not* discuss how they are formalized. You will find here the
@@ -102,9 +102,7 @@ is considerable interdependence between inference rules because giving the evide
 rule is well-formed requires one to provide derivations, but to know what a derivation is,
 we need to be given inference rules.
 
-
-
-## Naming conventions
+## Coing conventions
 
 We observe the following naming conventions.
 
@@ -154,8 +152,27 @@ you can live with the short name withing the module `Foo`.
 Note that when `xyz` is declared global, e.g., it is the field name of a globally defined
 `Record`, then it is ok to name it `foo_xyz`. (Example: field name `Family.family_index`.)
 
+### Categories and functoriality
 
-## Code structure
+Many constructions involved form categories, and/or are functorial/natural in some of their arguments, and keeping track of this systematically is crucial.
+
+Functoriality of a construction `widget` should be given as a lemma `widget_fmap`, or if `widget` is the core notion of a modula `Widget`, as a local lemma `fmap`, exported as `Widget.fmap`.
+
+If widgets are thought of as just forming a set/type, with no further category structure, then there should be further lemmas `Widget.fmap_idmap`, `Widget.fmap_compose` giving the functoriality laws up to equality, and these should all directly follow the definition of widgets.
+
+When widgets form a *category* — or, more typically, a *fibration* or *displayed category* over some previously-defined category (e.g. families form a fibration over sets/types) — then their (displayed) maps and category structure should directly follow their definition, and their `fmap` lemma (i.e. the demonstration that the displayed category is a fibration) should follow these.
+
+Maps of widgets should be defined as `Widget.map`, or `Widget.map_over` for displayed maps over some map(s) of the parameters, composition as `Widget.compose`, and so on.
+
+### Kleisli-like categories
+
+In some case, the main notion of map for some object is something like a Kleisli map: e.g. for type theories, a “map of type theories” may take a symbol of the source theory not just to an atomic symbol but more generally to any suitably-derivable *term* of the target theory.
+
+However, setting up the category of such maps usually requires first developing the corresponding *simple maps*, e.g. where each symbol of the source theory is sent just to a suitable symbol of the target theory.
+
+In this case, we distinguish the simple structure as e.g. `Widget.simple_map`, `Widget.simple_compose`, and so on; or when we wish to think of the simple notion as primary, we distinguish the Kleisli notions as `Widget.kleisli_map`, etc.
+
+## Directory overview
 
 * [`Auxiliary`](./Auxiliary) -- mathematical generalities
 * [`Raw`](./Raw) -- raw syntax
