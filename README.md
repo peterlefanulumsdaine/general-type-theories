@@ -2,6 +2,21 @@
 
 A (formalised) general definition of type theories.
 
+## Authors
+
+* Andrej Bauer
+* Philipp Haselwarter
+* Peter LeFanu Lumsdaine
+
+## Directory overview
+
+* [`Auxiliary`](./Auxiliary) -- mathematical generalities, not specifically about type theory
+* [`Syntax`](./Syntax) -- raw syntax
+* [`Typing`](./Typing) -- judgements, flat rules, flat type theories, typing derivations
+* [`Presented`](./Presented) -- well-presented rules, type theories
+* [`Metatheorem`](./Metatheorem) -- basic metatheorems about these type theories
+* [`Example`](./Example) -- examples of shape systems, type theories, etc.
+
 ## Mathematical overview
 
 We call the class of type theories we define *Martin-Löf style*. In this section we lay down
@@ -172,16 +187,3 @@ However, setting up the category of such maps usually requires first developing 
 
 In this case, we distinguish the simple structure as e.g. `Widget.simple_map`, `Widget.simple_compose`, and so on; or when we wish to think of the simple notion as primary, we distinguish the Kleisli notions as `Widget.kleisli_map`, etc.
 
-## Directory overview
-
-* [`Auxiliary`](./Auxiliary) -- mathematical generalities
-* [`Raw`](./Raw) -- raw syntax
-* [`Typing`](./Typing) -- judgements, flat rules, flat type theories, typing derivations
-* [`Presented`](./Presented) -- well-presented rules, type theories
-
-
-## Authors
-
-* Andrej Bauer
-* Philipp Haselwarter
-* Peter LeFanu Lumsdaine
