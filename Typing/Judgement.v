@@ -15,8 +15,10 @@ Section JudgementCombinatorics.
 
   (* The basic hypothetical judgment forms. *)
   Inductive hypothetical_form : Type :=
-  | form_object (cl : syntactic_class) (* a thing is a term, a thing is a type *)
-  | form_equality (cl : syntactic_class). (* terms are equal, types are equal *)
+  | form_object (cl : syntactic_class)
+      (* a thing is a term, a thing is a type *)
+  | form_equality (cl : syntactic_class).
+      (* terms are equal, types are equal *)
 
   Local Definition is_object : hypothetical_form -> Type
     := fun jf => match jf with
@@ -49,7 +51,8 @@ Section JudgementCombinatorics.
     |}.
 
   (* The boundary slots of a term or type judgement. *)
-  Local Definition object_boundary_slot (cl : syntactic_class) : family syntactic_class
+  Local Definition object_boundary_slot (cl : syntactic_class)
+    : family syntactic_class
   := match cl with
        (* No hypothetical part in boundary of a type judgement *)
        | class_type => type_object_boundary
@@ -57,10 +60,12 @@ Section JudgementCombinatorics.
        | class_term => term_boundary_slot
      end.
 
-  Inductive equality_boundary_slot_index cl :=
-  | the_equality_sort : family_index (object_boundary_slot cl) -> equality_boundary_slot_index cl
-  | the_equality_lhs
-  | the_equality_rhs.
+  Inductive equality_boundary_slot_index cl
+  :=
+    | the_equality_sort : family_index (object_boundary_slot cl)
+                          -> equality_boundary_slot_index cl
+    | the_equality_lhs
+    | the_equality_rhs.
 
   Local Definition equality_boundary_slot (cl : syntactic_class) :=
     {| family_index := equality_boundary_slot_index cl ;
@@ -79,8 +84,8 @@ Section JudgementCombinatorics.
   := match hjf with
        (* object judgement boundary is the boundary of the object *)
        | form_object cl => object_boundary_slot cl
-       (* equality judgement boundary: a boundary of the corresponding object-judgement,
-          together with two objects of the given class *)
+       (* equality judgement boundary: a boundary of the corresponding
+          object-judgement, together with two objects of the given class *)
        | form_equality cl  => equality_boundary_slot cl
      end.
 
@@ -140,7 +145,8 @@ Section Judgements.
      ; hypothetical_part :
          match jf with
          | form_context => (Unit : Type)
-         | form_hypothetical hjf => hypothetical_judgement hjf context_of_judgement
+         | form_hypothetical hjf
+             => hypothetical_judgement hjf context_of_judgement
          end
      }.
      (* NOTE: the cast [Unit : Type] above is necessary, for subtle universe-
@@ -624,9 +630,12 @@ End JudgementNotations.
 
 Notation "'[!' |- Γ !]" := (make_context_judgement_total Γ) : judgement_scope.
 Notation "'[!' Γ |- A !]" := (make_type_judgement_total Γ A) : judgement_scope.
-Notation "'[!' Γ |- A ≡ A' !]" := (make_type_equality_judgement_total Γ A A') : judgement_scope.
-Notation "'[!' Γ |- a ; A !]" :=  (make_term_judgement_total Γ a A) : judgement_scope.
-Notation "'[!' Γ |- a ≡ a' ; A !]" := (make_term_equality_judgement_total Γ A a a') : judgement_scope.
+Notation "'[!' Γ |- A ≡ A' !]"
+  := (make_type_equality_judgement_total Γ A A') : judgement_scope.
+Notation "'[!' Γ |- a ; A !]"
+  :=  (make_term_judgement_total Γ a A) : judgement_scope.
+Notation "'[!' Γ |- a ≡ a' ; A !]"
+  := (make_term_equality_judgement_total Γ A a a') : judgement_scope.
 
 Open Scope judgement_scope.
 
@@ -641,13 +650,13 @@ Section PresuppositionsCombinatorics.
 (** Whenever an object appears in the boundary of an object judgement, then its
     boundary embeds into that boundary.
 
-    NOTE. This is a special case of [boundary_slot_from_presupposition] below. It is
-    abstracted out because it’s used twice: directly for object judgements, and
-    as part of the case for equality judgements.
+    NOTE. This is a special case of [boundary_slot_from_presupposition] below.
+    It is abstracted out because it’s used twice: directly for object
+    judgements, and as part of the case for equality judgements.
 
-    In fact it’s almost trivial, so could easily be inlined; but conceptually it
-    is the same thing both times, and in type theory with more judgements, it
-    would be less trivial, so we keep it factored out. *)
+    In fact it’s almost trivial, so could easily be inlined; but conceptually
+    it is the same thing both times, and in type theory with more judgements,
+    it would be less trivial, so we keep it factored out. *)
 
   Local Definition object_boundary_from_boundary_slots
     {cl : syntactic_class} (i : object_boundary_slot cl)
@@ -682,7 +691,8 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
         destruct i as [ i' |  | ].
         * (* i is in shared bdry of LHS/RHS *)
           cbn in j.
-          exists (the_equality_sort _ (object_boundary_from_boundary_slots i' j)).
+          exists
+            (the_equality_sort _ (object_boundary_from_boundary_slots i' j)).
           apply (Family.map_commutes _ j).
         * (* i is RHS *)
           exists (the_equality_sort _ j). apply idpath.
@@ -739,19 +749,19 @@ Section Presuppositions.
         exact (option (boundary_slot hjf)).
     - intros i. simple refine (Build_judgement_total _ _).
       + clear jb. destruct jf as [ | hjf].
-        * destruct i as [].
-        * destruct i as [ i | ].
-          -- exact (form_hypothetical (form_object ((boundary_slot hjf) i))).
-          -- exact form_context.
+        { destruct i as []. }
+        destruct i as [ i | ].
+        * exact (form_hypothetical (form_object ((boundary_slot hjf) i))).
+        * exact form_context.
       + destruct jf as [ | hjf].
-         * destruct i as [].
-         * exists (pr1 jb).
-           destruct i as [ i | ].
-           -- intros j.
-              refine (transport (fun cl => raw_expression _ cl _) _ _).
-              ++ exact (Family.map_commutes (boundary_slot_from_presupposition i) j).
-              ++ exact (pr2 jb (boundary_slot_from_presupposition i j)).
-           -- constructor.
+        { destruct i as []. }
+        exists (pr1 jb).
+        destruct i as [ i | ].
+        2: { constructor. }
+        intros j.
+        refine (transport (fun cl => raw_expression _ cl _) _ _).
+        * exact (Family.map_commutes (boundary_slot_from_presupposition i) j).
+        * exact (pr2 jb (boundary_slot_from_presupposition i j)).
   Defined.
 
   (** The presuppositions of judgement [j]. *)
@@ -1030,7 +1040,7 @@ Section Instantiation.
     : instantiate _ I (presupposition j i)
       = presupposition (instantiate _ I j) i.
   Proof.
-    apply (ap (Build_judgement_total _)). (* judgement form of presup unchanged *)
+    apply (ap (Build_judgement_total _)). (* form of presup unchanged *)
     destruct j as [[ | hjf] j].
     - destruct i. (* [j] is context judgement: no presuppositions. *)
     - (* [j] is a hypothetical judgement *)

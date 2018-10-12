@@ -435,7 +435,7 @@ Section Maps.
       flat_rule_derivation T' (FlatRule.fmap f (T R)).
 
   (** Note: being defined as instance the general [map_over] means that [map]
-  is not quite what one would expect: it includes an extra [FlatRule.fmap idmap],
+  isn’t quite what one would expect: it includes an extra [FlatRule.fmap idmap],
   which is not judgementally the identity.  Is this good or bad? *)
   Local Definition map
     {Σ} (T T' : flat_type_theory Σ)
@@ -618,9 +618,9 @@ Section Maps.
   Defined.
 
   Local Definition compose_over
-      {Σ Σ' Σ'' : signature σ} {f' : Signature.map Σ' Σ''} {f : Signature.map Σ Σ'}
-      {T : flat_type_theory Σ} {T' : flat_type_theory Σ'} {T'' : flat_type_theory Σ''}
-      (ff' : map_over f' T' T'') (ff : map_over f T T')
+      {Σ Σ' Σ'' : signature σ}
+      {f' : Signature.map Σ' Σ''} {f : Signature.map Σ Σ'}
+      {T} {T'} {T''} (ff' : map_over f' T' T'') (ff : map_over f T T')
     : map_over (Signature.compose f' f) T T''.
   Proof.
     intros r.

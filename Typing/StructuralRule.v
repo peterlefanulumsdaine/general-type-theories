@@ -32,14 +32,14 @@ Require Import Typing.FlatRule.
   - the access function picking it out in the family [structural_rule].
 
   We use [context_extend] for the access function, and call the family
-  [context_extend_instance], since an element of the family is a specific instance
-  of the rule.  So when using this rule in a derivation, one will first say
-  [apply context_extend] to select the context extension rule, and then specify
-  the particular instance desired, i.e. the earlier context and the type to
-  extend by.
+  [context_extend_instance], since an element of the family is a specific
+  instance of the rule.  So when using this rule in a derivation, one will first
+  say [apply context_extend] to select the context extension rule, and then
+  specify the particular instance desired, i.e. the earlier context and the type
+  to extend by.
 
-  (An alternative convention could be to use [context_extend] for the family, and
-  [select_context_extend] or similar for the access function.)
+  (An alternative convention could be to use [context_extend] for the family,
+  and [select_context_extend] or similar for the access function.)
 *)
 
 Section StructuralRules.
@@ -201,8 +201,8 @@ Proof.
     (* f ≡ f' *)
     + exists Γ.
       intros i. refine [! Γ' |- _ ≡ _ ; _ !].
-    (* TODO: note inconsistent ordering of arguments in [give_Tm_ji] compared to other
-       [give_Foo_ji]. Consider, consistentise? *)
+    (* TODO: note inconsistent ordering of arguments in [give_Tm_ji] compared to
+      other [give_Foo_ji]. Consider, consistentise? *)
       * exact (substitute f (Γ i)).
       * exact (f i).
       * exact (f' i).
@@ -611,31 +611,37 @@ Definition variable_rule : variable_instance Σ -> structural_rule Σ
   := fun i => inl (inr i).
 Definition equality_rule : equality_instance Σ -> structural_rule Σ
   := fun i => inr i.
-Definition tyeq_refl
-    : FlatRule.closure_system
-        (FlatRule.fmap (Signature.empty_rect _) tyeq_refl_rule)
-      -> structural_rule Σ
+Definition tyeq_refl : FlatRule.closure_system
+      (FlatRule.fmap (Signature.empty_rect _) tyeq_refl_rule)
+    -> structural_rule Σ
   := fun i => inr (Some (Some (Some (Some (Some (Some (Some tt)))))) ; i).
 Definition tyeq_sym : FlatRule.closure_system
-        (FlatRule.fmap (Signature.empty_rect _) tyeq_sym_rule) -> structural_rule Σ
+      (FlatRule.fmap (Signature.empty_rect _) tyeq_sym_rule)
+    -> structural_rule Σ
   := fun i => inr (Some (Some (Some (Some (Some (Some None))))) ; i).
 Definition tyeq_trans : FlatRule.closure_system
-        (FlatRule.fmap (Signature.empty_rect _) tyeq_trans_rule) -> structural_rule Σ
+      (FlatRule.fmap (Signature.empty_rect _) tyeq_trans_rule)
+    -> structural_rule Σ
   := fun i => inr (Some (Some (Some (Some (Some None)))) ; i).
 Definition tmeq_refl : FlatRule.closure_system
-        (FlatRule.fmap (Signature.empty_rect _) tmeq_refl_rule) -> structural_rule Σ
+      (FlatRule.fmap (Signature.empty_rect _) tmeq_refl_rule)
+    -> structural_rule Σ
   := fun i => inr (Some (Some (Some (Some None))) ; i).
 Definition tmeq_sym : FlatRule.closure_system
-        (FlatRule.fmap (Signature.empty_rect _) tmeq_sym_rule) -> structural_rule Σ
+      (FlatRule.fmap (Signature.empty_rect _) tmeq_sym_rule)
+    -> structural_rule Σ
   := fun i => inr (Some (Some (Some None)) ; i).
 Definition tmeq_trans : FlatRule.closure_system
-        (FlatRule.fmap (Signature.empty_rect _) tmeq_trans_rule) -> structural_rule Σ
+      (FlatRule.fmap (Signature.empty_rect _) tmeq_trans_rule)
+    -> structural_rule Σ
   := fun i => inr (Some (Some None) ; i).
 Definition term_convert : FlatRule.closure_system
-        (FlatRule.fmap (Signature.empty_rect _) term_convert_rule) -> structural_rule Σ
+      (FlatRule.fmap (Signature.empty_rect _) term_convert_rule)
+    -> structural_rule Σ
   := fun i => inr (Some None ; i).
 Definition tmeq_convert : FlatRule.closure_system
-        (FlatRule.fmap (Signature.empty_rect _) tmeq_convert_rule) -> structural_rule Σ
+      (FlatRule.fmap (Signature.empty_rect _) tmeq_convert_rule)
+    -> structural_rule Σ
   := fun i => inr (None ; i).
 
 End StructuralRuleAccessors.
@@ -645,16 +651,17 @@ Section StructuralRuleInd.
 Context {σ : shape_system}.
 Context {Σ : signature σ}.
 
-Definition structural_rule_rect :
-      forall (P : structural_rule Σ -> Type),
-       P context_empty ->
-       (forall i_cxt_ext : context_extend_instance Σ, P (context_extend i_cxt_ext)) ->
-       (forall i_rename : rename_instance Σ, P (rename i_rename)) ->
-       (forall i_sub_ap : subst_apply_instance Σ, P (subst_apply i_sub_ap)) ->
-       (forall i_sub_eq : subst_equal_instance Σ, P (subst_equal i_sub_eq)) ->
-       (forall i_var : variable_instance Σ, P (variable_rule i_var)) ->
-       (forall i_eq : equality_instance Σ, P (equality_rule i_eq)) ->
-       forall s : structural_rule Σ, P s.
+Definition structural_rule_rect
+  : forall (P : structural_rule Σ -> Type),
+     P context_empty
+  -> (forall i_cxt_ext : context_extend_instance Σ,
+         P (context_extend i_cxt_ext))
+  -> (forall i_rename : rename_instance Σ, P (rename i_rename))
+  -> (forall i_sub_ap : subst_apply_instance Σ, P (subst_apply i_sub_ap))
+  -> (forall i_sub_eq : subst_equal_instance Σ, P (subst_equal i_sub_eq))
+  -> (forall i_var : variable_instance Σ, P (variable_rule i_var))
+  -> (forall i_eq : equality_instance Σ, P (equality_rule i_eq))
+  -> forall s : structural_rule Σ, P s.
 Proof.
   intros P X X0 X1 X2 X3 X4 X5 s.
   destruct s as

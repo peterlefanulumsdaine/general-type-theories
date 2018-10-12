@@ -20,9 +20,10 @@ Section RawContext.
   (** A raw context consists of a shape, and a raw syntactic type expression
      for each position of the shape. *)
   Record raw_context {Σ : signature σ}
-    := { raw_context_carrier :> shape_carrier σ
-       ; raw_context_type :> raw_context_carrier -> raw_type Σ raw_context_carrier
-       }.
+  := { raw_context_carrier :> shape_carrier σ
+     ; raw_context_type
+         :> raw_context_carrier -> raw_type Σ raw_context_carrier
+     }.
 
   Arguments raw_context _ : clear implicits.
 
@@ -44,7 +45,7 @@ Section RawContext.
   Defined.
 
   (** Extend a context by one slot of a given raw type. *)
-  Local Definition extend {Σ : signature σ} (Γ : raw_context Σ) (A : raw_type Σ Γ)
+  Local Definition extend {Σ} (Γ : raw_context Σ) (A : raw_type Σ Γ)
     : raw_context Σ.
   Proof.
     exists (shape_extend _ Γ).

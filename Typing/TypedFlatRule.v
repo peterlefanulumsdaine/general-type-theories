@@ -80,7 +80,8 @@ Section Instantiations.
   Local Lemma closure_system_weakly_well_typed
        (T : flat_type_theory Σ)
        (r : flat_rule Σ) (D_r : weakly_well_typed T r)
-       {Γ : raw_context Σ} (I : Metavariable.instantiation (flat_rule_metas r) Σ Γ)
+       {Γ : raw_context Σ}
+       (I : Metavariable.instantiation (flat_rule_metas r) Σ Γ)
     : Closure.weakly_well_typed_rule presupposition
         (FlatTypeTheory.closure_system T)
         (FlatRule.closure_system r (Γ;I)).
