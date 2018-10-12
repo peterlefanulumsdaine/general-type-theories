@@ -187,3 +187,46 @@ However, setting up the category of such maps usually requires first developing 
 
 In this case, we distinguish the simple structure as e.g. `Widget.simple_map`, `Widget.simple_compose`, and so on; or when we wish to think of the simple notion as primary, we distinguish the Kleisli notions as `Widget.kleisli_map`, etc.
 
+### Layout
+
+- all code should be kept to line lengths ≤80 chars
+
+- running text in comments should be either hard-wrapped to length ≤80 chars, or non-wrapped, with blank lines to separate paragraphs in either case.  (Please try not to hard-wrap text to longer line lengths; that becomes nasty to read in windows with shorter line lengths.) 
+
+- indent in steps of 2 spaces
+
+- symbols like `:`, `:=` that are high in the parse-tree of a declaration should go at the *beginning* of lines for quick visibility, not at the end of lines, where they get lost; so
+
+    Definition idfun {X : Type}
+      : X -> X
+    := fun x => x.
+
+- in short declarations they can be mid-line, e.g. 
+
+    Definition idfun {X : Type} : X -> X := fun x => x.
+
+- in tactic proofs, when a tactic spawns multiple subgoals, *always* use bullets or some other form of focusing to separate the proofs of the subgoals.  So never write
+
+      destruct x as [ y | z ].
+      tactic1.
+      tactic2.
+      tactic3.
+    Qed.
+
+but instead something like (A): 
+
+      destruct x as [ y | z ].
+      - tactic1.
+      	tactic2.
+      - tactic3.
+    Qed.
+
+or (B)
+
+      destruct x as [ y | z ].
+      2: { tactic3. }
+      tactic1.
+      tactic2.
+    Qed.
+
+- focusing with bullets as in (A) is usually better if both/most subproofs are long; brackets as in (B) are good when all subproofs except one are short (~one-liners), since they avoid extra indentation in this case.  (Most often relevant when composing a long chain of equalities or morphisms.)
