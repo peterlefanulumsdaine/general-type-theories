@@ -422,7 +422,8 @@ Defined.
 Notation " [< x >] " := (singleton x) : family_scope.
 
 (** A list-like notation for families. *)
-Notation " [< x ; y ; .. ; z >] " := (adjoin .. (adjoin (singleton x) y) .. z) : family_scope.
+Notation " [< x ; y ; .. ; z >] "
+  := (adjoin .. (adjoin (singleton x) y) .. z) : family_scope.
 
 
 (** The monadic _bind_ operation for families.  At least heuristically, families form a monad; this allows Haskell-like monadic programming with them.

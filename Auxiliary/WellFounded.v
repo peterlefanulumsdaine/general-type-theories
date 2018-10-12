@@ -81,13 +81,15 @@ Proof.
       apply (transitive (lt_Y x) _ y'); assumption.
 Defined.
 
-(* If [f : X -> Y] from a well-ordered [X] to a [Y] with a relation reflects order then
-   a predicate of the form [P o f] is hereditary. *)
-Lemma push_along_embedding {X Y}
-      (lt_X : well_founded_order X) (lt_Y : relation Y) (f : X -> Y) (P : Y -> Type) :
-  (forall x x', lt_Y (f x) (f x') -> lt_X x x') ->
-  (forall x : X, (forall x', lt_Y (f x') (f x) -> P (f x')) -> P (f x)) ->
-  (forall x : X, P (f x)).
+(* If [f : X -> Y] from a well-ordered [X] to a [Y] with a relation reflects
+   order then a predicate of the form [P o f] is hereditary. *)
+Lemma push_along_embedding
+    {X} (lt_X : well_founded_order X)
+    {Y} (lt_Y : relation Y) (f : X -> Y)
+    (P : Y -> Type)
+  : (forall x x', lt_Y (f x) (f x') -> lt_X x x')
+  -> (forall x : X, (forall x', lt_Y (f x') (f x) -> P (f x')) -> P (f x))
+  -> (forall x : X, P (f x)).
 Proof.
   intro f_embeds.
   intros p x.
@@ -121,7 +123,8 @@ Proof.
       apply f.
       intros [_ [] | ? ?].
       now apply H.
-  - intros [x1|y1] [x2|y2] [x3|y3] H1 H2 ; try (now destruct H1 || now destruct H2).
+  - intros [x1|y1] [x2|y2] [x3|y3] H1 H2;
+      try (now destruct H1 || now destruct H2).
     + now apply (transitive _ _ x2).
     + now apply (transitive _ _ y2).
 Defined.

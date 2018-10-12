@@ -42,9 +42,9 @@ Section Syntax.
   := forall (i : a),
       raw_expression (argument_class i) (shape_sum γ (argument_shape i)).
 
-  (* Useful, with [idpath] as the equality argument, when want wants to construct the
-  smybol argument interactively — this is difficult with original [symb_raw] due to [class
-  S] appearing in the conclusion. *)
+  (* Useful, with [idpath] as the equality argument, when want wants to
+     construct the smybol argument interactively — this is difficult with 
+     original [symb_raw] due to [class S] appearing in the conclusion. *)
   Definition raw_symbol'
       {γ} {cl} (S : Σ) (e : symbol_class S = cl)
       (args : arguments (symbol_arity S) γ)
@@ -146,13 +146,13 @@ Section Signature_Maps.
   Proof.
     intros t. induction t as [ γ i | γ S ts fts].
     - exact (raw_variable i).
-    - refine (transport (fun cl => raw_expression _ cl _) _ (raw_symbol (f S) _)).
+    - refine
+        (transport (fun cl => raw_expression _ cl _) _ (raw_symbol (f S) _)).
       + exact (ap fst (Family.map_commutes _ _)).
       + refine (transport
           (fun a : arity σ => forall i : a,
-               raw_expression Σ' (argument_class i) (shape_sum γ (argument_shape i)))
-          _
-          fts).
+            raw_expression _ (argument_class i) (_ (argument_shape i)))
+          _ fts).
         exact ((ap snd (Family.map_commutes _ _))^).
   Defined.
 

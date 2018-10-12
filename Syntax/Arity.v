@@ -9,22 +9,23 @@ Section Arity.
     := family (syntactic_class * shape_carrier σ).
 
   (**
+  Entries in the family represent arguments of a constructor; the [σ] component
+  represents the variables bound in each argument.
 
-    Entries in the family represent arguments of a constructor; the [σ] component
-    represents the variables bound in each argument.
+  For instance, the [Π-intro] rule (i.e. fully annotated λ-abstraction) would
+  have arity [Family_from_List [(Ty,0), (Ty,1), (Tm,1)]]; application would
+  have arity [Family_from_List [(Ty,0), (Ty,1), (Tm,0), (Tm,0)]].
 
-    For instance, the [Π-intro] rule (i.e. fully annotated λ-abstraction) would have arity
-    [Family_from_List [(Ty,0), (Ty,1), (Tm,1)]]; application would have arity
-    [Family_from_List [(Ty,0), (Ty,1), (Tm,0), (Tm,0)]].
-
-    The use of [family] instead of e.g. [list] serves two purposes. Firstly, it abstracts
-    the aspects of the [list] version that we really need, and so makes the code
-    significantly cleaner/more robust. Secondly, it allows this definition to be later
-    re-used for non-finitary syntax, although we do not intend to explore that for now.
+  The use of [family] instead of e.g. [list] serves two purposes. Firstly, it
+  abstracts the aspects of the [list] version that we really need, and so makes
+  the code significantly cleaner/more robust. Secondly, it allows this
+  definition to be later re-used for non-finitary syntax, although we do not
+  intend to explore that for now.
    *)
 
   (* Access functions for arity *)
-  Global Definition argument_class {a : arity} (i : a) : syntactic_class := fst (a i).
+  Global Definition argument_class {a : arity} (i : a) : syntactic_class
+    := fst (a i).
   Global Definition argument_shape {a : arity} (i : a) : σ := snd (a i).
 
   (* Given a shape, return the arity of that shape in which all the

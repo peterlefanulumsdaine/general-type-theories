@@ -108,7 +108,8 @@ Section Substitute_Laws.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  Local Definition id_left_substitute {γ γ' : σ} (f : raw_context_map Σ γ' γ) (x : _)
+  Local Definition id_left_substitute
+      {γ γ' : σ} (f : raw_context_map Σ γ' γ) (x : _)
     : substitute f (raw_variable x) = f x.
   Proof.
     apply idpath.
@@ -134,7 +135,8 @@ Section Substitute_Laws.
      naming conventions for recognising it when it arises in derivations;
      [id_right_substitute] fits the monad-law structure, for when it’s being
      used in those terms. *)
-  Local Fixpoint id_right_substitute {γ : σ} {cl : syntactic_class} (e : raw_expression Σ cl γ)
+  Local Fixpoint id_right_substitute
+      {γ : σ} {cl : syntactic_class} (e : raw_expression Σ cl γ)
     : substitute (id_raw_context γ) e = e
   := substitute_idmap e.
 
@@ -162,7 +164,8 @@ Section Substitute_Laws.
       apply ap. refine _^. refine (coproduct_comp_inj2 _).
   Defined.
 
-  Fixpoint substitute_rename {γ γ' γ'' : σ} (f : γ -> γ') (g : raw_context_map Σ γ'' γ')
+  Fixpoint substitute_rename
+      {γ γ' γ'' : σ} (f : γ -> γ') (g : raw_context_map Σ γ'' γ')
       {cl} (e : raw_expression Σ cl γ)
     : substitute g (rename f e)
     = substitute (g o f) e.
@@ -185,7 +188,8 @@ Section Substitute_Laws.
       (f : raw_context_map Σ γ' γ)
       (f' : raw_context_map Σ γ'' γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
-    : substitute f' (substitute f e) = substitute (fun i => substitute f' (f i)) e.
+    : substitute f' (substitute f e)
+    = substitute (fun i => substitute f' (f i)) e.
   Proof.
     destruct e as [ γ i | γ S args ].
     { apply idpath. }
@@ -214,7 +218,8 @@ Section Substitute_Laws.
       (f : raw_context_map Σ γ' γ)
       (f' : raw_context_map Σ γ'' γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
-    : substitute f' (substitute f e) = substitute (fun i => substitute f' (f i)) e
+    : substitute f' (substitute f e)
+    = substitute (fun i => substitute f' (f i)) e
   := assoc_substitute f f' e.
 
 End Substitute_Laws.

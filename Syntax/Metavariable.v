@@ -204,10 +204,12 @@ Defined.
 
 End MetavariableNotations.
 
-Notation " '[M/' A /] " := (raw_symbol (include_metavariable A) empty_args) : syntax_scope.
+Notation " '[M/' A /] "
+  := (raw_symbol (include_metavariable A) empty_args) : syntax_scope.
 
 Notation " '[M/' A ; x , .. , z /] "
-  := (raw_symbol (include_metavariable A) (extend_args .. (extend_args (empty_args) x) .. z)) : raw_syntax_scope.
+  := (raw_symbol (include_metavariable A)
+       (extend_args .. (extend_args (empty_args) x) .. z)) : raw_syntax_scope.
 
 Open Scope syntax_scope.
 
@@ -664,7 +666,7 @@ Section Instantiation_Composition.
       apply path_forall.
       repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
       + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
-        simpl rename. eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        simpl rename. eapply concat. { refine (ap _ (coproduct_comp_inj1 _)). }
         apply inverse.
         eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         refine (coproduct_comp_inj1 _).
