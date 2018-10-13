@@ -47,7 +47,7 @@ Having [TypedClosure] grouped with all the things that really depend on syntax j
 
 General functoriality/categorical conventions:
 
-- pass through all files to generally get functoriality lemma naming, placement, organisation consistent (done on all of [Syntax] group, and up to [Typing.FlatTypeTheory])
+- pass through all files to generally get functoriality lemma naming, placement, organisation consistent (done on all of [Syntax] group, and up to [Typing.FlatTypeTheory]; still needed for [Presented] group)
 
 Utility derivations, flat rules, etc:
 
