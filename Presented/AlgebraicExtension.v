@@ -108,7 +108,8 @@ Local Definition eq `{Funext} {a}
             = ae_lt A')
     (equiv_premise : ae_premise A -> ae_premise A' := eq_premise e_premises)
     (fe_signature : forall i : ae_premise A,
-      Signature.map (ae_signature_of_premise A i) (ae_signature_of_premise A' (equiv_premise i))
+      Signature.map (ae_signature_of_premise A i)
+                    (ae_signature_of_premise A' (equiv_premise i))
       := fun i => Metavariable.fmap2 _ (eq_metas e_premises e_lt i))
     (fe_shape : forall i : ae_premise A,
         (ae_shape A i <~> ae_shape A' (equiv_premise i))
@@ -545,7 +546,8 @@ Section Flattening.
     - eapply concat. { apply inverse, Metavariable.fmap_compose. }
       eapply concat. 2: { apply Metavariable.fmap_compose. }
       eapply concat. { apply ap, Family.id_left. }
-      eapply concat. { eapply (ap (fun f => Metavariable.fmap f _)), Family.id_right. }
+      eapply concat.
+      { eapply (ap (fun f => Metavariable.fmap f _)), Family.id_right. }
       apply inverse.                     
       eapply concat. { apply ap, Family.id_right. }
       eapply (ap (fun f => Metavariable.fmap f _)), Family.id_left.

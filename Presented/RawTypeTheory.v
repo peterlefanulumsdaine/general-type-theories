@@ -32,7 +32,8 @@ Section TypeTheory.
   (* the signature over which each rule can be written *)
   ; tt_rule_signature : tt_rule_data -> signature σ
     := fun i => Family.fmap
-        (fun (ja : Judgement.hypothetical_form * arity σ) => (Judgement.class_of (fst ja), snd ja))
+        (fun (ja : Judgement.hypothetical_form * arity σ)
+          => (Judgement.class_of (fst ja), snd ja))
         (Family.subfamily tt_rule_data
           (fun j => Judgement.is_object (tt_rule_form j) * tt_lt j i))
   (* the actual rule specification of each rule *)

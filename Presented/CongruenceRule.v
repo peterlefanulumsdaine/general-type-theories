@@ -59,8 +59,10 @@ eq_new i   0        0        0        0        i < j
 
   Local Definition original_constructor_translation
     {a} {hjf_concl} (R : rule Σ a hjf_concl)
-    (p : (a + a) +
-         (ae_equality_premise (rule_premise R) + ae_equality_premise (rule_premise R) + a))
+    (p : (a + a)
+         + (ae_equality_premise (rule_premise R)
+            + ae_equality_premise (rule_premise R)
+            + a))
     : Signature.map
         (ae_signature_of_premise (rule_premise R) (original_premise p))
         (Metavariable.extend Σ (Family.subfamily (a + a)

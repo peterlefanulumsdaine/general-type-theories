@@ -56,11 +56,12 @@ Section WellTypedRule.
   Proof.
     refine (is_well_typed_algebraic_extension T (rule_premise R) * _).
     (* well-typedness of conclusion *)
-    exact (forall (i : presupposition_of_boundary (RawRule.conclusion_boundary R)),
-               FlatTypeTheory.derivation
-                 (FlatTypeTheory.fmap include_symbol T)
-                 (AlgebraicExtension.flatten (rule_premise R))
-                 (presupposition_of_boundary _ i)).
+    exact
+      (forall (i : presupposition_of_boundary (RawRule.conclusion_boundary R)),
+        FlatTypeTheory.derivation
+          (FlatTypeTheory.fmap include_symbol T)
+          (AlgebraicExtension.flatten (rule_premise R))
+          (presupposition_of_boundary _ i)).
   Defined.
 
 End WellTypedRule.
@@ -171,7 +172,8 @@ Section Functoriality.
     : is_well_typed T R -> is_well_typed T' R.
   Proof.
     intros R_WT.
-    split. { exact (fmap_is_well_typed_algebraic_extension_in_theory f (fst R_WT)). }
+    split.
+    { exact (fmap_is_well_typed_algebraic_extension_in_theory f (fst R_WT)). }
     intros p.
     refine (FlatTypeTheory.derivation_fmap1 _ (snd R_WT p)).
     apply FlatTypeTheory.map_fmap, f.
