@@ -143,7 +143,8 @@ Section DeBruijn.
     apply path_ishprop.
   Defined.
 
-  Lemma DB_is_plusone (n : nat) : is_plusone (DB_positions (n.+1)) (DB_positions n).
+  Lemma DB_is_plusone (n : nat)
+    : is_plusone (DB_positions (n.+1)) (DB_positions n).
   Proof.
     simple refine {|
              plusone_one := zero_db ;
