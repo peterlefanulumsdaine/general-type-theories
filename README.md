@@ -167,6 +167,20 @@ you can live with the short name withing the module `Foo`.
 Note that when `xyz` is declared global, e.g., it is the field name of a globally defined
 `Record`, then it is ok to name it `foo_xyz`. (Example: field name `Family.family_index`.)
 
+### Boilerplate
+
+Many key constructions have a lot of related boilerplate — typically some of the following:
+
+- access functions
+- coercion declarations
+- equality lemmas (how to conveniently prove two widgets are equal; or, better, an equivalence between the equality type on widgets and some tractable type)
+- functoriality lemmas (widgets are functorial in maps of some of their arguments)
+- category structure (widgets form a category, or a displayed category over some of their arguments
+
+Such boilerplate should typically be given straight after the definition of widgets, in roughly the above order, except when there are specific reasons to defer it.
+
+See also “categories and functoriality” below.
+
 ### Categories and functoriality
 
 Many constructions involved form categories, and/or are functorial/natural in some of their arguments, and keeping track of this systematically is crucial.
