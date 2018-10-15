@@ -10,9 +10,10 @@ Require Import Typing.Judgement.
 
 Section Algebraic_Extensions.
 
-Context {σ : shape_system} {Σ : signature σ}.
+Context {σ : shape_system}.
 
 Record algebraic_extension
+  {Σ : signature σ} (* ambient signature of the extension *)
   {a : arity σ} (* arity listing the _object_ premises of the extension *)
 :=
   {
@@ -61,19 +62,19 @@ Record algebraic_extension
           (ae_shape i)
   }.
 
-Arguments algebraic_extension _ : clear implicits.
+Global Arguments algebraic_extension _ _ : clear implicits.
 
-Global Arguments ae_signature_of_premise {_ _} _.
-Global Arguments ae_form {_ _} _.
-Global Arguments ae_shape {_ _} _.
-Global Arguments ae_lt {_ _}.
-Global Arguments ae_metavariables_of_premise {_ _} _.
-Global Arguments ae_raw_context_type {_ _} _.
-Global Arguments ae_raw_context {_ _} _.
+Global Arguments ae_signature_of_premise {_ _ _} _.
+Global Arguments ae_form {_ _ _} _.
+Global Arguments ae_shape {_ _ _} _.
+Global Arguments ae_lt {_ _ _}.
+Global Arguments ae_metavariables_of_premise {_ _ _} _.
+Global Arguments ae_raw_context_type {_ _ _} _.
+Global Arguments ae_raw_context {_ _ _} _.
 
 (** Access functions *)
 Local Definition premise_boundary
-    {a} {A : algebraic_extension a} (r : A)
+    {Σ} {a} {A : algebraic_extension Σ a} (r : A)
   : Judgement.boundary (ae_signature_of_premise r)
                        (form_hypothetical (ae_form r)).
 Proof.
@@ -105,14 +106,14 @@ Proof.
   destruct e_eqp, e_lt. intros; apply Family.idmap.
 Defined.
 
-Local Definition eq `{Funext} {a}
-    {A A' : algebraic_extension a}
+Local Definition eq `{Funext} {Σ} {a}
+    {A A' : algebraic_extension Σ a}
     (e_premises : ae_equality_premise A = ae_equality_premise A')
     (e_lt : transport
               (fun K => well_founded_order (_ + Family.fmap _ K))
               e_premises
-              (@ae_lt _ A)
-            = @ae_lt _ A')
+              (@ae_lt _ _ A)
+            = @ae_lt _ _ A')
     (equiv_premise : ae_premise A -> ae_premise A' := eq_premise e_premises)
     (fe_signature : forall i : ae_premise A,
       Signature.map (ae_signature_of_premise i)
@@ -138,8 +139,8 @@ Proof.
   destruct A, A'; cbn in e_premises, e_lt.
   destruct e_premises, e_lt; simpl in *.
   refine
-    (ap (Build_algebraic_extension _ _ _ _) _
-    @ ap (fun rc => Build_algebraic_extension _ _ _ rc _) _).
+    (ap (Build_algebraic_extension _ _ _ _ _) _
+    @ ap (fun rc => Build_algebraic_extension _ _ _ _ rc _) _).
   - clear ae_raw_context0 ae_raw_context1 e_raw_context.
     apply path_forall; intros i.
     refine (_ @ e_hypothetical_boundary i). apply inverse.
@@ -164,8 +165,6 @@ Proof.
 Defined.
 
 End Algebraic_Extensions.
-
-Arguments algebraic_extension {_} _ _.
 
 Section Functoriality.
 
@@ -604,7 +603,7 @@ Section Flattening.
     { apply path_forall; intros i_is_ob. cbn. 
       specialize e_Sr with i_is_ob. 
       set (Sr_i := Sr i_is_ob) in *. clearbody Sr_i; clear Sr.
-      destruct Sr_i as [S e_aS e_cS]; cbn in e_Sr.
+      destruct Sr_i as [S e_aS_cS]; cbn in e_Sr.
       destruct e_Sr as [e_S [e_e_aS e_e_cS]].
       revert e_S e_e_aS e_e_cS. refine (inverse_sufficient _ _).
       intros e_S e_e_aS e_e_cS.
@@ -620,7 +619,7 @@ Section Flattening.
     (* why doesn’t [destruct e^] work here? *)
     apply inverse in e. clear e_Sr. revert Sr e.
     refine (paths_rect _ _ _ _).
-    (* this is terrible. We really need some kind of “master lemma” about [judgement_of_premise] giving the master conditions under which two instances are equal; and ideally perhaps also some factoring of [judgement_of_premise] to enable proving that. *)
+    (* TODO: this is terrible. We really need some kind of “master lemma” about [judgement_of_premise] giving the master conditions under which two instances are equal; and ideally perhaps also some factoring of [judgement_of_premise] to enable proving that. *)
   Admitted. (* [fmap_judgement_of_premise_simple_map]: nasty and difficult (sticking point is equality of judgements), but hopefully self-contained *)
 
   Definition fmap_flatten_simple_map `{Funext}
@@ -747,7 +746,7 @@ Section Initial_Segment.
       {Σ : signature σ} {a} (A : algebraic_extension Σ a) (r : A)
     : algebraic_extension Σ (ae_metavariables_of_premise r).
   Proof.
-    simple refine (Build_algebraic_extension _ _ _ _ _).
+    simple refine (Build_algebraic_extension _ _ _ _ _ _).
     - (* ae_equality_premise *)
       exact (Family.subfamily (ae_equality_premise A)
                               (fun j => ae_lt (inr j) r)).
