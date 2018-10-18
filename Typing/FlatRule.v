@@ -56,9 +56,6 @@ Section FlatRule.
     apply idpath.
   Defined.
 
-  Context `{Funext}.
-
-
   Local Definition fmap
         {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
     : flat_rule Σ -> flat_rule Σ'.
@@ -71,6 +68,8 @@ Section FlatRule.
     - refine (fmap_judgement_total _ (flat_rule_conclusion R)).
       apply Metavariable.fmap1, f.
   Defined.
+
+  Context `{Funext}.
 
   Local Lemma fmap_idmap
       {Σ : signature σ} (R : flat_rule Σ)
@@ -133,6 +132,7 @@ Section ClosureSystem.
 
   Context `{Funext}.
 
+  (** Note: unlike some similar lemmas, this really is a non-invertible map in general, i.e. a “lax naturality” not naturality. *)
   Local Definition closure_system_fmap 
         {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
         (R : flat_rule Σ)
