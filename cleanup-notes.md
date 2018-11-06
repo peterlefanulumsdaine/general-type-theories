@@ -45,10 +45,6 @@ Having [TypedClosure] grouped with all the things that really depend on syntax j
 
 # Still to do:
 
-General functoriality/categorical conventions:
-
-- pass through all files to generally get functoriality lemma naming, placement, organisation consistent.  (Done on all of [Syntax] group, and up to [Typing.FlatTypeTheory]; still needed just for [Presented.AlgebraicExtension], [Presented.RawRule].)
-
 Utility derivations, flat rules, etc:
 
 - move utility derivations upstream of flat type theories (both UtilityDerivations.v and the section currently in FlatTypeTheory.v) 
