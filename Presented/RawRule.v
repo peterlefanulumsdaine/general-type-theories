@@ -3,12 +3,14 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
-Require Import Raw.Syntax.
-Require Import Raw.AlgebraicExtension.
-Require Import Raw.FlatRule.
+Require Import Syntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
+Require Import Presented.AlgebraicExtension.
+Require Import Typing.FlatRule.
 
 (** A well-shaped rule is given by the following data:
 
@@ -22,17 +24,18 @@ Section WellShapedRule.
 
 Context {σ : shape_system}.
 
-(** An (ordered, raw) rule consists of premises and a conclusion. For various reasons, we
-    abstract the form of the premises as an _algebraic extension_.
+(** An (ordered, raw) rule consists of premises and a conclusion. For various
+    reasons, we abstract the form of the premises as an _algebraic extension_.
 
-    Such an extension can add both object premises (introducing type/term premises) and
-    equality premises.
+    Such an extension can add both object premises (introducing type/term
+    premises) and equality premises.
 
     Besides being viewed as the premises of a rule, the premises can be seen as
-    particularly simple rules themselves for extending a type theory. Viewed this way,
-    they are _algebraic_ in the sense that it does not introduce any new binders, and only
-    take term arguments (no type arguments). This is the raw-syntax analogue of an arity
-    seen as specifying the metavariable-extension of a signature.
+    particularly simple rules themselves for extending a type theory. Viewed
+    this way, they are _algebraic_ in the sense that it does not introduce any
+    new binders, and only take term arguments (no type arguments). This is the
+    raw-syntax analogue of an arity seen as specifying the metavariable-extension
+    of a signature.
 *)
 
 (** The parameters of a rule, beyond its ambient signature, may be a little
@@ -41,8 +44,10 @@ Context {σ : shape_system}.
     rule), and in any case the arity of its associated flat rule. *)
 Record rule
   {Σ : signature σ}
-  {a : arity σ} (* arity listing the _object_ premises of the rule *)
-  {hjf_conclusion : Judgement.hypothetical_form} (* judgement form of the conclusion *)
+  {a : arity σ}
+    (* arity listing the _object_ premises of the rule *)
+  {hjf_conclusion : Judgement.hypothetical_form}
+    (* judgement form of the conclusion *)
 :=
   {
     rule_premise : algebraic_extension Σ a
@@ -152,8 +157,8 @@ End WellShapedRule.
 Arguments rule {_} _ _ _.
 
 Module Span.
-(** Some auxiliary constructions for defining the ordering of the premises in the
-    associated congruence rule of a constructor. *)
+(** Some auxiliary constructions for defining the ordering of the premises in
+    the associated congruence rule of a constructor. *)
 
   Local Inductive span : Type :=
     left | right | top.
@@ -202,7 +207,8 @@ Section Flattening.
     {a} {hjf_concl}
     (R : rule Σ a hjf_concl)
     (Sr : Judgement.is_object hjf_concl
-          -> { S : Σ & (symbol_arity S = a) * (symbol_class S = Judgement.class_of hjf_concl) })
+          -> { S : Σ & (symbol_arity S = a)
+                       * (symbol_class S = Judgement.class_of hjf_concl) })
       : judgement_total (Metavariable.extend Σ a).
   Proof.
     exists (form_hypothetical hjf_concl).
@@ -237,7 +243,8 @@ Section Flattening.
     {a} {hjf_concl}
     (R : rule Σ a hjf_concl)
     (SR : Judgement.is_object hjf_concl
-        -> { S : Σ & (symbol_arity S = a) * (symbol_class S = Judgement.class_of hjf_concl) })
+        -> { S : Σ & (symbol_arity S = a)
+                     * (symbol_class S = Judgement.class_of hjf_concl) })
   : flat_rule Σ.
   (* This construction involves essentially two aspects:
 

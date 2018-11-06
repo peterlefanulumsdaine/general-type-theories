@@ -1,11 +1,12 @@
 Require Import HoTT.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Closure.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
-Require Import Raw.Syntax.
-Require Import Raw.SyntaxLemmas.
-Require Import Raw.FlatRule.
+Require Import Syntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
+Require Import Typing.FlatRule.
 
 (**
   This module defines the _standard structural rules_ — the rules which are not
@@ -31,14 +32,14 @@ Require Import Raw.FlatRule.
   - the access function picking it out in the family [structural_rule].
 
   We use [context_extend] for the access function, and call the family
-  [context_extend_instance], since an element of the family is a specific instance
-  of the rule.  So when using this rule in a derivation, one will first say
-  [apply context_extend] to select the context extension rule, and then specify
-  the particular instance desired, i.e. the earlier context and the type to
-  extend by.
+  [context_extend_instance], since an element of the family is a specific
+  instance of the rule.  So when using this rule in a derivation, one will first
+  say [apply context_extend] to select the context extension rule, and then
+  specify the particular instance desired, i.e. the earlier context and the type
+  to extend by.
 
-  (An alternative convention could be to use [context_extend] for the family, and
-  [select_context_extend] or similar for the access function.)
+  (An alternative convention could be to use [context_extend] for the family,
+  and [select_context_extend] or similar for the access function.)
 *)
 
 Section StructuralRules.
@@ -143,7 +144,7 @@ Definition subst_apply_instance : Closure.system (judgement_total Σ).
 Proof.
   exists { Γ : raw_context Σ
     & { Γ' : raw_context Σ
-    & { f : Context.map Σ Γ' Γ
+    & { f : raw_context_map Σ Γ' Γ
     & { hjf : Judgement.hypothetical_form
     & hypothetical_judgement Σ hjf Γ}}}}.
   intros [Γ [Γ' [f [hjf hjfi]]]].
@@ -170,6 +171,7 @@ Defined.
 (** Substitution respects *equality* of context morphisms:
 
   Γ' |- f(x) = g(x) : A   [for each x in Γ, A := type of x in Γ]
+  ⊢ Γ'     [not a presupposition of the previous premise if Γ is empty]
   Γ |- J   [for J any hypothetical judgement]
   --------------------
   Γ' |- f^*J = g^*J  [ for J any object judgement ]
@@ -178,8 +180,8 @@ Definition subst_equal_instance : Closure.system (judgement_total Σ).
 Proof.
   exists {   Γ : raw_context Σ
     & { Γ' : raw_context Σ
-    & { f : Context.map Σ Γ' Γ
-    & { f' : Context.map Σ Γ' Γ
+    & { f : raw_context_map Σ Γ' Γ
+    & { f' : raw_context_map Σ Γ' Γ
     & { cl : syntactic_class
     & hypothetical_judgement Σ (form_object cl) Γ}}}}}.
   intros [Γ [Γ' [f [f' [cl hjfi]]]]].
@@ -199,8 +201,8 @@ Proof.
     (* f ≡ f' *)
     + exists Γ.
       intros i. refine [! Γ' |- _ ≡ _ ; _ !].
-    (* TODO: note inconsistent ordering of arguments in [give_Tm_ji] compared to other
-       [give_Foo_ji]. Consider, consistentise? *)
+    (* TODO: note inconsistent ordering of arguments in [give_Tm_ji] compared to
+      other [give_Foo_ji]. Consider, consistentise? *)
       * exact (substitute f (Γ i)).
       * exact (f i).
       * exact (f' i).
@@ -258,6 +260,9 @@ Proof.
 Defined.
 
 Section Equality.
+(** The equality structural rules can all be specified as flat rules over the empty signature. 
+
+(One could specify them directly over arbitrary signatures, but then one would have to prove naturality for them afterwards.)*)
 
 (* rule tyeq_refl
     ⊢ A type
@@ -265,7 +270,7 @@ Section Equality.
     ⊢ A ≡ A
 *)
 
-Definition tyeq_refl_rule : flat_rule Σ.
+Definition tyeq_refl_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -293,7 +298,7 @@ Defined.
    ⊢ B ≡ A
 *)
 
-Definition tyeq_sym_rule : flat_rule Σ.
+Definition tyeq_sym_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
@@ -324,7 +329,7 @@ Defined.
        ⊢ A ≡ C
 *)
 
-Definition tyeq_trans_rule : flat_rule Σ.
+Definition tyeq_trans_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
@@ -362,7 +367,7 @@ Defined.
 ⊢ u ≡ u : A
 *)
 
-Definition tmeq_refl_rule : flat_rule Σ.
+Definition tmeq_refl_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -394,7 +399,7 @@ Defined.
    ⊢ v ≡ u : A
 *)
 
-Definition tmeq_sym_rule : flat_rule Σ.
+Definition tmeq_sym_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -429,7 +434,7 @@ Defined.
          ⊢ u ≡ w : A
 *)
 
-Definition tmeq_trans_rule : flat_rule Σ.
+Definition tmeq_trans_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -475,7 +480,7 @@ Defined.
  ⊢ u : B
 *)
 
-Definition term_convert_rule : flat_rule Σ.
+Definition term_convert_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -525,7 +530,7 @@ Defined.
  ⊢ u = u' : B
 *)
 
-Definition tmeq_convert_rule : flat_rule Σ.
+Definition tmeq_convert_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -558,7 +563,7 @@ Proof.
   - exact [! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ B /] !].
 Defined.
 
-Definition equality_flat_rule : family (flat_rule Σ)
+Definition equality_flat_rule : family (flat_rule (Signature.empty σ))
   := [< tyeq_refl_rule
     ; tyeq_sym_rule
     ; tyeq_trans_rule
@@ -570,7 +575,9 @@ Definition equality_flat_rule : family (flat_rule Σ)
     >].
 
 Definition equality_instance : family (rule (judgement_total Σ))
-  := Family.bind equality_flat_rule FlatRule.closure_system.
+  := Family.bind
+       (Family.fmap (FlatRule.fmap (Signature.empty_rect _)) equality_flat_rule)
+       FlatRule.closure_system.
 
 End Equality.
 
@@ -604,21 +611,37 @@ Definition variable_rule : variable_instance Σ -> structural_rule Σ
   := fun i => inl (inr i).
 Definition equality_rule : equality_instance Σ -> structural_rule Σ
   := fun i => inr i.
-Definition tyeq_refl : FlatRule.closure_system (tyeq_refl_rule Σ) -> structural_rule Σ
+Definition tyeq_refl : FlatRule.closure_system
+      (FlatRule.fmap (Signature.empty_rect _) tyeq_refl_rule)
+    -> structural_rule Σ
   := fun i => inr (Some (Some (Some (Some (Some (Some (Some tt)))))) ; i).
-Definition tyeq_sym : FlatRule.closure_system (tyeq_sym_rule Σ) -> structural_rule Σ
+Definition tyeq_sym : FlatRule.closure_system
+      (FlatRule.fmap (Signature.empty_rect _) tyeq_sym_rule)
+    -> structural_rule Σ
   := fun i => inr (Some (Some (Some (Some (Some (Some None))))) ; i).
-Definition tyeq_trans : FlatRule.closure_system (tyeq_trans_rule Σ) -> structural_rule Σ
+Definition tyeq_trans : FlatRule.closure_system
+      (FlatRule.fmap (Signature.empty_rect _) tyeq_trans_rule)
+    -> structural_rule Σ
   := fun i => inr (Some (Some (Some (Some (Some None)))) ; i).
-Definition tmeq_refl : FlatRule.closure_system (tmeq_refl_rule Σ) -> structural_rule Σ
+Definition tmeq_refl : FlatRule.closure_system
+      (FlatRule.fmap (Signature.empty_rect _) tmeq_refl_rule)
+    -> structural_rule Σ
   := fun i => inr (Some (Some (Some (Some None))) ; i).
-Definition tmeq_sym : FlatRule.closure_system (tmeq_sym_rule Σ) -> structural_rule Σ
+Definition tmeq_sym : FlatRule.closure_system
+      (FlatRule.fmap (Signature.empty_rect _) tmeq_sym_rule)
+    -> structural_rule Σ
   := fun i => inr (Some (Some (Some None)) ; i).
-Definition tmeq_trans : FlatRule.closure_system (tmeq_trans_rule Σ) -> structural_rule Σ
+Definition tmeq_trans : FlatRule.closure_system
+      (FlatRule.fmap (Signature.empty_rect _) tmeq_trans_rule)
+    -> structural_rule Σ
   := fun i => inr (Some (Some None) ; i).
-Definition term_convert : FlatRule.closure_system (term_convert_rule Σ) -> structural_rule Σ
+Definition term_convert : FlatRule.closure_system
+      (FlatRule.fmap (Signature.empty_rect _) term_convert_rule)
+    -> structural_rule Σ
   := fun i => inr (Some None ; i).
-Definition tmeq_convert : FlatRule.closure_system (tmeq_convert_rule Σ) -> structural_rule Σ
+Definition tmeq_convert : FlatRule.closure_system
+      (FlatRule.fmap (Signature.empty_rect _) tmeq_convert_rule)
+    -> structural_rule Σ
   := fun i => inr (None ; i).
 
 End StructuralRuleAccessors.
@@ -628,16 +651,17 @@ Section StructuralRuleInd.
 Context {σ : shape_system}.
 Context {Σ : signature σ}.
 
-Definition structural_rule_rect :
-      forall (P : structural_rule Σ -> Type),
-       P context_empty ->
-       (forall i_cxt_ext : context_extend_instance Σ, P (context_extend i_cxt_ext)) ->
-       (forall i_rename : rename_instance Σ, P (rename i_rename)) ->
-       (forall i_sub_ap : subst_apply_instance Σ, P (subst_apply i_sub_ap)) ->
-       (forall i_sub_eq : subst_equal_instance Σ, P (subst_equal i_sub_eq)) ->
-       (forall i_var : variable_instance Σ, P (variable_rule i_var)) ->
-       (forall i_eq : equality_instance Σ, P (equality_rule i_eq)) ->
-       forall s : structural_rule Σ, P s.
+Definition structural_rule_rect
+  : forall (P : structural_rule Σ -> Type),
+     P context_empty
+  -> (forall i_cxt_ext : context_extend_instance Σ,
+         P (context_extend i_cxt_ext))
+  -> (forall i_rename : rename_instance Σ, P (rename i_rename))
+  -> (forall i_sub_ap : subst_apply_instance Σ, P (subst_apply i_sub_ap))
+  -> (forall i_sub_eq : subst_equal_instance Σ, P (subst_equal i_sub_eq))
+  -> (forall i_var : variable_instance Σ, P (variable_rule i_var))
+  -> (forall i_eq : equality_instance Σ, P (equality_rule i_eq))
+  -> forall s : structural_rule Σ, P s.
 Proof.
   intros P X X0 X1 X2 X3 X4 X5 s.
   destruct s as
@@ -651,22 +675,31 @@ Defined.
 
 Definition equality_instance_rect :
   forall (P : structural_rule Σ -> Type),
-       (forall i_tyeq_refl : FlatRule.closure_system (tyeq_refl_rule Σ),
-        P (tyeq_refl i_tyeq_refl)) ->
-       (forall tyeq_sym_rule : FlatRule.closure_system (tyeq_sym_rule Σ),
-        P (tyeq_sym tyeq_sym_rule)) ->
-       (forall tyeq_trans_rule : FlatRule.closure_system (tyeq_trans_rule Σ),
-        P (tyeq_trans tyeq_trans_rule)) ->
-       (forall i_tmeq_refl : FlatRule.closure_system (tmeq_refl_rule Σ),
-        P (tmeq_refl i_tmeq_refl)) ->
-       (forall i_tmeq_sym : FlatRule.closure_system (tmeq_sym_rule Σ),
-        P (tmeq_sym i_tmeq_sym)) ->
-       (forall i_tmeq_trans : FlatRule.closure_system (tmeq_trans_rule Σ),
-        P (tmeq_trans i_tmeq_trans)) ->
-       (forall i_term_convert : FlatRule.closure_system (term_convert_rule Σ),
-        P (term_convert i_term_convert)) ->
-       (forall i_tmeq_convert : FlatRule.closure_system (tmeq_convert_rule Σ),
-        P (tmeq_convert i_tmeq_convert)) -> forall e : equality_instance Σ, P (equality_rule e).
+       (forall i_tyeq_refl : FlatRule.closure_system
+           (FlatRule.fmap (Signature.empty_rect _) tyeq_refl_rule),
+         P (tyeq_refl i_tyeq_refl))
+    -> (forall tyeq_sym_rule : FlatRule.closure_system
+           (FlatRule.fmap (Signature.empty_rect _) tyeq_sym_rule),
+         P (tyeq_sym tyeq_sym_rule))
+    -> (forall tyeq_trans_rule : FlatRule.closure_system
+           (FlatRule.fmap (Signature.empty_rect _) tyeq_trans_rule),
+         P (tyeq_trans tyeq_trans_rule))
+    -> (forall i_tmeq_refl : FlatRule.closure_system
+          (FlatRule.fmap (Signature.empty_rect _) tmeq_refl_rule),
+         P (tmeq_refl i_tmeq_refl))
+    -> (forall i_tmeq_sym : FlatRule.closure_system
+           (FlatRule.fmap (Signature.empty_rect _) tmeq_sym_rule),
+         P (tmeq_sym i_tmeq_sym))
+    -> (forall i_tmeq_trans : FlatRule.closure_system
+           (FlatRule.fmap (Signature.empty_rect _) tmeq_trans_rule),
+         P (tmeq_trans i_tmeq_trans))
+    -> (forall i_term_convert : FlatRule.closure_system
+           (FlatRule.fmap (Signature.empty_rect _) term_convert_rule),
+         P (term_convert i_term_convert))
+    -> (forall i_tmeq_convert : FlatRule.closure_system
+           (FlatRule.fmap (Signature.empty_rect _) tmeq_convert_rule),
+         P (tmeq_convert i_tmeq_convert))
+  -> forall e : equality_instance Σ, P (equality_rule e).
 Proof.
   intros P X X0 X1 X2 X3 X4 X5 X6.
   intros [ index element ].
@@ -676,35 +709,17 @@ Defined.
 
 End StructuralRuleInd.
 
-Section Instantiation.
-
-  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
-
-  Local Definition instantiate
-      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
-    : Family.map_over
-        (Closure.fmap (@Metavariable.instantiate_judgement σ _ Σ Γ I))
-        (structural_rule (Metavariable.extend Σ a))
-        (structural_rule Σ).
-  Proof.
-    (* Sketch: do this by hand for the ones given as closure conditions;
-     for the ones given as flat rules, use [instantiate_flat_rule]. *)
-    (* Query: can this be unified with [RawStructuralRule.fmap] below? *)
-  Admitted. (* [instantiate]: probably large, but self-contained. *)
-
-End Instantiation.
-
-Section StructuralRuleMap.
+Section SignatureMaps.
 
   Context `{H : Funext}.
   Context {σ : shape_system}.
 
-  (** For a given signature map [f] from [Σ] to [Σ'], give a family map from
-     the structural rules of [Σ] to structural rules of [Σ']. *)
+  (** For a given signature map [f] from [Σ] to [Σ'],
+     the translations of structural rules of [Σ] are structural rules of [Σ']. *)
   Local Definition fmap
       {Σ Σ' : signature σ}
       (f : Signature.map Σ Σ')
-    : Family.map_over (Closure.fmap (fmap_judgement_total f))
+    : Family.map_over (Closure.rule_fmap (fmap_judgement_total f))
         (structural_rule Σ)
         (structural_rule Σ').
   Proof.
@@ -713,7 +728,7 @@ Section StructuralRuleMap.
        - then use [repeat apply Family.fmap_sum.] or similar?  *)
     apply Family.Build_map'.
     apply structural_rule_rect ; intros.
-    (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
+    (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
     - (* empty context *)
       exists (context_empty).
       cbn. apply Closure.rule_eq.
@@ -747,12 +762,12 @@ Section StructuralRuleMap.
           -- eapply concat. { refine (plusone_comp_one _ _ _ _ _ _). }
              eapply concat.
                2: { apply ap. refine (plusone_comp_one _ _ _ _ _ _)^. }
-             apply inverse. apply SyntaxLemmas.fmap_rename.
+             apply inverse. apply fmap_rename.
           -- intros x. cbn in x.
              eapply concat. { refine (plusone_comp_inj _ _ _ _ _ _ _). }
              eapply concat.
                2: { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. }
-             apply inverse. apply SyntaxLemmas.fmap_rename.
+             apply inverse. apply fmap_rename.
     - (* rename *)
       destruct i_rename as [J [γ' e]].
       simple refine (_;_).
@@ -776,7 +791,7 @@ Section StructuralRuleMap.
       + refine (subst_apply _).
         exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
-        exists (fmap_raw_context_map f g).
+        exists (raw_context_map_fmap f g).
         exists hjf.
         exact (Judgement.fmap_hypothetical_judgement f hjfi).
       + cbn. apply Closure.rule_eq; cbn.
@@ -802,8 +817,8 @@ Section StructuralRuleMap.
       + refine (subst_equal _).
         exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
-        exists (fmap_raw_context_map f g).
-        exists (fmap_raw_context_map f g').
+        exists (raw_context_map_fmap f g).
+        exists (raw_context_map_fmap f g').
         exists hjf.
         exact (Judgement.fmap_hypothetical_judgement f hjfi).
       + cbn. apply Closure.rule_eq; cbn.
@@ -848,22 +863,46 @@ Section StructuralRuleMap.
         * apply Judgement.eq_by_eta, idpath.
     - (* equality rules *)
       destruct i_eq as [r ΓI].
-      simple refine (equality_rule _; _).
-      + exists r. set (r_keep := r).
-        recursive_destruct r;
-          exact (FlatRule.fmap_closure_system f
-                          (equality_flat_rule _ r_keep) ΓI).
-      + set (r_keep := r). recursive_destruct r;
-        set (e := (Family.map_over_commutes
-          (FlatRule.fmap_closure_system f
-             (equality_flat_rule _ r_keep))
-          ΓI)).
-        (* [e] is almost right for every case, modulo knowing that
-           [FlatRule.fmap f (equality_flat_rule Σ) = equality_flat_rule Σ'] *)
-        (* This lemma would follow automatically from functoriality lemmas,
-         if we defined the equality flat rules over the empty signature,
-         and then put them in as their translations to arbitrary sigs. *)
-        admit.
-  Admitted. (* [fmap], just the flat rule ones missing; small, self-contained *)
+      simple refine (equality_rule _;_).
+      + exists r.
+        simple refine (FlatRule.closure_system_fmap' f _ ΓI).
+        refine (_ @ _). { apply inverse, FlatRule.fmap_compose. }
+        refine (ap (fun f => FlatRule.fmap f _) _).
+        apply Signature.empty_rect_unique.
+      + refine (Family.map_over_commutes
+                  (FlatRule.closure_system_fmap' f _) _).
+  Defined.
 
-End StructuralRuleMap.
+End SignatureMaps.
+
+Section Instantiation.
+
+  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
+
+  (** Structural rules in a metavariable extension,
+   translated under an instantiation,
+   can always be derived from structural rules over the base signature,
+   assuming the context of the instantiation is well-typed.
+
+  Essentially, any structural rule gets translated into an instance of the same structural rule, possibly wrapped in a variable-renaming to reassociate iterated context extensions *)
+  Local Definition instantiate
+      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
+    : Closure.map_over (@Judgement.instantiate σ _ Σ Γ I)
+        (structural_rule (Metavariable.extend Σ a))
+        (structural_rule Σ + Closure.axioms [< [! |- Γ !] >]).
+  Proof.
+    (* TODO: As with [fmap] above, there really should be a more uniform way to do this. *)
+    unfold Closure.map_over.
+    refine (structural_rule_rect _ _ _ _ _ _ _ _).
+    - (* context_empty *)
+      cbn. apply Judgement.canonicalise. 
+      refine (transport _ (idpath _ : _ = [! |- _ !]) _); cbn.
+      admit. (* TODO: need utility derivations. *)
+    - (* context_extend *) admit.
+    - (* rename*) admit.
+    - (* subst_apply *) admit.
+    - (* subst_equal *) admit.
+    - (* variable_rule *) admit.
+    - (* equality_rule *) admit.
+  Admitted.
+End Instantiation.

@@ -1,12 +1,14 @@
 Require Import HoTT.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
-Require Import Raw.Syntax.
-Require Import Raw.RawRule.
-Require Import Raw.RawTypeTheory.
-Require Import Typed.TypedRule.
+Require Import Syntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
+Require Import Presented.RawRule.
+Require Import Presented.RawTypeTheory.
+Require Import Presented.TypedRule.
 
 (** In this file: definition of well-typedness of a type-theory. *)
 

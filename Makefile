@@ -14,30 +14,28 @@ MODULES := \
 	Auxiliary/Family \
 	Auxiliary/Coproduct \
 	Auxiliary/Closure \
-	Proto/ShapeSystem \
-	Raw/Syntax/SyntacticClass \
-	Raw/Syntax/Arity \
-	Raw/Syntax/Signature \
-	Raw/Syntax/Expression \
-	Raw/Syntax/Substitution \
-	Raw/Syntax/Context \
-	Raw/Syntax/Judgement \
-	Raw/Syntax/Metavariable \
-	Raw/Syntax \
-	Raw/SyntaxLemmas \
-	Raw/RawStructuralRule \
-	Raw/AlgebraicExtension \
-	Raw/CongruenceRule \
-	Raw/FlatRule \
-	Raw/FlatTypeTheory \
-	Raw/RawRule \
-	Raw/RawTypeTheory \
-	Typed/TypedClosure \
-	Typed/UtilityDerivations \
-	Typed/TypedFlatRule \
-	Typed/TypedRule \
-	Typed/TypedStructuralRule \
-	Typed/TypeTheory \
+	Syntax/ShapeSystem \
+	Syntax/SyntacticClass \
+	Syntax/Arity \
+	Syntax/Signature \
+	Syntax/Expression \
+	Syntax/Substitution \
+	Syntax/Metavariable \
+	Syntax/All \
+	Typing/Context \
+	Typing/Judgement \
+	Typing/FlatRule \
+	Typing/StructuralRule \
+	Typing/FlatTypeTheory \
+	Typing/UtilityDerivations \
+	Typing/TypedFlatRule \
+	Typing/TypedStructuralRule \
+	Presented/AlgebraicExtension \
+	Presented/RawRule \
+	Presented/CongruenceRule \
+	Presented/RawTypeTheory \
+	Presented/TypedRule \
+	Presented/TypeTheory \
 	Metatheorem/Sanity \
 	Metatheorem/CutElimination \
 	Metatheorem/UniqueTyping \

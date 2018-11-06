@@ -2,12 +2,63 @@
 Require Import HoTT.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
-Require Import Proto.ShapeSystem.
-Require Import Raw.Syntax.
-Require Import Raw.SyntaxLemmas.
-Require Import Raw.RawStructuralRule.
+Require Import Syntax.ShapeSystem.
+Require Import Syntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
+Require Import Typing.StructuralRule.
 
 (** Some “utility derivations”: small bits of infrastructure frequently used for all sorts of derivations. *)
+
+Section Renaming.
+
+  Context `{H_Funext : Funext} {σ : shape_system}.
+
+  (** Commonly-required analogue of [Closure.deduce']. *)
+  (* TODO: after some use, consider whether this would be more convenient with
+   the equivalence given in the other direction. *)
+  Lemma deduce_modulo_rename {Σ : signature σ}
+      {T : Closure.system (judgement_total Σ)}
+      (cl_sys_T := structural_rule Σ + T)
+      {H : family _} {J : judgement_total _}
+      (r : cl_sys_T)
+      (e : shape_of_judgement J
+          <~> shape_of_judgement (Closure.conclusion (cl_sys_T r)))
+      (e_J : Judgement.rename (Closure.conclusion (cl_sys_T r)) e
+             = J)
+      (D : forall p : Closure.premises (cl_sys_T r),
+          Closure.derivation cl_sys_T H (Closure.premises _ p))
+    : Closure.derivation cl_sys_T H J.
+  Proof.
+    simple refine (Closure.deduce' _ _ _).
+    - apply inl, StructuralRule.rename.
+      exists (Closure.conclusion (cl_sys_T r)). exact (_;e).
+    - apply e_J.
+    - intros [].
+      exact (Closure.deduce _ _ r D).
+  Defined.
+
+  (** Commonly-required analogue of [Closure.deduce'], similar to [deduce_modulo_rename] above. *)
+  (* TODO: after some use, consider whether this would be more convenient with
+   the equivalence given in the other direction. *)
+  Lemma hypothesis_modulo_rename {Σ : signature σ}
+      {T : Closure.system (judgement_total Σ)}
+      {H : family (judgement_total _)}
+      {J : judgement_total _}
+      (h : H)
+      (e : shape_of_judgement J <~> shape_of_judgement (H h))
+      (e_J : Judgement.rename (H h) e = J)
+    : Closure.derivation (structural_rule Σ + T) H J.
+  Proof.
+    simple refine (Closure.deduce' _ _ _).
+    - apply inl, StructuralRule.rename.
+      exists (H h). exact (_;e).
+    - apply e_J.
+    - intros [].
+      exact (Closure.hypothesis _ _ h).
+  Defined.
+
+End Renaming.
 
 Section Sum_Shape_Empty.
 (** This section provides infrastructure to deal with a problem
@@ -38,7 +89,7 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
         (Judgement.rename J_tot (equiv_inverse (shape_sum_empty_inl _))).
   Proof.
     simple refine (Closure.deduce' _ _ _).
-    - apply inl, RawStructuralRule.rename. 
+    - apply inl, StructuralRule.rename. 
       exists J_tot.
       exact (_ ; equiv_inverse (shape_sum_empty_inl _)).
     - apply idpath.
@@ -60,7 +111,7 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
   Defined.
 
   (* TODO: generalise this to arbitrary judgements, and add function
-   [rename_judgement] (both to make this more general, and to make
+   [Judgement.rename] (both to make this more general, and to make
    the statement cleaner). *)
   (* NOTE: test whether this or [derivation_of_reindexing_to_empty_sum]
    is easier to use in practice; maybe get rid of whichever is less
@@ -78,7 +129,7 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
         J_tot.
   Proof.
     simple refine (Closure.deduce' _ _ _).
-    - apply inl, RawStructuralRule.rename.
+    - apply inl, StructuralRule.rename.
       exists J'_tot. cbn.
       exact (_ ; equiv_inverse (shape_sum_empty_inl _)).
     - apply Judgement.eq_by_expressions. 
@@ -133,7 +184,7 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
     functoriality lemma for renaming to show that the conclusion
     of that is the original judgement. *)
     simple refine (Closure.deduce' _ _ _).
-    - apply inl, RawStructuralRule.rename.
+    - apply inl, StructuralRule.rename.
       exists (Judgement.rename J_tot (equiv_inverse (shape_sum_empty_inl _))).
       exists Γ. apply shape_sum_empty_inl. 
     - apply Judgement.eq_by_expressions; intros i.

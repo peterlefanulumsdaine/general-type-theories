@@ -2,9 +2,24 @@
 
 A (formalised) general definition of type theories.
 
-## What is a general type theory?
+## Authors
 
-We consider general type theories of the *Martin-Löf style*. In this section we lay down
+* Andrej Bauer
+* Philipp Haselwarter
+* Peter LeFanu Lumsdaine
+
+## Directory overview
+
+* [`Auxiliary`](./Auxiliary) -- mathematical generalities, not specifically about type theory
+* [`Syntax`](./Syntax) -- raw syntax
+* [`Typing`](./Typing) -- judgements, flat rules, flat type theories, typing derivations
+* [`Presented`](./Presented) -- well-presented rules, type theories
+* [`Metatheorem`](./Metatheorem) -- basic metatheorems about these type theories
+* [`Example`](./Example) -- examples of shape systems, type theories, etc.
+
+## Mathematical overview
+
+We call the class of type theories we define *Martin-Löf style*. In this section we lay down
 the basic concepts but do *not* discuss how they are formalized. You will find here the
 *naive mathematical decscription* of the concepts we intend to formalize. For the purposes
 of formalization we may introduce additional intermediate concepts (but it is better if we
@@ -21,7 +36,7 @@ entities which need not be well-formed.
 The theory is **dependent** (types depend on terms) and has **binding operators** (such as ∏, Σ,
 λ). Therefore, we need to describe **shapes** of contexts and binding operators. Two
 possibilities for shapes are *de Bruijn indices* and *named variables*, but these are not the
-only ones. Thus we define a general abstract notion of shapes, which we then use to
+only ones. Thus we define a general abstract notion of *shape systems*, which we then use to
 express the structure of contexts and binding operators.
 
 The raw syntax is generated from a **raw signature** (we use the qualifier "raw" to remind
@@ -102,9 +117,7 @@ is considerable interdependence between inference rules because giving the evide
 rule is well-formed requires one to provide derivations, but to know what a derivation is,
 we need to be given inference rules.
 
-
-
-## Naming conventions
+## Coing conventions
 
 We observe the following naming conventions.
 
@@ -154,17 +167,80 @@ you can live with the short name withing the module `Foo`.
 Note that when `xyz` is declared global, e.g., it is the field name of a globally defined
 `Record`, then it is ok to name it `foo_xyz`. (Example: field name `Family.family_index`.)
 
+### Boilerplate
 
-## Code structure
+Many key constructions have a lot of related boilerplate — typically some of the following:
 
-* [`Auxiliary`](./Auxiliary) -- mathematical generalities
-* [`Proto`](./Proto) -- shape systems
-* [`Raw`](./Raw) -- raw syntax, raw rules, raw type theories
-* [`Typed`](./Typed) -- typing derivations, (typed) type theories
+- access functions
+- coercion declarations
+- equality lemmas (how to conveniently prove two widgets are equal; or, better, an equivalence between the equality type on widgets and some tractable type)
+- functoriality lemmas (widgets are functorial in maps of some of their arguments)
+- category structure (widgets form a category, or a displayed category over some of their arguments
 
+Such boilerplate should typically be given straight after the definition of widgets, in roughly the above order, except when there are specific reasons to defer it.
 
-## Authors
+See also “categories and functoriality” below.
 
-* Andrej Bauer
-* Philipp Haselwarter
-* Peter LeFanu Lumsdaine
+### Categories and functoriality
+
+Many constructions involved form categories, and/or are functorial/natural in some of their arguments, and keeping track of this systematically is crucial.
+
+Functoriality of a construction `widget` should be given as a lemma `widget_fmap`, or if `widget` is the core notion of a modula `Widget`, as a local lemma `fmap`, exported as `Widget.fmap`.
+
+If widgets are thought of as just forming a set/type, with no further category structure, then there should be further lemmas `Widget.fmap_idmap`, `Widget.fmap_compose` giving the functoriality laws up to equality, and these should all directly follow the definition of widgets.
+
+When widgets form a *category* — or, more typically, a *fibration* or *displayed category* over some previously-defined category (e.g. families form a fibration over sets/types) — then their (displayed) maps and category structure should directly follow their definition, and their `fmap` lemma (i.e. the demonstration that the displayed category is a fibration) should follow these.
+
+Maps of widgets should be defined as `Widget.map`, or `Widget.map_over` for displayed maps over some map(s) of the parameters, composition as `Widget.compose`, and so on.
+
+### Kleisli-like categories
+
+In some case, the main notion of map for some object is something like a Kleisli map: e.g. for type theories, a “map of type theories” may take a symbol of the source theory not just to an atomic symbol but more generally to any suitably-derivable *term* of the target theory.
+
+However, setting up the category of such maps usually requires first developing the corresponding *simple maps*, e.g. where each symbol of the source theory is sent just to a suitable symbol of the target theory.
+
+In this case, we distinguish the simple structure as e.g. `Widget.simple_map`, `Widget.simple_compose`, and so on; or when we wish to think of the simple notion as primary, we distinguish the Kleisli notions as `Widget.kleisli_map`, etc.
+
+### Layout
+
+- all code should be kept to line lengths ≤80 chars
+
+- running text in comments should be either hard-wrapped to length ≤80 chars, or non-wrapped, with blank lines to separate paragraphs in either case.  (Please try not to hard-wrap text to longer line lengths; that becomes nasty to read in windows with shorter line lengths.) 
+
+- indent in steps of 2 spaces
+
+- symbols like `:`, `:=` that are high in the parse-tree of a declaration should go at the *beginning* of lines for quick visibility, not at the end of lines, where they get lost; so
+
+    Definition idfun {X : Type}
+      : X -> X
+    := fun x => x.
+
+- in short declarations they can be mid-line, e.g. 
+
+    Definition idfun {X : Type} : X -> X := fun x => x.
+
+- in tactic proofs, when a tactic spawns multiple subgoals, *always* use bullets or some other form of focusing to separate the proofs of the subgoals.  So never write
+
+      destruct x as [ y | z ].
+      tactic1.
+      tactic2.
+      tactic3.
+    Qed.
+
+but instead something like (A): 
+
+      destruct x as [ y | z ].
+      - tactic1.
+      	tactic2.
+      - tactic3.
+    Qed.
+
+or (B)
+
+      destruct x as [ y | z ].
+      2: { tactic3. }
+      tactic1.
+      tactic2.
+    Qed.
+
+- focusing with bullets as in (A) is usually better if both/most subproofs are long; brackets as in (B) are good when all subproofs except one are short (~one-liners), since they avoid extra indentation in this case.  (Most often relevant when composing a long chain of equalities or morphisms.)

@@ -36,8 +36,7 @@ Record is_plusone (X1 X : Type)
   }.
 
 (* TODO: consider argument implicitnesses *)
-(* Also: unnecessary size increase occurs, due to the large quantification in the recursor/computors.
-  TODO: make the field itself an equivalent small type (e.g. “the map to the actual sum induced by inj1, inj2 is an equiv”) and then define the recursor as a lemma. *)
+(* Also: unnecessary size increase occurs, due to the large quantification in the recursor/computors. TODO: make the field itself an equivalent small type (e.g. “the map to the actual sum induced by inj1, inj2 is an equiv”) and then define the recursor as a lemma. *)
 (* TODO: as with [is_coproduct], fix size issues. *)
 
 End PlusOne.

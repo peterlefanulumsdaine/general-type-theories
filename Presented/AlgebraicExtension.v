@@ -3,15 +3,17 @@ Require Import Auxiliary.General.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
-Require Import Proto.ShapeSystem.
-Require Import Raw.Syntax.
-Require Import Raw.SyntaxLemmas.
+Require Import Syntax.ShapeSystem.
+Require Import Syntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
 
 Section Algebraic_Extensions.
 
-Context {σ : shape_system} {Σ : signature σ}.
+Context {σ : shape_system}.
 
 Record algebraic_extension
+  {Σ : signature σ} (* ambient signature of the extension *)
   {a : arity σ} (* arity listing the _object_ premises of the extension *)
 :=
   {
@@ -60,16 +62,23 @@ Record algebraic_extension
           (ae_shape i)
   }.
 
-Arguments algebraic_extension _ : clear implicits.
+Global Arguments algebraic_extension _ _ : clear implicits.
 
-(* TODO: make the record argument implicit in most fields. *)
+Global Arguments ae_signature_of_premise {_ _ _} _.
+Global Arguments ae_form {_ _ _} _.
+Global Arguments ae_shape {_ _ _} _.
+Global Arguments ae_lt {_ _ _}.
+Global Arguments ae_metavariables_of_premise {_ _ _} _.
+Global Arguments ae_raw_context_type {_ _ _} _.
+Global Arguments ae_raw_context {_ _ _} _.
 
+(** Access functions *)
 Local Definition premise_boundary
-    {a} {A : algebraic_extension a} (r : A)
-  : Judgement.boundary (ae_signature_of_premise _ r)
-                       (form_hypothetical (ae_form _ r)).
+    {Σ} {a} {A : algebraic_extension Σ a} (r : A)
+  : Judgement.boundary (ae_signature_of_premise r)
+                       (form_hypothetical (ae_form r)).
 Proof.
-  exists (ae_raw_context _ r).
+  exists (ae_raw_context r).
   apply (ae_hypothetical_boundary).
 Defined.
 
@@ -97,25 +106,26 @@ Proof.
   destruct e_eqp, e_lt. intros; apply Family.idmap.
 Defined.
 
-Local Definition eq `{Funext} {a}
-    {A A' : algebraic_extension a}
+Local Definition eq `{Funext} {Σ} {a}
+    {A A' : algebraic_extension Σ a}
     (e_premises : ae_equality_premise A = ae_equality_premise A')
     (e_lt : transport
               (fun K => well_founded_order (_ + Family.fmap _ K))
               e_premises
-              (ae_lt A)
-            = ae_lt A')
+              (@ae_lt _ _ A)
+            = @ae_lt _ _ A')
     (equiv_premise : ae_premise A -> ae_premise A' := eq_premise e_premises)
     (fe_signature : forall i : ae_premise A,
-      Signature.map (ae_signature_of_premise A i) (ae_signature_of_premise A' (equiv_premise i))
+      Signature.map (ae_signature_of_premise i)
+                    (ae_signature_of_premise (equiv_premise i))
       := fun i => Metavariable.fmap2 _ (eq_metas e_premises e_lt i))
     (fe_shape : forall i : ae_premise A,
-        (ae_shape A i <~> ae_shape A' (equiv_premise i))
+        (ae_shape i <~> ae_shape (equiv_premise i))
       := fun i => equiv_path _ _ (ap _ (ap _ (Family.map_commutes _ i)^)))
     (e_raw_context : forall (i : ae_premise A) (j : _),
-        Expression.fmap (fe_signature i) (ae_raw_context A i j)
+        Expression.fmap (fe_signature i) (ae_raw_context i j)
         = rename (equiv_inverse (fe_shape i))
-                 (ae_raw_context A' _ (fe_shape i j)))
+                 (ae_raw_context _ (fe_shape i j)))
     (e_hypothetical_boundary
        : forall i : ae_premise A,
         rename_hypothetical_boundary (fe_shape i)
@@ -129,8 +139,8 @@ Proof.
   destruct A, A'; cbn in e_premises, e_lt.
   destruct e_premises, e_lt; simpl in *.
   refine
-    (ap (Build_algebraic_extension _ _ _ _) _
-    @ ap (fun rc => Build_algebraic_extension _ _ _ rc _) _).
+    (ap (Build_algebraic_extension _ _ _ _ _) _
+    @ ap (fun rc => Build_algebraic_extension _ _ _ _ rc _) _).
   - clear ae_raw_context0 ae_raw_context1 e_raw_context.
     apply path_forall; intros i.
     refine (_ @ e_hypothetical_boundary i). apply inverse.
@@ -154,124 +164,116 @@ Proof.
       apply rename_idmap.
 Defined.
 
+Local Definition fmap
+    {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+    {a} (A : algebraic_extension Σ a)
+  : algebraic_extension Σ' a.
+Proof.
+  simple refine {| ae_equality_premise := ae_equality_premise A ;
+                   ae_lt := @ae_lt _ _ A |}.
+  - (* ae_raw_context_type *)
+    intros i v.
+    refine (_ (ae_raw_context_type i v)).
+    apply Expression.fmap, Metavariable.fmap1, f.
+  - (* ae_hypothetical_boundary *)
+    intros i.
+    simple refine
+      (fmap_hypothetical_boundary
+        _ (ae_hypothetical_boundary _ i)).
+    apply Metavariable.fmap1, f.
+Defined.
+
+Context `{Funext}.
+
+Local Definition fmap_idmap
+    {Σ} {a} (A : algebraic_extension Σ a)
+  : fmap (Signature.idmap _) A = A.
+Proof.
+  destruct A as [A_premises A_lt ? ?].
+  simple refine (eq _ _ _ _).
+  - apply idpath.
+  - apply idpath.
+  - unfold transport; simpl. intros i j.
+    eapply concat.
+    { refine (ap (fun f => Expression.fmap f _) _).
+      apply Metavariable.fmap2_idmap. }
+    eapply concat. { apply Expression.fmap_idmap. }
+    eapply concat.
+    { refine (ap (fun f => Expression.fmap f _) _).
+      apply Metavariable.fmap1_idmap. }
+    eapply concat. { apply Expression.fmap_idmap. }
+    apply inverse, rename_idmap.
+  - unfold transport; simpl. intros i.
+    eapply concat.
+    { apply rename_hypothetical_boundary_idmap. }
+    eapply concat.
+    { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+      apply Metavariable.fmap2_idmap. }
+    eapply concat. { apply fmap_hypothetical_boundary_idmap. }
+    eapply concat.
+    { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+      apply Metavariable.fmap1_idmap. }
+    apply fmap_hypothetical_boundary_idmap.
+Defined.
+
+Local Definition fmap_compose
+    {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+    {a} (A : algebraic_extension Σ a)
+  : fmap (Signature.compose f' f) A = fmap f' (fmap f A).
+Proof.
+  destruct A as [A_premises A_lt ? ?].
+  simple refine (eq _ _ _ _).
+  - apply idpath.
+  - apply idpath.
+  - unfold transport; simpl. intros i j.
+    eapply concat.
+    { refine (ap (fun f => Expression.fmap f _) _).
+      apply Metavariable.fmap2_idmap. }
+    eapply concat. { apply Expression.fmap_idmap. }
+    eapply concat.
+    { refine (ap (fun f => Expression.fmap f _) _).
+      apply Metavariable.fmap1_compose. }
+    eapply concat. { apply Expression.fmap_compose. }
+    apply inverse, rename_idmap.
+  - unfold transport; simpl. intros i.
+    eapply concat.
+    { apply rename_hypothetical_boundary_idmap. }
+    eapply concat.
+    { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+      apply Metavariable.fmap2_idmap. }
+    eapply concat. { apply fmap_hypothetical_boundary_idmap. }
+    eapply concat.
+    { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+      apply Metavariable.fmap1_compose. }
+    apply fmap_hypothetical_boundary_compose.
+Defined.
+
+Local Definition fmap_fmap
+    {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+    {a} (A : algebraic_extension Σ a)
+  : fmap f' (fmap f A) = fmap (Signature.compose f' f) A.
+Proof.
+  apply inverse, fmap_compose.
+Defined.
+
+Local Lemma premise_boundary_fmap
+    {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+    {a} {A : algebraic_extension Σ a} (p : A)
+  : @premise_boundary _ _ (fmap f A) p
+  = Judgement.fmap_boundary
+      (Metavariable.fmap1 f (ae_metavariables_of_premise p))
+      (premise_boundary p).
+Proof.
+  apply idpath.
+Defined.
+
 End Algebraic_Extensions.
 
-Arguments algebraic_extension {_} _ _.
-
-Section Functoriality.
-
-  Context {σ : shape_system}.
-
-  Local Definition fmap
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {a} (A : algebraic_extension Σ a)
-    : algebraic_extension Σ' a.
-  Proof.
-    simple refine {| ae_equality_premise := ae_equality_premise A ;
-                     ae_lt := ae_lt A |}.
-    - (* ae_raw_context_type *)
-      intros i v.
-      refine (_ (ae_raw_context_type _ i v)).
-      apply Expression.fmap, Metavariable.fmap1, f.
-    - (* ae_hypothetical_boundary *)
-      intros i.
-      simple refine
-        (fmap_hypothetical_boundary
-          _ (ae_hypothetical_boundary _ i)).
-      apply Metavariable.fmap1, f.
-  Defined.
-
-  Context `{Funext}.
-
-  Local Definition fmap_idmap
-      {Σ} {a} (A : algebraic_extension Σ a)
-    : fmap (Signature.idmap _) A = A.
-  Proof.
-    destruct A as [A_premises A_lt ? ?].
-    simple refine (eq _ _ _ _).
-    - apply idpath.
-    - apply idpath.
-    - unfold transport; simpl. intros i j.
-      eapply concat.
-      { refine (ap (fun f => Expression.fmap f _) _).
-        apply Metavariable.fmap2_idmap. }
-      eapply concat. { apply Expression.fmap_idmap. }
-      eapply concat.
-      { refine (ap (fun f => Expression.fmap f _) _).
-        apply Metavariable.fmap1_idmap. }
-      eapply concat. { apply Expression.fmap_idmap. }
-      apply inverse, rename_idmap.
-    - unfold transport; simpl. intros i.
-      eapply concat.
-      { apply rename_hypothetical_boundary_idmap. }
-      eapply concat.
-      { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
-        apply Metavariable.fmap2_idmap. }
-      eapply concat. { apply fmap_hypothetical_boundary_idmap. }
-      eapply concat.
-      { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
-        apply Metavariable.fmap1_idmap. }
-      apply fmap_hypothetical_boundary_idmap.
-  Defined.
-
-  Local Definition fmap_compose
-      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
-      {a} (A : algebraic_extension Σ a)
-    : fmap (Signature.compose f' f) A = fmap f' (fmap f A).
-  Proof.
-    destruct A as [A_premises A_lt ? ?].
-    simple refine (eq _ _ _ _).
-    - apply idpath.
-    - apply idpath.
-    - unfold transport; simpl. intros i j.
-      eapply concat.
-      { refine (ap (fun f => Expression.fmap f _) _).
-        apply Metavariable.fmap2_idmap. }
-      eapply concat. { apply Expression.fmap_idmap. }
-      eapply concat.
-      { refine (ap (fun f => Expression.fmap f _) _).
-        apply Metavariable.fmap1_compose. }
-      eapply concat. { apply Expression.fmap_compose. }
-      apply inverse, rename_idmap.
-    - unfold transport; simpl. intros i.
-      eapply concat.
-      { apply rename_hypothetical_boundary_idmap. }
-      eapply concat.
-      { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
-        apply Metavariable.fmap2_idmap. }
-      eapply concat. { apply fmap_hypothetical_boundary_idmap. }
-      eapply concat.
-      { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
-        apply Metavariable.fmap1_compose. }
-      apply fmap_hypothetical_boundary_compose.
-  Defined.
-
-  Local Definition fmap_fmap
-      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
-      {a} (A : algebraic_extension Σ a)
-    : fmap f' (fmap f A) = fmap (Signature.compose f' f) A.
-  Proof.
-    apply inverse, fmap_compose.
-  Defined.
-
-  Local Lemma premise_boundary_fmap
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {a} {A : algebraic_extension Σ a} (p : A)
-    : @premise_boundary _ _ _ (fmap f A) p
-    = Judgement.fmap_boundary
-        (Metavariable.fmap1 f (ae_metavariables_of_premise A p))
-        (premise_boundary p).
-  Proof.
-    apply idpath.
-  Defined.
-
-End Functoriality.
-
-(** We distinguish between:
+(** In setting up a category of algebraic extensions, we will have both:
 
 -  _simple_ maps of algebraic extensions, which are roughly just like family maps between their flattenings, and so interpret each symbol/premise of the source elg. ext. by a corresponding symbol/premise of the target alg. ext.;
 
-- _maps_, i.e. more general Kleisli-like maps (not given yet), which will be like maps of type theories between their flattenings, and so may interpret each symbol/premise of the source by a suitable _derivable expression_ of the target.  *)
+- _(general) maps_, i.e. more general Kleisli-like maps (not given yet), which will be like maps of type theories between their flattenings, and so may interpret each symbol/premise of the source by a suitable _derivable expression_ of the target.  *)
 Section Simple_Maps.
 
   Context {σ : shape_system}.
@@ -286,12 +288,12 @@ Section Simple_Maps.
         : Family.map (ae_equality_premise A) (ae_equality_premise A')
     ; premise_map_of_simple_map
         :> Family.map A A'
-        := Family.fmap_of_sum
+        := Family.sum_fmap
              (Family.map_fmap _ arity_map_of_simple_map)
              (Family.map_fmap _ equality_premise_map_of_simple_map)
     ; well_order_map_of_simple_map
-      : forall p p' : A, (ae_lt A p p'
-      <~> ae_lt A' (premise_map_of_simple_map p) (premise_map_of_simple_map p'))
+      : forall p p' : A, (ae_lt p p'
+      <~> ae_lt (premise_map_of_simple_map p) (premise_map_of_simple_map p'))
   }.
 
   Arguments simple_map_aux {_ _ _} _ _.
@@ -301,7 +303,7 @@ Section Simple_Maps.
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
       (f : simple_map_aux A A')
       (p : A)
-    : ae_form A p = ae_form A' (f p).
+    : ae_form p = ae_form (f p).
   Proof.
     apply (ap fst), inverse, Family.map_commutes.
   Defined.
@@ -311,7 +313,7 @@ Section Simple_Maps.
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
       (f : simple_map_aux A A')
       (p : A)
-    : ae_shape A p = ae_shape A' (f p).
+    : ae_shape p = ae_shape (f p).
   Proof.
     apply (ap snd), inverse, Family.map_commutes.
   Defined.
@@ -321,7 +323,7 @@ Section Simple_Maps.
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
       (f : simple_map_aux A A')
       {p : A}
-    : ae_shape A p <~> ae_shape A' (f p).
+    : ae_shape p <~> ae_shape (f p).
   Proof.
     refine (equiv_transport _ _ _ _).
     apply simple_map_shape_commutes.
@@ -332,8 +334,8 @@ Section Simple_Maps.
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
       (f : simple_map_aux A A')
       {p : A}
-    : Family.map (ae_metavariables_of_premise A p)
-                 (ae_metavariables_of_premise A' (f p)).
+    : Family.map (ae_metavariables_of_premise p)
+                 (ae_metavariables_of_premise (f p)).
   Proof.
     (* NOTE: could be abstracted using functoriality of “subfamily”? *)
     apply Family.Build_map'.
@@ -348,8 +350,8 @@ Section Simple_Maps.
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
       (f : simple_map_aux A A')
       {p : A}
-    : Signature.map (ae_signature_of_premise A p)
-                    (ae_signature_of_premise A' (f p)).
+    : Signature.map (ae_signature_of_premise p)
+                    (ae_signature_of_premise (f p)).
   Proof.
     apply Metavariable.fmap2, simple_map_metavariables_of_premise.
   Defined.
@@ -366,11 +368,11 @@ Section Simple_Maps.
   { simple_map_aux_part :> simple_map_aux A A'
   ; simple_map_context_commutes
     : forall (p : A) (i : _),
-      ae_raw_context_type A'
+      ae_raw_context_type
        (simple_map_aux_part p) (simple_map_premise_shape _ i)
       = rename (simple_map_premise_shape _)
        (Expression.fmap (simple_map_signature_of_premise _)
-         (ae_raw_context_type A p i))
+         (ae_raw_context_type p i))
   ; simple_map_hypothetical_boundary_commutes
     : forall (p : A),
       ae_hypothetical_boundary A' (simple_map_aux_part p) 
@@ -384,26 +386,25 @@ Section Simple_Maps.
 
 End Simple_Maps.
 
+Section Judgement_of_Premise.
+(** In flattening an algebraic extension (or rule), and in other settings (e.g. type-checking the premises), we often want to extract premises as judgements.
 
-Section Flattening.
+   We need to do this into several different signatures, so in this construction, we isolate exactly what is required: a map from the signature of this premise, plus (in case the premise is an object premise) a symbol to use as the head of the judgement, i.e. the metavariable introduced by the premise. *)
 
   Context {σ : shape_system}.
 
-  (* In flattening an algebraic extension (or rule), and in other settings (e.g. type-checking the premises), we often want to extract premises as judgements.
-
-   We need to do this into several different signatures, so in this lemma, we isolate exactly what is required: a map from the signature of this premise, plus (in case the premise is an object premise) a symbol to use as the head of the judgement, i.e. the metavariable introduced by the premise. *)
   (* TODO: consider whether the flattening of the conclusion of rules can also be unified with this. *)
   Local Definition judgement_of_premise {Σ : signature σ}
       {a} {A : algebraic_extension Σ a} (i : A)
-      {Σ'} (f : Signature.map (ae_signature_of_premise _ i) Σ')
-      (Sr : Judgement.is_object (ae_form _ i)
+      {Σ'} (f : Signature.map (ae_signature_of_premise i) Σ')
+      (Sr : Judgement.is_object (ae_form i)
            -> { S : Σ'
-             & (symbol_arity S = Arity.simple (ae_shape _ i))
-             * (symbol_class S = Judgement.class_of (ae_form _ i))})
+             & (symbol_arity S = Arity.simple (ae_shape i))
+             * (symbol_class S = Judgement.class_of (ae_form i))})
    : judgement_total Σ'.
   Proof.
-    exists (form_hypothetical (ae_form _ i)).
-    exists (Context.fmap f (ae_raw_context _ i)).
+    exists (form_hypothetical (ae_form i)).
+    exists (Context.fmap f (ae_raw_context i)).
     apply Judgement.hypothetical_instance_from_boundary_and_head.
     - refine (Judgement.fmap_hypothetical_boundary f _).
       apply ae_hypothetical_boundary.
@@ -420,45 +421,23 @@ Section Flattening.
         destruct H_obj. (* ruled out by assumption *)
   Defined.
 
-  Local Definition flatten {Σ : signature σ} {a}
-    (A : algebraic_extension Σ a)
-  : family (judgement_total (Metavariable.extend Σ a)).
-  (* This construction involves essentially two aspects:
-
-     - translate the syntax of each expression in the rule from its “local”
-       signatures to the overall signature;
-
-     - reconstruct the head terms of the object premises *)
-  Proof.
-    exists (ae_premise A).
-    intros i.
-    apply (judgement_of_premise i).
-    + apply Metavariable.fmap2.
-      apply Family.inclusion.
-    + intros H_i_obj.
-      destruct i as [ i | i ]; simpl in i.
-      * (* case: i an object premise *)
-        simple refine (_;_).
-        -- apply include_metavariable. exact i.
-        -- split; apply idpath.
-      * (* case: i an equality premise *)
-        destruct H_i_obj. (* ruled out by assumption *)
-  Defined.
+  (* TODO: reorganise and reconsider the functoriality lemmas for [judgement_of_premise] *)
 
   Local Definition judgement_of_premise_fmap1 `{Funext}
       {Σ Σ' : signature σ} {f : Signature.map Σ Σ'}
       {a} {A : algebraic_extension Σ a} {i : A}
-      {Σ''} {f' : Signature.map (ae_signature_of_premise A i) Σ''}
-      {f'' : Signature.map (ae_signature_of_premise (fmap f A) i) Σ''}
+      {Σ''} {f' : Signature.map (ae_signature_of_premise i) Σ''}
+      {f'' : Signature.map (@ae_signature_of_premise _ _ _ (fmap f A) i) Σ''}
       (e_f : f' = Signature.compose f'' (Metavariable.fmap1 f _)) 
-      {Sr : Judgement.is_object (ae_form A i)
+      {Sr : Judgement.is_object (ae_form i)
            -> { S : Σ''
-             & (symbol_arity S = Arity.simple (ae_shape A i))
-             * (symbol_class S = Judgement.class_of (ae_form A i))}}
-      {Sr' : Judgement.is_object (ae_form (fmap f A) i)
+             & (symbol_arity S = Arity.simple (ae_shape i))
+             * (symbol_class S = Judgement.class_of (ae_form i))}}
+      {Sr' : Judgement.is_object (@ae_form _ _ _ (fmap f A) i)
            -> { S : Σ''
-             & (symbol_arity S = Arity.simple (ae_shape (fmap f A) i))
-             * (symbol_class S = Judgement.class_of (ae_form (fmap f A) i))}}
+             & (symbol_arity S = Arity.simple (@ae_shape _ _ _ (fmap f A) i))
+             * (symbol_class S
+                 = Judgement.class_of (@ae_form _ _ _ (fmap f A) i))}}
       (e_Sr : Sr = Sr')
    : judgement_of_premise i f' Sr
      = @judgement_of_premise _ _ (fmap f A) i _ f'' Sr'.
@@ -481,19 +460,19 @@ Section Flattening.
   Definition fmap_judgement_of_premise `{Funext}
       {Σ} {a} {A : algebraic_extension Σ a} {i : A}
       {Σ' Σ''} (f' : Signature.map Σ' Σ'')
-      (f : Signature.map (ae_signature_of_premise A i) Σ')
-      (Sr : Judgement.is_object (ae_form A i)
+      (f : Signature.map (ae_signature_of_premise i) Σ')
+      (Sr : Judgement.is_object (ae_form i)
            -> { S : Σ'
-             & (symbol_arity S = Arity.simple (ae_shape A i))
-             * (symbol_class S = Judgement.class_of (ae_form A i))})
+             & (symbol_arity S = Arity.simple (ae_shape i))
+             * (symbol_class S = Judgement.class_of (ae_form i))})
       (Sr' := (fun i_ob =>
            (f' (Sr i_ob).1; 
               (ap snd (Family.map_commutes _ _) @ fst (Sr i_ob).2
               , ap fst (Family.map_commutes _ _) @ snd (Sr i_ob).2)))
-         : Judgement.is_object (ae_form A i)
+         : Judgement.is_object (ae_form i)
            -> { S : Σ''
-             & (symbol_arity S = Arity.simple (ae_shape A i))
-             * (symbol_class S = Judgement.class_of (ae_form A i))})
+             & (symbol_arity S = Arity.simple (ae_shape i))
+             * (symbol_class S = Judgement.class_of (ae_form i))})
    : fmap_judgement_total f' (judgement_of_premise i f Sr)
      = @judgement_of_premise _ _ A i _ (Signature.compose f' f) Sr'.
   Proof.
@@ -531,29 +510,6 @@ Section Flattening.
         apply idpath.
   Defined.
   
-  Local Lemma flatten_fmap `{Funext}
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {a} (A : algebraic_extension Σ a)
-    : Family.map_over (fmap_judgement_total (Metavariable.fmap1 f a))
-        (flatten A) (flatten (fmap f A)).
-  Proof.
-    exists idmap.
-    intros i.
-    eapply concat. 2: { apply inverse, fmap_judgement_of_premise. }
-    apply inverse, judgement_of_premise_fmap1.
-    - eapply concat. { apply inverse, Metavariable.fmap_compose. }
-      eapply concat. 2: { apply Metavariable.fmap_compose. }
-      eapply concat. { apply ap, Family.id_left. }
-      eapply concat. { eapply (ap (fun f => Metavariable.fmap f _)), Family.id_right. }
-      apply inverse.                     
-      eapply concat. { apply ap, Family.id_right. }
-      eapply (ap (fun f => Metavariable.fmap f _)), Family.id_left.
-    - apply path_forall. intros i_is_ob.
-      destruct i as [i_ob | i_eq].
-      + apply idpath.
-      + destruct i_is_ob.
-  Defined.
-
   (* TODO: rename [simple_map_signature_of_premise]
    to [fmap_signature_of_premise_simple_map], etc. *)
   Definition fmap_judgement_of_premise_simple_map `{Funext}
@@ -561,18 +517,18 @@ Section Flattening.
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
       (g : simple_map A A') (i : A)
       {Σ'}
-      {f : Signature.map (ae_signature_of_premise A i) Σ'}
-      {f' : Signature.map (ae_signature_of_premise A' (g i)) Σ'}
+      {f : Signature.map (ae_signature_of_premise i) Σ'}
+      {f' : Signature.map (ae_signature_of_premise (g i)) Σ'}
       (e_f : f = Signature.compose f'
                     (simple_map_signature_of_premise g)) 
-      {Sr : Judgement.is_object (ae_form A i)
+      {Sr : Judgement.is_object (ae_form i)
            -> { S : Σ'
-             & (symbol_arity S = Arity.simple (ae_shape A i))
-             * (symbol_class S = Judgement.class_of (ae_form A i))}}
-      {Sr' : Judgement.is_object (ae_form A' (g i))
+             & (symbol_arity S = Arity.simple (ae_shape i))
+             * (symbol_class S = Judgement.class_of (ae_form i))}}
+      {Sr' : Judgement.is_object (ae_form  (g i))
            -> { S : Σ'
-             & (symbol_arity S = Arity.simple (ae_shape A' (g i)))
-             * (symbol_class S = Judgement.class_of (ae_form A' (g i)))}}
+             & (symbol_arity S = Arity.simple (ae_shape (g i)))
+             * (symbol_class S = Judgement.class_of (ae_form (g i)))}}
       (e_Sr : forall i_is_ob,
          let Sr_i := Sr i_is_ob
       in let Sr_gi := Sr' (transport _ (simple_map_form_commutes _ _) i_is_ob)
@@ -593,7 +549,7 @@ Section Flattening.
     { apply path_forall; intros i_is_ob. cbn. 
       specialize e_Sr with i_is_ob. 
       set (Sr_i := Sr i_is_ob) in *. clearbody Sr_i; clear Sr.
-      destruct Sr_i as [S e_aS e_cS]; cbn in e_Sr.
+      destruct Sr_i as [S e_aS_cS]; cbn in e_Sr.
       destruct e_Sr as [e_S [e_e_aS e_e_cS]].
       revert e_S e_e_aS e_e_cS. refine (inverse_sufficient _ _).
       intros e_S e_e_aS e_e_cS.
@@ -609,10 +565,68 @@ Section Flattening.
     (* why doesn’t [destruct e^] work here? *)
     apply inverse in e. clear e_Sr. revert Sr e.
     refine (paths_rect _ _ _ _).
-    (* this is terrible. We really need some kind of “master lemma” about [judgement_of_premise] giving the master conditions under which two instances are equal; and ideally perhaps also some factoring of [judgement_of_premise] to enable proving that. *)
+    (* TODO: this is terrible. We really need some kind of “master lemma” about [judgement_of_premise] giving the master conditions under which two instances are equal; and ideally perhaps also some factoring of [judgement_of_premise] to enable proving that. *)
   Admitted. (* [fmap_judgement_of_premise_simple_map]: nasty and difficult (sticking point is equality of judgements), but hopefully self-contained *)
 
-  Definition fmap_flatten_simple_map `{Funext}
+End Judgement_of_Premise.
+
+
+Section Flattening.
+
+  Context {σ : shape_system}.
+
+
+  Local Definition flatten {Σ : signature σ} {a}
+    (A : algebraic_extension Σ a)
+  : family (judgement_total (Metavariable.extend Σ a)).
+  (* This construction involves essentially two aspects:
+
+     - translate the syntax of each expression in the rule from its “local”
+       signatures to the overall signature;
+
+     - reconstruct the head terms of the object premises *)
+  Proof.
+    exists (ae_premise A).
+    intros i.
+    apply (judgement_of_premise i).
+    + apply Metavariable.fmap2.
+      apply Family.subfamily_inclusion.
+    + intros H_i_obj.
+      destruct i as [ i | i ]; simpl in i.
+      * (* case: i an object premise *)
+        simple refine (_;_).
+        -- apply include_metavariable. exact i.
+        -- split; apply idpath.
+      * (* case: i an equality premise *)
+        destruct H_i_obj. (* ruled out by assumption *)
+  Defined.
+
+  (** Note: this map should additionally be an isomorphism *)
+  Local Lemma flatten_fmap `{Funext}
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} (A : algebraic_extension Σ a)
+    : Family.map_over (fmap_judgement_total (Metavariable.fmap1 f a))
+        (flatten A) (flatten (fmap f A)).
+  Proof.
+    exists idmap.
+    intros i.
+    eapply concat. 2: { apply inverse, fmap_judgement_of_premise. }
+    apply inverse, judgement_of_premise_fmap1.
+    - eapply concat. { apply inverse, Metavariable.fmap_compose. }
+      eapply concat. 2: { apply Metavariable.fmap_compose. }
+      eapply concat. { apply ap, Family.id_left. }
+      eapply concat.
+      { eapply (ap (fun f => Metavariable.fmap f _)), Family.id_right. }
+      apply inverse.                     
+      eapply concat. { apply ap, Family.id_right. }
+      eapply (ap (fun f => Metavariable.fmap f _)), Family.id_left.
+    - apply path_forall. intros i_is_ob.
+      destruct i as [i_ob | i_eq].
+      + apply idpath.
+      + destruct i_is_ob.
+  Defined.
+
+  Definition flatten_fmap_simple `{Funext}
       {Σ : signature σ} {a a'}
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
       (f : simple_map A A')
@@ -654,7 +668,11 @@ Section Flattening.
 
 End Flattening.
 
+
 Section Initial_Segment.
+  (** Each premise of an algebraic extension will be typechecked in the _initial segment_ preceding it: that is, the algebraic extension giving by the earlier premises.
+
+  (If the ordering relation is multi-valued, then  *)
 
   Context {σ : shape_system}.
 
@@ -664,11 +682,11 @@ Section Initial_Segment.
     : family (hypothetical_form * σ.(shape_carrier))
   := Family.fmap (fun cl_γ : syntactic_class * σ.(shape_carrier) =>
                     (form_object cl_γ.(fst), cl_γ.(snd)))
-                 (ae_metavariables_of_premise A r)
+                 (ae_metavariables_of_premise r)
    + Family.fmap (fun cl_γ : syntactic_class * σ.(shape_carrier) =>
                     (form_equality cl_γ.(fst), cl_γ.(snd)))
        (Family.subfamily (ae_equality_premise A)
-                         (fun j => ae_lt A (inr j) r)).
+                         (fun j => ae_lt (inr j) r)).
 
   Local Definition initial_segment_include_premise_aux
       {Σ : signature σ} {a} (A : algebraic_extension Σ a) (r : A)
@@ -689,12 +707,12 @@ Section Initial_Segment.
     : well_founded_order (initial_segment_premise_aux A r)
   := WellFounded.pullback
        (initial_segment_include_premise_aux A r)
-       (ae_lt A).
+       (ae_lt).
 
   Local Definition initial_segment_include_premise_lt_aux
       {Σ : signature σ} {a} {A : algebraic_extension Σ a} {r : A}
       (i : initial_segment_premise_aux A r)
-    : ae_lt A (initial_segment_include_premise_aux _ _ i) r.
+    : ae_lt (initial_segment_include_premise_aux _ _ i) r.
   Proof.
     destruct i as [ [ i_ob e ] | [i_eq e] ]; apply e.
   Defined.
@@ -703,9 +721,9 @@ Section Initial_Segment.
       {Σ : signature σ} {a} {A : algebraic_extension Σ a} {r : A}
       (i : initial_segment_premise_aux A r)
     : Family.map
-        (ae_metavariables_of_premise A
+        (ae_metavariables_of_premise
            (initial_segment_include_premise_aux _ _ i))
-        (Family.subfamily (ae_metavariables_of_premise A r) (fun j =>
+        (Family.subfamily (ae_metavariables_of_premise r) (fun j =>
            initial_segment_lt_aux _ _ (inl j) i)).
   Proof.
     apply Family.Build_map'.
@@ -723,23 +741,24 @@ Section Initial_Segment.
       {Σ : signature σ} {a} {A : algebraic_extension Σ a} {r : A}
       (i : initial_segment_premise_aux A r)
     : Signature.map
-        (ae_signature_of_premise A
-           (initial_segment_include_premise_aux _ _ i))
+        (ae_signature_of_premise
+          (initial_segment_include_premise_aux _ _ i))
         (Metavariable.extend Σ
-           (Family.subfamily (ae_metavariables_of_premise A r) (fun j =>
-           initial_segment_lt_aux _ _ (inl j) i))).
+          (Family.subfamily (ae_metavariables_of_premise r) (fun j =>
+            initial_segment_lt_aux _ _ (inl j) i))).
   Proof.
     apply Metavariable.fmap2, initial_segment_compare_premise_metas.
   Defined.
 
+  (** The “initial segment” of an algebraic extension preceding some given premise *)
   Local Definition initial_segment
       {Σ : signature σ} {a} (A : algebraic_extension Σ a) (r : A)
-    : algebraic_extension Σ (ae_metavariables_of_premise A r).
+    : algebraic_extension Σ (ae_metavariables_of_premise r).
   Proof.
-    simple refine (Build_algebraic_extension _ _ _ _ _).
+    simple refine (Build_algebraic_extension _ _ _ _ _ _).
     - (* ae_equality_premise *)
       exact (Family.subfamily (ae_equality_premise A)
-                              (fun j => ae_lt A (inr j) r)).
+                              (fun j => ae_lt (inr j) r)).
     - (* ae_lt *)
       apply initial_segment_lt_aux.
     - (* ae_raw_context_type *)
@@ -748,7 +767,7 @@ Section Initial_Segment.
       + apply initial_segment_compare_signature.
       + set (i_orig
           := initial_segment_include_premise_aux A r i).
-        destruct i as [ ? | ? ]; refine (ae_raw_context_type A i_orig x).
+        destruct i as [ ? | ? ]; refine (ae_raw_context_type i_orig x).
     - (* ae_hypothetical_boundary *)
       intros i x.
       refine (Expression.fmap _ _).
@@ -758,7 +777,7 @@ Section Initial_Segment.
         destruct i as [ ? | ? ]; refine (ae_hypothetical_boundary A i_orig x).
   Defined.
 
-  (* Perhaps better as map (we’d have to define the notion of map first…)? *)
+  (* Perhaps better as (simple) map of alg exts. *)
   Local Lemma initial_segment_fmap_eq `{Funext}
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {A : algebraic_extension Σ a} (p : A)
@@ -961,7 +980,7 @@ Section Initial_Segment.
         (flatten (initial_segment (fmap f A) p))
         (flatten (fmap f (initial_segment A p))).
   Proof.
-    simple refine (Family.map_transport _ (fmap_flatten_simple_map _)).
+    simple refine (Family.map_transport _ (flatten_fmap_simple _)).
     2: { refine (initial_segment_fmap f p). }
     eapply concat. { apply ap, Metavariable.fmap_idmap. }
     apply path_forall; intros i. apply fmap_judgement_total_idmap. 

@@ -4,10 +4,12 @@ Require Import HoTT.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
-Require Import Proto.ShapeSystem.
-Require Import Raw.Syntax.
-Require Import Raw.AlgebraicExtension.
-Require Import Raw.RawRule.
+Require Import Syntax.ShapeSystem.
+Require Import Syntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
+Require Import Presented.AlgebraicExtension.
+Require Import Presented.RawRule.
 
 Section CongruenceRule.
 
@@ -57,12 +59,14 @@ eq_new i   0        0        0        0        i < j
 
   Local Definition original_constructor_translation
     {a} {hjf_concl} (R : rule Σ a hjf_concl)
-    (p : (a + a) +
-         (ae_equality_premise (rule_premise R) + ae_equality_premise (rule_premise R) + a))
+    (p : (a + a)
+         + (ae_equality_premise (rule_premise R)
+            + ae_equality_premise (rule_premise R)
+            + a))
     : Signature.map
-        (ae_signature_of_premise (rule_premise R) (original_premise p))
+        (ae_signature_of_premise (original_premise p))
         (Metavariable.extend Σ (Family.subfamily (a + a)
-           (fun j => lt (ae_lt _) (inl j) p))).
+           (fun j => lt (ae_lt) (inl j) p))).
   Proof.
     (* In case [p] is one of the 2 copies of the original premises, there is a single canonical choice for this definition.
 
@@ -106,14 +110,14 @@ eq_new i   0        0        0        0        i < j
                  (ae_equality_premise (rule_premise R))) + a ;
               |}.
     - (* ae_lt *)
-      exact (lt (ae_lt _)).
+      exact (lt (ae_lt)).
     - (* ae_raw_context_type *)
       intros p i.
       refine (Expression.fmap
         (original_constructor_translation _ _) _).
       set (p_orig := original_premise p).
       destruct p as [ [ ? | ? ] | [ [ ? | ? ] | ? ] ];
-      refine (ae_raw_context_type _ p_orig i).
+      refine (ae_raw_context_type p_orig i).
       (* alternatively, instead of destructing [p], could use equality reasoning
       on the type of [i]. *)
     - (* ae_hypothetical_boundary *)

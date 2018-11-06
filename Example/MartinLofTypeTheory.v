@@ -1,13 +1,13 @@
 Require Import HoTT.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
-Require Import Raw.Syntax.
-Require Import Raw.RawTypeTheory.
+Require Import Syntax.All.
+Require Import Presented.RawTypeTheory.
 Require Import Raw.SignatureMap.
-Require Import Raw.RawRule.
-Require Import WellTyped.TypeTheory.
+Require Import Presented.RawRule.
+Require Import WellPresented.TypeTheory.
 
 Section MartinLöfTypeTheory.
   Context {σ : shape_system}.

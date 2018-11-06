@@ -1,20 +1,24 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
-Require Import Proto.ShapeSystem.
-Require Import Raw.Syntax.Signature.
-Require Import Raw.Syntax.SyntacticClass.
-Require Import Raw.Syntax.Expression.
-Require Import Raw.Syntax.Substitution.
-Require Import Raw.Syntax.Context.
+Require Import Auxiliary.Coproduct.
+Require Import Syntax.ShapeSystem.
+Require Import Syntax.Arity.
+Require Import Syntax.Signature.
+Require Import Syntax.SyntacticClass.
+Require Import Syntax.Expression.
+Require Import Syntax.Substitution.
+Require Import Syntax.Metavariable.
+Require Import Typing.Context.
 
-Section JudgementDefinitions.
-  Context {σ : shape_system}.
-  Context (Σ : signature σ).
+(** We first set up the combinatorics describing the “shapes” of the judgement forms — specifying how many expressions they will involve, and of what classes — before bringing in the actual syntax, and defining judgements themselves. *)
+Section JudgementCombinatorics.
 
-  (* The basic hypothetical judgments forms. *)
+  (* The basic hypothetical judgment forms. *)
   Inductive hypothetical_form : Type :=
-  | form_object (cl : syntactic_class) (* a thing is a term, a thing is a type *)
-  | form_equality (cl : syntactic_class). (* terms are equal, types are equal *)
+  | form_object (cl : syntactic_class)
+      (* a thing is a term, a thing is a type *)
+  | form_equality (cl : syntactic_class).
+      (* terms are equal, types are equal *)
 
   Local Definition is_object : hypothetical_form -> Type
     := fun jf => match jf with
@@ -47,7 +51,8 @@ Section JudgementDefinitions.
     |}.
 
   (* The boundary slots of a term or type judgement. *)
-  Local Definition object_boundary_slot (cl : syntactic_class) : family syntactic_class
+  Local Definition object_boundary_slot (cl : syntactic_class)
+    : family syntactic_class
   := match cl with
        (* No hypothetical part in boundary of a type judgement *)
        | class_type => type_object_boundary
@@ -55,10 +60,12 @@ Section JudgementDefinitions.
        | class_term => term_boundary_slot
      end.
 
-  Inductive equality_boundary_slot_index cl :=
-  | the_equality_sort : family_index (object_boundary_slot cl) -> equality_boundary_slot_index cl
-  | the_equality_lhs
-  | the_equality_rhs.
+  Inductive equality_boundary_slot_index cl
+  :=
+    | the_equality_sort : family_index (object_boundary_slot cl)
+                          -> equality_boundary_slot_index cl
+    | the_equality_lhs
+    | the_equality_rhs.
 
   Local Definition equality_boundary_slot (cl : syntactic_class) :=
     {| family_index := equality_boundary_slot_index cl ;
@@ -77,8 +84,8 @@ Section JudgementDefinitions.
   := match hjf with
        (* object judgement boundary is the boundary of the object *)
        | form_object cl => object_boundary_slot cl
-       (* equality judgement boundary: a boundary of the corresponding object-judgement,
-          together with two objects of the given class *)
+       (* equality judgement boundary: a boundary of the corresponding
+          object-judgement, together with two objects of the given class *)
        | form_equality cl  => equality_boundary_slot cl
      end.
 
@@ -109,6 +116,13 @@ Section JudgementDefinitions.
      end.
   (* NOTE: the order of slots for term judgements follows “dependency order” — later slots are (morally) dependent on earlier ones, so the type comes before the term.  However, the functions in section [Judgement_Notations] below follow standard written order, so the term comes before the type. *)
 
+End JudgementCombinatorics.
+
+Section Judgements.
+
+  Context {σ : shape_system}.
+  Context (Σ : signature σ).
+
   Local Definition hypothetical_boundary (hjf : hypothetical_form) γ : Type
     := forall i : boundary_slot hjf, raw_expression Σ (family_element _ i) γ.
 
@@ -131,7 +145,8 @@ Section JudgementDefinitions.
      ; hypothetical_part :
          match jf with
          | form_context => (Unit : Type)
-         | form_hypothetical hjf => hypothetical_judgement hjf context_of_judgement
+         | form_hypothetical hjf
+             => hypothetical_judgement hjf context_of_judgement
          end
      }.
      (* NOTE: the cast [Unit : Type] above is necessary, for subtle universe-
@@ -182,7 +197,7 @@ Section JudgementDefinitions.
       + exact (hypothetical_part _ j i).
   Defined.
 
-End JudgementDefinitions.
+End Judgements.
 
 Arguments hypothetical_boundary : simpl nomatch.
 Arguments Build_judgement {_ _ _} _ _.
@@ -193,163 +208,6 @@ Arguments Build_judgement_total {_ _} _ _.
 Arguments form_of_judgement_total {_ _} j : simpl nomatch.
 Arguments boundary_of_judgement {_ _ _} _ : simpl nomatch.
 Arguments shape_of_judgement {_ _ _} _ : simpl nomatch.
-
-(** A tactic that is often handy working with syntax, especially slots:
-recursively destruct some object of an iterated inductive type.
-
-Currently only supports specific inductive types hand-coded here. *)
-(* TODO: can this be generalised to work for arbitrary inductive types? *)
-Ltac recursive_destruct x :=
-    cbn in x;
-    try match type of x with
-    | form =>
-      let hf := fresh "hf" in
-      destruct x as [ | hf ]; [idtac | recursive_destruct hf]
-    | hypothetical_form =>
-      let cl := fresh "cl" in
-      destruct x as [ cl | cl ]; recursive_destruct cl
-    | syntactic_class => destruct x as [ | ]
-    | option _ =>
-      let y := fresh "y" in
-      destruct x as [ y | ]; [recursive_destruct y | idtac ]
-    | Empty => destruct x
-    | Unit => destruct x as []
-    | sum _ _ =>
-      let y := fresh "y" in
-      destruct x as [ y | y ]; recursive_destruct y
-    | sig _ =>
-      let x1 := fresh "x1" in
-      let x2 := fresh "x2" in
-      destruct x as [ x1 x2 ]; recursive_destruct x1; recursive_destruct x2
-    | term_boundary_slot_index => destruct x as []
-    | object_slot_index _ =>
-      let slot := fresh "slot" in
-      destruct x as [ slot | ] ; [ recursive_destruct slot | idtac ]
-    | equality_boundary_slot_index _ =>
-      let slot := fresh "slot" in
-      destruct x as [ slot | | ] ; [ recursive_destruct slot | idtac | idtac ]
-    | _ => idtac
-    end.
-
-Section Equality_Lemmas.
-(** If judgements were record types, rather than function types over their finite set of slots, they would have judgemental eta, which would be very convenient.
-
-In lieu of that, we give explicit lemmas for judgement equality:
-- one [eq_by_eta] analogous to eta-expansion and the eta rule,
-- one [eq_by_expressions] analogous to general function extensionality. *)
-
-  Context {σ : shape_system} {Σ : signature σ} `{Funext}.
-
-  Local Definition eta_expand (j : judgement_total Σ)
-    : judgement_total Σ.
-  Proof.
-    destruct j as [jf j].
-    exists jf.
-    exists (context_of_judgement j).
-    destruct jf as [ | hf].
-    - (* note: could use [constructor] here, but this keeps this case
-         literally equal to [j]. *)
-      exact (hypothetical_part j).
-    - intros i.
-      set (i_keep := i).
-      recursive_destruct hf;
-        recursive_destruct i;
-        exact (hypothetical_part j i_keep).
-  Defined.
-
-  Local Definition eta (j : judgement_total Σ)
-    : eta_expand j = j.
-  Proof.
-    apply (ap (Build_judgement_total _)).
-    destruct j as [jf j].
-    destruct jf as [ | hf]; try apply idpath.
-    destruct j as [Γ hj].
-    apply (ap (Build_judgement _)).
-    apply path_forall; intros i.
-    recursive_destruct hf;
-      recursive_destruct i;
-      apply idpath.
-  Defined.
-
-  (** To give something for a judgement (e.g. to derive it), one can always eta-expand the judgement first. *)
-  Local Definition canonicalise
-      (P : judgement_total Σ -> Type)
-      (j : judgement_total Σ)
-    : P (eta_expand j) -> P j.
-  Proof.
-    apply transport, eta.
-  Defined.
-
-  (* TODO: consider naming *)
-  (** To check two judgements are equal, it’s enough to check their eta-expansions.
-   Convenient for when modulo eta expansion, judgements are literally equal:
-   [apply Judgement.eq_by_eta, idpath.] 
-
-   For other cases, [eq_by_expressions] may be clearer. *)
-  Local Definition eq_by_eta
-      (j j' : judgement_total Σ)
-    : eta_expand j = eta_expand j' -> j = j'.
-  Proof.
-    intros e.
-    exact ((eta j)^ @ e @ eta j').
-  Defined.
-
-  (** When two judgements have the same form and are over the same shape, 
-  then they are equal if all expressions involved (in both the context and
-  the hypothetical part) are equal.
-
-  Often useful in cases where the equality of expressions is for a uniform
-  reason, such as functoriality/naturality lemmas. 
-
-  For cases where the specific form of the judgement is involved in the 
-  difference, [eq_by_eta] may be cleaner. *)
-  Local Definition eq_by_expressions
-      {hjf : hypothetical_form}
-      {γ : σ} {Γ Γ' : γ -> raw_type Σ γ}
-      {J J' : hypothetical_judgement Σ hjf γ}
-      (e_Γ : forall i, Γ i = Γ' i)
-      (e_J : forall i, J i = J' i)
-    : Build_judgement_total _ (@Build_judgement _ _
-        (form_hypothetical hjf) (Build_raw_context γ Γ) J)
-    = Build_judgement_total _ (@Build_judgement _ _
-        (form_hypothetical hjf) (Build_raw_context γ Γ') J').
-  Proof.
-    apply ap.
-    refine (@ap _ _
-                (fun ΓJ : (_ * hypothetical_judgement _ _ γ)
-                 => @Build_judgement _ _ (form_hypothetical _)
-                       (Build_raw_context γ (fst ΓJ)) (snd ΓJ))
-            (_,_) (_,_) _).
-    apply path_prod; apply path_forall; auto.
-  Defined.
-
-  (** When two judgements have the same form and are over the same shape, 
-  then they are equal if all expressions involved (in both the context and
-  the hypothetical part) are equal.
-
-  Often useful in cases where the equality of expressions is for a uniform
-  reason, such as functoriality/naturality lemmas. 
-
-  For cases where the specific form of the judgement is involved in the 
-  difference, [eq_by_eta] may be cleaner. *)
-  Local Definition boundary_eq_by_expressions
-      {hjf : hypothetical_form}
-      {γ : σ} {Γ Γ' : γ -> raw_type Σ γ}
-      {B B' : hypothetical_boundary Σ hjf γ}
-      (e_Γ : forall i, Γ i = Γ' i)
-      (e_B : forall i, B i = B' i) 
-    : (Build_raw_context γ Γ ; B)
-      = ((Build_raw_context γ Γ' ; B')
-          : boundary _ (form_hypothetical hjf)).
-  Proof.
-    refine (@ap _ _
-              (fun ΓB : (_ * hypothetical_boundary _ _ γ)
-               => (Build_raw_context γ (fst ΓB) ; (snd ΓB)))
-           (_,_) (_,_) _).
-    apply path_prod; apply path_forall; auto.
-  Defined.
-
-End Equality_Lemmas.
 
 Section JudgementFmap.
 
@@ -554,6 +412,163 @@ Section JudgementFmap.
 
 End JudgementFmap.
 
+(** A tactic that is often handy working with syntax, especially slots:
+recursively destruct some object of an iterated inductive type.
+
+Currently only supports specific inductive types hand-coded here. *)
+(* TODO: can this be generalised to work for arbitrary inductive types? *)
+Ltac recursive_destruct x :=
+    cbn in x;
+    try match type of x with
+    | form =>
+      let hf := fresh "hf" in
+      destruct x as [ | hf ]; [idtac | recursive_destruct hf]
+    | hypothetical_form =>
+      let cl := fresh "cl" in
+      destruct x as [ cl | cl ]; recursive_destruct cl
+    | syntactic_class => destruct x as [ | ]
+    | option _ =>
+      let y := fresh "y" in
+      destruct x as [ y | ]; [recursive_destruct y | idtac ]
+    | Empty => destruct x
+    | Unit => destruct x as []
+    | sum _ _ =>
+      let y := fresh "y" in
+      destruct x as [ y | y ]; recursive_destruct y
+    | sig _ =>
+      let x1 := fresh "x1" in
+      let x2 := fresh "x2" in
+      destruct x as [ x1 x2 ]; recursive_destruct x1; recursive_destruct x2
+    | term_boundary_slot_index => destruct x as []
+    | object_slot_index _ =>
+      let slot := fresh "slot" in
+      destruct x as [ slot | ] ; [ recursive_destruct slot | idtac ]
+    | equality_boundary_slot_index _ =>
+      let slot := fresh "slot" in
+      destruct x as [ slot | | ] ; [ recursive_destruct slot | idtac | idtac ]
+    | _ => idtac
+    end.
+
+Section Equality_Lemmas.
+(** If judgements were record types, rather than function types over their finite set of slots, they would have judgemental eta, which would be very convenient.
+
+In lieu of that, we give explicit lemmas for judgement equality:
+- one [eq_by_eta] analogous to eta-expansion and the eta rule,
+- one [eq_by_expressions] analogous to general function extensionality. *)
+
+  Context {σ : shape_system} {Σ : signature σ} `{Funext}.
+
+  Local Definition eta_expand (j : judgement_total Σ)
+    : judgement_total Σ.
+  Proof.
+    destruct j as [jf j].
+    exists jf.
+    exists (context_of_judgement j).
+    destruct jf as [ | hf].
+    - (* note: could use [constructor] here, but this keeps this case
+         literally equal to [j]. *)
+      exact (hypothetical_part j).
+    - intros i.
+      set (i_keep := i).
+      recursive_destruct hf;
+        recursive_destruct i;
+        exact (hypothetical_part j i_keep).
+  Defined.
+
+  Local Definition eta (j : judgement_total Σ)
+    : eta_expand j = j.
+  Proof.
+    apply (ap (Build_judgement_total _)).
+    destruct j as [jf j].
+    destruct jf as [ | hf]; try apply idpath.
+    destruct j as [Γ hj].
+    apply (ap (Build_judgement _)).
+    apply path_forall; intros i.
+    recursive_destruct hf;
+      recursive_destruct i;
+      apply idpath.
+  Defined.
+
+  (** To give something for a judgement (e.g. to derive it), one can always eta-expand the judgement first. *)
+  Local Definition canonicalise
+      (P : judgement_total Σ -> Type)
+      (j : judgement_total Σ)
+    : P (eta_expand j) -> P j.
+  Proof.
+    apply transport, eta.
+  Defined.
+
+  (* TODO: consider naming *)
+  (** To check two judgements are equal, it’s enough to check their eta-expansions.
+   Convenient for when modulo eta expansion, judgements are literally equal:
+   [apply Judgement.eq_by_eta, idpath.] 
+
+   For other cases, [eq_by_expressions] may be clearer. *)
+  Local Definition eq_by_eta
+      (j j' : judgement_total Σ)
+    : eta_expand j = eta_expand j' -> j = j'.
+  Proof.
+    intros e.
+    exact ((eta j)^ @ e @ eta j').
+  Defined.
+
+  (** When two judgements have the same form and are over the same shape, 
+  then they are equal if all expressions involved (in both the context and
+  the hypothetical part) are equal.
+
+  Often useful in cases where the equality of expressions is for a uniform
+  reason, such as functoriality/naturality lemmas. 
+
+  For cases where the specific form of the judgement is involved in the 
+  difference, [eq_by_eta] may be cleaner. *)
+  Local Definition eq_by_expressions
+      {hjf : hypothetical_form}
+      {γ : σ} {Γ Γ' : γ -> raw_type Σ γ}
+      {J J' : hypothetical_judgement Σ hjf γ}
+      (e_Γ : forall i, Γ i = Γ' i)
+      (e_J : forall i, J i = J' i)
+    : Build_judgement_total _ (@Build_judgement _ _
+        (form_hypothetical hjf) (Build_raw_context γ Γ) J)
+    = Build_judgement_total _ (@Build_judgement _ _
+        (form_hypothetical hjf) (Build_raw_context γ Γ') J').
+  Proof.
+    apply ap.
+    refine (@ap _ _
+                (fun ΓJ : (_ * hypothetical_judgement _ _ γ)
+                 => @Build_judgement _ _ (form_hypothetical _)
+                       (Build_raw_context γ (fst ΓJ)) (snd ΓJ))
+            (_,_) (_,_) _).
+    apply path_prod; apply path_forall; auto.
+  Defined.
+
+  (** When two judgements have the same form and are over the same shape, 
+  then they are equal if all expressions involved (in both the context and
+  the hypothetical part) are equal.
+
+  Often useful in cases where the equality of expressions is for a uniform
+  reason, such as functoriality/naturality lemmas. 
+
+  For cases where the specific form of the judgement is involved in the 
+  difference, [eq_by_eta] may be cleaner. *)
+  Local Definition boundary_eq_by_expressions
+      {hjf : hypothetical_form}
+      {γ : σ} {Γ Γ' : γ -> raw_type Σ γ}
+      {B B' : hypothetical_boundary Σ hjf γ}
+      (e_Γ : forall i, Γ i = Γ' i)
+      (e_B : forall i, B i = B' i) 
+    : (Build_raw_context γ Γ ; B)
+      = ((Build_raw_context γ Γ' ; B')
+          : boundary _ (form_hypothetical hjf)).
+  Proof.
+    refine (@ap _ _
+              (fun ΓB : (_ * hypothetical_boundary _ _ γ)
+               => (Build_raw_context γ (fst ΓB) ; (snd ΓB)))
+           (_,_) (_,_) _).
+    apply path_prod; apply path_forall; auto.
+  Defined.
+
+End Equality_Lemmas.
+
 Section JudgementNotations.
 
   Context {σ : shape_system}.
@@ -615,25 +630,33 @@ End JudgementNotations.
 
 Notation "'[!' |- Γ !]" := (make_context_judgement_total Γ) : judgement_scope.
 Notation "'[!' Γ |- A !]" := (make_type_judgement_total Γ A) : judgement_scope.
-Notation "'[!' Γ |- A ≡ A' !]" := (make_type_equality_judgement_total Γ A A') : judgement_scope.
-Notation "'[!' Γ |- a ; A !]" :=  (make_term_judgement_total Γ a A) : judgement_scope.
-Notation "'[!' Γ |- a ≡ a' ; A !]" := (make_term_equality_judgement_total Γ A a a') : judgement_scope.
+Notation "'[!' Γ |- A ≡ A' !]"
+  := (make_type_equality_judgement_total Γ A A') : judgement_scope.
+Notation "'[!' Γ |- a ; A !]"
+  :=  (make_term_judgement_total Γ a A) : judgement_scope.
+Notation "'[!' Γ |- a ≡ a' ; A !]"
+  := (make_term_equality_judgement_total Γ A a a') : judgement_scope.
 
 Open Scope judgement_scope.
 
-Section Presupposition.
-(** TODO: the naming in this section seems a bit ugly. *)
 
+(** A key notion is the _presuppositions_ of a judgement.
+
+For instance, the presuppositions of [ Γ |- a : A ] are the judgements [ |- Γ ] and [ Γ |- A type ].
+
+As with judgements themselves, we first describe set up the combinatorics indexing the constructions involved. *)
+
+Section PresuppositionsCombinatorics.
 (** Whenever an object appears in the boundary of an object judgement, then its
     boundary embeds into that boundary.
 
-    NOTE. This is a special case of [boundary_slot_from_presupposition] below. It is
-    abstracted out because it’s used twice: directly for object judgements, and
-    as part of the case for equality judgements.
+    NOTE. This is a special case of [boundary_slot_from_presupposition] below.
+    It is abstracted out because it’s used twice: directly for object
+    judgements, and as part of the case for equality judgements.
 
-    In fact it’s almost trivial, so could easily be inlined; but conceptually it
-    is the same thing both times, and in type theory with more judgements, it
-    would be less trivial, so we keep it factored out. *)
+    In fact it’s almost trivial, so could easily be inlined; but conceptually
+    it is the same thing both times, and in type theory with more judgements,
+    it would be less trivial, so we keep it factored out. *)
 
   Local Definition object_boundary_from_boundary_slots
     {cl : syntactic_class} (i : object_boundary_slot cl)
@@ -668,7 +691,8 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
         destruct i as [ i' |  | ].
         * (* i is in shared bdry of LHS/RHS *)
           cbn in j.
-          exists (the_equality_sort _ (object_boundary_from_boundary_slots i' j)).
+          exists
+            (the_equality_sort _ (object_boundary_from_boundary_slots i' j)).
           apply (Family.map_commutes _ j).
         * (* i is RHS *)
           exists (the_equality_sort _ j). apply idpath.
@@ -699,6 +723,11 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
     - apply boundary_slot_from_presupposition.
   Defined.
 
+End PresuppositionsCombinatorics.
+
+Section Presuppositions.
+(** TODO: the naming in this section seems a bit ugly. *)
+
   Context {σ : shape_system}.
 
   (** The presuppositions of a judgment boundary [jb] *)
@@ -720,19 +749,19 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
         exact (option (boundary_slot hjf)).
     - intros i. simple refine (Build_judgement_total _ _).
       + clear jb. destruct jf as [ | hjf].
-        * destruct i as [].
-        * destruct i as [ i | ].
-          -- exact (form_hypothetical (form_object ((boundary_slot hjf) i))).
-          -- exact form_context.
+        { destruct i as []. }
+        destruct i as [ i | ].
+        * exact (form_hypothetical (form_object ((boundary_slot hjf) i))).
+        * exact form_context.
       + destruct jf as [ | hjf].
-         * destruct i as [].
-         * exists (pr1 jb).
-           destruct i as [ i | ].
-           -- intros j.
-              refine (transport (fun cl => raw_expression _ cl _) _ _).
-              ++ exact (Family.map_commutes (boundary_slot_from_presupposition i) j).
-              ++ exact (pr2 jb (boundary_slot_from_presupposition i j)).
-           -- constructor.
+        { destruct i as []. }
+        exists (pr1 jb).
+        destruct i as [ i | ].
+        2: { constructor. }
+        intros j.
+        refine (transport (fun cl => raw_expression _ cl _) _ _).
+        * exact (Family.map_commutes (boundary_slot_from_presupposition i) j).
+        * exact (pr2 jb (boundary_slot_from_presupposition i j)).
   Defined.
 
   (** The presuppositions of judgement [j]. *)
@@ -741,8 +770,25 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
     : family (judgement_total Σ)
   := presupposition_of_boundary (boundary_of_judgement j).
 
-  (** Interactions between [fmap] along signature maps,
+  (** Interactions between functoriality under signature maps,
    and taking presuppositions. *)
+
+  Local Definition fmap_presupposition_of_boundary `{Funext}
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {jf} (B : boundary Σ jf)
+      (p : presupposition_of_boundary B)
+    : fmap_judgement_total f (presupposition_of_boundary B p)
+    = presupposition_of_boundary (fmap_boundary f B) p.
+  Proof.
+    destruct jf as [ | hjf].
+    - (* context *) destruct p. (* no presups *)
+    - (* hyp *)
+      recursive_destruct hjf; recursive_destruct p; try apply idpath;
+        apply eq_by_expressions;
+        intros j; recursive_destruct j; apply idpath.
+  Defined.
+
+  (* TODO: this should be an iso! *)
   Local Definition presupposition_fmap_boundary `{Funext}
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {jf} (B : boundary Σ jf)
@@ -751,19 +797,40 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
         (Family.fmap (fmap_judgement_total f) (presupposition_of_boundary B)).
   Proof.
     exists idmap.
-    intros i.
-    destruct jf as [ | hjf].
-    - (* context *) destruct i. (* no presups *)
-    - (* hyp *)
-      recursive_destruct hjf; recursive_destruct i; try apply idpath;
-        apply eq_by_expressions;
-        intros j; recursive_destruct j; apply idpath.
+    intros i; apply fmap_presupposition_of_boundary.
   Defined.
 
-End Presupposition.
+  Local Definition fmap_presupposition `{Funext}
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      (J : judgement_total Σ)
+      (p : presupposition J)
+    : fmap_judgement_total f (presupposition J p)
+    = presupposition (fmap_judgement_total f J) p.
+  Proof.
+    destruct J as [[ | hjf] J].
+    - (* context *) destruct p. (* no presups *)
+    - (* hyp *)
+      recursive_destruct hjf; recursive_destruct p; try apply idpath;
+        apply eq_by_expressions;
+        intros j; recursive_destruct j; apply idpath.    
+  Defined.
+
+  (* TODO: this should be an iso!  And consistentise with [presupposition_fmap_boundary]. *)
+  Local Definition fmap_presupposition_family `{Funext}
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      (J : judgement_total Σ)
+    : Family.map
+        (Family.fmap (fmap_judgement_total f) (presupposition J))
+        (presupposition (fmap_judgement_total f J)).
+  Proof.
+    exists (fun p => p).
+    intros p; apply inverse, fmap_presupposition.
+  Defined.
+
+End Presuppositions.
 
 Section Rename_Variables.
-(** As discussed in [Raw.Syntax.Context], one can rename the variables of a judgement along an isomorphism of shapes. *)
+(** One can rename the variables of a judgement along an _isomorphism_ of shapes.  (Cf. discussion at [Context.rename].) *)
 
   Context {σ : shape_system} {Σ : signature σ}.
 
@@ -800,5 +867,195 @@ Section Rename_Variables.
       exact (rename_hypothetical_judgement (hypothetical_part J) f).
   Defined.
 
+  Context `{H_Funext : Funext}.
+
+  Local Definition rename_rename
+      (J : judgement_total Σ)
+      {γ' : shape_carrier σ} (e : γ' <~> shape_of_judgement J)
+      {γ'' : shape_carrier σ} (e' : γ'' <~> γ')
+    : rename (rename J e) e'
+      = rename J (equiv_compose e e').
+  Proof.
+    destruct J as [ [ | hjf ] J].
+    - (* context judgement *)
+      apply (ap (Build_judgement_total _)),
+            (ap make_context_judgement),
+            (ap (Build_raw_context _)).
+      apply path_forall; cbn; intros i.
+      apply inverse, rename_comp.
+    - (* hypothetical judgement *)
+      apply eq_by_expressions; cbn.
+      + intros i. apply inverse, rename_comp.
+      + intros i. unfold rename_hypothetical_judgement; cbn.
+        apply inverse, rename_comp.
+  Defined.
+
+  Local Definition rename_idmap
+      (J : judgement_total Σ)
+    : rename J (equiv_idmap _)
+      = J.
+  Proof.
+    destruct J as [ [ | hjf ] J].
+    - (* context judgement *)
+      apply (ap (Build_judgement_total _)).
+      eapply concat.
+      { eapply (ap make_context_judgement),
+               (ap (Build_raw_context _)).
+        apply path_forall; cbn; intros i.
+        apply rename_idmap. }
+      apply (ap (Build_judgement _)), contr_unit.
+    - (* hypothetical judgement *)
+      apply eq_by_expressions; cbn.
+      + intros i. apply rename_idmap.
+      + intros i. unfold rename_hypothetical_judgement; cbn.
+        apply rename_idmap.
+  Defined.
+
+  Local Definition rename_inverse
+      (J : judgement_total Σ)
+      {γ' : shape_carrier σ} (e : shape_of_judgement J <~> γ')
+    : rename (rename J (e^-1)) e = J.
+  Proof.
+    eapply concat. { apply rename_rename. }
+    eapply concat. 2: { apply rename_idmap. }
+    apply ap, ecompose_Ve.
+  Defined.
+
+  Lemma rename_hypothetical_boundary_idmap
+      {γ : σ} {hjf} (B : hypothetical_boundary _ hjf γ)
+    : rename_hypothetical_boundary idmap B = B.
+  Proof.
+    apply path_forall; intros i.
+    apply Expression.rename_idmap.
+  Defined.
+
 End Rename_Variables.
 
+Section Instantiation.
+(** Interaction of judgements with metavariable instantiations *)
+
+  Context {σ : shape_system} `{Funext}.
+
+  Local Definition instantiate
+      {a : arity σ} {Σ : signature σ} (Γ : raw_context Σ)
+      (I : Metavariable.instantiation a Σ Γ)
+      (j : judgement_total (Metavariable.extend Σ a))
+    : judgement_total Σ.
+  Proof.
+    exists (form_of_judgement_total j).
+    exists (Context.instantiate _ I (context_of_judgement j)).
+    destruct j as [jf J]; destruct jf; simpl in *.
+    - constructor.
+    - simpl. intro i.
+      apply (instantiate_expression I (hypothetical_part J i)).
+  Defined.
+
+  Local Lemma fmap_instantiate
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a : @arity σ} (Γ : raw_context Σ)
+      (I : Metavariable.instantiation a Σ Γ)
+      (J : judgement_total (Metavariable.extend _ _))
+    : fmap_judgement_total f (instantiate Γ I J)
+    = instantiate
+        (Context.fmap f Γ) 
+        (instantiation_fmap f I)
+        (fmap_judgement_total (Metavariable.fmap1 f a) J).
+  Proof.
+    destruct J as [[ | ] J].
+    - (* context judgement *)
+      apply (ap (Build_judgement_total _)), (ap (fun Γ => Build_judgement Γ _)).
+      cbn. apply Context.fmap_instantiate.
+    - (* hypothetical judgement *)
+      apply eq_by_expressions. 
+      + (* context part *)
+        refine (coproduct_rect shape_is_sum _ _ _); intros i;
+          unfold Context.instantiate.
+        * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+          eapply concat. 2: {apply inverse. refine (coproduct_comp_inj1 _). }
+          apply fmap_rename.
+        * eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+          eapply concat. 2: {apply inverse. refine (coproduct_comp_inj2 _). }
+          apply fmap_instantiate_expression.
+      + intros i; apply fmap_instantiate_expression.
+  Defined.
+
+  Context {Σ : signature σ}.
+
+  Local Lemma unit_instantiate
+      {a} (J : judgement_total (Metavariable.extend Σ a))
+    : instantiate [::] (unit_instantiation a)
+        (fmap_judgement_total (Metavariable.fmap1 include_symbol _) J)
+      = rename J (shape_sum_empty_inr _)^-1.
+  Proof.
+    destruct J as [ [ | hjf ] J ].
+    - (* context judgement *)
+      destruct J as [J []].
+      simpl. unfold instantiate, rename. 
+      apply ap, ap10, ap.
+      apply Context.unit_instantiate.
+    - (* hypothetical judgement *)
+      apply eq_by_expressions.
+      + refine (coproduct_rect shape_is_sum _ _ _).
+        * apply (empty_rect _ shape_is_empty).
+        * intros x.
+          eapply concat. { refine (coproduct_comp_inj2 _). }
+          eapply concat. { apply unit_instantiate_expression. }
+          apply ap, ap, inverse. cbn.
+          refine (coproduct_comp_inj2 _).
+      + intros i; apply unit_instantiate_expression.
+  Defined.
+
+  Local Lemma instantiate_instantiate
+      {Γ : raw_context _} {a} (I : Metavariable.instantiation a Σ Γ)
+      {Δ : raw_context _} {b}
+      (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
+      (j : judgement_total (Metavariable.extend Σ b))
+    : instantiate
+        (Context.instantiate _ I Δ)
+        (instantiate_instantiation I J) j
+    = rename
+        (instantiate Γ I
+          (instantiate Δ J
+            (fmap_judgement_total (Metavariable.fmap1 include_symbol _) j)))
+         (shape_assoc _ _ _)^-1.
+  Proof.
+    destruct j as [[ | jf ] j].
+    - apply (ap (Build_judgement_total _)),
+            (ap (fun Γ => Build_judgement Γ _)),
+            (ap (fun A => Build_raw_context _ A)).
+      apply path_forall.
+      intros i; apply @Context.instantiate_instantiate_pointwise; auto.
+    - apply eq_by_expressions.
+      + apply @Context.instantiate_instantiate_pointwise; auto.
+      + intros i. refine (instantiate_instantiate_expression _ _ _).
+  Defined.
+
+  (** The instantiation under [I] of any presupposition of a judgement [j]
+      is equal to the corresponding presupposition of the instantiation of [j]
+      itself under [I]. *)
+  Definition instantiate_presupposition
+      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
+      (j : judgement_total _)
+      (i : presupposition (instantiate _ I j))
+    : instantiate _ I (presupposition j i)
+      = presupposition (instantiate _ I j) i.
+  Proof.
+    apply (ap (Build_judgement_total _)). (* form of presup unchanged *)
+    destruct j as [[ | hjf] j].
+    - destruct i. (* [j] is context judgement: no presuppositions. *)
+    - (* [j] is a hypothetical judgement *)
+      apply (ap (Build_judgement _)). (* context of presup unchanged *)
+      destruct i as [ i | ].
+      + (* hypothetical presupposition *)
+        apply path_forall; intros k.
+        recursive_destruct hjf;
+        recursive_destruct i;
+        recursive_destruct k;
+        try apply idpath.
+      + (* raw context *)
+        apply idpath.
+Defined.
+
+End Instantiation.
+
+Arguments instantiate : simpl nomatch.

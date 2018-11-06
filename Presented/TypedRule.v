@@ -1,16 +1,18 @@
 Require Import HoTT.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
-Require Import Raw.Syntax.
-Require Import Raw.AlgebraicExtension.
-Require Import Raw.FlatRule.
-Require Import Raw.FlatTypeTheory.
-Require Import Raw.RawRule.
-Require Import Raw.RawTypeTheory.
-Require Import Raw.CongruenceRule.
-Require Import Typed.TypedFlatRule.
+Require Import Syntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
+Require Import Presented.AlgebraicExtension.
+Require Import Typing.FlatRule.
+Require Import Typing.FlatTypeTheory.
+Require Import Presented.RawRule.
+Require Import Presented.RawTypeTheory.
+Require Import Presented.CongruenceRule.
+Require Import Typing.TypedFlatRule.
 
 (** In this file: definition of well-typedness of an algebraic extension, and a (well-presented) rule. *)
 
@@ -54,11 +56,12 @@ Section WellTypedRule.
   Proof.
     refine (is_well_typed_algebraic_extension T (rule_premise R) * _).
     (* well-typedness of conclusion *)
-    exact (forall (i : presupposition_of_boundary (RawRule.conclusion_boundary R)),
-               FlatTypeTheory.derivation
-                 (FlatTypeTheory.fmap include_symbol T)
-                 (AlgebraicExtension.flatten (rule_premise R))
-                 (presupposition_of_boundary _ i)).
+    exact
+      (forall (i : presupposition_of_boundary (RawRule.conclusion_boundary R)),
+        FlatTypeTheory.derivation
+          (FlatTypeTheory.fmap include_symbol T)
+          (AlgebraicExtension.flatten (rule_premise R))
+          (presupposition_of_boundary _ i)).
   Defined.
 
 End WellTypedRule.
@@ -91,23 +94,19 @@ Section Functoriality.
     end.
     unfold Family.fmap, family_element in J.
     subst J.
-    assert (fDi :=
-      FlatTypeTheory.fmap_derivation (Metavariable.fmap1 f _) Di).
-    clear D Di. (* just tidying up *)
-    refine (FlatTypeTheory.fmap_derivation_in_theory _ (Closure.derivation_fmap2 _ fDi)).
-      + (* commutativity in type theory *)
-        apply FlatTypeTheory.map_from_family_map.
-        (* TODO: abstract the follwing as lemma? *)
-        exists idmap.
-        intros r; simpl.
-        eapply concat. { apply inverse, FlatRule.fmap_compose. }
-        eapply concat. 2: { apply FlatRule.fmap_compose. }
-        apply ap10, ap.
-        apply Metavariable.include_symbol_after_map.
-      + (* commutativity in hypotheses *)
-        cbn. exists idmap; intros j.
-        eapply concat. 2: { apply AlgebraicExtension.flatten_fmap. }
-        apply AlgebraicExtension.flatten_initial_segment_fmap_applied.
+    refine (FlatTypeTheory.derivation_fmap_over_simple _ _ _ Di).
+    - (* map in type theory *)
+      (* TODO: refactor to be higher-level, eg using [FlatTypeTheory.fmap_compose]? *)
+      exists idmap.
+      intros r; simpl.
+      eapply concat. { apply inverse, FlatRule.fmap_compose. }
+      eapply concat. 2: { apply FlatRule.fmap_compose. }
+      apply ap10, ap.
+      apply Metavariable.include_symbol_after_map.
+    - (* map in hypotheses *)
+      cbn. exists idmap; intros j.
+      eapply concat. 2: { apply AlgebraicExtension.flatten_fmap. }
+      apply AlgebraicExtension.flatten_initial_segment_fmap_applied.
   Defined.
 
   (** Well-typedness is _covariant_ in the signature *)
@@ -138,20 +137,16 @@ Section Functoriality.
     end.
     unfold Family.fmap, family_element in J.
     subst J.
-    assert (fDi :=
-      FlatTypeTheory.fmap_derivation (Metavariable.fmap1 f a) Di).
-    clear D Di e_concl. (* just tidying up *)
-    refine (FlatTypeTheory.fmap_derivation_in_theory _ (Closure.derivation_fmap2 _ fDi)).
-    - (* commutativity in type theory *)
-      apply FlatTypeTheory.map_from_family_map.
-      (* TODO: abstract the follwing as lemma? *)
+    refine (FlatTypeTheory.derivation_fmap_over_simple _ _ _ Di).
+    - (* map in type theory *)
+      (* TODO: refactor using [FlatTypeTheory.fmap_compose]? *)
       exists idmap.
       intros r; simpl.
       eapply concat. { apply inverse, FlatRule.fmap_compose. }
       eapply concat. 2: { apply FlatRule.fmap_compose. }
       apply ap10, ap.
       apply Metavariable.include_symbol_after_map.
-    - (* commutativity in hypotheses *)
+    - (* map in hypotheses *)
       cbn. exists idmap.
       apply AlgebraicExtension.flatten_fmap.
   Defined.
@@ -165,8 +160,8 @@ Section Functoriality.
       -> is_well_typed_algebraic_extension T' A.
   Proof.
     intros A_WT r p.
-    refine (FlatTypeTheory.fmap_derivation_in_theory _ (A_WT r p)).
-    apply FlatTypeTheory.fmap_map, f.
+    refine (FlatTypeTheory.derivation_fmap1 _ (A_WT r p)).
+    apply FlatTypeTheory.map_fmap, f.
   Defined.
 
   (** Well-typedness is _contravariantly_ functorial in the ambient theory. *)
@@ -177,10 +172,11 @@ Section Functoriality.
     : is_well_typed T R -> is_well_typed T' R.
   Proof.
     intros R_WT.
-    split. { exact (fmap_is_well_typed_algebraic_extension_in_theory f (fst R_WT)). }
+    split.
+    { exact (fmap_is_well_typed_algebraic_extension_in_theory f (fst R_WT)). }
     intros p.
-    refine (FlatTypeTheory.fmap_derivation_in_theory _ (snd R_WT p)).
-    apply FlatTypeTheory.fmap_map, f.
+    refine (FlatTypeTheory.derivation_fmap1 _ (snd R_WT p)).
+    apply FlatTypeTheory.map_fmap, f.
   Defined.
 
 End Functoriality.

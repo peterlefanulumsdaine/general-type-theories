@@ -1,20 +1,21 @@
 Require Import HoTT.
-Require Import Proto.ShapeSystem.
+Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
-Require Import Raw.Syntax.
-Require Import Raw.RawRule.
-Require Import Raw.RawTypeTheory.
-Require Import Raw.RawStructuralRule.
-Require Import Raw.FlatRule.
-Require Import Raw.FlatTypeTheory.
-Require Import Raw.CongruenceRule.
-Require Import Typed.TypedClosure.
-Require Import Typed.TypedStructuralRule.
-Require Import Typed.TypedRule.
-Require Import Typed.TypeTheory.
+Require Import Syntax.All.
+Require Import Typing.Context.
+Require Import Typing.Judgement.
+Require Import Presented.RawRule.
+Require Import Presented.RawTypeTheory.
+Require Import Typing.StructuralRule.
+Require Import Typing.FlatRule.
+Require Import Typing.FlatTypeTheory.
+Require Import Presented.CongruenceRule.
+Require Import Typing.TypedStructuralRule.
+Require Import Presented.TypedRule.
+Require Import Presented.TypeTheory.
 
 (** The main goal of this file is the metatheorem that all presuppositions
     of a derivable judgement are derivable, over any type theory: *)
@@ -46,15 +47,15 @@ Section PresuppositionClosureFlat.
   Theorem closure_system_of_presupposition_closed_flat_type_theory
       {Σ : signature σ} {T : flat_type_theory Σ}
       (T_presup_closed : presupposition_closed_flat_type_theory T)
-    : TypedClosure.weakly_well_typed_system presupposition
+    : Closure.weakly_well_typed_system presupposition
         (FlatTypeTheory.closure_system T).
   Proof.
     intros [r_str | r_log ].
     - intros p.
-      refine (Closure.fmap_derivation _ _).
+      refine (Closure.derivation_fmap1 _ _).
       2: { apply TypedStructuralRule.well_typed. }
       + apply Closure.map_from_family_map.
-        apply Family.fmap_of_sum.
+        apply Family.sum_fmap.
         * apply Family.idmap.
         * apply Family.Build_map'; intros [[]].
     - destruct r_log as [r r_inst]. cbn in r_inst.
@@ -77,7 +78,7 @@ Section PresuppositionClosureFlat.
         (presupposition _ p).
   Proof.
     simple refine
-      (TypedClosure.presupposition_derivation presupposition _ d_j _).
+      (Closure.presupposition_derivation presupposition _ d_j _).
     apply closure_system_of_presupposition_closed_flat_type_theory.
     apply H_T.
   Defined.
@@ -98,8 +99,10 @@ Section PresuppositionClosure.
     assert (r'_WT := TypedRule.fmap_is_well_typed
                     (RawTypeTheory.include_rule_signature _) r_WT).
     refine (TypedRule.fmap_is_well_typed_in_theory _ r'_WT).
-    eapply FlatTypeTheory.compose.
-    2: { eapply FlatTypeTheory.map_from_eq, inverse, FlatTypeTheory.fmap_compose. }
+    apply FlatTypeTheory.map_from_simple_map,
+          FlatTypeTheory.simple_map_from_family_map.
+    eapply Family.compose.
+    2: { apply Family.map_from_eq, inverse, FlatTypeTheory.fmap_compose. }
     (* - simple map of raw TT’s 
        - induces a map (not nec fam map) of raw tt’s
        - simple map f : T —> T':
@@ -107,11 +110,9 @@ Section PresuppositionClosure.
          (T r) derivable from flatten (T r'), stably (i.e. regardless of
          ambient theory) 
        - so: simple map of _raw rules_: f : R' —> R: must implies R stably derivable from R'; so, is simple map (premises R —> premises R'), and then conclusion must agree. *)
-    apply FlatTypeTheory.map_from_family_map.
     apply (Family.map_vs_map_over _ _ _)^-1.
     apply RawTypeTheory.flatten_initial_segment.
-  Admitted.
-  (* Proof here is complete; [Admitted] is just to avoid universe
+  Admitted. (* Proof actually complete; [Admitted] is just to avoid universe
   proliferation causing terrible slowdown downstream. *)
 
   (** For any raw type theory [T] and a rule [r] of the flattened [T], every
@@ -131,9 +132,9 @@ Section PresuppositionClosure.
   Defined.
 
   (** Working in a type theory [T], given a judgement [j] which is derivable
-      from hypotheses [hyps], suppose every presupposition [q] of every hypothesis [h : hyps]
-      is derivable from [hyps], then every presuppsition [p] of [j] is derivable from
-      [hyps]. *)
+      from hypotheses [hyps], suppose every presupposition [q] of every
+      hypothesis [h : hyps] is derivable from [hyps], then every presuppsition
+      [p] of [j] is derivable from [hyps]. *)
   Theorem derive_presupposition
       {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
       {j : judgement_total (RawTypeTheory.signature T)}

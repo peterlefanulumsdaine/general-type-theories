@@ -1,14 +1,15 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
-Require Import Proto.ShapeSystem.
-Require Import Raw.Syntax.SyntacticClass.
-Require Import Raw.Syntax.Arity.
-Require Import Raw.Syntax.Signature.
+Require Import Auxiliary.General.
+Require Import Auxiliary.Coproduct.
+Require Import Syntax.ShapeSystem.
+Require Import Syntax.SyntacticClass.
+Require Import Syntax.Arity.
+Require Import Syntax.Signature.
 
-Section RawSyntax.
+Section Syntax.
 
   Context {σ : shape_system}.
-
   Context {Σ : signature σ}.
 
   (* A raw syntactic expression of a syntactic class, relative to a shape *)
@@ -41,9 +42,9 @@ Section RawSyntax.
   := forall (i : a),
       raw_expression (argument_class i) (shape_sum γ (argument_shape i)).
 
-  (* Useful, with [idpath] as the equality argument, when want wants to construct the
-  smybol argument interactively — this is difficult with original [symb_raw] due to [class
-  S] appearing in the conclusion. *)
+  (* Useful, with [idpath] as the equality argument, when want wants to
+     construct the smybol argument interactively — this is difficult with 
+     original [symb_raw] due to [class S] appearing in the conclusion. *)
   Definition raw_symbol'
       {γ} {cl} (S : Σ) (e : symbol_class S = cl)
       (args : arguments (symbol_arity S) γ)
@@ -53,13 +54,88 @@ Section RawSyntax.
     now apply raw_symbol.
   Defined.
 
-End RawSyntax.
+End Syntax.
 
 Global Arguments raw_expression {_} _ _ _.
 Global Arguments raw_type {_} _ _.
 Global Arguments raw_term {_} _ _.
 Global Arguments arguments {_} _ _ _.
 
+Section Renaming.
+
+  Context {σ : shape_system} {Σ : signature σ}.
+
+  (* General substitution will be defined in [Syntax.Substitution] below.
+     Here we define the special case of substituting variables for variables.
+     This already subsumes weakening, contraction, and exchange, and gives
+     will be used to move under binders in general substitution. 
+
+     This can be seen as the functoriality of syntax in the shape argument. *)
+  Local Fixpoint rename {γ γ' : σ} (f : γ -> γ')
+      {cl : syntactic_class} (e : raw_expression Σ cl γ)
+    : raw_expression Σ cl γ'.
+  Proof.
+    destruct e as [ γ i | γ S args ].
+  - exact (raw_variable (f i)).
+  - refine (raw_symbol S _). intros i.
+    refine (rename _ _ _ _ (args i)).
+    simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn.
+    + intros x. apply (coproduct_inj1 (shape_is_sum)). exact (f x).
+    + intros x. apply (coproduct_inj2 (shape_is_sum)). exact x.
+  Defined.
+
+  (* Interaction between renaming and transport *)
+  Local Definition transport_rename {γ γ' : σ} (g : γ -> γ')
+      {cl cl' : syntactic_class} (p : cl = cl') (e : raw_expression Σ cl γ)
+    : transport (fun cl => raw_expression Σ cl γ') p (rename g e)
+      = rename g (transport (fun cl => raw_expression Σ cl γ) p e).
+  Proof.
+    destruct p. apply idpath.
+  Defined.
+
+  (* Functoriality properties of renaming variables *)
+  Context `{H_Funext : Funext}.
+
+  Lemma rename_idmap {γ} {cl} (e : raw_expression Σ cl γ)
+    : rename idmap e = e.
+  Proof.
+    induction e as [ γ i | γ s es IH_es ].
+    - apply idpath.
+    - cbn. apply ap.
+      apply path_forall; intros i.
+      eapply concat.
+      2: { apply IH_es. }
+      apply ap10. refine (apD10 _ _). apply ap.
+      apply path_forall. refine (coproduct_rect shape_is_sum _ _ _).
+      + intros j. refine (coproduct_comp_inj1 _).
+      + intros j. refine (coproduct_comp_inj2 _).
+  Defined.
+
+  Fixpoint rename_comp {γ γ' γ'' : σ} (f : γ -> γ') (f' : γ' -> γ'')
+      {cl : syntactic_class} (e : raw_expression Σ cl γ)
+    : rename (f' o f) e = rename f' (rename f e).
+  Proof.
+    destruct e as [ γ i | γ S args ].
+  - reflexivity.
+  - cbn. apply ap. apply path_forall; intros i.
+    refine (_ @ _).
+    2: { apply rename_comp. }
+    + apply ap10. refine (apD10 _ _). apply ap.
+      apply path_arrow.
+      refine (coproduct_rect _ _ _ _); intros x.
+      * refine (_ @ _^). { refine (coproduct_comp_inj1 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
+        refine (coproduct_comp_inj1 _).
+      * refine (_ @ _^). { refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+        refine (coproduct_comp_inj2 _).
+  Defined.
+
+End Renaming.
+
+Global Arguments rename {_ _ _ _} _ {_} _.
+
+(* Functoriality of expressions in signature maps *)
 Section Signature_Maps.
 
   Context {σ : shape_system}.
@@ -70,13 +146,13 @@ Section Signature_Maps.
   Proof.
     intros t. induction t as [ γ i | γ S ts fts].
     - exact (raw_variable i).
-    - refine (transport (fun cl => raw_expression _ cl _) _ (raw_symbol (f S) _)).
+    - refine
+        (transport (fun cl => raw_expression _ cl _) _ (raw_symbol (f S) _)).
       + exact (ap fst (Family.map_commutes _ _)).
       + refine (transport
           (fun a : arity σ => forall i : a,
-               raw_expression Σ' (argument_class i) (shape_sum γ (argument_shape i)))
-          _
-          fts).
+            raw_expression _ (argument_class i) (_ (argument_shape i)))
+          _ fts).
         exact ((ap snd (Family.map_commutes _ _))^).
   Defined.
 
@@ -88,7 +164,7 @@ Section Signature_Maps.
     : fmap (Signature.idmap Σ) e = e.
   Proof.
     induction e as [ γ i | γ S e_args IH_e_args ].
-    - apply idpath.
+     - apply idpath.
     - simpl. apply ap.
       apply path_forall; intros i.
       apply IH_e_args.
@@ -141,6 +217,30 @@ Section Signature_Maps.
   Proof.
     apply inverse, fmap_fmap.
   Defined.
+
+  (* Naturality of renaming variables w.r.t. functoriality in signature maps *)
+  Local Fixpoint fmap_rename
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {γ γ' : σ} (g : γ -> γ')
+      {cl : syntactic_class} (e : raw_expression Σ cl γ)
+    : fmap f (rename g e)
+      = rename g (fmap f e).
+  Proof.
+    destruct e as [ γ i | γ S args ].
+  - apply idpath.
+  - simpl.
+    eapply concat.
+    { apply ap, ap, ap. apply path_forall; intros i. apply fmap_rename. }
+    eapply concat.
+    2: { apply transport_rename. }
+    + apply ap. cbn. apply ap.
+      set (ΣfS := Σ' (f S)). change (symbol_arity (f S)) with (snd ΣfS).
+      set (p := Family.map_commutes f S : ΣfS = _). clearbody p ΣfS.
+      revert p; apply inverse_sufficient; intros p.
+      set (p' := p^); clearbody p'; clear p.
+      destruct p'; apply idpath.
+  Defined.
+  (* NOTE: this proof was surprisingly difficult to write; it shows the kind of headaches caused by the appearance of equality in maps of signatures. *)
 
 End Signature_Maps.
 
