@@ -346,6 +346,21 @@ Proof.
     simpl; apply map_over_commutes.
 Defined.
 
+Local Definition sum_fmap1
+    {X} {K K'} (f : map K K')
+    (L : family X)
+  : map (sum K L) (sum K' L).
+Proof.
+  exact (sum_fmap f (idmap _)). 
+Defined.
+
+Local Definition sum_fmap2
+    {X} (K : family X) {L L'} (g : map L L')
+  : map (sum K L) (sum K L').
+Proof.
+  exact (sum_fmap (idmap _) g). 
+Defined.
+
 Local Lemma sum_fmap_compose_over `{Funext}
     {X X' X''} {f' : X' -> X''} {f : X -> X'}
     {K} {K'} {K''} (g' : map_over f' K' K'') (g : map_over f K K')

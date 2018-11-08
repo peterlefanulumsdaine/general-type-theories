@@ -253,24 +253,10 @@ Section Derivations.
       [Judgement.unit_instantiate], but the typing of [Judgement.rename]
       (in particular, the way it uses [shape_of_judgement]) makes it
       very difficult.  This would work better if judgements were
-      parametrised over shapes before judgement forms? *)
+      parametrised over shapes independently of the context expressions? *)
       set (J := (T.(family_element) r).(flat_rule_conclusion)).
-      clearbody J. destruct J as [ [ | hjf ] J].
-      + (* context judgement *)
-        apply (ap (Build_judgement _)).
-        destruct J as [ Γ [] ].
-        apply (ap (fun Γ => Build_judgement Γ _)).
-        apply (ap (Build_raw_context _)).
-        apply path_forall; intros i.
-        cbn. eapply concat.
-        { apply ap. refine (coproduct_comp_inj2 _). }
-        eapply concat. { apply ap, unit_instantiate_expression. }
-        eapply concat. { apply inverse, rename_comp. }
-        eapply concat. 2: { apply rename_idmap. }
-        apply (ap (fun f => rename f _)).
-        apply path_forall; intros j.
-        refine (coproduct_comp_inj2 _).
-      + (* hypothetical judgement *)
+      clearbody J.
+      (* hypothetical judgement *)
         apply Judgement.eq_by_expressions; intros i.
         * (* context part *)
         cbn. eapply concat.
@@ -282,21 +268,17 @@ Section Derivations.
         apply path_forall; intros j.
         refine (coproduct_comp_inj2 _).          
         * cbn.
-        eapply concat. { apply ap, unit_instantiate_expression. }
+        eapply concat. { apply ap. refine (unit_instantiate_expression _). }
         eapply concat. { apply inverse, rename_comp. }
         eapply concat. 2: { apply rename_idmap. }
         apply (ap (fun f => rename f _)).
         apply path_forall; intros j.
         refine (coproduct_comp_inj2 _).
-    - cbn. intros [[] | p].
-      + simple refine (Closure.deduce' _ _ _). 
-        * apply inl, context_empty.
-        * apply idpath.
-        * intros [].
-      + simple refine (hypothesis_modulo_rename _ _ _).
-        * exact p.
-        * apply equiv_inverse, shape_sum_empty_inr.
-        * cbn. apply inverse, Judgement.unit_instantiate.
+    - cbn. intros p.
+      simple refine (hypothesis_modulo_rename _ _ _).
+      + exact p.
+      + apply equiv_inverse, shape_sum_empty_inr.
+      + cbn. apply inverse, Judgement.unit_instantiate.
   Defined.
 
 End Derivations.
@@ -350,12 +332,9 @@ Section Instantiation.
       exists (Context.instantiate _ I Δ).
       exact (instantiate_instantiation I J).
     }
-    { apply Judgement.instantiate_instantiate. }
-    cbn. intros [[] | p].
-    - simple refine (Closure.hypothesis' _ _).
-      + apply inl, tt.
-      + cbn. apply idpath.
-    - simple refine (Closure.deduce' _ _ _).
+    { apply @Judgement.instantiate_instantiate; auto. }
+    cbn; intros p.
+    simple refine (Closure.deduce' _ _ _).
       { apply inl, StructuralRule.rename. cbn.
         exists
           (Judgement.instantiate Γ I
@@ -368,7 +347,7 @@ Section Instantiation.
       { apply inverse, Judgement.instantiate_instantiate. }
       intros [].
       simple refine (Closure.hypothesis' _ _).
-      { exact (inr p). }
+      { exact p. }
       { apply idpath. }
   Defined.
 
@@ -383,20 +362,19 @@ Section Instantiation.
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
     : Closure.map_over (Judgement.instantiate Γ I)
         (closure_system (fmap include_symbol T)) 
-        (closure_system T + Closure.axioms [< [! |- Γ !] >]).
+        (closure_system T).
   Proof.
     apply Closure.sum_rect.
     - refine (Closure.compose_over' _ _ _ _ _).
       { apply (StructuralRule.instantiate I). }
-      { apply Closure.sum_fmap1. apply Closure.inl. }
+      { apply Closure.inl. }
       apply idpath.
     - intros [r I_r].
       refine (Closure.derivation_fmap1 _
         (instantiate_flat_rule_closure_system I (T r) I_r)).
       clear I_r.
       apply Closure.map_from_family_map.
-      refine (Family.compose Family.inl _).
-      apply (Family.sum_fmap (Family.idmap _)).
+      apply Family.sum_fmap2.
       (* TODO: the following could be a lemma about [Family.bind]? *)
       apply Family.Build_map'.
       intros I_r. exists (r;I_r). apply idpath.
@@ -410,13 +388,11 @@ Section Instantiation.
       (d : derivation (fmap include_symbol T) hyps j)
     : derivation
         T
-        (Family.fmap (Judgement.instantiate _ I) hyps + [< [! |- Γ !] >])
+        (Family.fmap (Judgement.instantiate _ I) hyps)
         (Judgement.instantiate _ I j).
   Proof.
-    apply (Closure.derivation_fmap1_over (instantiate_closure_system _ I)) in d.
-    apply Closure.axioms_vs_hypotheses in d.
-    refine (Closure.derivation_fmap2 _ d).
-    apply Family.sum_symmetry.
+    apply (Closure.derivation_fmap1_over (instantiate_closure_system _ I)).
+    exact d.
   Defined.
 
 End Instantiation.
@@ -509,10 +485,6 @@ Section Maps.
     from [d]. *)
     eapply transport. { apply inverse, Judgement.fmap_instantiate. }
     refine (Closure.derivation_fmap2 _ d).
-    refine (transport _ (Family.fmap_sum _ _ _)^ _).
-    refine (Family.compose (Family.sum_symmetry _ _) _).
-    apply Family.sum_fmap.
-    2: { apply Family.idmap. }
     refine (transport _ _ (Family.idmap _)).
     simple refine (Family.eq _ _). { apply idpath. }
     intros i. cbn.
