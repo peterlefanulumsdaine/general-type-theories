@@ -349,7 +349,7 @@ Section Presuppositions.
   [presup : X -> family X].
  
   Throughout, the motivating example is the type-theoretic case:
-  [X := judgement_total Σ]
+  [X := judgement Σ]
   [presup j := presupposition j].
 *)
 

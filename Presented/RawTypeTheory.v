@@ -20,9 +20,9 @@ Section TypeTheory.
   Record raw_type_theory
   := {
   (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
-    tt_rule_data :> family (Judgement.hypothetical_form * arity σ)
+    tt_rule_data :> family (Judgement.form * arity σ)
   (* the judgement form of the conclusion of each rule *)
-  ; tt_rule_form : tt_rule_data -> Judgement.hypothetical_form
+  ; tt_rule_form : tt_rule_data -> Judgement.form
     := fun i => fst (tt_rule_data i)
   (* the arity of the arguments (i.e. the *object* premises only) of each rule *)
   ; tt_rule_arity : tt_rule_data -> arity _
@@ -32,7 +32,7 @@ Section TypeTheory.
   (* the signature over which each rule can be written *)
   ; tt_rule_signature : tt_rule_data -> signature σ
     := fun i => Family.fmap
-        (fun (ja : Judgement.hypothetical_form * arity σ)
+        (fun (ja : Judgement.form * arity σ)
           => (Judgement.class_of (fst ja), snd ja))
         (Family.subfamily tt_rule_data
           (fun j => Judgement.is_object (tt_rule_form j) * tt_lt j i))
@@ -181,6 +181,6 @@ Section Flattening.
 End Flattening.
 
 Local Definition derivation {σ : shape_system} (T : raw_type_theory σ) H
-    : judgement_total (signature T) -> Type
+    : judgement (signature T) -> Type
   := FlatTypeTheory.derivation (flatten T) H.
 

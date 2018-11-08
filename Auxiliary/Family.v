@@ -392,6 +392,13 @@ Proof.
   intros _; exact x.
 Defined.
 
+Local Lemma fmap_singleton `{Funext}
+    {X Y} (f:X->Y) (x:X)
+  : Family.fmap f (singleton x) = singleton (f x).
+Proof.
+  apply eq with idpath.
+  intros []; apply idpath.
+Defined.
 
 (** Adjoining one element to a family; acts as [option], on the index type *)
 Local Definition adjoin {X} (K : family X) (x : X) : family X.

@@ -46,7 +46,7 @@ Record rule
   {Σ : signature σ}
   {a : arity σ}
     (* arity listing the _object_ premises of the rule *)
-  {hjf_conclusion : Judgement.hypothetical_form}
+  {hjf_conclusion : Judgement.form}
     (* judgement form of the conclusion *)
 :=
   {
@@ -209,7 +209,7 @@ Section Flattening.
     (Sr : Judgement.is_object hjf_concl
           -> { S : Σ & (symbol_arity S = a)
                        * (symbol_class S = Judgement.class_of hjf_concl) })
-      : judgement_total (Metavariable.extend Σ a).
+      : judgement (Metavariable.extend Σ a).
   Proof.
     exists (form_hypothetical hjf_concl).
     simpl.

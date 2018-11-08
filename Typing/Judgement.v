@@ -135,12 +135,16 @@ Section Judgements.
 
   Arguments form_of_boundary {_} _.
   Arguments boundary_expression {_} _.
- 
+
+  Definition hypothetical_judgement_expressions jf γ
+  := forall i : slot jf, raw_expression Σ (slot jf i) γ.
+  Identity Coercion id_hypothetical_judgement_expressions :
+    hypothetical_judgement_expressions >-> Funclass.
+
   Record hypothetical_judgement γ : Type
     := { form_of_judgement : form
        ; judgement_expression :>
-           forall i : slot form_of_judgement,
-             raw_expression Σ (family_element _ i) γ }.
+           hypothetical_judgement_expressions form_of_judgement γ }.
   Arguments form_of_judgement {_} _.
   Arguments judgement_expression {_} _.
 
@@ -170,7 +174,7 @@ Section Judgements.
       + apply b.
       + apply head. constructor.
     - (* case: equality judgement *)
-      apply b.
+      exact b.
   Defined.
 
   Definition hypothetical_boundary_of_judgement
@@ -210,8 +214,8 @@ Arguments Build_judgement {_ _ _} _ _.
 Arguments context_of_judgement {_ _ _} j : simpl nomatch.
 Arguments hypothetical_part {_ _ _} j : simpl nomatch.
 Arguments make_context_judgement {_ _} _.
-Arguments Build_judgement_total {_ _} _ _.
-Arguments form_of_judgement_total {_ _} j : simpl nomatch.
+Arguments Build_judgement {_ _} _ _.
+Arguments form_of_judgement {_ _} j : simpl nomatch.
 Arguments boundary_of_judgement {_ _ _} _ : simpl nomatch.
 Arguments shape_of_judgement {_ _ _} _ : simpl nomatch.
 *)

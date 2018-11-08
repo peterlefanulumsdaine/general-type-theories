@@ -21,13 +21,13 @@ Record algebraic_extension
   (* The family of equality-judgment premises: *)
     ae_equality_premise : arity σ
   (* family indexing the premises of the extension, and giving for each… *)
-  ; ae_premise :> family (Judgement.hypothetical_form * σ)
+  ; ae_premise :> family (Judgement.form * σ)
     := Family.sum
          (Family.fmap (fun cl_γ => (form_object (fst cl_γ), snd cl_γ)) a)
          (Family.fmap (fun cl_γ => (form_equality (fst cl_γ), snd cl_γ))
                       ae_equality_premise)
   (* - the judgement form of each premise, e.g. “term” or “type equality” *)
-  ; ae_form : ae_premise -> Judgement.hypothetical_form
+  ; ae_form : ae_premise -> Judgement.form
     := fun i => fst (ae_premise i)
   (* - the proto-context of each premise *)
   ; ae_shape : ae_premise -> σ
@@ -401,7 +401,7 @@ Section Judgement_of_Premise.
            -> { S : Σ'
              & (symbol_arity S = Arity.simple (ae_shape i))
              * (symbol_class S = Judgement.class_of (ae_form i))})
-   : judgement_total Σ'.
+   : judgement Σ'.
   Proof.
     exists (form_hypothetical (ae_form i)).
     exists (Context.fmap f (ae_raw_context i)).
@@ -443,7 +443,7 @@ Section Judgement_of_Premise.
      = @judgement_of_premise _ _ (fmap f A) i _ f'' Sr'.
   Proof.
     destruct e_f^, e_Sr. clear e_f.
-    eapply (ap (Build_judgement_total _)).
+    eapply (ap (Build_judgement _)).
     refine (ap (fun Γ => Build_judgement (Build_raw_context _ Γ) _) _
            @ ap (Build_judgement _) _).
     - (* context part *)
@@ -457,7 +457,7 @@ Section Judgement_of_Premise.
         apply idpath.
   Defined.
 
-  Definition fmap_judgement_of_premise `{Funext}
+  Definition Judgement.fmap_of_premise `{Funext}
       {Σ} {a} {A : algebraic_extension Σ a} {i : A}
       {Σ' Σ''} (f' : Signature.map Σ' Σ'')
       (f : Signature.map (ae_signature_of_premise i) Σ')
@@ -473,10 +473,10 @@ Section Judgement_of_Premise.
            -> { S : Σ''
              & (symbol_arity S = Arity.simple (ae_shape i))
              * (symbol_class S = Judgement.class_of (ae_form i))})
-   : fmap_judgement_total f' (judgement_of_premise i f Sr)
+   : Judgement.fmap f' (judgement_of_premise i f Sr)
      = @judgement_of_premise _ _ A i _ (Signature.compose f' f) Sr'.
   Proof.
-    eapply (ap (Build_judgement_total _)).
+    eapply (ap (Build_judgement _)).
     refine (ap (fun Γ => Build_judgement (Build_raw_context _ Γ) _) _
            @ ap (Build_judgement _) _).
     - (* context part *)
@@ -512,7 +512,7 @@ Section Judgement_of_Premise.
   
   (* TODO: rename [simple_map_signature_of_premise]
    to [fmap_signature_of_premise_simple_map], etc. *)
-  Definition fmap_judgement_of_premise_simple_map `{Funext}
+  Definition Judgement.fmap_of_premise_simple_map `{Funext}
       {Σ : signature σ} {a a'}
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
       (g : simple_map A A') (i : A)
@@ -566,7 +566,7 @@ Section Judgement_of_Premise.
     apply inverse in e. clear e_Sr. revert Sr e.
     refine (paths_rect _ _ _ _).
     (* TODO: this is terrible. We really need some kind of “master lemma” about [judgement_of_premise] giving the master conditions under which two instances are equal; and ideally perhaps also some factoring of [judgement_of_premise] to enable proving that. *)
-  Admitted. (* [fmap_judgement_of_premise_simple_map]: nasty and difficult (sticking point is equality of judgements), but hopefully self-contained *)
+  Admitted. (* [Judgement.fmap_of_premise_simple_map]: nasty and difficult (sticking point is equality of judgements), but hopefully self-contained *)
 
 End Judgement_of_Premise.
 
@@ -578,7 +578,7 @@ Section Flattening.
 
   Local Definition flatten {Σ : signature σ} {a}
     (A : algebraic_extension Σ a)
-  : family (judgement_total (Metavariable.extend Σ a)).
+  : family (judgement (Metavariable.extend Σ a)).
   (* This construction involves essentially two aspects:
 
      - translate the syntax of each expression in the rule from its “local”
@@ -605,12 +605,12 @@ Section Flattening.
   Local Lemma flatten_fmap `{Funext}
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} (A : algebraic_extension Σ a)
-    : Family.map_over (fmap_judgement_total (Metavariable.fmap1 f a))
+    : Family.map_over (Judgement.fmap (Metavariable.fmap1 f a))
         (flatten A) (flatten (fmap f A)).
   Proof.
     exists idmap.
     intros i.
-    eapply concat. 2: { apply inverse, fmap_judgement_of_premise. }
+    eapply concat. 2: { apply inverse, Judgement.fmap_of_premise. }
     apply inverse, judgement_of_premise_fmap1.
     - eapply concat. { apply inverse, Metavariable.fmap_compose. }
       eapply concat. 2: { apply Metavariable.fmap_compose. }
@@ -631,15 +631,15 @@ Section Flattening.
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
       (f : simple_map A A')
     : Family.map_over
-        (fmap_judgement_total
+        (Judgement.fmap
            (Metavariable.fmap2 _ (arity_map_of_simple_map f)))
         (flatten A) (flatten A').
     Proof.
       exists f.
       intros i.
       apply inverse.
-      eapply concat. { apply fmap_judgement_of_premise. }
-      apply fmap_judgement_of_premise_simple_map.
+      eapply concat. { apply Judgement.fmap_of_premise. }
+      apply Judgement.fmap_of_premise_simple_map.
       - eapply concat. { apply inverse, Metavariable.fmap_compose. }
         eapply concat. 2: { apply Metavariable.fmap_compose. }
         (* TODO: abstract the following as naturality lemma for
@@ -679,7 +679,7 @@ Section Initial_Segment.
   (** Next few definitions are auxiliary for [initial_segment] below *)
   Local Definition initial_segment_premise_aux
       {Σ : signature σ} {a} (A : algebraic_extension Σ a) (r : A)
-    : family (hypothetical_form * σ.(shape_carrier))
+    : family (form * σ.(shape_carrier))
   := Family.fmap (fun cl_γ : syntactic_class * σ.(shape_carrier) =>
                     (form_object cl_γ.(fst), cl_γ.(snd)))
                  (ae_metavariables_of_premise r)
@@ -983,7 +983,7 @@ Section Initial_Segment.
     simple refine (Family.map_transport _ (flatten_fmap_simple _)).
     2: { refine (initial_segment_fmap f p). }
     eapply concat. { apply ap, Metavariable.fmap_idmap. }
-    apply path_forall; intros i. apply fmap_judgement_total_idmap. 
+    apply path_forall; intros i. apply Judgement.fmap_idmap. 
   Defined.
 
   Local Lemma flatten_initial_segment_fmap_applied `{Funext}

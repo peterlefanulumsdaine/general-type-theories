@@ -30,7 +30,7 @@ Section TypedStructuralRule.
       that its presuppositions are derivable, using just structural rules? 
 
   In fact, we ask for derivations not over just the structural rules but over the closure system associated to the empty flat type theory, so that infrastructure for derivations over general flat type theories can be used. *)
-  Local Definition is_well_typed : Closure.rule (judgement_total Σ) -> Type
+  Local Definition is_well_typed : Closure.rule (judgement Σ) -> Type
     := Closure.weakly_well_typed_rule
          presupposition (FlatTypeTheory.closure_system [<>]).
 
@@ -61,7 +61,7 @@ Section TypedStructuralRule.
     destruct r as [J [γ' f]]; destruct J as [[ | hjf ] J].
     { intros []. } (* Context judgement: no presuppositions. *)
     (* Hypothetical judgement: *)
-    set (J_orig := Build_judgement_total _ J).
+    set (J_orig := Build_judgement _ J).
     destruct J as [Γ J]; cbn.
     intros p.
     set (p_orig := p : presupposition J_orig).
@@ -74,7 +74,7 @@ Section TypedStructuralRule.
       simple refine (Closure.deduce' _ _ _).
       + apply inl, StructuralRule.rename.
         exact (presupposition _ p_orig; (γ'; f)).
-      + apply (ap (Build_judgement_total _)).
+      + apply (ap (Build_judgement _)).
         apply (ap (Build_judgement _)).
         apply path_forall; intros i.
         recursive_destruct hjf; recursive_destruct p; recursive_destruct i;
@@ -103,7 +103,7 @@ Section TypedStructuralRule.
   Proof.
     destruct r as [Γ [ Γ' [ f [ hjf J]]]].
     intros p.
-    transparent assert (j : (judgement_total Σ)).
+    transparent assert (j : (judgement Σ)).
       { exists (form_hypothetical hjf). exists Γ. exact J. }
     transparent assert (p' : (presupposition j)).
       { exact p. }
@@ -141,7 +141,7 @@ Section TypedStructuralRule.
   Proof.
     destruct r as [Γ [ Γ' [ f [ g [cl J]]]]].
     intros p.
-    transparent assert (j : (judgement_total Σ)).
+    transparent assert (j : (judgement Σ)).
       { exists (form_hypothetical (form_object cl)), Γ. exact J. }
     destruct p as [ p | ].
     - (* [p] a hypothetical presupposition *)
