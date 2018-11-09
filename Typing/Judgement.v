@@ -18,7 +18,7 @@ Section JudgementCombinatorics.
   [! Γ |- A ≡ A' !],
   [! Γ |- a ; A !],
   [! Γ |- a ≡ a' ; A !],
-  and rules, derivations will be given purely in terms of these.
+  and rules and derivations will be given purely in terms of these.
  
   Other judgement forms — e.g. well-formed contexts, context morphisms — are taken as _auxiliary_ judgements, defined afterwards from thes primitive ones. *)
   Local Inductive form : Type :=
@@ -127,11 +127,15 @@ Section Judgements.
   Context {σ : shape_system}.
   Context (Σ : signature σ).
 
+  Definition hypothetical_boundary_expressions jf γ
+  := forall i : boundary_slot jf, raw_expression Σ (boundary_slot jf i) γ.
+  Identity Coercion id_hypothetical_boundary_expressions :
+    hypothetical_boundary_expressions >-> Funclass.
+
   Local Record hypothetical_boundary γ : Type
     := { form_of_boundary : form
        ; boundary_expression :>
-           forall i : boundary_slot form_of_boundary,
-             raw_expression Σ (family_element _ i) γ }.
+           hypothetical_boundary_expressions form_of_boundary γ }.
 
   Arguments form_of_boundary {_} _.
   Arguments boundary_expression {_} _.
@@ -224,12 +228,20 @@ Section JudgementFmap.
 
   Context {σ : shape_system}.
 
+  Definition fmap_hypothetical_boundary_expressions
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ') {jf} {γ} 
+    : hypothetical_boundary_expressions Σ jf γ
+      -> hypothetical_boundary_expressions Σ' jf γ.
+  Proof.
+    intros B i. apply (Expression.fmap f), B.
+  Defined.
+
   Definition fmap_hypothetical_boundary
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ') {γ}
     : hypothetical_boundary Σ γ -> hypothetical_boundary Σ' γ.
   Proof.
     intros B. exists (form_of_boundary B).
-    intros i. apply (Expression.fmap f), B.
+    exact (fmap_hypothetical_boundary_expressions f B).
   Defined.
 
   Local Definition fmap_boundary
@@ -241,12 +253,20 @@ Section JudgementFmap.
     exact (fmap_hypothetical_boundary f B).
   Defined.
 
+  Definition fmap_hypothetical_judgement_expressions
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ') {jf} {γ} 
+    : hypothetical_judgement_expressions Σ jf γ
+      -> hypothetical_judgement_expressions Σ' jf γ.
+  Proof.
+    intros J i. apply (Expression.fmap f), J.
+  Defined.
+
   Definition fmap_hypothetical_judgement
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ') {γ}
     : hypothetical_judgement Σ γ -> hypothetical_judgement Σ' γ.
   Proof.
     intros J. exists (form_of_judgement J).
-    intros i. apply (Expression.fmap f), J.
+    exact (fmap_hypothetical_judgement_expressions f J).
   Defined.
 
   Local Definition fmap {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
@@ -748,13 +768,21 @@ Section Rename_Variables.
   Context {σ : shape_system} {Σ : signature σ}.
 
   (** Note: argument order follows general [rename] for expressions, not  [Context.rename]. *)
+  Definition rename_hypothetical_boundary_expressions
+      {jf} {γ γ' : σ} (f : γ -> γ')
+      (B : hypothetical_boundary_expressions Σ jf γ)
+    : hypothetical_boundary_expressions Σ jf γ'.
+  Proof.
+    exact (fun j => rename f (B j)).
+  Defined.
+
   Definition rename_hypothetical_boundary
       {γ γ' : σ} (f : γ -> γ')
       (B : hypothetical_boundary Σ γ)
     : hypothetical_boundary Σ γ'.
   Proof.
     exists (form_of_boundary B).
-    exact (fun j => rename f (B j)).
+    exact (rename_hypothetical_boundary_expressions f B).
   Defined.
 
   (** Note: argument order follows [Context.rename], not general [rename] for expressions. *)

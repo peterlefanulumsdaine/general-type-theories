@@ -54,9 +54,9 @@ Record algebraic_extension
         raw_context (ae_signature_of_premise i)
     := fun i => Build_raw_context _ (ae_raw_context_type i)
   (* hypothetical judgement boundary instance for each premise *)
-  ; ae_hypothetical_boundary
+  ; ae_hypothetical_boundary_expressions
     : forall i : ae_premise,
-        Judgement.hypothetical_boundary
+        Judgement.hypothetical_boundary_expressions
           (ae_signature_of_premise i)
           (ae_form i)
           (ae_shape i)
@@ -75,11 +75,10 @@ Global Arguments ae_raw_context {_ _ _} _.
 (** Access functions *)
 Local Definition premise_boundary
     {Σ} {a} {A : algebraic_extension Σ a} (r : A)
-  : Judgement.boundary (ae_signature_of_premise r)
-                       (form_hypothetical (ae_form r)).
+  : Judgement.boundary (ae_signature_of_premise r).
 Proof.
-  exists (ae_raw_context r).
-  apply (ae_hypothetical_boundary).
+  exists (ae_raw_context r), (ae_form r).
+  apply (ae_hypothetical_boundary_expressions).
 Defined.
 
 Local Definition eq_premise {a : arity σ}
@@ -128,12 +127,12 @@ Local Definition eq `{Funext} {Σ} {a}
                  (ae_raw_context _ (fe_shape i j)))
     (e_hypothetical_boundary
        : forall i : ae_premise A,
-        rename_hypothetical_boundary (fe_shape i)
-        (fmap_hypothetical_boundary (fe_signature i)
-        (transport (fun hjf => Judgement.hypothetical_boundary _ hjf _)
+        rename_hypothetical_boundary_expressions (fe_shape i)
+        (fmap_hypothetical_boundary_expressions (fe_signature i)
+        (transport (fun hjf => Judgement.hypothetical_boundary_expressions _ hjf _)
                    (ap fst (Family.map_commutes (eq_premise e_premises) i)^)
-        (ae_hypothetical_boundary A i)))
-        = ae_hypothetical_boundary A' (equiv_premise i))
+        (ae_hypothetical_boundary_expressions A i)))
+        = ae_hypothetical_boundary_expressions A' (equiv_premise i))
   : A = A'.
 Proof.
   destruct A, A'; cbn in e_premises, e_lt.
