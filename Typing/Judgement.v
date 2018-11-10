@@ -164,21 +164,19 @@ Section Judgements.
   Definition shape_of_judgement (J : judgement) : shape_carrier σ
   := context_of_judgement J.
 
-  Local Definition hypothetical_judgement_from_boundary_and_head
-      {γ}
-      (bdry : hypothetical_boundary γ)
-      (head : is_object (form_of_boundary bdry)
-              -> raw_expression Σ (class_of (form_of_boundary bdry)) γ)
-    : hypothetical_judgement γ.
+  Definition hypothetical_judgement_expressions_from_boundary_and_head
+      {γ} {jf}
+      (bdry : hypothetical_boundary_expressions jf γ)
+      (head : is_object jf -> raw_expression Σ (class_of jf) γ)
+    : hypothetical_judgement_expressions jf γ.
   Proof.
-    destruct bdry as [hjf b]; exists hjf.
-    destruct hjf as [ ocl | ecl ].
+    destruct jf as [ ocl | ecl ].
     - (* case: object judgement *)
       intros [ i | ].
-      + apply b.
+      + apply bdry.
       + apply head. constructor.
     - (* case: equality judgement *)
-      exact b.
+      exact bdry.
   Defined.
 
   Definition hypothetical_boundary_of_judgement
@@ -279,13 +277,31 @@ Section JudgementFmap.
 
   Context `{Funext}.
 
+  Definition fmap_hypothetical_boundary_expressions_idmap
+      {Σ} {jf} {γ} (B : hypothetical_boundary_expressions Σ jf γ)
+    : fmap_hypothetical_boundary_expressions (Signature.idmap Σ) B = B.
+  Proof. 
+    apply path_forall; intros i.
+    apply Expression.fmap_idmap.
+  Defined.
+
   Definition fmap_hypothetical_boundary_idmap
       {Σ} {γ} (B : hypothetical_boundary Σ γ)
     : fmap_hypothetical_boundary (Signature.idmap Σ) B = B.
   Proof. 
     apply (ap (Build_hypothetical_boundary _)).
+    apply fmap_hypothetical_boundary_expressions_idmap.
+  Defined.
+
+  Definition fmap_fmap_hypothetical_boundary_expressions
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {jf} {γ} (B : hypothetical_boundary_expressions Σ jf γ)
+    : fmap_hypothetical_boundary_expressions f'
+        (fmap_hypothetical_boundary_expressions f B)
+      = fmap_hypothetical_boundary_expressions (Signature.compose f' f) B.
+  Proof.
     apply path_forall; intros i.
-    apply Expression.fmap_idmap.
+    apply Expression.fmap_fmap.
   Defined.
 
   Definition fmap_fmap_hypothetical_boundary
@@ -295,8 +311,17 @@ Section JudgementFmap.
       = fmap_hypothetical_boundary (Signature.compose f' f) B.
   Proof. 
     apply (ap (Build_hypothetical_boundary _)).
-    apply path_forall; intros i.
-    apply Expression.fmap_fmap.
+    apply fmap_fmap_hypothetical_boundary_expressions.
+  Defined.
+
+  Definition fmap_hypothetical_boundary_expressions_compose
+      {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
+      {jf} {γ} (B : hypothetical_boundary_expressions Σ jf γ)
+    : fmap_hypothetical_boundary_expressions (Signature.compose f' f) B
+      = fmap_hypothetical_boundary_expressions f'
+          (fmap_hypothetical_boundary_expressions f B).
+  Proof.
+    apply inverse, fmap_fmap_hypothetical_boundary_expressions.
   Defined.
 
   Definition fmap_hypothetical_boundary_compose
@@ -371,17 +396,16 @@ Section JudgementFmap.
     apply inverse, fmap_compose.
   Defined.
 
-  Definition fmap_hypothetical_judgement_from_boundary_and_head
+  Definition fmap_hypothetical_judgement_expressions_from_boundary_and_head
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {γ : σ} (B : hypothetical_boundary Σ γ)
+      {jf} {γ : σ} (B : hypothetical_boundary_expressions Σ jf γ)
       (e : is_object _ -> raw_expression Σ _ γ)
-    : fmap_hypothetical_judgement f
-        (hypothetical_judgement_from_boundary_and_head _ B e)
-      = hypothetical_judgement_from_boundary_and_head _
-          (fmap_hypothetical_boundary f B)
+    : fmap_hypothetical_judgement_expressions f
+        (hypothetical_judgement_expressions_from_boundary_and_head _ B e)
+      = hypothetical_judgement_expressions_from_boundary_and_head _
+          (fmap_hypothetical_boundary_expressions f B)
           (fun hjf_ob => Expression.fmap f (e hjf_ob)).
   Proof.
-    destruct B as [jf B]. apply (ap (Build_hypothetical_judgement _)).
     destruct jf as [ocl | ecl].
     - apply path_forall; intros [ ? | ]; apply idpath.
     - apply idpath.
@@ -843,13 +867,20 @@ Section Rename_Variables.
     apply ap, ecompose_Ve.
   Defined.
 
+  Lemma rename_hypothetical_boundary_expressions_idmap
+      {jf} {γ : σ} (B : hypothetical_boundary_expressions _ jf γ)
+    : rename_hypothetical_boundary_expressions idmap B = B.
+  Proof.
+    apply path_forall; intros i.
+    apply Expression.rename_idmap.
+  Defined.
+
   Lemma rename_hypothetical_boundary_idmap
       {γ : σ} (B : hypothetical_boundary _ γ)
     : rename_hypothetical_boundary idmap B = B.
   Proof.
     apply (ap (Build_hypothetical_boundary _)).
-    apply path_forall; intros i.
-    apply Expression.rename_idmap.
+    apply rename_hypothetical_boundary_expressions_idmap.
   Defined.
 
 End Rename_Variables.
