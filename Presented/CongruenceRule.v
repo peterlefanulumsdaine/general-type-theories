@@ -123,10 +123,10 @@ eq_new i   0        0        0        0        i < j
     - (* ae_hypothetical_boundary *)
       intros p.
       set (p_orig := original_premise p).
-      destruct p as [ [ ? | ? ] | [ [ ? | ? ] | p ] ] ;
-        try (refine (Judgement.fmap_hypothetical_boundary
+      destruct p as [ [ ? | ? ] | [ [ ? | ? ] | p ] ];
+        try (refine (Judgement.fmap_hypothetical_boundary_expressions
           (original_constructor_translation _ _) _) ;
-             refine (ae_hypothetical_boundary _ p_orig)).
+             refine (ae_hypothetical_boundary_expressions _ p_orig)).
       (* The cases where [p] is a copy of an original premise are all just translation,
       leaving just the new equality premises to give. *)
       intros i; simpl Judgement.boundary_slot in i.
@@ -134,7 +134,7 @@ eq_new i   0        0        0        0        i < j
       + (* boundary of the corresponding original premise *)
         refine (Expression.fmap
           (original_constructor_translation _ _) _).
-        apply (ae_hypothetical_boundary _ p_orig).
+        apply (ae_hypothetical_boundary_expressions _ p_orig).
       + (* LHS of new equality premise *)
         cbn. simple refine (raw_symbol' _ _ _).
         * apply Metavariable.include_metavariable.
@@ -157,7 +157,7 @@ eq_new i   0        0        0        0        i < j
         refine (Expression.fmap _ _).
         * apply Metavariable.fmap2, Family.inl.
         * destruct hjf_concl as [cl | ?].
-          -- exact (rule_conclusion_hypothetical_boundary R i).
+          -- exact (rule_conclusion_hypothetical_boundary_expressions R i).
           -- destruct H. (* [hjf_concl] can’t be an equality judgement *)
       + (* LHS of new conclusion *)
         cbn. simple refine (raw_symbol' _ _ _).

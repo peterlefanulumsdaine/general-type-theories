@@ -151,6 +151,42 @@ Record rule
     apply idpath.
   Defined.
 
+  (** Auxiliary access functions *)
+  Local Definition conclusion_hypothetical_boundary
+        {Σ} {a} {hjf} (R : rule Σ a hjf)
+    : hypothetical_boundary
+        (Metavariable.extend Σ a) (shape_empty σ)
+  := Build_hypothetical_boundary _
+        (rule_conclusion_hypothetical_boundary_expressions R).
+
+  Local Definition conclusion_hypothetical_boundary_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {hjf_concl} (R : rule Σ a hjf_concl)
+    : conclusion_hypothetical_boundary (fmap f R)
+      = fmap_hypothetical_boundary (Metavariable.fmap1 f a)
+                                        (conclusion_hypothetical_boundary R).
+  Proof.
+    apply idpath.
+  Defined.
+
+  Local Definition conclusion_boundary
+        {Σ} {a} {hjf} (R : rule Σ a hjf)
+    : boundary (Metavariable.extend Σ a)
+  := Build_boundary [::] (conclusion_hypothetical_boundary R).
+
+  Local Definition conclusion_boundary_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {hjf} (R : rule Σ a hjf)
+    : conclusion_boundary (fmap f R)
+      = Judgement.fmap_boundary (Metavariable.fmap1 f a)
+                                (conclusion_boundary R).
+  Proof.
+    apply (ap (fun Γ
+                  => Build_boundary
+                      (Build_raw_context _ Γ) _)).
+    apply path_forall; refine (empty_rect _ shape_is_empty _).
+  Defined.
+
 End WellShapedRule.
 
 (* globalise argument declarations *)

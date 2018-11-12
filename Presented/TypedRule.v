@@ -211,8 +211,8 @@ Section Flattening.
       destruct e. apply idpath.
     - clear i. intros i.
       exact (Closure.hypothesis _ (_+_) (inl i)).
-  Defined.
-  (* TODO: in fact, we should be able to extend this to showing
+  Admitted. (* TODO: fix very odd typechecking error here *)
+  (* NOTE: in fact, we should be able to extend this to showing
    that [flatten R] is _strongly_ well-typed. *)
   
 End Flattening.
