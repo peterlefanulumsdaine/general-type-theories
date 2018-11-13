@@ -14,28 +14,29 @@ Require Import Typing.FlatRule.
   automatically. These fall into several groups:
 
   - variable-renaming rules: [rename_hypothetical]
-  - substitution rules: [subst_apply], [subst_equal]
   - variable rule: [variable_rule]
-  - equality rules:
+  - equivalence relation rules:
       [tyeq_refl, tyeq_sym, tyeq_trans,
       tmeq_refl, tmeq_sym, tmeq_trans,
-      term_convert, tmeq_convert].
+  - conversion for term/term-eq judgments under type equalities:
+      [term_convert, tmeq_convert].
 
   All of the above are then collected as a single family [structural_rule].
 
-  Each rule, e.g. [variable_rule] — which formally is not just a single rule,
-  but a family of rules, one for each raw context [Γ] and position [i] of it
-  — has two things one might want to call [variable_rule]:
+  A note on naming: each rule, e.g. [variable_rule] — which formally is not
+  just a single rule, but a family of closure rules, one for each raw context
+  [Γ] and position [i] thereof — has two things one might want to call
+  [variable_rule]:
 
   - the definition of it as a family of rules;
   - the access function picking it out in the family [structural_rule].
 
   We use [variable_rule] for the access function, and call the family
   [variable_rule_instance], since an element of the family is a specific
-  instance of the rule.  So when using this rule in a derivation, one will first
+  instance of the rule.  So to use this rule in a derivation, one will first
   say [apply variable_rule] to select the context extension rule, and then
-  specify the particular instance desired, i.e. the earlier context and the type
-  to extend by.
+  specify the particular instance desired, i.e. the context and the position
+  desired.
 
   (An alternative convention could be to use [variable_rule] for the family,
   and [select_variable_rule] or similar for the access function.)
@@ -84,103 +85,7 @@ Defined.
 
 End RenamingRules.
 
-Section SubstitutionRules.
-
-(** General substitution along context maps:
-
-  Γ' |- f(x) : A   [for each x in Γ, A := type of x in Γ]
-  ⊢ Γ'     [not a presupposition of the previous premise if Γ is empty]
-  Γ |- J   [for J any hypothetical judgement]
-  --------------------
-  Γ' |- f^*J
-*)
-Definition subst_apply_instance : Closure.system (judgement Σ).
-Proof.
-  exists { Γ : raw_context Σ
-    & { Γ' : raw_context Σ
-    & { f : raw_context_map Σ Γ' Γ
-    & hypothetical_judgement Σ Γ}}}.
-  intros [Γ [Γ' [f hj]]].
-  split.
-  (* premises: *)
-  - refine (Family.adjoin _ _).
-    (* all components of [f] are suitably typed: *)
-    + exists Γ.
-      intros i. refine [! Γ' |- _ ; _ !].
-      * exact (f i).
-      * exact (substitute f (Γ i)).
-    (* the target judgement holds over Γ *)
-    + exists Γ; exact hj.
-  (* conclusion: *)
-  - exists Γ', (form_of_judgement hj).
-    intros i. exact (substitute f (hj i)).
-Defined.
-
-(** Substitution respects *equality* of context morphisms:
-
-  Γ' |- f(x) = g(x) : A   [for each x in Γ, A := type of x in Γ]
-  ⊢ Γ'     [not a presupposition of the previous premise if Γ is empty]
-  Γ |- J   [for J any hypothetical judgement]
-  --------------------
-  Γ' |- f^*J = g^*J  [ for J any object judgement ]
- *)
-Definition subst_equal_instance : Closure.system (judgement Σ).
-Proof.
-  exists {   Γ : raw_context Σ
-    & { Γ' : raw_context Σ
-    & { f : raw_context_map Σ Γ' Γ
-    & { f' : raw_context_map Σ Γ' Γ
-    & { cl : syntactic_class
-    & hypothetical_judgement_expressions Σ (form_object cl) Γ}}}}}.
-  intros [Γ [Γ' [f [f' [cl hjfi]]]]].
-  split.
-  (* premises: *)
-  - refine (Family.adjoin (_ + _ + _) _).
-    (* f is a context morphism *)
-    + exists Γ.
-      intros i. refine [! Γ' |- _ ; _ !].
-      * exact (f i).
-      * exact (substitute f (Γ i)).
-    (* f' is a context morphism *)
-    + exists Γ.
-      intros i. refine [! Γ' |- _ ; _ !].
-      * exact (f' i).
-      * exact (substitute f' (Γ i)).
-    (* f ≡ f' *)
-    + exists Γ.
-      intros i. refine [! Γ' |- _ ≡ _ ; _ !].
-    (* TODO: note inconsistent ordering of arguments in [give_Tm_ji] compared to
-      other [give_Foo_ji]. Consider, consistentise? *)
-      * exact (substitute f (Γ i)).
-      * exact (f i).
-      * exact (f' i).
-    (* the target judgement holds over Γ *)
-    + exists Γ, (form_object cl).
-      exact hjfi.
-  (* conclusion: *)
-  - exists Γ', (form_equality cl).
-    intros [i | | ].
-    + (* boundary *)
-      exact (substitute f (hjfi (the_boundary _ i))).
-    + (* LHS *)
-      exact (substitute f (hjfi (the_head _))).
-    + (* RHS *)
-      exact (substitute f' (hjfi (the_head _))).
-Defined.
-
-Definition substitution_instance : Closure.system (judgement Σ)
-  := subst_apply_instance + subst_equal_instance.
-
-End SubstitutionRules.
-
-Section HypotheticalStructuralRules.
-
-(* Hypothetical structural rules:
-
-  - var rule
-  - equality rules
-
-*)
+Section VarRules.
 
 (* The general variable rule:
 
@@ -199,6 +104,8 @@ Proof.
   (*conclusion *)
   - exact [! Γ |- (raw_variable x) ; A !].
 Defined.
+
+End VarRules.
 
 Section Equality.
 (** The equality structural rules can all be specified as flat rules over the empty signature. 
@@ -522,11 +429,8 @@ Definition equality_instance : family (rule (judgement Σ))
 
 End Equality.
 
-End HypotheticalStructuralRules.
-
 Definition structural_rule : Closure.system (judgement Σ)
-  := rename_instance + substitution_instance
-     + variable_instance + equality_instance.
+  := rename_instance + variable_instance + equality_instance.
 
 End StructuralRules.
 
@@ -540,11 +444,7 @@ Section StructuralRuleAccessors.
 Context {σ : shape_system} {Σ : signature σ}.
 
 Local Definition rename : rename_instance Σ -> structural_rule Σ
-  := fun i => inl (inl (inl i)).
-Definition subst_apply : subst_apply_instance Σ -> structural_rule Σ
-  := fun i => inl (inl (inr (inl i))).
-Definition subst_equal : subst_equal_instance Σ -> structural_rule Σ
-  := fun i => inl (inl (inr (inr i))).
+  := fun i => inl (inl i).
 Definition variable_rule : variable_instance Σ -> structural_rule Σ
   := fun i => inl (inr i).
 Definition equality_rule : equality_instance Σ -> structural_rule Σ
@@ -592,18 +492,12 @@ Context {Σ : signature σ}.
 Definition structural_rule_rect
   : forall (P : structural_rule Σ -> Type),
      (forall i_rename : rename_instance Σ, P (rename i_rename))
-  -> (forall i_sub_ap : subst_apply_instance Σ, P (subst_apply i_sub_ap))
-  -> (forall i_sub_eq : subst_equal_instance Σ, P (subst_equal i_sub_eq))
   -> (forall i_var : variable_instance Σ, P (variable_rule i_var))
   -> (forall i_eq : equality_instance Σ, P (equality_rule i_eq))
   -> forall s : structural_rule Σ, P s.
 Proof.
-  intros P ? ? ? ? ? s.
-  destruct s as
-      [ [ [ i_rename
-          | [i_sub_ap | i_sub_eq] ]
-        | i_var ]
-      | i_eq ]
+  intros P ? ? ? s.
+  destruct s as [ [ i_rename | i_var ] | i_eq ]
   ; eauto.
 Defined.
 
@@ -662,7 +556,7 @@ Section SignatureMaps.
        - then use [repeat apply Family.fmap_sum.] or similar?  *)
     apply Family.Build_map'.
     apply structural_rule_rect ; intros.
-    (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
+    (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
     - (* rename *)
       destruct i_rename as [J [γ' e]].
       simple refine (_;_).
@@ -674,58 +568,6 @@ Section SignatureMaps.
         * (* hypothetical judgement *)
           refine (Judgement.eq_by_expressions _ _); intros i;
             apply inverse, fmap_rename.
-    - (* subst_apply *)
-      destruct i_sub_ap as [ Γ [Γ' [g hj]]].
-      simple refine (_;_).
-      + refine (subst_apply _).
-        exists (Context.fmap f Γ).
-        exists (Context.fmap f Γ').
-        exists (raw_context_map_fmap f g).
-        exact (Judgement.fmap_hypothetical_judgement f hj).
-      + cbn. apply Closure.rule_eq; cbn.
-        * apply inverse.
-          eapply concat. { apply Family.fmap_adjoin. }
-          apply ap011; try apply idpath.
-          unfold Family.fmap.
-          apply ap, path_forall; intros i.
-          refine (Judgement.eq_by_expressions _ _);
-            intros j; try apply idpath; recursive_destruct j;
-            try apply idpath; apply fmap_substitute.
-        * refine (Judgement.eq_by_expressions _ _);
-            intros; try apply idpath.
-          refine (fmap_substitute _ _ _)^.
-    - (* subst_equal *)
-      destruct i_sub_eq as [ Γ [Γ' [g [g' [jf hj]]]]].
-      simple refine (_;_).
-      + refine (subst_equal _).
-        exists (Context.fmap f Γ).
-        exists (Context.fmap f Γ').
-        exists (raw_context_map_fmap f g).
-        exists (raw_context_map_fmap f g').
-        exists jf.
-        intros i. apply (Expression.fmap f), hj.
-      + cbn. apply Closure.rule_eq; cbn.
-        * apply inverse.
-          eapply concat. { apply Family.fmap_adjoin. }
-          apply ap011; try apply idpath.
-          eapply concat. { apply Family.fmap_sum. }
-          eapply concat. { eapply (ap (fun K => K + _)), Family.fmap_sum. }
-          apply ap2; try apply ap2; unfold Family.fmap.
-          -- apply ap, path_forall; intros i.
-            refine (Judgement.eq_by_expressions _ _);
-            intros j; try apply idpath; recursive_destruct j;
-              try apply idpath; apply fmap_substitute.
-          -- apply ap, path_forall; intros i.
-            refine (Judgement.eq_by_expressions _ _);
-            intros j; try apply idpath; recursive_destruct j;
-              try apply idpath; apply fmap_substitute.
-          -- apply ap, path_forall; intros i.
-            refine (Judgement.eq_by_expressions _ _);
-            intros j; try apply idpath; recursive_destruct j;
-              try apply idpath; apply fmap_substitute.
-        * refine (Judgement.eq_by_expressions _ _);
-            intros; try apply idpath.
-          recursive_destruct i; refine (fmap_substitute _ _ _)^.
     - (* var rule *)
       destruct i_var as [Γ x].
       simple refine (variable_rule _ ; _).
@@ -768,10 +610,8 @@ Section Instantiation.
   Proof.
     (* TODO: As with [fmap] above, there really should be a more uniform way to do this. *)
     unfold Closure.map_over.
-    refine (structural_rule_rect _ _ _ _ _ _).
+    refine (structural_rule_rect _ _ _ _).
     - (* rename*) admit.
-    - (* subst_apply *) admit.
-    - (* subst_equal *) admit.
     - (* variable_rule *) admit.
     - (* equality_rule *) admit.
   Admitted.
