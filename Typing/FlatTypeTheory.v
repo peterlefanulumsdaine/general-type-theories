@@ -410,8 +410,8 @@ Section Instantiation.
       (d : derivation (fmap include_symbol T) hyps j)
     : derivation
         T
-        (Family.fmap (Judgement.instantiate _ I) hyps + [< [! |- Γ !] >])
-        (Judgement.instantiate _ I j).
+        (Family.fmap (Judgement.instantiate Γ I) hyps + [< [! |- Γ !] >])
+        (Judgement.instantiate Γ I j).
   Proof.
     apply (Closure.derivation_fmap1_over (instantiate_closure_system _ I)) in d.
     apply Closure.axioms_vs_hypotheses in d.
