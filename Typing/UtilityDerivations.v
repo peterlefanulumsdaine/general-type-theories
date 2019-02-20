@@ -190,13 +190,13 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
     - apply Judgement.eq_by_expressions; intros i.
       + eapply concat. { apply inverse, rename_comp. }
         eapply concat.
-        { eapply (ap (fun f => rename f _)).
+        { eapply (ap (fun f => Expression.rename f _)).
           apply path_forall; intros j; apply eissect. }
         eapply concat. { apply rename_idmap. }
         apply ap, eissect.
       + eapply concat. { apply inverse, rename_comp. }
         eapply concat.
-        { eapply (ap (fun f => rename f _)).
+        { eapply (ap (fun f => Expression.rename f _)).
           apply path_forall; intros j; apply eissect. }
         apply rename_idmap.
     - intros [].

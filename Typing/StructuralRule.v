@@ -762,12 +762,12 @@ Section SignatureMaps.
           -- eapply concat. { refine (plusone_comp_one _ _ _ _ _ _). }
              eapply concat.
                2: { apply ap. refine (plusone_comp_one _ _ _ _ _ _)^. }
-             apply inverse. apply fmap_rename.
+             apply inverse. apply Expression.fmap_rename.
           -- intros x. cbn in x.
              eapply concat. { refine (plusone_comp_inj _ _ _ _ _ _ _). }
              eapply concat.
                2: { apply ap. refine (plusone_comp_inj _ _ _ _ _ _ _)^. }
-             apply inverse. apply fmap_rename.
+             apply inverse. apply Expression.fmap_rename.
     - (* rename *)
       destruct i_rename as [J [γ' e]].
       simple refine (_;_).
@@ -781,10 +781,10 @@ Section SignatureMaps.
             apply (ap (Build_judgement_total _)),
                   (ap make_context_judgement), (ap (Build_raw_context _)).
             apply path_forall; intros i.
-            apply inverse, fmap_rename.
+            apply inverse, Expression.fmap_rename.
           -- (* hypothetical judgement *)
             apply Judgement.eq_by_expressions; intros i;
-            apply inverse, fmap_rename.
+            apply inverse, Expression.fmap_rename.
     - (* subst_apply *)
       destruct i_sub_ap as [ Γ [Γ' [g [hjf hjfi]]]].
       simple refine (_;_).
@@ -805,12 +805,12 @@ Section SignatureMaps.
           apply (ap (Build_judgement_total _)).
           apply (ap (Build_judgement _)).
           apply path_forall. intros [ [] | ]; try apply idpath.
-          refine (fmap_substitute _ _ _).
+          refine (Substitution.fmap_substitute _ _ _).
         * apply (ap (Build_judgement_total _)).
           apply (ap (Build_judgement _)).
           apply path_forall. intros i.
           unfold Judgement.fmap_hypothetical_judgement.
-          refine (fmap_substitute _ _ _)^.
+          refine (Substitution.fmap_substitute _ _ _)^.
     - (* subst_equal *)
       destruct i_sub_eq as [ Γ [Γ' [g [g' [hjf hjfi]]]]].
       simple refine (_;_).
@@ -834,23 +834,23 @@ Section SignatureMaps.
              apply (ap (Build_judgement_total _)).
              apply (ap (Build_judgement _)).
              apply path_forall. intros [ [] | ]; try apply idpath.
-             refine (fmap_substitute _ _ _).
+             refine (Substitution.fmap_substitute _ _ _).
           -- apply ap, path_forall; intros i.
              apply (ap (Build_judgement_total _)).
              apply (ap (Build_judgement _)).
              apply path_forall. intros [ [] | ]; try apply idpath.
-             refine (fmap_substitute _ _ _).
+             refine (Substitution.fmap_substitute _ _ _).
           -- apply ap, path_forall; intros i.
              apply (ap (Build_judgement_total _)).
              apply (ap (Build_judgement _)).
              apply path_forall. intros j.
              destruct j as [ [] | | ]; try apply idpath.
-             refine (fmap_substitute _ _ _).
+             refine (Substitution.fmap_substitute _ _ _).
         * apply (ap (Build_judgement_total _)).
           apply (ap (Build_judgement _)).
           apply path_forall. intros i.
           unfold Judgement.fmap_hypothetical_judgement.
-          destruct i; refine (fmap_substitute _ _ _)^.
+          destruct i; refine (Substitution.fmap_substitute _ _ _)^.
     - (* var rule *)
       destruct i_var as [Γ x].
       simple refine (variable_rule _ ; _).

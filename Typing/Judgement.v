@@ -840,7 +840,7 @@ Section Rename_Variables.
       {hjf} (B : hypothetical_boundary Σ hjf γ)
     : hypothetical_boundary Σ hjf γ'.
   Proof.
-    exact (fun j => rename f (B j)).
+    exact (fun j => Expression.rename f (B j)).
   Defined.
 
   (** Note: argument order follows [Context.rename], not general [rename] for expressions. *)
@@ -850,7 +850,7 @@ Section Rename_Variables.
       {γ' : shape_carrier σ} (f : γ' <~> γ)
     : hypothetical_judgement Σ hjf γ'.
   Proof.
-    exact (fun j => rename (equiv_inverse f) (J j)).
+    exact (fun j => Expression.rename (equiv_inverse f) (J j)).
   Defined.
 
   Local Definition rename
@@ -947,7 +947,7 @@ Section Instantiation.
     destruct j as [jf J]; destruct jf; simpl in *.
     - constructor.
     - simpl. intro i.
-      apply (instantiate_expression I (hypothetical_part J i)).
+      apply (Metavariable.instantiate_expression I (hypothetical_part J i)).
   Defined.
 
   Local Lemma fmap_instantiate
@@ -972,7 +972,7 @@ Section Instantiation.
           unfold Context.instantiate.
         * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
           eapply concat. 2: {apply inverse. refine (coproduct_comp_inj1 _). }
-          apply fmap_rename.
+          apply Expression.fmap_rename.
         * eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
           eapply concat. 2: {apply inverse. refine (coproduct_comp_inj2 _). }
           apply fmap_instantiate_expression.

@@ -241,11 +241,11 @@ Section TypedStructuralRule.
           -- apply inl, term_convert.
             exists Γ'. cbn.
             intros i; recursive_destruct i; cbn.
-            ++ refine (rename _ (substitute g A)). (* [g^*A] *)
+            ++ refine (Expression.rename _ (substitute g A)). (* [g^*A] *)
               apply shape_sum_empty_inl.
-            ++ refine (rename _ (substitute f A)). (* [f^*A] *)
+            ++ refine (Expression.rename _ (substitute f A)). (* [f^*A] *)
               apply shape_sum_empty_inl.
-            ++ refine (rename _ (substitute g a)). (* [g^*a] *)
+            ++ refine (Expression.rename _ (substitute g a)). (* [g^*a] *)
               apply shape_sum_empty_inl.
           -- apply Judgement.eq_by_expressions.
             ++ apply (coproduct_rect shape_is_sum).
@@ -289,7 +289,7 @@ Section TypedStructuralRule.
                   eapply concat.
                   { apply ap. refine (coproduct_comp_inj1 _). }
                   eapply concat. 2: { apply rename_idmap. }
-                  eapply concat. 
+                  eapply concat.
                   { apply inverse, rename_comp. }
                   apply ap10. refine (apD10 _ _). apply ap.
                   apply path_forall. refine (eissect _).
