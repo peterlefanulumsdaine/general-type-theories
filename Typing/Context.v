@@ -83,7 +83,7 @@ Section Rename_Variables.
     : raw_context Σ.
   Proof.
     exists γ'. 
-    exact (fun j => rename (equiv_inverse f) (Γ (f j))).
+    exact (fun j => Expression.rename (equiv_inverse f) (Γ (f j))).
   Defined.
 
 End Rename_Variables.
@@ -123,7 +123,7 @@ Section Instantiation.
       unfold instantiate.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       eapply concat. 2: {apply inverse. refine (coproduct_comp_inj1 _). }
-      apply fmap_rename.
+      apply Expression.fmap_rename.
     - eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
       eapply concat. 2: {apply inverse. refine (coproduct_comp_inj2 _). }
       apply fmap_instantiate_expression.

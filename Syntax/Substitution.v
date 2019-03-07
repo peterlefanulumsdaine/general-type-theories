@@ -33,7 +33,7 @@ Section RawSubstitution.
     intros f.
     simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn.
     - intros i.
-      refine (rename _ (f i)).
+      refine (Expression.rename _ (f i)).
       apply (coproduct_inj1 (shape_is_sum)).
     - intros i.
       apply raw_variable.
@@ -143,8 +143,8 @@ Section Substitute_Laws.
   Local Fixpoint rename_substitute {γ γ' γ'' : σ}
       (f : raw_context_map Σ γ' γ) (g : γ' -> γ'')
       {cl} (e : raw_expression Σ cl γ)
-    : rename g (substitute f e)
-      = substitute ((rename g) o f) e.
+    : Expression.rename g (substitute f e)
+      = substitute ((Expression.rename g) o f) e.
   Proof.
     destruct e as [ γ i | γ S args ].
     { apply idpath. }
@@ -167,7 +167,7 @@ Section Substitute_Laws.
   Fixpoint substitute_rename
       {γ γ' γ'' : σ} (f : γ -> γ') (g : raw_context_map Σ γ'' γ')
       {cl} (e : raw_expression Σ cl γ)
-    : substitute g (rename f e)
+    : substitute g (Expression.rename f e)
     = substitute (g o f) e.
   Proof.
     destruct e as [ γ i | γ S args ].
@@ -281,7 +281,7 @@ Section Naturality.
     refine (coproduct_rect shape_is_sum _ _ _).
     - intros i. unfold raw_context_map_fmap.
       eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
-      eapply concat. { apply fmap_rename. }
+      eapply concat. { apply Expression.fmap_rename. }
       apply inverse. refine (coproduct_comp_inj1 _).
     - intros i. unfold raw_context_map_fmap.
       eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }

@@ -264,14 +264,14 @@ Section Derivations.
         eapply concat. { apply ap, unit_instantiate_expression. }
         eapply concat. { apply inverse, rename_comp. }
         eapply concat. 2: { apply rename_idmap. }
-        apply (ap (fun f => rename f _)).
+        apply (ap (fun f => Expression.rename f _)).
         apply path_forall; intros j.
         refine (coproduct_comp_inj2 _).          
         * cbn.
         eapply concat. { apply ap. refine (unit_instantiate_expression _). }
         eapply concat. { apply inverse, rename_comp. }
         eapply concat. 2: { apply rename_idmap. }
-        apply (ap (fun f => rename f _)).
+        apply (ap (fun f => Expression.rename f _)).
         apply path_forall; intros j.
         refine (coproduct_comp_inj2 _).
     - cbn. intros p.

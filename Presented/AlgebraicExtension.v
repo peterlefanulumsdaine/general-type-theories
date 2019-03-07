@@ -123,7 +123,7 @@ Local Definition eq `{Funext} {Σ} {a}
       := fun i => equiv_path _ _ (ap _ (ap _ (Family.map_commutes _ i)^)))
     (e_raw_context : forall (i : ae_premise A) (j : _),
         Expression.fmap (fe_signature i) (ae_raw_context i j)
-        = rename (equiv_inverse (fe_shape i))
+        = Expression.rename (equiv_inverse (fe_shape i))
                  (ae_raw_context _ (fe_shape i j)))
     (e_hypothetical_boundary
        : forall i : ae_premise A,
@@ -370,7 +370,7 @@ Section Simple_Maps.
     : forall (p : A) (i : _),
       ae_raw_context_type
        (simple_map_aux_part p) (simple_map_premise_shape _ i)
-      = rename (simple_map_premise_shape _)
+      = Expression.rename (simple_map_premise_shape _)
        (Expression.fmap (simple_map_signature_of_premise _)
          (ae_raw_context_type p i))
   ; simple_map_hypothetical_boundary_commutes
@@ -902,7 +902,7 @@ Section Initial_Segment.
       eapply concat. { apply Expression.fmap_fmap. }
       eapply concat. { apply inverse, rename_idmap. }
       destruct i as [ i_ob | i_eq ];
-      apply (ap2 (fun f e => rename f e)); try apply idpath.
+      apply (ap2 (fun f e => Expression.rename f e)); try apply idpath.
       + simpl. apply inverse. 
         eapply concat. { apply Expression.fmap_fmap. }
         eapply concat. { apply Expression.fmap_fmap. }

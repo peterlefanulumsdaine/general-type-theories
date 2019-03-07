@@ -124,8 +124,8 @@ Section ClosureSystem.
     split.
     - (* premises *)
       refine (Family.fmap _ (flat_rule_premise R)).
-      apply (Judgement.instantiate _ I).
-    - apply (Judgement.instantiate _ I).
+      apply (Judgement.instantiate Γ I).
+    - apply (Judgement.instantiate Γ I).
       apply (flat_rule_conclusion R).
   Defined.
 
