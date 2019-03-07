@@ -786,8 +786,9 @@ Section Presuppositions.
 End Presuppositions.
 
 Section Rename_Variables.
-(** One can rename the variables of a judgement along an _isomorphism_ of shapes.  (Cf. discussion at [Context.rename].) *)
-(* TODO: redo all this now that context judgement expunged. *)
+(** In a hypothetical judgement, one can rename/substitute for the variables.
+
+In a judgement-in-context, one can rename only along an _isomorphism_ of shapes; see discussion at [Context.rename]. *)
 
   Context {σ : shape_system} {Σ : signature σ}.
 
@@ -809,17 +810,16 @@ Section Rename_Variables.
     exact (rename_hypothetical_boundary_expressions f B).
   Defined.
 
-  (** Note: argument order follows [Context.rename], not general [rename] for expressions. *)
-  (* TODO: consistentise with [rename_hypothetical_boundary]! *)
   Definition rename_hypothetical_judgement
-      {γ} (J : hypothetical_judgement Σ γ)
-      {γ' : shape_carrier σ} (f : γ' <~> γ)
+      {γ γ' : σ} (f : γ -> γ')
+      (J : hypothetical_judgement Σ γ)
     : hypothetical_judgement Σ γ'.
   Proof.
     exists (form_of_judgement J).
-    exact (fun j => rename (equiv_inverse f) (J j)).
+    exact (fun j => rename f (J j)).
   Defined.
 
+  (** Note: argument order follows [Context.rename], not general [rename] for expressions. *)
   Local Definition rename
       (J : judgement Σ)
       {γ' : shape_carrier σ} (f : γ' <~> shape_of_judgement J)
@@ -827,7 +827,7 @@ Section Rename_Variables.
   Proof.
     exists (Context.rename (context_of_judgement J) f).
     exists (form_of_judgement J).
-    exact (rename_hypothetical_judgement (hypothetical_part J) f).
+    exact (rename_hypothetical_judgement (equiv_inverse f) (hypothetical_part J)).
   Defined.
 
   Context `{H_Funext : Funext}.

@@ -210,3 +210,4 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
   Defined.
 
 End Sum_Shape_Empty.
+
