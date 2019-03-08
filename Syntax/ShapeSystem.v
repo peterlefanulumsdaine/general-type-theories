@@ -54,6 +54,27 @@ here from general lemmas about coproducts. *)
 
   Context {σ : shape_system}.
 
+  (* use this and [fmap1], [fmap2] where they’ve previously been given inline, e.g. in [Expression.rename], [instantiate_rename]. *)
+  Lemma fmap_shape_sum {γ γ' δ δ' : σ} (f : γ -> γ') (g : δ -> δ')
+    : (shape_sum γ δ) -> (shape_sum γ' δ').
+  Proof.
+    refine (coproduct_rect shape_is_sum _ _ _).
+    - intros; apply (coproduct_inj1 (shape_is_sum)); auto.
+    - intros; apply (coproduct_inj2 (shape_is_sum)); auto.
+  Defined.
+
+  Lemma fmap1_shape_sum {γ γ' δ : σ} (f : γ -> γ')
+    : (shape_sum γ δ) -> (shape_sum γ' δ).
+  Proof.
+    exact (fmap_shape_sum f idmap).
+  Defined.
+
+  Lemma fmap2_shape_sum {γ δ δ' : σ} (g : δ -> δ')
+    : (shape_sum γ δ) -> (shape_sum γ δ').
+  Proof.
+    exact (fmap_shape_sum idmap g).
+  Defined.
+
   Definition shape_sum_empty_inl_is_equiv (γ : σ)
     : IsEquiv (coproduct_inj1 shape_is_sum
                : γ -> shape_sum γ (shape_empty _)).

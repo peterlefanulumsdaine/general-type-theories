@@ -68,6 +68,36 @@ Open Scope context_scope.
 Arguments raw_context {_} _.
 Arguments Build_raw_context {_ _} _ _.
 
+Section Typed_Renamings.
+(** A _typed renaming_ between contexts is a function on their variables, respecting their types (up to literal syntactic equality). *)
+
+  Context {σ : shape_system}.
+
+  Definition respects_types {Σ : signature σ} (Γ Δ : raw_context Σ)
+    (f : Γ -> Δ)
+  := forall i:Γ, Δ (f i) = rename f (Γ i).
+
+  Record typed_renaming {Σ : signature σ} (Γ Δ : raw_context Σ)
+  := {
+    map_of_typed_renaming :> Γ -> Δ
+  ; typed_renaming_respects_types
+    : respects_types Γ Δ map_of_typed_renaming
+  }.
+
+  Definition fmap_typed_renaming `{Funext}
+      {Σ Σ' : signature σ}
+      (f : Signature.map Σ Σ')
+      {Γ Γ'} (α : typed_renaming Γ Γ')
+    : typed_renaming (fmap f Γ) (fmap f Γ').
+  Proof.
+    exists (fun i : fmap f Γ => α i).
+    intros i. cbn.
+    eapply concat. { apply ap, typed_renaming_respects_types. }
+    apply fmap_rename.
+  Defined.
+
+End Typed_Renamings.
+
 Section Rename_Variables.
 (** The action of variable-renaming on contexts (and, later, judgements) is a bit subtler than on expressions: one can only rename along an _isomorphism_ of shapes, not an arbitrary map of shapes.
 
@@ -85,7 +115,6 @@ Section Rename_Variables.
     exists γ'. 
     exact (fun j => Expression.rename (equiv_inverse f) (Γ (f j))).
   Defined.
-
 End Rename_Variables.
 
 Section Instantiation.
@@ -130,6 +159,26 @@ Section Instantiation.
   Defined.
 
   Context {Σ : signature σ}.
+
+  Lemma instantiate_typed_renaming
+      (Γ : raw_context Σ) {a} (I : Metavariable.instantiation a Σ Γ)
+      {Δ Δ' : raw_context _} (f : typed_renaming Δ Δ')
+    : typed_renaming (instantiate Γ I Δ) (instantiate Γ I Δ').
+  Proof.
+    exists (fmap2_shape_sum f).
+    refine (coproduct_rect shape_is_sum _ _ _).
+    - intros i; cbn.
+      unfold fmap2_shape_sum, fmap_shape_sum.
+      repeat rewrite coproduct_comp_inj1.
+      eapply concat. 2: { apply Expression.rename_comp. }
+      apply (ap (fun f => Expression.rename f _)), path_forall.
+      intros j. apply inverse; refine (coproduct_comp_inj1 _).
+    - intros i; cbn.
+      unfold fmap2_shape_sum, fmap_shape_sum.
+      repeat rewrite coproduct_comp_inj2.
+      eapply concat. { apply ap, typed_renaming_respects_types. }
+      apply instantiate_rename. 
+  Defined.
 
   Local Lemma unit_instantiate
       {a} (Γ : raw_context (Metavariable.extend Σ a))

@@ -812,12 +812,12 @@ Section Rename_Variables.
   (** Note: argument order follows [Context.rename], not general [rename] for expressions. *)
   (* TODO: consistentise with [rename_hypothetical_boundary]! *)
   Definition rename_hypothetical_judgement
-      {γ} (J : hypothetical_judgement Σ γ)
-      {γ' : shape_carrier σ} (f : γ' <~> γ)
+      {γ γ' : σ} (f : γ -> γ')
+      (J : hypothetical_judgement Σ γ)
     : hypothetical_judgement Σ γ'.
   Proof.
     exists (form_of_judgement J).
-    exact (fun j => rename (equiv_inverse f) (J j)).
+    exact (fun j => rename f (J j)).
   Defined.
 
   Local Definition rename
@@ -827,7 +827,8 @@ Section Rename_Variables.
   Proof.
     exists (Context.rename (context_of_judgement J) f).
     exists (form_of_judgement J).
-    exact (rename_hypothetical_judgement (hypothetical_part J) f).
+    exact (rename_hypothetical_judgement (equiv_inverse f)
+           (hypothetical_part J)).
   Defined.
 
   Context `{H_Funext : Funext}.
@@ -890,6 +891,16 @@ Section Instantiation.
 
   Context {σ : shape_system} `{Funext}.
 
+  Definition instantiate_hypothetical_judgement
+      {a : arity σ} {Σ : signature σ} {γ : σ}
+      (I : Metavariable.instantiation a Σ γ)
+      {δ} (j : hypothetical_judgement (Metavariable.extend Σ a) δ)
+    : hypothetical_judgement Σ (shape_sum γ δ).
+  Proof.
+    exists (form_of_judgement j).
+    intro i; exact (instantiate_expression I (j i)).
+  Defined.
+
   Local Definition instantiate
       {a : arity σ} {Σ : signature σ} (Γ : raw_context Σ)
       (I : Metavariable.instantiation a Σ Γ)
@@ -897,11 +908,10 @@ Section Instantiation.
     : judgement Σ.
   Proof.
     exists (Context.instantiate _ I (context_of_judgement j)).
-    exists (form_of_judgement j).
-    intro i.
-    apply (instantiate_expression I (hypothetical_part j i)).
+    apply (instantiate_hypothetical_judgement I (hypothetical_part j)).
   Defined.
 
+  (* TODO: factor out [fmap_instantiate_hypothetical_judgement] *)
   Local Lemma fmap_instantiate
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a : @arity σ} (Γ : raw_context Σ)
