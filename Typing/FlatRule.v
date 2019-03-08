@@ -31,9 +31,9 @@ Section FlatRule.
   :=
     { flat_rule_metas : arity _
     ; flat_rule_premise :
-        family (judgement_total (Metavariable.extend Σ flat_rule_metas))
+        family (judgement (Metavariable.extend Σ flat_rule_metas))
     ; flat_rule_conclusion :
-        (judgement_total (Metavariable.extend Σ flat_rule_metas))
+        (judgement (Metavariable.extend Σ flat_rule_metas))
     }.
 
   Global Arguments flat_rule _ : clear implicits.
@@ -46,7 +46,7 @@ Section FlatRule.
                    (flat_rule_premise R)
          = flat_rule_premise R')
       (e_conclusion
-       : transport (fun a => judgement_total (_ _ a)) e_metas
+       : transport (fun a => judgement (_ _ a)) e_metas
                    (flat_rule_conclusion R)
          = flat_rule_conclusion R')
     : R = R'.
@@ -63,9 +63,9 @@ Section FlatRule.
     intros R.
     exists (flat_rule_metas R).
     - refine (Family.fmap _ (flat_rule_premise R)).
-      apply fmap_judgement_total.
+      apply Judgement.fmap.
       apply Metavariable.fmap1, f.
-    - refine (fmap_judgement_total _ (flat_rule_conclusion R)).
+    - refine (Judgement.fmap _ (flat_rule_conclusion R)).
       apply Metavariable.fmap1, f.
   Defined.
 
@@ -82,10 +82,10 @@ Section FlatRule.
       { refine (ap (fun f => Family.fmap f _) _).
         eapply concat. { apply ap, Metavariable.fmap1_idmap. }
         apply path_forall; intros i.
-        apply Judgement.fmap_judgement_total_idmap. }
+        apply Judgement.fmap_idmap. }
       apply Family.fmap_idmap.
     - cbn.
-      eapply concat. 2: { apply fmap_judgement_total_idmap. }
+      eapply concat. 2: { apply Judgement.fmap_idmap. }
       apply ap10, ap. apply Metavariable.fmap1_idmap.
   Defined.
 
@@ -103,9 +103,9 @@ Section FlatRule.
       refine (ap (fun f => Family.fmap f _) _).
       eapply concat. { apply ap, Metavariable.fmap1_compose. }
       apply path_forall; intros i.
-      apply fmap_judgement_total_compose.
+      apply Judgement.fmap_compose.
     - cbn.
-      eapply concat. 2: { apply fmap_judgement_total_compose. }
+      eapply concat. 2: { apply Judgement.fmap_compose. }
       apply ap10, ap, Metavariable.fmap1_compose.
   Defined.
 
@@ -116,14 +116,13 @@ Section ClosureSystem.
   Context {σ : shape_system}.
 
   Local Definition closure_system {Σ : signature σ} (R : flat_rule Σ)
-    : Closure.system (judgement_total Σ).
+    : Closure.system (judgement Σ).
   Proof.
     exists { Γ : raw_context Σ &
                  Metavariable.instantiation (flat_rule_metas R) Σ Γ }.
     intros [Γ I].
     split.
     - (* premises *)
-      refine ([< [! |- Γ !] >] + _).
       refine (Family.fmap _ (flat_rule_premise R)).
       apply (Judgement.instantiate Γ I).
     - apply (Judgement.instantiate Γ I).
@@ -136,7 +135,7 @@ Section ClosureSystem.
   Local Definition closure_system_fmap 
         {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
         (R : flat_rule Σ)
-    : Family.map_over (Closure.rule_fmap (fmap_judgement_total f))
+    : Family.map_over (Closure.rule_fmap (Judgement.fmap f))
         (closure_system R)
         (closure_system (fmap f R)).
   Proof.
@@ -145,16 +144,15 @@ Section ClosureSystem.
     exists (Context.fmap f Γ ; instantiation_fmap f I_R).
     apply Closure.rule_eq.
     - simple refine (Family.eq _ _). { apply idpath. }
-      cbn. intros [[] | i].
-      + apply idpath.
-      + apply inverse, Judgement.fmap_instantiate.
+      cbn; intros i.
+      apply inverse, Judgement.fmap_instantiate.
     - cbn. apply inverse, Judgement.fmap_instantiate.
   Defined.
 
   Local Definition closure_system_fmap'
     {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
     {R} {R'} (e : fmap f R = R') 
-  : Family.map_over (Closure.rule_fmap (fmap_judgement_total f))
+  : Family.map_over (Closure.rule_fmap (Judgement.fmap f))
       (closure_system R)
       (closure_system R').
   Proof.

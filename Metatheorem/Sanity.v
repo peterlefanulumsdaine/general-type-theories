@@ -20,7 +20,7 @@ Require Import Presented.TypeTheory.
 (** The main goal of this file is the metatheorem that all presuppositions
     of a derivable judgement are derivable, over any type theory: *)
 Theorem derive_presupposition_closed {σ} {T : raw_type_theory σ}
-     {j : judgement_total (RawTypeTheory.signature T)}
+     {j : judgement (RawTypeTheory.signature T)}
      (dj : RawTypeTheory.derivation T [<>] j)
      {p : presupposition j }
   : RawTypeTheory.derivation T [<>] (presupposition j p).
@@ -70,7 +70,7 @@ Section PresuppositionClosureFlat.
   Theorem derive_presupposition_from_flat
       {Σ : signature σ}
       {T : flat_type_theory Σ} (H_T : presupposition_closed_flat_type_theory T)
-      {j : judgement_total Σ} {hyps : family _}
+      {j : judgement Σ} {hyps : family _}
       (d_j : FlatTypeTheory.derivation T hyps j)
       {p : presupposition j }
     : FlatTypeTheory.derivation T
@@ -137,7 +137,7 @@ Section PresuppositionClosure.
       [p] of [j] is derivable from [hyps]. *)
   Theorem derive_presupposition
       {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
-      {j : judgement_total (RawTypeTheory.signature T)}
+      {j : judgement (RawTypeTheory.signature T)}
       {hyps : family _}
       (dj : RawTypeTheory.derivation T hyps j)
       {p : presupposition j }
@@ -153,7 +153,7 @@ Section PresuppositionClosure.
       without hypotheses, ever presupposition of [j] is derivable. *)
   Corollary derive_presupposition_closed
       {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
-      {j : judgement_total (RawTypeTheory.signature T)}
+      {j : judgement (RawTypeTheory.signature T)}
       (dj : RawTypeTheory.derivation T [<>] j)
       {p : presupposition j }
     : RawTypeTheory.derivation T [<>] (presupposition j p).

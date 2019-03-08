@@ -198,21 +198,11 @@ Section Flattening.
     apply snd in T_WT.
     intros i.
     refine (Closure.graft' (T_WT i) _ _).
-    - unfold presupposition.
-      apply ap10.
-      assert (e :
-        RawRule.conclusion_boundary R
-        =
-        boundary_of_judgement
-          (flat_rule_conclusion (RawRule.flatten R Sr))).
-      { recursive_destruct hjf_concl; apply idpath. }
-      (* TODO: perhaps try to improve defs of boundary/judgt slots
-       so that the above computes on the nose? *)
-      destruct e. apply idpath.
+    - recursive_destruct hjf_concl; apply idpath.
     - clear i. intros i.
       exact (Closure.hypothesis _ (_+_) (inl i)).
-  Defined.
-  (* TODO: in fact, we should be able to extend this to showing
+  Qed.
+  (* NOTE: in fact, we should be able to extend this to showing
    that [flatten R] is _strongly_ well-typed. *)
   
 End Flattening.

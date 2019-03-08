@@ -19,11 +19,11 @@ Section MartinLöfTypeTheory.
     - simple refine (class_type, [< (class_term, shape_empty σ) >]). (* El *)
   Defined.
 
-  Local Definition U_formation_rule_index : (hypothetical_form * arity σ)
+  Local Definition U_formation_rule_index : (form * arity σ)
     := (form_object class_type  (* Formation of a type *)
        , [< >]).                (* With no (object) premises *)
 
-  Local Definition El_formation_rule_index : (hypothetical_form * arity σ)
+  Local Definition El_formation_rule_index : (form * arity σ)
     := (form_object class_type
        , [< (class_term, shape_empty σ) >]).
 

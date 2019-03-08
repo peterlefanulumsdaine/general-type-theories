@@ -96,16 +96,13 @@ Section Instantiations.
       refine (Closure.graft _ _ _).
       + refine (FlatTypeTheory.instantiate_derivation _ _ _ _).
         apply D_r.
-      + intros [[ i | [ i i_presup]] | []]. 
+      + intros [ i | [ i i_presup]]. 
         * simple refine (Closure.hypothesis' _ _).
-          -- exact (inl (inr i)).
+          -- exact (inl i).
           -- apply idpath.
         * simple refine (Closure.hypothesis' _ _).
-          -- refine (inr ((inr i);_)). exact i_presup.
+          -- refine (inr (i;_)). exact i_presup.
           -- apply inverse. refine (instantiate_presupposition _ _ _).
-        * simple refine (Closure.hypothesis' _ _).
-          -- apply inl, inl, tt.
-          -- apply idpath.
   Defined.
 
 End Instantiations.

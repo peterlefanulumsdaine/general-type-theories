@@ -21,13 +21,13 @@ Record algebraic_extension
   (* The family of equality-judgment premises: *)
     ae_equality_premise : arity σ
   (* family indexing the premises of the extension, and giving for each… *)
-  ; ae_premise :> family (Judgement.hypothetical_form * σ)
+  ; ae_premise :> family (Judgement.form * σ)
     := Family.sum
          (Family.fmap (fun cl_γ => (form_object (fst cl_γ), snd cl_γ)) a)
          (Family.fmap (fun cl_γ => (form_equality (fst cl_γ), snd cl_γ))
                       ae_equality_premise)
   (* - the judgement form of each premise, e.g. “term” or “type equality” *)
-  ; ae_form : ae_premise -> Judgement.hypothetical_form
+  ; ae_form : ae_premise -> Judgement.form
     := fun i => fst (ae_premise i)
   (* - the proto-context of each premise *)
   ; ae_shape : ae_premise -> σ
@@ -54,9 +54,9 @@ Record algebraic_extension
         raw_context (ae_signature_of_premise i)
     := fun i => Build_raw_context _ (ae_raw_context_type i)
   (* hypothetical judgement boundary instance for each premise *)
-  ; ae_hypothetical_boundary
+  ; ae_hypothetical_boundary_expressions
     : forall i : ae_premise,
-        Judgement.hypothetical_boundary
+        Judgement.hypothetical_boundary_expressions
           (ae_signature_of_premise i)
           (ae_form i)
           (ae_shape i)
@@ -75,11 +75,10 @@ Global Arguments ae_raw_context {_ _ _} _.
 (** Access functions *)
 Local Definition premise_boundary
     {Σ} {a} {A : algebraic_extension Σ a} (r : A)
-  : Judgement.boundary (ae_signature_of_premise r)
-                       (form_hypothetical (ae_form r)).
+  : Judgement.boundary (ae_signature_of_premise r).
 Proof.
-  exists (ae_raw_context r).
-  apply (ae_hypothetical_boundary).
+  exists (ae_raw_context r), (ae_form r).
+  apply (ae_hypothetical_boundary_expressions).
 Defined.
 
 Local Definition eq_premise {a : arity σ}
@@ -128,12 +127,12 @@ Local Definition eq `{Funext} {Σ} {a}
                  (ae_raw_context _ (fe_shape i j)))
     (e_hypothetical_boundary
        : forall i : ae_premise A,
-        rename_hypothetical_boundary (fe_shape i)
-        (fmap_hypothetical_boundary (fe_signature i)
-        (transport (fun hjf => Judgement.hypothetical_boundary _ hjf _)
+        rename_hypothetical_boundary_expressions (fe_shape i)
+        (fmap_hypothetical_boundary_expressions (fe_signature i)
+        (transport (fun hjf => Judgement.hypothetical_boundary_expressions _ hjf _)
                    (ap fst (Family.map_commutes (eq_premise e_premises) i)^)
-        (ae_hypothetical_boundary A i)))
-        = ae_hypothetical_boundary A' (equiv_premise i))
+        (ae_hypothetical_boundary_expressions A i)))
+        = ae_hypothetical_boundary_expressions A' (equiv_premise i))
   : A = A'.
 Proof.
   destruct A, A'; cbn in e_premises, e_lt.
@@ -145,12 +144,13 @@ Proof.
     apply path_forall; intros i.
     refine (_ @ e_hypothetical_boundary i). apply inverse.
     eapply concat.
-    { unfold transport. apply rename_hypothetical_boundary_idmap. }
+    { unfold transport.
+      apply rename_hypothetical_boundary_expressions_idmap. }
     unfold fe_signature.
     eapply concat.
-    { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+    { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
       apply Metavariable.fmap2_idmap. }
-    apply fmap_hypothetical_boundary_idmap.
+    apply fmap_hypothetical_boundary_expressions_idmap.
   - clear e_hypothetical_boundary.
     apply path_forall; intros i.
     apply path_forall; intros j.  
@@ -178,8 +178,8 @@ Proof.
   - (* ae_hypothetical_boundary *)
     intros i.
     simple refine
-      (fmap_hypothetical_boundary
-        _ (ae_hypothetical_boundary _ i)).
+      (fmap_hypothetical_boundary_expressions
+        _ (ae_hypothetical_boundary_expressions _ i)).
     apply Metavariable.fmap1, f.
 Defined.
 
@@ -205,15 +205,15 @@ Proof.
     apply inverse, rename_idmap.
   - unfold transport; simpl. intros i.
     eapply concat.
-    { apply rename_hypothetical_boundary_idmap. }
+    { apply rename_hypothetical_boundary_expressions_idmap. }
     eapply concat.
-    { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+    { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
       apply Metavariable.fmap2_idmap. }
-    eapply concat. { apply fmap_hypothetical_boundary_idmap. }
+    eapply concat. { apply fmap_hypothetical_boundary_expressions_idmap. }
     eapply concat.
-    { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+    { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
       apply Metavariable.fmap1_idmap. }
-    apply fmap_hypothetical_boundary_idmap.
+    apply fmap_hypothetical_boundary_expressions_idmap.
 Defined.
 
 Local Definition fmap_compose
@@ -237,15 +237,15 @@ Proof.
     apply inverse, rename_idmap.
   - unfold transport; simpl. intros i.
     eapply concat.
-    { apply rename_hypothetical_boundary_idmap. }
+    { apply rename_hypothetical_boundary_expressions_idmap. }
     eapply concat.
-    { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+    { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
       apply Metavariable.fmap2_idmap. }
-    eapply concat. { apply fmap_hypothetical_boundary_idmap. }
+    eapply concat. { apply fmap_hypothetical_boundary_expressions_idmap. }
     eapply concat.
-    { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+    { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
       apply Metavariable.fmap1_compose. }
-    apply fmap_hypothetical_boundary_compose.
+    apply fmap_hypothetical_boundary_expressions_compose.
 Defined.
 
 Local Definition fmap_fmap
@@ -375,13 +375,13 @@ Section Simple_Maps.
          (ae_raw_context_type p i))
   ; simple_map_hypothetical_boundary_commutes
     : forall (p : A),
-      ae_hypothetical_boundary A' (simple_map_aux_part p) 
-      = transport (fun hjf => Judgement.hypothetical_boundary _ hjf _)
+      ae_hypothetical_boundary_expressions A' (simple_map_aux_part p) 
+      = transport (fun hjf => Judgement.hypothetical_boundary_expressions _ hjf _)
                   (simple_map_form_commutes _ _)
-       (rename_hypothetical_boundary (simple_map_premise_shape _)
-       (fmap_hypothetical_boundary
+       (rename_hypothetical_boundary_expressions (simple_map_premise_shape _)
+       (fmap_hypothetical_boundary_expressions
            (simple_map_signature_of_premise _)
-         (ae_hypothetical_boundary A p)))
+         (ae_hypothetical_boundary_expressions A p)))
   }.
 
 End Simple_Maps.
@@ -401,13 +401,13 @@ Section Judgement_of_Premise.
            -> { S : Σ'
              & (symbol_arity S = Arity.simple (ae_shape i))
              * (symbol_class S = Judgement.class_of (ae_form i))})
-   : judgement_total Σ'.
+   : judgement Σ'.
   Proof.
-    exists (form_hypothetical (ae_form i)).
     exists (Context.fmap f (ae_raw_context i)).
-    apply Judgement.hypothetical_instance_from_boundary_and_head.
-    - refine (Judgement.fmap_hypothetical_boundary f _).
-      apply ae_hypothetical_boundary.
+    exists (ae_form i).
+    apply hypothetical_judgement_expressions_from_boundary_and_head.
+    - refine (Judgement.fmap_hypothetical_boundary_expressions f _).
+      apply ae_hypothetical_boundary_expressions.
     - intro H_obj.
       destruct i as [ i_obj | i_eq ]; simpl in *.
       + (* case: i an object rule *)
@@ -443,18 +443,17 @@ Section Judgement_of_Premise.
      = @judgement_of_premise _ _ (fmap f A) i _ f'' Sr'.
   Proof.
     destruct e_f^, e_Sr. clear e_f.
-    eapply (ap (Build_judgement_total _)).
     refine (ap (fun Γ => Build_judgement (Build_raw_context _ Γ) _) _
            @ ap (Build_judgement _) _).
     - (* context part *)
       apply path_forall; intros x.
       apply Expression.fmap_compose.
     - (* hypothetical part *)
-      apply (ap2 (Judgement.hypothetical_instance_from_boundary_and_head _)).
-      + apply fmap_hypothetical_boundary_compose.
+      apply ap.
+      apply (ap2 (hypothetical_judgement_expressions_from_boundary_and_head _)).
+      + apply fmap_hypothetical_boundary_expressions_compose.
       + apply path_forall; intros i_is_ob.
-        destruct i as [i_ob | i_eq]; destruct i_is_ob.
-        apply idpath.
+        destruct i as [i_ob | i_eq]; apply idpath.
   Defined.
 
   Definition fmap_judgement_of_premise `{Funext}
@@ -473,20 +472,20 @@ Section Judgement_of_Premise.
            -> { S : Σ''
              & (symbol_arity S = Arity.simple (ae_shape i))
              * (symbol_class S = Judgement.class_of (ae_form i))})
-   : fmap_judgement_total f' (judgement_of_premise i f Sr)
+   : Judgement.fmap f' (judgement_of_premise i f Sr)
      = @judgement_of_premise _ _ A i _ (Signature.compose f' f) Sr'.
   Proof.
-    eapply (ap (Build_judgement_total _)).
     refine (ap (fun Γ => Build_judgement (Build_raw_context _ Γ) _) _
            @ ap (Build_judgement _) _).
     - (* context part *)
       apply path_forall; intros x.
       apply inverse, Expression.fmap_compose.
     - (* hypothetical part *)
+      apply (ap (Build_hypothetical_judgement _)).
       eapply concat.
-      { refine (fmap_hypothetical_instance_from_boundary_and_head _ _ _). }
-      apply (ap2 (Judgement.hypothetical_instance_from_boundary_and_head _)).
-      + apply inverse, fmap_hypothetical_boundary_compose.
+      { apply fmap_hypothetical_judgement_expressions_from_boundary_and_head. }
+      apply ap2.
+      + apply inverse, fmap_hypothetical_boundary_expressions_compose.
       + apply path_forall; intros i_is_ob.
         destruct i as [i_ob | i_eq]; destruct i_is_ob.
         unfold Sr', raw_symbol'.
@@ -578,7 +577,7 @@ Section Flattening.
 
   Local Definition flatten {Σ : signature σ} {a}
     (A : algebraic_extension Σ a)
-  : family (judgement_total (Metavariable.extend Σ a)).
+  : family (judgement (Metavariable.extend Σ a)).
   (* This construction involves essentially two aspects:
 
      - translate the syntax of each expression in the rule from its “local”
@@ -605,7 +604,7 @@ Section Flattening.
   Local Lemma flatten_fmap `{Funext}
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} (A : algebraic_extension Σ a)
-    : Family.map_over (fmap_judgement_total (Metavariable.fmap1 f a))
+    : Family.map_over (Judgement.fmap (Metavariable.fmap1 f a))
         (flatten A) (flatten (fmap f A)).
   Proof.
     exists idmap.
@@ -631,7 +630,7 @@ Section Flattening.
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
       (f : simple_map A A')
     : Family.map_over
-        (fmap_judgement_total
+        (Judgement.fmap
            (Metavariable.fmap2 _ (arity_map_of_simple_map f)))
         (flatten A) (flatten A').
     Proof.
@@ -679,7 +678,7 @@ Section Initial_Segment.
   (** Next few definitions are auxiliary for [initial_segment] below *)
   Local Definition initial_segment_premise_aux
       {Σ : signature σ} {a} (A : algebraic_extension Σ a) (r : A)
-    : family (hypothetical_form * σ.(shape_carrier))
+    : family (form * σ.(shape_carrier))
   := Family.fmap (fun cl_γ : syntactic_class * σ.(shape_carrier) =>
                     (form_object cl_γ.(fst), cl_γ.(snd)))
                  (ae_metavariables_of_premise r)
@@ -774,7 +773,8 @@ Section Initial_Segment.
       + apply initial_segment_compare_signature.
       + set (i_orig
           := initial_segment_include_premise_aux A r i).
-        destruct i as [ ? | ? ]; refine (ae_hypothetical_boundary A i_orig x).
+        destruct i as [ ? | ? ];
+          refine (ae_hypothetical_boundary_expressions A i_orig x).
   Defined.
 
   (* Perhaps better as (simple) map of alg exts. *)
@@ -789,8 +789,7 @@ Section Initial_Segment.
       intros i j. simpl in j.
       eapply concat. { apply Expression.fmap_fmap. }
       eapply concat. { apply inverse, rename_idmap. }
-      apply (ap2 (fun f e => Expression.rename f e)).
-      + apply idpath.
+      apply ap.
       + (* there’s got to be a better way here
            than this 20 lines of duplicated code… *)
         destruct i as [ i_ob | i_eq ].
@@ -842,43 +841,43 @@ Section Initial_Segment.
           -- apply idpath.
     - (* rule boundaries *)
       intros i.
-      eapply concat. 2: { eapply rename_hypothetical_boundary_idmap. }
-      apply (ap2 (fun f b => rename_hypothetical_boundary f b)).
-      + apply idpath. 
-      + simpl ap. apply path_forall; intros x.
-        destruct i as [ i_ob | i_eq ].
-        * simpl. unfold fmap_hypothetical_boundary.
-          eapply concat.
-          { eapply (ap (fun f => Expression.fmap f _)). 
-            apply Metavariable.fmap_idmap. }
-          eapply concat. { apply Expression.fmap_idmap. }
-          eapply concat. { apply Expression.fmap_fmap. }
-          apply inverse. 
-          eapply concat. { apply Expression.fmap_fmap. }
-          apply (ap (fun f => Expression.fmap f _)).
-          eapply concat. { apply inverse, Metavariable.fmap_compose. }
-          eapply concat. 2: { eapply Metavariable.fmap_compose. }
-          apply (ap2 (fun f g => Metavariable.fmap f g)).
-          -- eapply concat. { apply Family.id_right. }
-             apply inverse.
-             apply Family.id_left.
-          -- apply idpath.
-        * simpl. unfold fmap_hypothetical_boundary.
-          eapply concat.
-          { eapply (ap (fun f => Expression.fmap f _)). 
-            apply Metavariable.fmap_idmap. }
-          eapply concat. { apply Expression.fmap_idmap. }
-          eapply concat. { apply Expression.fmap_fmap. }
-          apply inverse. 
-          eapply concat. { apply Expression.fmap_fmap. }
-          apply (ap (fun f => Expression.fmap f _)).
-          eapply concat. { apply inverse, Metavariable.fmap_compose. }
-          eapply concat. 2: { eapply Metavariable.fmap_compose. }
-          apply (ap2 (fun f g => Metavariable.fmap f g)).
-          -- eapply concat. { apply Family.id_right. }
-             apply inverse.
-             apply Family.id_left.
-          -- apply idpath.
+      eapply concat.
+      2: { eapply rename_hypothetical_boundary_expressions_idmap. }
+      apply ap.
+      simpl ap. apply path_forall; intros x.
+      destruct i as [ i_ob | i_eq ].
+      + simpl. unfold fmap_hypothetical_boundary.
+        eapply concat.
+        { eapply (ap (fun f => Expression.fmap f _)). 
+          apply Metavariable.fmap_idmap. }
+        eapply concat. { apply Expression.fmap_idmap. }
+        eapply concat. { apply Expression.fmap_fmap. }
+        apply inverse. 
+        eapply concat. { apply Expression.fmap_fmap. }
+        apply (ap (fun f => Expression.fmap f _)).
+        eapply concat. { apply inverse, Metavariable.fmap_compose. }
+        eapply concat. 2: { eapply Metavariable.fmap_compose. }
+        apply (ap2 (fun f g => Metavariable.fmap f g)).
+        * eapply concat. { apply Family.id_right. }
+          apply inverse.
+          apply Family.id_left.
+        * apply idpath.
+      + simpl. unfold fmap_hypothetical_boundary.
+        eapply concat.
+        { eapply (ap (fun f => Expression.fmap f _)). 
+          apply Metavariable.fmap_idmap. }
+        eapply concat. { apply Expression.fmap_idmap. }
+        eapply concat. { apply Expression.fmap_fmap. }
+        apply inverse. 
+        eapply concat. { apply Expression.fmap_fmap. }
+        apply (ap (fun f => Expression.fmap f _)).
+        eapply concat. { apply inverse, Metavariable.fmap_compose. }
+        eapply concat. 2: { eapply Metavariable.fmap_compose. }
+        apply (ap2 (fun f g => Metavariable.fmap f g)).
+        * eapply concat. { apply Family.id_right. }
+          apply inverse.
+          apply Family.id_left.
+        * apply idpath.
   Time Defined.
 
   (* TODO: try to abstract some bits of this out, to:
@@ -933,7 +932,8 @@ Section Initial_Segment.
     - (* premise hypothetical boundaries *)
       intros i.
       destruct i as [ i_ob | i_eq ]; simpl.
-      + eapply concat. 2: { apply inverse, rename_hypothetical_boundary_idmap. }
+      + eapply concat.
+        2: { apply inverse, rename_hypothetical_boundary_expressions_idmap. }
         apply inverse.
         simpl ap. apply path_forall; intros x.
         simpl. unfold fmap_hypothetical_boundary.
@@ -952,7 +952,8 @@ Section Initial_Segment.
           apply inverse.
           apply Family.id_left.
         * apply idpath.
-      + eapply concat. 2: { apply inverse, rename_hypothetical_boundary_idmap. }
+      + eapply concat.
+        2: { apply inverse, rename_hypothetical_boundary_expressions_idmap. }
         apply inverse.
         simpl ap. apply path_forall; intros x.
         simpl. unfold fmap_hypothetical_boundary.
@@ -983,7 +984,7 @@ Section Initial_Segment.
     simple refine (Family.map_transport _ (flatten_fmap_simple _)).
     2: { refine (initial_segment_fmap f p). }
     eapply concat. { apply ap, Metavariable.fmap_idmap. }
-    apply path_forall; intros i. apply fmap_judgement_total_idmap. 
+    apply path_forall; intros i. apply Judgement.fmap_idmap. 
   Defined.
 
   Local Lemma flatten_initial_segment_fmap_applied `{Funext}

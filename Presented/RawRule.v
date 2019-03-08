@@ -46,13 +46,13 @@ Record rule
   {Σ : signature σ}
   {a : arity σ}
     (* arity listing the _object_ premises of the rule *)
-  {hjf_conclusion : Judgement.hypothetical_form}
+  {hjf_conclusion : Judgement.form}
     (* judgement form of the conclusion *)
 :=
   {
     rule_premise : algebraic_extension Σ a
-  ; rule_conclusion_hypothetical_boundary
-      : Judgement.hypothetical_boundary
+  ; rule_conclusion_hypothetical_boundary_expressions
+      : Judgement.hypothetical_boundary_expressions
           (Metavariable.extend Σ a)
           hjf_conclusion
           (shape_empty σ)
@@ -70,15 +70,17 @@ Record rule
 
   Arguments rule _ _ _ : clear implicits.
 
-  Local Definition conclusion_boundary {Σ} {a} {hjf} (R : rule Σ a hjf)
-    : Judgement.boundary (Metavariable.extend Σ a) (form_hypothetical hjf)
-  := ([::]; rule_conclusion_hypothetical_boundary R).
+  Local Definition conclusion_boundary_expressions
+        {Σ} {a} {hjf} (R : rule Σ a hjf)
+    : hypothetical_boundary_expressions
+        (Metavariable.extend Σ a) hjf (shape_empty σ)
+  := rule_conclusion_hypothetical_boundary_expressions R.
 
   Local Lemma eq 
       {Σ} {a} {hjf_concl} (R R' : rule Σ a hjf_concl)
       (e_prem : rule_premise R = rule_premise R')
-      (e_concl : rule_conclusion_hypothetical_boundary R
-                 = rule_conclusion_hypothetical_boundary R')
+      (e_concl : rule_conclusion_hypothetical_boundary_expressions R
+                 = rule_conclusion_hypothetical_boundary_expressions R')
     : R = R'.
   Proof.
     destruct R'; simpl in *.
@@ -97,8 +99,8 @@ Record rule
       exact (AlgebraicExtension.fmap f (rule_premise R)).
     - (* conclusion *)
       simple refine
-        (fmap_hypothetical_boundary
-          _ (rule_conclusion_hypothetical_boundary R)).
+        (fmap_hypothetical_boundary_expressions
+          _ (rule_conclusion_hypothetical_boundary_expressions R)).
       apply Metavariable.fmap1, f.
   Defined.
 
@@ -112,9 +114,9 @@ Record rule
     - apply AlgebraicExtension.fmap_idmap.
     - cbn. 
       eapply concat.
-      { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+      { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
         apply Metavariable.fmap1_idmap. }
-      apply fmap_hypothetical_boundary_idmap.
+      apply fmap_hypothetical_boundary_expressions_idmap.
   Defined.
 
   Local Definition fmap_compose
@@ -126,9 +128,9 @@ Record rule
     - apply AlgebraicExtension.fmap_compose.
     - cbn. 
       eapply concat.
-      { refine (ap (fun f => fmap_hypothetical_boundary f _) _).
+      { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
         apply Metavariable.fmap1_compose. }
-      apply fmap_hypothetical_boundary_compose.
+      apply fmap_hypothetical_boundary_expressions_compose.
   Defined.
 
   Local Definition fmap_fmap
@@ -139,16 +141,50 @@ Record rule
     apply inverse, fmap_compose.
   Defined.
 
-  Local Lemma conclusion_boundary_fmap
+  Local Lemma conclusion_boundary_expressions_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {hjf_concl} (R : rule Σ a hjf_concl)
+    : conclusion_boundary_expressions (fmap f R)
+      = fmap_hypothetical_boundary_expressions (Metavariable.fmap1 f a)
+                                        (conclusion_boundary_expressions R).
+  Proof.
+    apply idpath.
+  Defined.
+
+  (** Auxiliary access functions *)
+  Local Definition conclusion_hypothetical_boundary
+        {Σ} {a} {hjf} (R : rule Σ a hjf)
+    : hypothetical_boundary
+        (Metavariable.extend Σ a) (shape_empty σ)
+  := Build_hypothetical_boundary _
+        (rule_conclusion_hypothetical_boundary_expressions R).
+
+  Local Definition conclusion_hypothetical_boundary_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {hjf_concl} (R : rule Σ a hjf_concl)
+    : conclusion_hypothetical_boundary (fmap f R)
+      = fmap_hypothetical_boundary (Metavariable.fmap1 f a)
+                                        (conclusion_hypothetical_boundary R).
+  Proof.
+    apply idpath.
+  Defined.
+
+  Local Definition conclusion_boundary
+        {Σ} {a} {hjf} (R : rule Σ a hjf)
+    : boundary (Metavariable.extend Σ a)
+  := Build_boundary [::] (conclusion_hypothetical_boundary R).
+
+  Local Definition conclusion_boundary_fmap
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
+      {a} {hjf} (R : rule Σ a hjf)
     : conclusion_boundary (fmap f R)
       = Judgement.fmap_boundary (Metavariable.fmap1 f a)
                                 (conclusion_boundary R).
   Proof.
-    apply Judgement.boundary_eq_by_expressions.
-    - refine (empty_rect _ shape_is_empty _).
-    - intros i; apply idpath.
+    apply (ap (fun Γ
+                  => Build_boundary
+                      (Build_raw_context _ Γ) _)).
+    apply path_forall; refine (empty_rect _ shape_is_empty _).
   Defined.
 
 End WellShapedRule.
@@ -209,13 +245,11 @@ Section Flattening.
     (Sr : Judgement.is_object hjf_concl
           -> { S : Σ & (symbol_arity S = a)
                        * (symbol_class S = Judgement.class_of hjf_concl) })
-      : judgement_total (Metavariable.extend Σ a).
+      : judgement (Metavariable.extend Σ a).
   Proof.
-    exists (form_hypothetical hjf_concl).
-    simpl.
-    exists (pr1 (conclusion_boundary R)).
-    apply Judgement.hypothetical_instance_from_boundary_and_head.
-    - exact (pr2 (conclusion_boundary R)).
+    exists [::], hjf_concl.
+    apply hypothetical_judgement_expressions_from_boundary_and_head.
+    - exact (conclusion_boundary_expressions R).
     - intros H_obj.
       destruct hjf_concl as [ ocl | ecl ]; simpl in *.
       + (* case: R an object rule *)
