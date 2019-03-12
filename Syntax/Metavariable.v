@@ -245,9 +245,7 @@ Section Instantiations.
   - refine (raw_symbol S _). intros i.
     refine (Expression.rename _
              (instantiate_expression _ _ _ _ I _ (args i))).
-    apply (Coproduct.assoc
-             shape_is_sum shape_is_sum
-             shape_is_sum shape_is_sum).
+    apply shape_assoc_rtol.
   - simpl in M. (* Substitute [args] into the expression [I M]. *)
     refine (substitute _ (I M)).
     refine (coproduct_rect shape_is_sum _ _ _).

@@ -317,39 +317,36 @@ Section Instantiation.
      ; instantiate_instantiation I J)]
      of the same flat rule, wrapped in renamings along [shape_assoc].
      *)
-    simple refine (Closure.deduce' _ _ _).
-    { apply inl. apply StructuralRule.rename. cbn.
-      set (j := Judgement.instantiate Γ I
-         (Closure.conclusion
-            (FlatRule.closure_system (FlatRule.fmap include_symbol r) (Δ;J)))).
-      exists (Judgement.rename j (shape_assoc _ _ _)^-1).
-      refine (_ ; shape_assoc _ _ _).
+    simple refine (derive_rename' _ _ _ _ _).
+    4: simple refine (Closure.deduce' _ _ _);
+       [ apply inr; 
+         exists (Context.instantiate _ I Δ);
+         exact (instantiate_instantiation I J)
+       | apply idpath | ].
+    { cbn. exists (shape_assoc_ltor).
+      admit. (* Lemma: abstract this as a typed renaming *)
     }
-    { apply Judgement.rename_inverse. }
-    intros []; cbn.
-    simple refine (Closure.deduce' _ _ _).
-    { apply inr. 
-      exists (Context.instantiate _ I Δ).
-      exact (instantiate_instantiation I J).
+    { (* TODO: abstract as something like [instantiate_instantiate_hypothetical_judgement], and consider direction. *)
+      apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
+      cbn; apply inverse.
+      eapply concat. { apply ap, instantiate_instantiate_expression. }
+      eapply concat. { apply inverse, rename_comp. }
+      eapply concat. 2: { apply rename_idmap. }
+      apply (ap (fun f => rename f _)).
+      apply path_forall; intros j.
+      apply Coproduct.assoc_rtoltor.
     }
-    { apply @Judgement.instantiate_instantiate; auto. }
-    cbn; intros p.
-    simple refine (Closure.deduce' _ _ _).
-      { apply inl, StructuralRule.rename. cbn.
-        exists
-          (Judgement.instantiate Γ I
-            (Judgement.instantiate Δ J
-              (Judgement.fmap
-                (Metavariable.fmap1 include_symbol _)
-                (flat_rule_premise r p)))).
-        refine (_ ; (equiv_inverse (shape_assoc _ _ _))).
-      }
-      { apply inverse, Judgement.instantiate_instantiate. }
-      intros [].
-      simple refine (Closure.hypothesis' _ _).
-      { exact p. }
-      { apply idpath. }
-  Defined.
+    intros p.
+    simple refine (derive_rename' _ _ _ _ _).
+    4: refine (Closure.hypothesis _ _ _); apply p.
+    { cbn. exists (shape_assoc_rtol).
+      admit. (* again, abstract as a typed renaming *)
+    }
+    { 
+      apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
+      apply instantiate_instantiate_expression. 
+    }
+  Admitted.
 
   (** For any flat type theory [T], an an instantiation [I] from a metavariable 
   extension [Σ + a] of its signature, there is a closure system map from the

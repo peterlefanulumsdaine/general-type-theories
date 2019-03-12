@@ -109,12 +109,34 @@ Section Rename_Variables.
 
   (** NOTE: arguments of [Context.rename] are in the opposite order from in renaming of expressions; this seems inevitable, unless we split up the context argument into shape and types separately, which would make this cumbersome to apply. *)
   Local Definition rename
-      (Γ : raw_context Σ) {γ' : shape_carrier σ} (f : γ' <~> Γ)
+      (Γ : raw_context Σ) {γ' : shape_carrier σ} (e : γ' <~> Γ)
     : raw_context Σ.
   Proof.
     exists γ'. 
-    exact (fun j => Expression.rename (equiv_inverse f) (Γ (f j))).
+    exact (fun j => Expression.rename (equiv_inverse e) (Γ (e j))).
   Defined.
+
+  Local Definition typed_renaming_to_rename_context
+      (Γ : raw_context Σ) {γ' : shape_carrier σ} (e : γ' <~> Γ)
+    : typed_renaming Γ (rename Γ e).
+  Proof.
+    exists (equiv_inverse e : _ -> _).
+    intros i; cbn.
+    apply ap, ap, eisretr.
+  Defined.
+
+  Local Definition typed_renaming_from_rename_context `{Funext}
+      (Γ : raw_context Σ) {γ' : shape_carrier σ} (e : γ' <~> Γ)
+    : typed_renaming (rename Γ e) Γ.
+  Proof.
+    exists (e : _ -> _).
+    intros i; cbn.
+    eapply concat. { apply inverse, rename_idmap. }
+    eapply concat. 2: { apply rename_comp. }
+    refine (ap (fun f => Expression.rename f _) _).
+    apply path_forall; intros ?; apply inverse, eisretr.
+  Defined.
+
 End Rename_Variables.
 
 Section Instantiation.
