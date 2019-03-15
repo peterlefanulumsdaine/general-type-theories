@@ -645,6 +645,155 @@ Defined.
 
 End StructuralRuleInd.
 
+Section InterfaceFunctions.
+(** More convenient interface functions for using the rules in derivations *)
+
+  Context `{H_Funext : Funext} {σ : shape_system}.
+
+  (** Interface to the renaming structural rule *)
+  (* TODO: see if this is more convenient to use in places where older
+   lemmas (eg [deduce_modulo_rename]) are currently used *)
+  Lemma derive_rename {Σ : signature σ}
+      {T : Closure.system (judgement Σ)} {H : family _}
+      (cl_sys_T := structural_rule Σ + T)
+      (Γ Γ' : raw_context Σ)
+      (f : typed_renaming Γ Γ')
+      (J : hypothetical_judgement Σ Γ)
+    : Closure.derivation cl_sys_T H (Build_judgement Γ J)
+    -> Closure.derivation cl_sys_T H
+      (Build_judgement Γ' (rename_hypothetical_judgement f J)).
+  Proof.
+    intros D.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, rename. exists Γ, Γ', f; exact J. }
+    { apply idpath. }
+    { intros; apply D. }
+  Defined.
+
+  Lemma derive_rename' {Σ : signature σ}
+      {T : Closure.system (judgement Σ)} {H : family _}
+      (cl_sys_T := structural_rule Σ + T)
+      (J J' : judgement Σ)
+      (f : typed_renaming
+             (context_of_judgement J') (context_of_judgement J))
+      (e : hypothetical_part J
+           = rename_hypothetical_judgement f (hypothetical_part J'))
+    : Closure.derivation cl_sys_T H J'
+    -> Closure.derivation cl_sys_T H J.
+  Proof.
+    intros D.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, rename.
+      refine (_;(_;(f;_))). exact J'. }
+    { apply (ap (Build_judgement _)), inverse, e. }
+    { intros; apply D. }
+  Defined.
+
+  Lemma derive_variable {Σ : signature σ}
+      {T : Closure.system (judgement Σ)} {H : family _}
+      (cl_sys_T := structural_rule Σ + T)
+      (Γ : raw_context Σ) (i : Γ)
+    : Closure.derivation cl_sys_T H [! Γ |- Γ i !]
+    -> Closure.derivation cl_sys_T H [! Γ |- raw_variable i ; Γ i !].
+  Proof.
+    intro D.
+    simple refine (Closure.deduce' _ _ _).
+    simple refine (inl (variable_rule (_;_))).
+    3: apply idpath.
+    intro; apply D.
+  Defined.
+
+  (* TODO: upstream *)
+  Lemma respects_types_shape_sum_inl
+    {Σ : signature σ} {a : arity σ}
+    (Γ : raw_context Σ) (Δ : raw_context (Metavariable.extend Σ a))
+    (I : Metavariable.instantiation a Σ Γ)
+  : respects_types Γ (Context.instantiate Γ I Δ)
+                   (coproduct_inj1 shape_is_sum).
+  Proof.
+  Admitted.
+
+  (* TODO: upstream *)
+  Lemma respects_types_shape_sum_empty_inl_inverse
+    {Σ : signature σ} {a : arity σ}
+    (Γ : raw_context Σ) (Δ : _)
+    (I : Metavariable.instantiation a Σ Γ)
+  : respects_types
+      (Context.instantiate Γ I (Build_raw_context _ Δ)) Γ
+      (shape_sum_empty_inl Γ)^-1.
+  Proof.
+  Admitted.
+
+  Lemma derive_tyeq_refl {Σ : signature σ}
+      {T : Closure.system (judgement Σ)} {H : family _}
+      (cl_sys_T := structural_rule Σ + T)
+      (Γ : raw_context Σ) (A : raw_expression Σ class_type Γ )
+    : Closure.derivation cl_sys_T H [! Γ |- A !]
+    -> Closure.derivation cl_sys_T H [! Γ |- A ≡ A !].
+  Proof.
+    assert (H_A :
+      @instantiate_expression _ _ [<(class_type, σ.(shape_empty)) >] _ _
+        (fun _ => (Expression.rename (shape_sum_empty_inl Γ) A))
+        _ ([M/ (tt : [<(class_type, σ.(shape_empty)) >]) /])
+      = Expression.rename (shape_sum_empty_inl Γ) A).
+    { eapply concat. 2: { apply substitute_idmap. }
+      simpl. apply (ap (fun f => substitute f _)).
+      apply path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _).
+      - intros i. refine (coproduct_comp_inj1 _). 
+      - refine (empty_rect _ shape_is_empty _).
+    }
+    intros D.
+    simple refine (derive_rename' _ _ _ _ _).
+    4: {
+      simple refine (Closure.deduce _ _ _ _).
+      { apply inl, tyeq_refl.
+        exists Γ.
+        intros ?. refine (Expression.rename _ A). apply shape_sum_empty_inl. }
+      intros p; cbn; clear p.
+      simple refine (derive_rename' _ _ _ _ _).
+      4: apply D.
+      { exists (shape_sum_empty_inl _ : _ -> _).
+        apply respects_types_shape_sum_inl. }
+      apply (ap (Build_hypothetical_judgement _)).
+      apply path_forall. intros i; recursive_destruct i.
+      eapply concat. 2: apply H_A.
+      apply ap; cbn; apply ap.
+      apply path_forall. refine (empty_rect _ shape_is_empty _).
+    }
+    { exists (shape_sum_empty_inl _)^-1.
+      apply respects_types_shape_sum_empty_inl_inverse.
+    }
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall. intros i; recursive_destruct i.
+    - eapply concat. 2: apply ap. 
+      { eapply concat. { apply inverse, rename_idmap. }
+        eapply concat. 2: { eapply rename_comp. }
+        eapply (ap (fun f => Expression.rename f _)).
+        apply inverse, path_forall.
+        apply (eissect (shape_sum_empty_inl _)).
+      }
+      eapply concat. { apply inverse, H_A. }
+      apply (ap (instantiate_expression _)).
+      cbn; apply ap.
+      apply path_forall. refine (empty_rect _ shape_is_empty _).
+    - eapply concat. 2: apply ap. 
+      { eapply concat. { apply inverse, rename_idmap. }
+        eapply concat. 2: { eapply rename_comp. }
+        eapply (ap (fun f => Expression.rename f _)).
+        apply inverse, path_forall.
+        apply (eissect (shape_sum_empty_inl _)).
+      }
+      eapply concat. { apply inverse, H_A. }
+      apply (ap (instantiate_expression _)).
+      cbn; apply ap.
+      apply path_forall. refine (empty_rect _ shape_is_empty _).
+  Defined.
+  (* This proof is horrible. What lemmas can we abstract to make it nicer?? *)
+
+End InterfaceFunctions.
+
+
 Section SignatureMaps.
 
   Context `{H : Funext}.

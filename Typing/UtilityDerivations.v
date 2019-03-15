@@ -14,45 +14,6 @@ Section Renaming.
 
   Context `{H_Funext : Funext} {σ : shape_system}.
 
-  (** Interface to the renaming structural rule *)
-  (* TODO: see if this is more convenient to use in places where older
-   lemmas (eg [deduce_modulo_rename]) are currently used *)
-  Lemma derive_rename {Σ : signature σ}
-      {T : Closure.system (judgement Σ)} {H : family _}
-      (cl_sys_T := structural_rule Σ + T)
-      (Γ Γ' : raw_context Σ)
-      (f : typed_renaming Γ Γ')
-      (J : hypothetical_judgement Σ Γ)
-    : Closure.derivation cl_sys_T H (Build_judgement Γ J)
-    -> Closure.derivation cl_sys_T H
-      (Build_judgement Γ' (rename_hypothetical_judgement f J)).
-  Proof.
-    intros D.
-    simple refine (Closure.deduce' _ _ _).
-    { apply inl, StructuralRule.rename. exists Γ, Γ', f; exact J. }
-    { apply idpath. }
-    { intros; apply D. }
-  Defined.
-
-  Lemma derive_rename' {Σ : signature σ}
-      {T : Closure.system (judgement Σ)} {H : family _}
-      (cl_sys_T := structural_rule Σ + T)
-      (J J' : judgement Σ)
-      (f : typed_renaming
-             (context_of_judgement J') (context_of_judgement J))
-      (e : hypothetical_part J
-           = rename_hypothetical_judgement f (hypothetical_part J'))
-    : Closure.derivation cl_sys_T H J'
-    -> Closure.derivation cl_sys_T H J.
-  Proof.
-    intros D.
-    simple refine (Closure.deduce' _ _ _).
-    { apply inl, StructuralRule.rename.
-      refine (_;(_;(f;_))). exact J'. }
-    { apply (ap (Build_judgement _)), inverse, e. }
-    { intros; apply D. }
-  Defined.
-
   (** Commonly-required analogue of [Closure.deduce']. *)
   (* TODO: after some use, consider whether this would be more convenient with
    the equivalence given in the other direction. *)
