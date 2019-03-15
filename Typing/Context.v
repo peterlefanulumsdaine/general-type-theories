@@ -96,6 +96,21 @@ Section Typed_Renamings.
     apply fmap_rename.
   Defined.
 
+  Lemma respects_types_equiv_inverse `{Funext}
+      {Σ : signature σ} (Γ Δ : raw_context Σ)
+      (e : Γ <~> Δ)
+    : respects_types Γ Δ e
+    -> respects_types Δ Γ e^-1.
+  Proof.
+    intros H_e i.
+    eapply concat. 2: { apply ap, ap. exact (eisretr e i). }
+    eapply concat. 2: { apply ap, inverse, H_e. }
+    eapply concat. 2: { apply rename_comp. }
+    apply inverse. eapply concat. 2: { apply rename_idmap. }
+    apply (ap (fun f => Expression.rename f _)).
+    apply path_forall, (eissect e).
+  Defined.
+
 End Typed_Renamings.
 
 Section Rename_Variables.
@@ -159,6 +174,16 @@ Section Instantiation.
           exact (Metavariable.instantiate_expression I (Δ i)).
   Defined.
 
+  Lemma respects_types_shape_sum_inl
+    {Σ : signature σ} {a : arity σ}
+    (Γ : raw_context Σ) (Δ : raw_context (Metavariable.extend Σ a))
+    (I : Metavariable.instantiation a Σ Γ)
+  : respects_types Γ (instantiate Γ I Δ)
+                   (coproduct_inj1 shape_is_sum).
+  Proof.
+    intros i. refine (coproduct_comp_inj1 _).
+  Defined.
+
   Local Definition fmap_instantiate
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {Γ : raw_context Σ} (I : Metavariable.instantiation a Σ Γ)
@@ -217,6 +242,17 @@ Section Instantiation.
       apply ap, ap, inverse. cbn.
       refine (coproduct_comp_inj2 _).
   Defined.
+
+  Lemma respects_types_shape_sum_empty_inl_inverse
+    {a} (Γ : raw_context Σ) (Δ : _)
+    (I : Metavariable.instantiation a Σ Γ)
+  : respects_types
+      (instantiate Γ I (Build_raw_context _ Δ)) Γ
+      (shape_sum_empty_inl Γ)^-1.
+  Proof.
+    apply respects_types_equiv_inverse, respects_types_shape_sum_inl.
+  Defined.
+
 
   Local Lemma instantiate_instantiate_pointwise
       {Γ : raw_context _} {a} (I : Metavariable.instantiation a Σ Γ)

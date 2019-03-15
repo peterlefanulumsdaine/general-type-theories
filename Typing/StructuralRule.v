@@ -703,27 +703,6 @@ Section InterfaceFunctions.
     intro; apply D.
   Defined.
 
-  (* TODO: upstream *)
-  Lemma respects_types_shape_sum_inl
-    {Σ : signature σ} {a : arity σ}
-    (Γ : raw_context Σ) (Δ : raw_context (Metavariable.extend Σ a))
-    (I : Metavariable.instantiation a Σ Γ)
-  : respects_types Γ (Context.instantiate Γ I Δ)
-                   (coproduct_inj1 shape_is_sum).
-  Proof.
-  Admitted.
-
-  (* TODO: upstream *)
-  Lemma respects_types_shape_sum_empty_inl_inverse
-    {Σ : signature σ} {a : arity σ}
-    (Γ : raw_context Σ) (Δ : _)
-    (I : Metavariable.instantiation a Σ Γ)
-  : respects_types
-      (Context.instantiate Γ I (Build_raw_context _ Δ)) Γ
-      (shape_sum_empty_inl Γ)^-1.
-  Proof.
-  Admitted.
-
   Lemma derive_tyeq_refl {Σ : signature σ}
       {T : Closure.system (judgement Σ)} {H : family _}
       (cl_sys_T := structural_rule Σ + T)
