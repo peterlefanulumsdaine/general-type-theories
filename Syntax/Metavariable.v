@@ -225,6 +225,26 @@ Section Instantiations.
   := forall i : a,
          raw_expression Σ (argument_class i) (shape_sum γ (argument_shape i)).
 
+  (* TODO: check naming conventions *)
+  Definition rename_instantiation {a} {Σ}
+    {γ γ' : σ} (f : γ -> γ')
+    (I : instantiation a Σ γ)
+    : instantiation a Σ γ'.
+  Proof.
+    intros i. refine (rename _ (I i)).
+    exact (Coproduct.fmap shape_is_sum shape_is_sum f idmap).
+  Defined.
+
+  (* TODO: check naming conventions *)
+  Definition substitute_instantiation {a} {Σ}
+    {γ γ' : σ} (f : raw_context_map Σ γ' γ)
+    (I : instantiation a Σ γ)
+    : instantiation a Σ γ'.
+  Proof.
+    intros i. refine (substitute _ (I i)).
+    exact (Substitution.extend _ _ (argument_shape i) f).
+  Defined.
+
   Definition instantiation_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {γ} (I : instantiation a Σ γ)
@@ -261,6 +281,14 @@ Section Instantiations.
 
   Arguments instantiate_expression {_ _ _ _} _ [_] _ : simpl nomatch.
 
+  Definition instantiate_raw_context_map {Σ : signature σ}
+      {a : arity σ} {γ : σ} (I : instantiation a Σ γ)
+      {δ δ' : σ} (f : raw_context_map (extend Σ a) δ' δ)
+    : raw_context_map Σ (shape_sum γ δ') (shape_sum γ δ)
+  := (coproduct_rect shape_is_sum _
+        (fun i => raw_variable (coproduct_inj1 shape_is_sum i))
+        (fun i => instantiate_expression I (f i))).
+
   (** Interaction of metavariable-instantiation with renaming, substitution. *)
 
   Context `{Funext}.
@@ -272,9 +300,7 @@ Section Instantiations.
       {δ' : σ} (f : δ -> δ')
     : instantiate_expression I (Expression.rename f e)
     = Expression.rename
-        (coproduct_rect shape_is_sum _
-          (coproduct_inj1 shape_is_sum)
-          ((coproduct_inj2 shape_is_sum) o f))
+        (Coproduct.fmap shape_is_sum shape_is_sum idmap f)
         (instantiate_expression I e).
   Proof.
     revert δ' f.
@@ -290,7 +316,7 @@ Section Instantiations.
       apply (ap (fun f => Expression.rename f _)).
       apply path_forall.
       repeat refine (coproduct_rect shape_is_sum _ _ _); intros j;
-        cbn; unfold shape_assoc_rtol, Coproduct.assoc_rtol;
+        cbn; unfold Coproduct.fmap, shape_assoc_rtol, Coproduct.assoc_rtol;
         repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
         apply idpath.
     - (* [e] is a metavariable from [a] *)
@@ -335,9 +361,7 @@ Section Instantiations.
       {δ' : σ} (f : raw_context_map _ δ' δ)
     : instantiate_expression I (substitute f e)
     = substitute
-        (coproduct_rect shape_is_sum _
-          (fun i => raw_variable (coproduct_inj1 shape_is_sum i))
-          (fun i => instantiate_expression I (f i)))
+        (instantiate_raw_context_map I f)
         (instantiate_expression I e).
   Proof.
     revert δ' f.
@@ -427,6 +451,32 @@ Section Instantiations.
            apply ap. refine (coproduct_comp_inj1 _).
         * revert j. apply empty_rect, shape_is_empty.
   Defined.
+
+  (* TODO: consider naming of this vs. preceding lemmas about commutation of instantiations with renaming/substitution in the expressions, currently [instantiate_rename] and [instantiate_substitute]. *)
+  Lemma instantiate_rename_instantiation {Σ : signature σ}
+      {cl} {a : @arity σ} {γ γ': σ}
+      (f : γ -> γ')
+      (I : instantiation a Σ γ)
+      {δ} (e : raw_expression (extend Σ a) cl δ)
+    : instantiate_expression (rename_instantiation f I) e
+    = rename
+        (Coproduct.fmap shape_is_sum shape_is_sum f idmap) 
+        (instantiate_expression I e).
+  Proof.
+  Admitted. (* TODO: [instantiate_rename_instantiation]; should be tedious but straightforward. *)
+
+  (* TODO: consider naming of this vs. preceding lemmas about commutation of instantiations with renaming/substitution in the expressions, currently [instantiate_rename] and  instantiate_substitute]. *)
+  Lemma instantiate_substitute_instantiation {Σ : signature σ}
+      {cl} {a : @arity σ} {γ γ': σ}
+      (f : raw_context_map Σ γ' γ)
+      (I : instantiation a Σ γ)
+      {δ} (e : raw_expression (extend Σ a) cl δ)
+    : instantiate_expression (substitute_instantiation f I) e
+    = substitute
+        (Substitution.extend _ _ _ f)
+        (instantiate_expression I e).
+  Proof.
+  Admitted. (* TODO: [instantiate_substitute_instantiation]; should be tedious but straightforward. *)
 
   Lemma fmap_instantiate_expression
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
@@ -581,7 +631,7 @@ Section Instantiation_Composition.
       apply (ap (fun f => Expression.rename f _)).
       apply path_forall.
       repeat refine (coproduct_rect shape_is_sum _ _ _); intros j;
-        cbn; unfold shape_assoc_rtol, Coproduct.assoc_rtol;
+        cbn; unfold Coproduct.fmap, shape_assoc_rtol, Coproduct.assoc_rtol;
         repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
         apply idpath.
     - (* [e] is a metavariable of [b] *)
