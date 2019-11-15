@@ -463,7 +463,45 @@ Section Instantiations.
         (Coproduct.fmap shape_is_sum shape_is_sum f idmap) 
         (instantiate_expression I e).
   Proof.
-  Admitted. (* TODO: [instantiate_rename_instantiation]; should be tedious but straightforward. *)
+    induction e as [ θ i | θ [S | M] e_args IH_e_args ].
+    - (* [e] is a variable *)
+      simpl. apply ap, inverse. refine (coproduct_comp_inj2 _). 
+    - (* [e] is a symbol of [Σ] *)
+      simpl. apply ap. apply path_forall; intros i.
+      eapply concat. { apply ap, IH_e_args. }
+      eapply concat. { apply inverse, rename_comp. }
+    (* TODO: define [rename_rename], and make it primary instead of [rename_comp], as it seems to be the direction that's needed much more often; perhaps replace [rename_comp] entirely, unless there are places where it's really more natural. *)
+      apply inverse.
+      eapply concat. { apply inverse, rename_comp. }
+      apply (ap (fun f => rename f _)).
+      apply path_forall.
+      repeat refine (coproduct_rect shape_is_sum _ _ _); intros j;
+        cbn; unfold Coproduct.fmap, shape_assoc_rtol, Coproduct.assoc_rtol;
+        repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
+        apply idpath.
+    - (* [e] is a metavariable from [a] *)
+      simpl. unfold rename_instantiation.
+      eapply concat. { apply substitute_rename. }
+      eapply concat. 2: { apply inverse, rename_substitute. }      
+      apply (ap (fun f => substitute f _)).
+      apply path_forall.
+      repeat refine (coproduct_rect shape_is_sum _ _ _); intros j;
+        cbn; unfold Coproduct.fmap, shape_assoc_rtol, Coproduct.assoc_rtol;
+        repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
+        cbn; try apply ap;
+        repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
+        try apply idpath.
+      rewrite IH_e_args.
+      eapply concat. 2: { apply rename_comp. }
+      eapply concat. { apply inverse, rename_comp. }
+      apply (ap (fun f => rename f _)).
+      apply path_forall.
+      repeat refine (coproduct_rect shape_is_sum _ _ _); intros k;
+        cbn; unfold Coproduct.fmap, shape_assoc_rtol, Coproduct.assoc_rtol;
+        repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
+        try apply idpath.
+    (* TODO: see if the above mess can be simplified at all. *)
+  Qed.
 
   (* TODO: consider naming of this vs. preceding lemmas about commutation of instantiations with renaming/substitution in the expressions, currently [instantiate_rename] and  instantiate_substitute]. *)
   Lemma instantiate_substitute_instantiation {Σ : signature σ}
