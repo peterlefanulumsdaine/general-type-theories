@@ -71,12 +71,13 @@ Global Arguments coproduct_rect [_ _ _] _ _ _ _ _.
 Global Arguments coproduct_comp_inj1 [_ _ _ _ _ _ _] _.
 Global Arguments coproduct_comp_inj2 [_ _ _ _ _ _ _] _.
 
-Local Definition assoc {X Y Z XY YZ XY_Z X_YZ}
+Local Definition assoc_rtol {X Y Z XY YZ XY_Z X_YZ}
            (H_XY : is_coproduct XY X Y)
            (H_XY_Z : is_coproduct XY_Z XY Z)
            (H_YZ : is_coproduct YZ Y Z)
            (H_X_YZ : is_coproduct X_YZ X YZ)
   : X_YZ -> XY_Z.
+Proof.
   refine (coproduct_rect H_X_YZ _ _ _).
   - intro x.
     exact (coproduct_inj1 H_XY_Z (coproduct_inj1 H_XY x)).
@@ -85,6 +86,76 @@ Local Definition assoc {X Y Z XY YZ XY_Z X_YZ}
       exact (coproduct_inj1 H_XY_Z (coproduct_inj2 H_XY y)).
     + intro z.
       exact (coproduct_inj2 H_XY_Z z).
+Defined.
+
+Local Definition assoc_ltor {X Y Z XY YZ XY_Z X_YZ}
+           (H_XY : is_coproduct XY X Y)
+           (H_XY_Z : is_coproduct XY_Z XY Z)
+           (H_YZ : is_coproduct YZ Y Z)
+           (H_X_YZ : is_coproduct X_YZ X YZ)
+  : XY_Z -> X_YZ.
+Proof.
+  refine (coproduct_rect H_XY_Z _ _ _).
+  - refine (coproduct_rect H_XY _ _ _).
+    + intro x.
+      exact (coproduct_inj1 H_X_YZ x).
+    + intro y.
+      exact (coproduct_inj2 H_X_YZ (coproduct_inj1 H_YZ y)).
+  - intro z.
+    exact (coproduct_inj2 H_X_YZ (coproduct_inj2 H_YZ z)).
+Defined.
+
+Local Definition assoc_ltortol {X Y Z XY YZ XY_Z X_YZ}
+           (H_XY : is_coproduct XY X Y)
+           (H_XY_Z : is_coproduct XY_Z XY Z)
+           (H_YZ : is_coproduct YZ Y Z)
+           (H_X_YZ : is_coproduct X_YZ X YZ)
+  : forall w : XY_Z,
+    assoc_rtol H_XY H_XY_Z H_YZ H_X_YZ
+      (assoc_ltor H_XY H_XY_Z H_YZ H_X_YZ
+        w)
+    = w.
+Proof.
+  apply (coproduct_rect H_XY_Z);
+    [ apply (coproduct_rect H_XY) | ];
+    intros;
+    unfold assoc_rtol, assoc_ltor;
+    repeat progress rewrite ? coproduct_comp_inj2, ? coproduct_comp_inj1;
+    apply idpath.
+Defined.
+
+Local Definition assoc_rtoltor {X Y Z XY YZ XY_Z X_YZ}
+           (H_XY : is_coproduct XY X Y)
+           (H_XY_Z : is_coproduct XY_Z XY Z)
+           (H_YZ : is_coproduct YZ Y Z)
+           (H_X_YZ : is_coproduct X_YZ X YZ)
+  : forall w : X_YZ,
+    assoc_ltor H_XY H_XY_Z H_YZ H_X_YZ
+      (assoc_rtol H_XY H_XY_Z H_YZ H_X_YZ
+        w)
+    = w.
+Proof.
+  apply (coproduct_rect H_X_YZ);
+    [ | apply (coproduct_rect H_YZ) ];
+    intros;
+    unfold assoc_rtol, assoc_ltor;
+    repeat progress rewrite ? coproduct_comp_inj2, ? coproduct_comp_inj1;
+    try apply idpath.
+Defined.
+
+Local Definition assoc_equiv {X Y Z XY YZ XY_Z X_YZ}
+           (H_XY : is_coproduct XY X Y)
+           (H_XY_Z : is_coproduct XY_Z XY Z)
+           (H_YZ : is_coproduct YZ Y Z)
+           (H_X_YZ : is_coproduct X_YZ X YZ)
+  : XY_Z <~> X_YZ.
+Proof.
+  apply (equiv_adjointify
+           (assoc_ltor H_XY H_XY_Z H_YZ H_X_YZ)
+           (assoc_rtol H_XY H_XY_Z H_YZ H_X_YZ));
+    unfold Sect.
+  - apply assoc_rtoltor.
+  - apply assoc_ltortol.
 Defined.
 
 Local Definition fmap {X Y XY X' Y' XY'}

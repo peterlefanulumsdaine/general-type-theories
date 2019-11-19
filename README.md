@@ -117,7 +117,7 @@ is considerable interdependence between inference rules because giving the evide
 rule is well-formed requires one to provide derivations, but to know what a derivation is,
 we need to be given inference rules.
 
-## Coing conventions
+## Coding conventions
 
 We observe the following naming conventions.
 

@@ -32,11 +32,15 @@ Section Renaming.
   Proof.
     simple refine (Closure.deduce' _ _ _).
     - apply inl, StructuralRule.rename.
-      exists (Closure.conclusion (cl_sys_T r)). exact (_;e).
-    - apply e_J.
+      exists (context_of_judgement (Closure.conclusion (cl_sys_T r))).
+      exists (context_of_judgement J).
+      refine (_; hypothetical_part (Closure.conclusion (cl_sys_T r))).
+      exists (equiv_inverse e).
+      admit.
+    - admit.
     - intros [].
       exact (Closure.deduce _ _ r D).
-  Defined.
+  Admitted.
 
   (** Commonly-required analogue of [Closure.deduce'], similar to [deduce_modulo_rename] above. *)
   (* TODO: after some use, consider whether this would be more convenient with
@@ -52,11 +56,15 @@ Section Renaming.
   Proof.
     simple refine (Closure.deduce' _ _ _).
     - apply inl, StructuralRule.rename.
-      exists (H h). exact (_;e).
-    - apply e_J.
+      exists (context_of_judgement (H h)).
+      exists (context_of_judgement J).
+      refine (_; hypothetical_part (H h)).
+      exists (equiv_inverse e).
+      admit.
+    - admit.
     - intros [].
       exact (Closure.hypothesis _ _ h).
-  Defined.
+  Admitted.
 
 End Renaming.
 
@@ -87,9 +95,12 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
         (Judgement.rename J (equiv_inverse (shape_sum_empty_inl _))).
   Proof.
     simple refine (Closure.deduce' _ _ _).
-    - apply inl, StructuralRule.rename. 
-      exists J.
-      exact (_ ; equiv_inverse (shape_sum_empty_inl _)).
+    - apply inl, StructuralRule.rename.
+      exists (context_of_judgement J).
+      exists (Context.rename (context_of_judgement J)
+                (equiv_inverse (shape_sum_empty_inl _))).
+      exists (Context.typed_renaming_to_rename_context _ _).
+      exact (hypothetical_part J).
     - apply idpath.
     - intros [].
       refine (Closure.hypothesis _ [<_>] tt).
@@ -122,23 +133,18 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
   Proof.
     simple refine (Closure.deduce' _ _ _).
     - apply inl, StructuralRule.rename.
-      exists (Judgement.rename (Build_judgement Γ J) (shape_sum_empty_inl _)). cbn.
-      exact (_ ; equiv_inverse (shape_sum_empty_inl _)).
-    - apply Judgement.eq_by_expressions. 
-      + intros i.
-        eapply concat.
-        { apply inverse, rename_comp. }
-        refine (_ @ ap _ _).
-        * eapply concat. 2: { apply rename_idmap. }
-          apply ap10. refine (apD10 _ _). apply ap.
-          apply path_forall. refine (eissect _).
-        * apply eisretr.
-      + intros i. 
-        eapply concat.
-        { apply inverse, rename_comp. }
+      exists (Context.rename Γ (shape_sum_empty_inl _)).
+      exists Γ.
+      exists (Context.typed_renaming_from_rename_context _ _).
+      refine (rename_hypothetical_judgement _ J).
+      exact (equiv_inverse (shape_sum_empty_inl _)).
+    - apply Judgement.eq_by_expressions.
+      + intros; apply idpath.
+      + intros.
+        eapply concat. { apply inverse, rename_comp. }
         eapply concat. 2: { apply rename_idmap. }
-        apply ap10. refine (apD10 _ _). apply ap.
-        apply path_forall. refine (eissect _).
+        apply (ap (fun f => Expression.rename f _)).
+        apply path_forall; intros j; apply eisretr.
     - intros [].
       refine (Closure.hypothesis _ [<_>] tt).
   Defined.
@@ -168,26 +174,18 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
              (Build_judgement Γ J) (equiv_inverse (shape_sum_empty_inl _)) >]
         (Build_judgement Γ J).
   Proof.
-    (* Outline: renaming rule, along [shape_sum_empty_inl], plus
-    functoriality lemma for renaming to show that the conclusion
-    of that is the original judgement. *)
     simple refine (Closure.deduce' _ _ _).
     - apply inl, StructuralRule.rename.
-      exists (Judgement.rename (Build_judgement Γ J)
-                               (equiv_inverse (shape_sum_empty_inl _))).
-      exists Γ. apply shape_sum_empty_inl. 
+      exists (Context.rename Γ (equiv_inverse (shape_sum_empty_inl _))).
+      exists Γ.
+      exists (Context.typed_renaming_from_rename_context _ _).
+      exact (rename_hypothetical_judgement (shape_sum_empty_inl _) J).
     - apply Judgement.eq_by_expressions; intros i.
+      + apply idpath.
       + eapply concat. { apply inverse, rename_comp. }
-        eapply concat.
-        { eapply (ap (fun f => Expression.rename f _)).
-          apply path_forall; intros j; apply eissect. }
-        eapply concat. { apply rename_idmap. }
-        apply ap, eissect.
-      + eapply concat. { apply inverse, rename_comp. }
-        eapply concat.
-        { eapply (ap (fun f => Expression.rename f _)).
-          apply path_forall; intros j; apply eissect. }
-        apply rename_idmap.
+        eapply concat. 2: { apply rename_idmap. }
+        apply (ap (fun f => Expression.rename f _)).
+        apply path_forall; intros j; apply eissect.
     - intros [].
       refine (Closure.hypothesis _ [<_>] tt).
   Defined.

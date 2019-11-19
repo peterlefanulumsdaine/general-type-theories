@@ -39,23 +39,20 @@ Section TypedStructuralRule.
       (r : rename_instance Σ)
     : is_well_typed (rename_instance _ r).
   Proof.
-    destruct r as [J [γ' f]]; cbn.
-    set (J_orig := J); destruct J as [Γ [jf J]].
+    destruct r as [Γ [Γ' [f J]]]; cbn.
+    set (J_orig := Build_judgement Γ J).
     intros p.
     set (p_orig := p : presupposition J_orig).
-    (* In all cases, we just rename along [f] in the corresponding original
-    presupposition.  However, this will require a different rule — either
-    [rename_context] or [rename_hypotherical] — depending on whether [p] is
-    the context presup or a hypothetical presup. *)
-    simple refine (Closure.deduce' _ _ _).
-    - apply inl, StructuralRule.rename.
-      exact (presupposition _ p_orig; (γ'; f)).
-    - apply (ap (Build_judgement _)),
-        (ap (Build_hypothetical_judgement _)).
-      apply path_forall; intros i.
+    (* We just need to rename along [f] in the corresponding original
+    presupposition. *)
+    simple refine (derive_rename' _ _ _ _ _).
+    { exact (presupposition J_orig p_orig). }
+    { exact f. }
+    { apply (ap (Build_hypothetical_judgement _)), path_forall; intros i.
+      destruct J as [jf j]. 
       recursive_destruct jf; recursive_destruct p; recursive_destruct i;
         apply idpath.
-    - intros []. 
+    }
       simple refine (Closure.hypothesis' _ _).
       + apply inr. (* go for a presup *)
         exact (tt; p_orig). (* select corresponding original presup *)

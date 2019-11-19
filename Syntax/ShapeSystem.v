@@ -54,6 +54,27 @@ here from general lemmas about coproducts. *)
 
   Context {σ : shape_system}.
 
+  (* use this and [fmap1], [fmap2] where they’ve previously been given inline, e.g. in [Expression.rename], [instantiate_rename]. *)
+  Lemma fmap_shape_sum {γ γ' δ δ' : σ} (f : γ -> γ') (g : δ -> δ')
+    : (shape_sum γ δ) -> (shape_sum γ' δ').
+  Proof.
+    refine (coproduct_rect shape_is_sum _ _ _).
+    - intros; apply (coproduct_inj1 (shape_is_sum)); auto.
+    - intros; apply (coproduct_inj2 (shape_is_sum)); auto.
+  Defined.
+
+  Lemma fmap1_shape_sum {γ γ' δ : σ} (f : γ -> γ')
+    : (shape_sum γ δ) -> (shape_sum γ' δ).
+  Proof.
+    exact (fmap_shape_sum f idmap).
+  Defined.
+
+  Lemma fmap2_shape_sum {γ δ δ' : σ} (g : δ -> δ')
+    : (shape_sum γ δ) -> (shape_sum γ δ').
+  Proof.
+    exact (fmap_shape_sum idmap g).
+  Defined.
+
   Definition shape_sum_empty_inl_is_equiv (γ : σ)
     : IsEquiv (coproduct_inj1 shape_is_sum
                : γ -> shape_sum γ (shape_empty _)).
@@ -92,41 +113,27 @@ here from general lemmas about coproducts. *)
     : γ <~> shape_sum (shape_empty _) γ
   := BuildEquiv _ _ _ (shape_sum_empty_inr_is_equiv γ).
 
-  (* TODO: unify with [Coproduct.assoc] *)
+  Definition shape_assoc_ltor {γ δ κ : shape_carrier σ}
+    : shape_sum (shape_sum γ δ) κ -> shape_sum γ (shape_sum δ κ).
+  Proof.
+    simple refine (Coproduct.assoc_ltor _ _ _ _);
+      try apply shape_is_sum; try apply shape_is_sum.
+  Defined.
+
+  Definition shape_assoc_rtol {γ δ κ : shape_carrier σ}
+    : shape_sum γ (shape_sum δ κ) -> shape_sum (shape_sum γ δ) κ.
+  Proof.
+    simple refine (Coproduct.assoc_rtol _ _ _ _);
+      try apply shape_is_sum; try apply shape_is_sum.
+  Defined.
+
   Definition shape_assoc (γ δ κ : shape_carrier σ)
     : shape_sum γ (shape_sum δ κ) <~> shape_sum (shape_sum γ δ) κ.
   Proof.
-    simple refine (equiv_adjointify _ _ _ _); unfold Sect.
-    - repeat apply (coproduct_rect shape_is_sum); intros i.
-      + repeat apply (coproduct_inj1 shape_is_sum); exact i.
-      + apply (coproduct_inj1 shape_is_sum), (coproduct_inj2 shape_is_sum), i.
-      + repeat apply (coproduct_inj2 shape_is_sum); exact i.
-    - repeat apply (coproduct_rect shape_is_sum); intros i.
-      + repeat apply (coproduct_inj1 shape_is_sum); exact i.
-      + apply (coproduct_inj2 shape_is_sum), (coproduct_inj1 shape_is_sum), i.
-      + repeat apply (coproduct_inj2 shape_is_sum); exact i.
-    - unfold Sect. repeat apply (coproduct_rect shape_is_sum); intros i.
-      + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
-        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
-        refine (coproduct_comp_inj1 _).
-      + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
-        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
-        eapply concat. { refine (coproduct_comp_inj2 _). }
-        refine (coproduct_comp_inj1 _).
-      + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
-        eapply concat. { refine (coproduct_comp_inj2 _). }
-        refine (coproduct_comp_inj2 _).
-    - unfold Sect. repeat apply (coproduct_rect shape_is_sum); intros i.
-      + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
-        eapply concat. { refine (coproduct_comp_inj1 _). }
-        refine (coproduct_comp_inj1 _).
-      + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
-        eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
-        eapply concat. { refine (coproduct_comp_inj1 _). }
-        refine (coproduct_comp_inj2 _).
-      + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
-        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
-        refine (coproduct_comp_inj2 _).
+    simple refine (equiv_adjointify shape_assoc_rtol shape_assoc_ltor _ _);
+      unfold Sect.
+    - apply Coproduct.assoc_ltortol; apply shape_is_sum.
+    - apply Coproduct.assoc_rtoltor; apply shape_is_sum.
   Defined.
 
   Instance shape_assoc_is_equiv {γ δ κ} : IsEquiv (shape_assoc γ δ κ)

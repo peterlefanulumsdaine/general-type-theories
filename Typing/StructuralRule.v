@@ -13,7 +13,7 @@ Require Import Typing.FlatRule.
   specified separately for every type theory, but are always provided
   automatically. These fall into several groups:
 
-  - variable-renaming rules: [rename_hypothetical]
+  - variable-renaming rules: [rename]
   - substitution rules: [subst_apply], [subst_equal]
   - variable rule: [variable_rule]
   - equality rules:
@@ -49,37 +49,41 @@ Context (Σ : signature σ).
 Section RenamingRules.
 (** Renaming of variables:
 
-for any isomorphism of shapes [f : γ ≅ δ], we can rename variables along
-[f] in any judgement with shape [γ], both hypothetical and context judgements:
+given a variable-renaming f : Γ -> Δ respecting types up to literal sytnactic 
+equality (e.g. a weakening), if J is derivable over Γ, then f_* J is derivable
+over Δ.
 
-  Γ |- J   [J any hypothetical judgement]
-  --------------------
-  f^* Γ |- f^*J
+  Γ |- J   [J any hypothetical judgement over Γ]
+  -------------------- [f : Γ -> Γ' a renaming respcting types]
+  Γ' |- f_* J
 
-This is not traditionally explicitly given; we need it because our context
-extension rule only extends by “the standard fresh variable” over a given
-shape, and so to show that e.g. contexts whose shapes are given as coproducts
-are contexts, we need a rule like this (or some other strengthening of the
-context rules, or restrictions on the shape system).
+This is not a traditional rule.  We need it since, in our setup, instantiations
+of flat rules will always have conclusion context shape of the form γ+δ, where
+δ is the conclusion context shape of the flat rule; this lets us go from such
+conclusions to arbitrary contexts.
+
+The specific instances we really use are isomorphisms of the form γ <~> γ+0 and
+(γ+δ)+χ <~> γ+(δ+χ), used for instance in the instantiation of derivations,
+Over some specific shape systems, e.g. de Bruijn shapes, these isomorphisms are
+identities, so this rule should never be required.
+
+In fact we will show it is admissible more generally; but that is a more
+non-trivial metatheorem.` 
 *)
-(* TODO: probably no longer needed. *)
 
-(*
-  Γ |- J   [J any judgement]
-  -------------- [f : γ' <~> Γ]
-  f^* Γ |- f^*J
-*)
-(* TODO: naming of this rule far from ideal (both in itself, and in how it interacts with our [_instance] convention).  Keep seeking better options? *)
+(* TODO: naming of this rule not ideal.  Keep seeking better options? *)
 (* TODO: would it work more cleanly if the direction of this rule was reversed? *)
 Definition rename_instance : Closure.system (judgement Σ).
 Proof.
-  exists { J : judgement Σ
-               & { γ' : shape_carrier σ & γ' <~> shape_of_judgement J }}.
-  intros [J [γ' f]]. split.
+  exists { Γ : raw_context Σ
+    & { Γ' : raw_context Σ
+    & { f : typed_renaming Γ Γ'
+    & hypothetical_judgement Σ Γ}}}.
+  intros [Γ [Γ' [f J]]]. split.
   - (* premises: *)
-    exact [< J >].
+    refine [< _ >]. exists Γ; exact J.
   - (* conclusion: *)
-    exact (Judgement.rename J f).
+    exists Γ'. exact (rename_hypothetical_judgement f J).
 Defined.
 
 End RenamingRules.
@@ -89,7 +93,6 @@ Section SubstitutionRules.
 (** General substitution along context maps:
 
   Γ' |- f(x) : A   [for each x in Γ, A := type of x in Γ]
-  ⊢ Γ'     [not a presupposition of the previous premise if Γ is empty]
   Γ |- J   [for J any hypothetical judgement]
   --------------------
   Γ' |- f^*J
@@ -119,10 +122,9 @@ Defined.
 (** Substitution respects *equality* of context morphisms:
 
   Γ' |- f(x) = g(x) : A   [for each x in Γ, A := type of x in Γ]
-  ⊢ Γ'     [not a presupposition of the previous premise if Γ is empty]
-  Γ |- J   [for J any hypothetical judgement]
+  Γ |- J   [for J any hypothetical object judgement]
   --------------------
-  Γ' |- f^*J = g^*J  [ for J any object judgement ]
+  Γ' |- f^*J = g^*J  [ over f* of boundary of J ]
  *)
 Definition subst_equal_instance : Closure.system (judgement Σ).
 Proof.
@@ -184,7 +186,7 @@ Section HypotheticalStructuralRules.
 
 (* The general variable rule:
 
-  Γ ΓA type
+  Γ |- A type
   ------------- (x in Γ, A := type of x in Γ)
   Γ |- x : A
 
@@ -643,6 +645,134 @@ Defined.
 
 End StructuralRuleInd.
 
+Section InterfaceFunctions.
+(** More convenient interface functions for using the rules in derivations *)
+
+  Context `{H_Funext : Funext} {σ : shape_system}.
+
+  (** Interface to the renaming structural rule *)
+  (* TODO: see if this is more convenient to use in places where older
+   lemmas (eg [deduce_modulo_rename]) are currently used *)
+  Lemma derive_rename {Σ : signature σ}
+      {T : Closure.system (judgement Σ)} {H : family _}
+      (cl_sys_T := structural_rule Σ + T)
+      (Γ Γ' : raw_context Σ)
+      (f : typed_renaming Γ Γ')
+      (J : hypothetical_judgement Σ Γ)
+    : Closure.derivation cl_sys_T H (Build_judgement Γ J)
+    -> Closure.derivation cl_sys_T H
+      (Build_judgement Γ' (rename_hypothetical_judgement f J)).
+  Proof.
+    intros D.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, rename. exists Γ, Γ', f; exact J. }
+    { apply idpath. }
+    { intros; apply D. }
+  Defined.
+
+  Lemma derive_rename' {Σ : signature σ}
+      {T : Closure.system (judgement Σ)} {H : family _}
+      (cl_sys_T := structural_rule Σ + T)
+      (J J' : judgement Σ)
+      (f : typed_renaming
+             (context_of_judgement J') (context_of_judgement J))
+      (e : hypothetical_part J
+           = rename_hypothetical_judgement f (hypothetical_part J'))
+    : Closure.derivation cl_sys_T H J'
+    -> Closure.derivation cl_sys_T H J.
+  Proof.
+    intros D.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, rename.
+      refine (_;(_;(f;_))). exact J'. }
+    { apply (ap (Build_judgement _)), inverse, e. }
+    { intros; apply D. }
+  Defined.
+
+  Lemma derive_variable {Σ : signature σ}
+      {T : Closure.system (judgement Σ)} {H : family _}
+      (cl_sys_T := structural_rule Σ + T)
+      (Γ : raw_context Σ) (i : Γ)
+    : Closure.derivation cl_sys_T H [! Γ |- Γ i !]
+    -> Closure.derivation cl_sys_T H [! Γ |- raw_variable i ; Γ i !].
+  Proof.
+    intro D.
+    simple refine (Closure.deduce' _ _ _).
+    simple refine (inl (variable_rule (_;_))).
+    3: apply idpath.
+    intro; apply D.
+  Defined.
+
+  Lemma derive_tyeq_refl {Σ : signature σ}
+      {T : Closure.system (judgement Σ)} {H : family _}
+      (cl_sys_T := structural_rule Σ + T)
+      (Γ : raw_context Σ) (A : raw_expression Σ class_type Γ )
+    : Closure.derivation cl_sys_T H [! Γ |- A !]
+    -> Closure.derivation cl_sys_T H [! Γ |- A ≡ A !].
+  Proof.
+    assert (H_A :
+      @instantiate_expression _ _ [<(class_type, σ.(shape_empty)) >] _ _
+        (fun _ => (Expression.rename (shape_sum_empty_inl Γ) A))
+        _ ([M/ (tt : [<(class_type, σ.(shape_empty)) >]) /])
+      = Expression.rename (shape_sum_empty_inl Γ) A).
+    { eapply concat. 2: { apply substitute_idmap. }
+      simpl. apply (ap (fun f => substitute f _)).
+      apply path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _).
+      - intros i. refine (coproduct_comp_inj1 _). 
+      - refine (empty_rect _ shape_is_empty _).
+    }
+    intros D.
+    simple refine (derive_rename' _ _ _ _ _).
+    4: {
+      simple refine (Closure.deduce _ _ _ _).
+      { apply inl, tyeq_refl.
+        exists Γ.
+        intros ?. refine (Expression.rename _ A). apply shape_sum_empty_inl. }
+      intros p; cbn; clear p.
+      simple refine (derive_rename' _ _ _ _ _).
+      4: apply D.
+      { exists (shape_sum_empty_inl _ : _ -> _).
+        apply respects_types_shape_sum_inl. }
+      apply (ap (Build_hypothetical_judgement _)).
+      apply path_forall. intros i; recursive_destruct i.
+      eapply concat. 2: apply H_A.
+      apply ap; cbn; apply ap.
+      apply path_forall. refine (empty_rect _ shape_is_empty _).
+    }
+    { exists (shape_sum_empty_inl _)^-1.
+      apply respects_types_shape_sum_empty_inl_inverse.
+    }
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall. intros i; recursive_destruct i.
+    - eapply concat. 2: apply ap. 
+      { eapply concat. { apply inverse, rename_idmap. }
+        eapply concat. 2: { eapply rename_comp. }
+        eapply (ap (fun f => Expression.rename f _)).
+        apply inverse, path_forall.
+        apply (eissect (shape_sum_empty_inl _)).
+      }
+      eapply concat. { apply inverse, H_A. }
+      apply (ap (instantiate_expression _)).
+      cbn; apply ap.
+      apply path_forall. refine (empty_rect _ shape_is_empty _).
+    - eapply concat. 2: apply ap. 
+      { eapply concat. { apply inverse, rename_idmap. }
+        eapply concat. 2: { eapply rename_comp. }
+        eapply (ap (fun f => Expression.rename f _)).
+        apply inverse, path_forall.
+        apply (eissect (shape_sum_empty_inl _)).
+      }
+      eapply concat. { apply inverse, H_A. }
+      apply (ap (instantiate_expression _)).
+      cbn; apply ap.
+      apply path_forall. refine (empty_rect _ shape_is_empty _).
+  Defined.
+  (* This proof is horrible. What lemmas can we abstract to make it nicer?? *)
+
+End InterfaceFunctions.
+
+
 Section SignatureMaps.
 
   Context `{H : Funext}.
@@ -664,16 +794,18 @@ Section SignatureMaps.
     apply structural_rule_rect ; intros.
     (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
     - (* rename *)
-      destruct i_rename as [J [γ' e]].
+      destruct i_rename as [Γ [Γ' [α J]]].
       simple refine (_;_).
       + apply rename.
-        exists (Judgement.fmap f J).
-        exact (γ'; e).
+        exists (Context.fmap f Γ).
+        exists (Context.fmap f Γ').
+        exists (fmap_typed_renaming f α).
+        exact (fmap_hypothetical_judgement f J).
       + apply Closure.rule_eq.
         * apply idpath.
-        * (* hypothetical judgement *)
-          refine (Judgement.eq_by_expressions _ _); intros i;
-            apply inverse, fmap_rename.
+        * refine (Judgement.eq_by_expressions _ _); intros i.
+          -- apply idpath.
+          -- apply inverse, fmap_rename.
     - (* subst_apply *)
       destruct i_sub_ap as [ Γ [Γ' [g hj]]].
       simple refine (_;_).
@@ -759,7 +891,6 @@ Section Instantiation.
    can always be derived from structural rules over the base signature.
 
   Essentially, any structural rule gets translated into an instance of the same structural rule, possibly wrapped in a variable-renaming to reassociate iterated context extensions *)
-  (* TODO: do we have to assume some form of well-typedness of the context? *)
   Local Definition instantiate
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
     : Closure.map_over (@Judgement.instantiate σ _ Σ Γ I)
@@ -769,7 +900,19 @@ Section Instantiation.
     (* TODO: As with [fmap] above, there really should be a more uniform way to do this. *)
     unfold Closure.map_over.
     refine (structural_rule_rect _ _ _ _ _ _).
-    - (* rename*) admit.
+    - (* rename*)
+      intros [Δ [Δ' [α J]]].
+      simple refine (Closure.deduce' _ _ _).
+      { apply rename.
+        exists (Context.instantiate Γ I Δ),
+               (Context.instantiate Γ I Δ'),
+               (instantiate_typed_renaming Γ I α).
+        exact (instantiate_hypothetical_judgement I J).
+      }
+      { apply Judgement.eq_by_expressions; intros;
+          [ apply idpath | apply inverse, instantiate_rename ].
+      }
+      intros p; refine (Closure.hypothesis _ _ p).
     - (* subst_apply *) admit.
     - (* subst_equal *) admit.
     - (* variable_rule *) admit.
