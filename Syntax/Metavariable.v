@@ -485,22 +485,20 @@ Section Instantiations.
       eapply concat. 2: { apply inverse, rename_substitute. }      
       apply (ap (fun f => substitute f _)).
       apply path_forall.
-      repeat refine (coproduct_rect shape_is_sum _ _ _); intros j;
-        cbn; unfold Coproduct.fmap, shape_assoc_rtol, Coproduct.assoc_rtol;
-        repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
-        cbn; try apply ap;
-        repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
-        try apply idpath.
+      refine (coproduct_rect shape_is_sum _ _ _); intros j;
+        unfold Coproduct.fmap.
+      { repeat rewrite coproduct_comp_inj1; cbn.
+        apply ap, inverse. refine (coproduct_comp_inj1 _). }
+      repeat rewrite coproduct_comp_inj2.
       rewrite IH_e_args.
       eapply concat. 2: { apply rename_comp. }
       eapply concat. { apply inverse, rename_comp. }
       apply (ap (fun f => rename f _)).
       apply path_forall.
       repeat refine (coproduct_rect shape_is_sum _ _ _); intros k;
-        cbn; unfold Coproduct.fmap, shape_assoc_rtol, Coproduct.assoc_rtol;
-        repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
-        try apply idpath.
-    (* TODO: see if the above mess can be simplified at all. *)
+        unfold Coproduct.fmap;
+        repeat rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
+        apply idpath.
   Qed.
 
   (* TODO: consider naming of this vs. preceding lemmas about commutation of instantiations with renaming/substitution in the expressions, currently [instantiate_rename] and  instantiate_substitute]. *)
@@ -514,7 +512,56 @@ Section Instantiations.
         (Substitution.extend _ _ _ f)
         (instantiate_expression I e).
   Proof.
-  Admitted. (* TODO: [instantiate_substitute_instantiation]; should be tedious but straightforward. *)
+    induction e as [ θ i | θ [S | M] e_args IH_e_args ].
+    - (* [e] is a variable *)
+      simpl. apply inverse. refine (coproduct_comp_inj2 _). 
+    - (* [e] is a symbol of [Σ] *)
+      simpl. apply ap. apply path_forall; intros i.
+      eapply concat. { apply ap, IH_e_args. }
+      eapply concat. { apply rename_substitute. }
+      apply inverse.
+      eapply concat. { apply substitute_rename. }
+      apply (ap (fun r => substitute r _)).
+      apply path_forall.
+      repeat refine (coproduct_rect shape_is_sum _ _ _); intro;
+        cbn; unfold Substitution.extend, shape_assoc_rtol, Coproduct.assoc_rtol;
+        repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2.
+      + eapply concat. { apply inverse, rename_comp. }
+        eapply concat. 2: { apply rename_comp. }
+        refine (ap (fun r => rename r _) _).
+        apply inverse, path_forall; intro.
+        refine (coproduct_comp_inj1 _).
+      + cbn. apply ap.
+        rewrite coproduct_comp_inj2, coproduct_comp_inj1; apply idpath.
+      + cbn. apply ap.
+        repeat rewrite coproduct_comp_inj2; apply idpath.
+    - (* [e] is a metavariable from [a] *)
+      simpl. unfold substitute_instantiation.
+      eapply concat. { apply substitute_substitute. }
+      eapply concat. 2: { apply inverse, substitute_substitute. }      
+      apply (ap (fun f => substitute f _)), path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _); intros j;
+        unfold Substitution.extend.
+      { repeat rewrite coproduct_comp_inj1; cbn;
+        rewrite coproduct_comp_inj1; cbn.
+        eapply concat. { apply substitute_rename. }
+        admit. (* TODO: lemma [substitute_raw_variable] *) }
+      repeat rewrite coproduct_comp_inj2; cbn; rewrite coproduct_comp_inj2.
+      rewrite IH_e_args.
+      eapply concat. { apply rename_substitute. }
+      eapply concat. 2: { apply inverse, substitute_rename. }
+      apply (ap (fun f => substitute f _)), path_forall.
+      repeat refine (coproduct_rect shape_is_sum _ _ _); intros k;
+        unfold Substitution.extend, Coproduct.fmap;
+        repeat rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2.
+      + eapply concat. { apply inverse, rename_comp. }
+        refine (ap (fun r => rename r _) _). apply path_forall; intro.
+        refine (coproduct_comp_inj1 _).
+      + cbn. apply ap.
+        rewrite coproduct_comp_inj2; apply idpath.
+      + cbn. apply ap.
+        repeat rewrite coproduct_comp_inj2; apply idpath.
+  Admitted. (* TODO: [instantiate_substitute_instantiation]: waiting for [substitute_raw_variable] upstream. *)
 
   Lemma fmap_instantiate_expression
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
