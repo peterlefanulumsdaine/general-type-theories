@@ -318,6 +318,34 @@ Section Instantiation.
         apply ap. refine (coproduct_comp_inj2 _).
   Defined.
 
+  Local Lemma instantiate_instantiate
+      {Γ : raw_context _} {a} (I : Metavariable.instantiation a Σ Γ)
+      {Δ : raw_context _} {b}
+      (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
+      (K : raw_context (Metavariable.extend Σ b))
+    : typed_renaming 
+        (instantiate
+          (instantiate _ I Δ)
+          (instantiate_instantiation I J)
+          K)
+        (instantiate Γ I
+          (instantiate Δ J
+            (fmap (Metavariable.fmap1 include_symbol _) K))).
+  Proof.
+    exists shape_assoc_ltor.
+    refine (respects_types_equiv_inverse
+             (instantiate _ _ (instantiate _ _ (fmap _ _)))
+             (instantiate (instantiate _ _ _) _ K)
+             (shape_assoc _ _ _) _).
+    intros i.
+    eapply concat. { apply (instantiate_instantiate_pointwise I J K). }
+    revert i.
+    refine (coproduct_rect shape_is_sum _ _ _); intros i.
+    - apply (ap (Expression.rename _)).
+      admit.
+    - admit.
+  Admitted. (* TODO: [Context.instantiate_instantiate]; should be self-contained but seems tough. *)
+
 End Instantiation.
 
 Arguments instantiate : simpl nomatch.
