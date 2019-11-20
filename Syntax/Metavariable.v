@@ -545,7 +545,9 @@ Section Instantiations.
       { repeat rewrite coproduct_comp_inj1; cbn;
         rewrite coproduct_comp_inj1; cbn.
         eapply concat. { apply substitute_rename. }
-        admit. (* TODO: lemma [substitute_raw_variable] *) }
+        eapply concat. 2: { apply substitute_raw_variable. } 
+        apply ap10. refine (apD10 _ _). apply ap, path_forall; intros k.
+        refine (coproduct_comp_inj1 _). }
       repeat rewrite coproduct_comp_inj2; cbn; rewrite coproduct_comp_inj2.
       rewrite IH_e_args.
       eapply concat. { apply rename_substitute. }
@@ -561,7 +563,7 @@ Section Instantiations.
         rewrite coproduct_comp_inj2; apply idpath.
       + cbn. apply ap.
         repeat rewrite coproduct_comp_inj2; apply idpath.
-  Admitted. (* TODO: [instantiate_substitute_instantiation]: waiting for [substitute_raw_variable] upstream. *)
+  Qed.
 
   Lemma fmap_instantiate_expression
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')

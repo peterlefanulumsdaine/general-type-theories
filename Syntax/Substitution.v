@@ -140,6 +140,24 @@ Section Substitute_Laws.
     : substitute (id_raw_context γ) e = e
   := substitute_idmap e.
 
+  Lemma substitute_raw_variable
+    {γ γ' : σ} (r : γ -> γ')
+    {cl} (e : raw_expression Σ cl γ)
+    : substitute (fun i => raw_variable (r i)) e = rename r e.
+  Proof.
+    revert γ' r; induction e as [ γ i | γ s es IH_es ]; intros γ' r.
+    - apply idpath.
+    - cbn. apply ap.
+      apply path_forall; intros i.
+      eapply concat.
+      2: { apply IH_es. }
+      apply ap10. refine (apD10 _ _). apply ap, path_forall.
+      (* TODO: give lemma showing [f x y z = f x' y z], where z can depend on y, and use that in the MANY situations like the above line, currently done by hand? *)
+      refine (coproduct_rect shape_is_sum _ _ _); intro; unfold extend.
+      + repeat rewrite coproduct_comp_inj1; apply idpath.
+      + repeat rewrite coproduct_comp_inj2; apply idpath.
+  Defined.
+
   Local Fixpoint rename_substitute {γ γ' γ'' : σ}
       (f : raw_context_map Σ γ' γ) (g : γ' -> γ'')
       {cl} (e : raw_expression Σ cl γ)
