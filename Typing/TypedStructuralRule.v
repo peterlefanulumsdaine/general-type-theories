@@ -226,8 +226,7 @@ Section TypedStructuralRule.
                  eapply concat.
                  { apply ap. refine (coproduct_comp_inj1 _). }
                  eapply concat. 2: { apply rename_idmap. }
-                 eapply concat. 
-                 { apply inverse, rename_comp. }
+                 eapply concat. { apply rename_rename. }
                  apply ap10. refine (apD10 _ _). apply ap.
                  apply path_forall. refine (eissect _).
                - intros i; recursive_destruct i. apply inverse.
@@ -237,8 +236,7 @@ Section TypedStructuralRule.
                    refine (coproduct_rect shape_is_sum _ _ _).
                    * intros x. refine (coproduct_comp_inj1 _).
                    * apply (empty_rect _ shape_is_empty).
-                 + eapply concat.
-                   { apply inverse, rename_comp. }
+                 + eapply concat. { apply rename_rename. }
                    eapply concat. 2: { apply rename_idmap. }
                    apply ap10. refine (apD10 _ _). apply ap, path_forall. 
                    refine (@eissect _ _ _ (shape_sum_empty_inl_is_equiv _)).

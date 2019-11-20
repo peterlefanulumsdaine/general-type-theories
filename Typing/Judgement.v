@@ -833,7 +833,6 @@ Section Rename_Variables.
 
   Context `{H_Funext : Funext}.
 
-  (* TODO: reorder the following lemmas, for consistency with usual *)
   Local Definition rename_rename
       (J : judgement Σ)
       {γ' : shape_carrier σ} (e : γ' <~> shape_of_judgement J)
@@ -842,9 +841,9 @@ Section Rename_Variables.
       = rename J (equiv_compose e e').
   Proof.
     refine (eq_by_expressions _ _); cbn.
-    - intros i. apply inverse, rename_comp.
+    - intros i. apply rename_rename.
     - intros i. unfold rename_hypothetical_judgement; cbn.
-        apply inverse, rename_comp.
+        apply rename_rename.
   Defined.
 
   Local Definition rename_idmap

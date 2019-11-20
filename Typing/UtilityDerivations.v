@@ -141,7 +141,7 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
     - apply Judgement.eq_by_expressions.
       + intros; apply idpath.
       + intros.
-        eapply concat. { apply inverse, rename_comp. }
+        eapply concat. { apply rename_rename. }
         eapply concat. 2: { apply rename_idmap. }
         apply (ap (fun f => Expression.rename f _)).
         apply path_forall; intros j; apply eisretr.
@@ -182,7 +182,7 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
       exact (rename_hypothetical_judgement (shape_sum_empty_inl _) J).
     - apply Judgement.eq_by_expressions; intros i.
       + apply idpath.
-      + eapply concat. { apply inverse, rename_comp. }
+      + eapply concat. { apply rename_rename. }
         eapply concat. 2: { apply rename_idmap. }
         apply (ap (fun f => Expression.rename f _)).
         apply path_forall; intros j; apply eissect.

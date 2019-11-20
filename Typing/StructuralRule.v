@@ -747,7 +747,7 @@ Section InterfaceFunctions.
     apply path_forall. intros i; recursive_destruct i.
     - eapply concat. 2: apply ap. 
       { eapply concat. { apply inverse, rename_idmap. }
-        eapply concat. 2: { eapply rename_comp. }
+        eapply concat. 2: { eapply inverse, rename_rename. }
         eapply (ap (fun f => Expression.rename f _)).
         apply inverse, path_forall.
         apply (eissect (shape_sum_empty_inl _)).
@@ -758,7 +758,7 @@ Section InterfaceFunctions.
       apply path_forall. refine (empty_rect _ shape_is_empty _).
     - eapply concat. 2: apply ap. 
       { eapply concat. { apply inverse, rename_idmap. }
-        eapply concat. 2: { eapply rename_comp. }
+        eapply concat. 2: { eapply inverse, rename_rename. }
         eapply (ap (fun f => Expression.rename f _)).
         apply inverse, path_forall.
         apply (eissect (shape_sum_empty_inl _)).
@@ -768,7 +768,7 @@ Section InterfaceFunctions.
       cbn; apply ap.
       apply path_forall. refine (empty_rect _ shape_is_empty _).
   Defined.
-  (* This proof is horrible. What lemmas can we abstract to make it nicer?? *)
+  (* TODO: this proof is horrible. What lemmas can we abstract to make it nicer, or what lemmas have we already abstracted that could help?? *)
 
 End InterfaceFunctions.
 

@@ -103,12 +103,12 @@ Section Typed_Renamings.
     -> respects_types Δ Γ e^-1.
   Proof.
     intros H_e i.
-    eapply concat. 2: { apply ap, ap. exact (eisretr e i). }
-    eapply concat. 2: { apply ap, inverse, H_e. }
-    eapply concat. 2: { apply rename_comp. }
-    apply inverse. eapply concat. 2: { apply rename_idmap. }
+    eapply concat. 2: { apply ap, ap, (eisretr e). }
+    eapply concat. 2: { apply inverse, ap, H_e. }
+    eapply concat. 2: { apply inverse, rename_rename. }
+    eapply concat. { apply inverse, rename_idmap. }
     apply (ap (fun f => Expression.rename f _)).
-    apply path_forall, (eissect e).
+    apply inverse, path_forall, (eissect e).
   Defined.
 
 End Typed_Renamings.
@@ -147,7 +147,7 @@ Section Rename_Variables.
     exists (e : _ -> _).
     intros i; cbn.
     eapply concat. { apply inverse, rename_idmap. }
-    eapply concat. 2: { apply rename_comp. }
+    eapply concat. 2: { apply inverse, rename_rename. }
     refine (ap (fun f => Expression.rename f _) _).
     apply path_forall; intros ?; apply inverse, eisretr.
   Defined.
@@ -217,7 +217,7 @@ Section Instantiation.
     - intros i; cbn.
       unfold fmap2_shape_sum, fmap_shape_sum.
       repeat rewrite coproduct_comp_inj1.
-      eapply concat. 2: { apply Expression.rename_comp. }
+      eapply concat. 2: { apply inverse, rename_rename. }
       apply (ap (fun f => Expression.rename f _)), path_forall.
       intros j. apply inverse; refine (coproduct_comp_inj1 _).
     - intros i; cbn.
@@ -274,7 +274,7 @@ Section Instantiation.
     - intros i; cbn.
       eapply concat. { refine (coproduct_comp_inj1 _). }
       eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
-      eapply concat. { apply inverse, rename_comp. }
+      eapply concat. { apply rename_rename. }
       apply inverse.
       eapply concat.
       { apply ap.
@@ -282,7 +282,7 @@ Section Instantiation.
         eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         refine (coproduct_comp_inj1 _).
       }
-      eapply concat. { apply inverse, rename_comp. }
+      eapply concat. { apply rename_rename. }
       refine (ap (fun f => Expression.rename f _) _).
       clear i. apply path_forall; intros x.
       refine (coproduct_comp_inj1 _).
@@ -298,7 +298,7 @@ Section Instantiation.
       }
       eapply concat. { apply ap, ap. refine (coproduct_comp_inj1 _). }
       eapply concat. { apply ap, instantiate_rename. }
-      eapply concat. { apply inverse, rename_comp. }
+      eapply concat. { apply rename_rename. }
       refine (ap (fun f => Expression.rename f _) _).
       clear i. apply path_forall.
       refine (coproduct_rect shape_is_sum _ _ _); intros i.

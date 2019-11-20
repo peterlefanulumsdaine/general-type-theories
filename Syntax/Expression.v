@@ -111,24 +111,30 @@ Section Renaming.
       + intros j. refine (coproduct_comp_inj2 _).
   Defined.
 
-  Fixpoint rename_comp {γ γ' γ'' : σ} (f : γ -> γ') (f' : γ' -> γ'')
+  Fixpoint rename_rename {γ γ' γ'' : σ} (f : γ -> γ') (f' : γ' -> γ'')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
-    : rename (f' o f) e = rename f' (rename f e).
+    : rename f' (rename f e) = rename (f' o f) e.
   Proof.
     destruct e as [ γ i | γ S args ].
   - reflexivity.
   - cbn. apply ap. apply path_forall; intros i.
-    refine (_ @ _).
-    2: { apply rename_comp. }
-    + apply ap10. refine (apD10 _ _). apply ap.
-      apply path_arrow.
+    eapply concat. { apply rename_rename. }
+    + apply ap10. refine (apD10 _ _). apply ap, path_forall.
       refine (coproduct_rect _ _ _ _); intros x.
-      * refine (_ @ _^). { refine (coproduct_comp_inj1 _). }
+      * refine (_ @ _^). 2: { refine (coproduct_comp_inj1 _). }
         eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         refine (coproduct_comp_inj1 _).
-      * refine (_ @ _^). { refine (coproduct_comp_inj2 _). }
+      * refine (_ @ _^). 2: { refine (coproduct_comp_inj2 _). }
         eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
         refine (coproduct_comp_inj2 _).
+  Defined.
+
+  (* [rename_rename] should be used as primitive for computing on expressions; this is a skin to show it as a functoriality property. *)
+  Definition rename_comp {γ γ' γ'' : σ} (f : γ -> γ') (f' : γ' -> γ'')
+      {cl : syntactic_class} (e : raw_expression Σ cl γ)
+    : rename (f' o f) e = rename f' (rename f e).
+  Proof.
+    apply inverse, rename_rename.
   Defined.
 
 End Renaming.

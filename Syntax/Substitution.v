@@ -171,9 +171,9 @@ Section Substitute_Laws.
     apply ap10. refine (apD10 _ _). apply ap. apply path_arrow.
     simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
-      refine (_^ @ _^). { apply rename_comp. }
+      refine (_ @ _^). { apply rename_rename. }
       eapply concat. { refine (coproduct_comp_inj1 _). }
-      refine (_^ @ _). { apply rename_comp. }
+      refine (_ @ _). { apply rename_rename. }
       apply ap10. refine (apD10 _ _). apply ap. apply path_arrow. intros y.
       refine _^. refine (coproduct_comp_inj1 _).
     - eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }

@@ -262,14 +262,14 @@ Section Derivations.
         cbn. eapply concat.
         { apply ap. refine (coproduct_comp_inj2 _). }
         eapply concat. { apply ap, unit_instantiate_expression. }
-        eapply concat. { apply inverse, rename_comp. }
+        eapply concat. { apply rename_rename. }
         eapply concat. 2: { apply rename_idmap. }
         apply (ap (fun f => Expression.rename f _)).
         apply path_forall; intros j.
         refine (coproduct_comp_inj2 _).          
         * cbn.
         eapply concat. { apply ap. refine (unit_instantiate_expression _). }
-        eapply concat. { apply inverse, rename_comp. }
+        eapply concat. { apply rename_rename. }
         eapply concat. 2: { apply rename_idmap. }
         apply (ap (fun f => Expression.rename f _)).
         apply path_forall; intros j.
@@ -330,7 +330,7 @@ Section Instantiation.
       apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
       cbn; apply inverse.
       eapply concat. { apply ap, instantiate_instantiate_expression. }
-      eapply concat. { apply inverse, rename_comp. }
+      eapply concat. { apply rename_rename. }
       eapply concat. 2: { apply rename_idmap. }
       apply (ap (fun f => rename f _)).
       apply path_forall; intros j.
