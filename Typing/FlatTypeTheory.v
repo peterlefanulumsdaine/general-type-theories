@@ -323,9 +323,7 @@ Section Instantiation.
          exists (Context.instantiate _ I Δ);
          exact (instantiate_instantiation I J)
        | apply idpath | ].
-    { cbn. exists (shape_assoc_ltor).
-      admit. (* Lemma: abstract this as a typed renaming *)
-    }
+    { apply Context.instantiate_instantiate_ltor. }
     { (* TODO: abstract as something like [instantiate_instantiate_hypothetical_judgement], and consider direction. *)
       apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
       cbn; apply inverse.
@@ -339,14 +337,10 @@ Section Instantiation.
     intros p.
     simple refine (derive_rename' _ _ _ _ _).
     4: refine (Closure.hypothesis _ _ _); apply p.
-    { cbn. exists (shape_assoc_rtol).
-      admit. (* again, abstract as a typed renaming *)
-    }
-    { 
-      apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
-      apply instantiate_instantiate_expression. 
-    }
-  Admitted.
+    { apply Context.instantiate_instantiate_rtol. }
+    apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
+    apply instantiate_instantiate_expression.
+  Defined.
 
   (** For any flat type theory [T], an an instantiation [I] from a metavariable 
   extension [Σ + a] of its signature, there is a closure system map from the

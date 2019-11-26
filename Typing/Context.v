@@ -253,7 +253,6 @@ Section Instantiation.
     apply respects_types_equiv_inverse, respects_types_shape_sum_inl.
   Defined.
 
-
   Local Lemma instantiate_instantiate_pointwise
       {Γ : raw_context _} {a} (I : Metavariable.instantiation a Σ Γ)
       {Δ : raw_context _} {b}
@@ -316,9 +315,29 @@ Section Instantiation.
         eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
         eapply concat. { refine (coproduct_comp_inj2 _). }
         apply ap. refine (coproduct_comp_inj2 _).
+  Qed.
+
+  Local Lemma instantiate_instantiate_rtol
+      {Γ : raw_context _} {a} (I : Metavariable.instantiation a Σ Γ)
+      {Δ : raw_context _} {b}
+      (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
+      (Θ : raw_context (Metavariable.extend Σ b))
+    : typed_renaming 
+        (instantiate Γ I
+          (instantiate Δ J
+            (fmap (Metavariable.fmap1 include_symbol _) Θ)))
+        (instantiate
+          (instantiate _ I Δ)
+          (instantiate_instantiation I J)
+          Θ).
+  Proof.
+    exists shape_assoc_rtol; intros i.
+    eapply concat. { apply (instantiate_instantiate_pointwise I J Θ). }
+    apply (ap (Expression.rename _)), ap.
+    apply eissect.
   Defined.
 
-  Local Lemma instantiate_instantiate
+  Local Lemma instantiate_instantiate_ltor
       {Γ : raw_context _} {a} (I : Metavariable.instantiation a Σ Γ)
       {Δ : raw_context _} {b}
       (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
@@ -336,11 +355,10 @@ Section Instantiation.
     refine (respects_types_equiv_inverse
              (instantiate _ _ (instantiate _ _ (fmap _ _)))
              (instantiate (instantiate _ _ _) _ Θ)
-             (shape_assoc _ _ _) _).
-    intros i.
-    eapply concat. { apply (instantiate_instantiate_pointwise I J Θ). }
-    apply (ap (Expression.rename _)), ap.
-    apply eissect.
+             (shape_assoc _ _ _)
+             _).
+    exact
+      (typed_renaming_respects_types _ _ (instantiate_instantiate_rtol _ _ _)).
   Defined.
 
 End Instantiation.
