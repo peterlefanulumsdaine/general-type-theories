@@ -289,59 +289,6 @@ Section Instantiation.
   Context `{Funext}.
   Context {σ : shape_system} {Σ : signature σ}.
 
-  (** Given a flat rule [R] over a signature [Σ], an arity [a] specifying a
-  metavariable extension, and an instantiation [I] of [a] in [Σ] over some
-  context [Γ],
-
-  any instance of [R] over the extended signature [extend Σ a] gets translated
-  under [I] into an instance of [R] over [Σ], modulo renaming. 
-
-  Note: this can’t be in [Typing.FlatRule], since it uses the structural rules,
-  specifically the rule for renaming along shape isomorphisms.  Morally perhaps
-  that should be seen as more primitive than the other structural rules, and be
-  baked into the notion of derivations earlier, as e.g. “closure systems on a
-  groupoid”.  (Indeed, if the shape system is univalent then this rule _will_
-  come for free.)
-  *)
-  Local Definition instantiate_flat_rule_closure_system
-      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
-      (r : flat_rule Σ)
-    : Closure.map_over
-        (Judgement.instantiate Γ I)
-        (FlatRule.closure_system (FlatRule.fmap include_symbol r))
-        (structural_rule Σ + FlatRule.closure_system r).
-  Proof.
-    intros [Δ J].
-    (* The derivation essentially consists of the instance
-     [(Context.instantiate _ I Δ
-     ; instantiate_instantiation I J)]
-     of the same flat rule, wrapped in renamings along [shape_assoc].
-     *)
-    simple refine (derive_rename' _ _ _ _ _).
-    4: simple refine (Closure.deduce' _ _ _);
-       [ apply inr; 
-         exists (Context.instantiate _ I Δ);
-         exact (instantiate_instantiation I J)
-       | apply idpath | ].
-    { apply Context.instantiate_instantiate_ltor. }
-    { (* TODO: abstract as something like [instantiate_instantiate_hypothetical_judgement], and consider direction. *)
-      apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
-      cbn; apply inverse.
-      eapply concat. { apply ap, instantiate_instantiate_expression. }
-      eapply concat. { apply rename_rename. }
-      eapply concat. 2: { apply rename_idmap. }
-      apply (ap (fun f => rename f _)).
-      apply path_forall; intros j.
-      apply Coproduct.assoc_rtoltor.
-    }
-    intros p.
-    simple refine (derive_rename' _ _ _ _ _).
-    4: refine (Closure.hypothesis _ _ _); apply p.
-    { apply Context.instantiate_instantiate_rtol. }
-    apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
-    apply instantiate_instantiate_expression.
-  Defined.
-
   (** For any flat type theory [T], an an instantiation [I] from a metavariable 
   extension [Σ + a] of its signature, there is a closure system map from the
   interpretation of [T] over [Σ + a] to the interpretation of [Σ]: any

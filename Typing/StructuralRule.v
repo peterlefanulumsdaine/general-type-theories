@@ -886,6 +886,75 @@ Section Instantiation.
 
   Context `{Funext} {σ : shape_system} {Σ : signature σ}.
 
+  (** Given a flat rule [R] over a signature [Σ], an arity [a] specifying a
+  metavariable extension, and an instantiation [I] of [a] in [Σ] over some
+  context [Γ],
+
+  any instance of [R] over the extended signature [extend Σ a] gets translated
+  under [I] into an instance of [R] over [Σ], modulo renaming. 
+
+  Note: this can’t be in [Typing.FlatRule], since it uses the structural rules,
+  specifically the rule for renaming along shape isomorphisms.  Morally perhaps
+  that should be seen as more primitive than the other structural rules, and be
+  baked into the notion of derivations earlier, as e.g. “closure systems on a
+  groupoid”.  (Indeed, if the shape system is univalent then this rule _will_
+  come for free.)
+  *)
+  Definition instantiate_flat_rule_closure_system
+      {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
+      (r : flat_rule Σ)
+    : Closure.map_over
+        (Judgement.instantiate Γ I)
+        (FlatRule.closure_system (FlatRule.fmap include_symbol r))
+        (structural_rule Σ + FlatRule.closure_system r).
+  Proof.
+    intros [Δ J].
+    (* The derivation essentially consists of the instance
+     [(Context.instantiate _ I Δ
+     ; instantiate_instantiation I J)]
+     of the same flat rule, wrapped in renamings along [shape_assoc].
+     *)
+    simple refine (derive_rename' _ _ _ _ _).
+    4: simple refine (Closure.deduce' _ _ _);
+       [ apply inr; 
+         exists (Context.instantiate _ I Δ);
+         exact (instantiate_instantiation I J)
+       | apply idpath | ].
+    { apply Context.instantiate_instantiate_ltor. }
+    { (* TODO: abstract as something like [instantiate_instantiate_hypothetical_judgement], and consider direction. *)
+      apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
+      cbn; apply inverse.
+      eapply concat. { apply ap, instantiate_instantiate_expression. }
+      eapply concat. { apply rename_rename. }
+      eapply concat. 2: { apply rename_idmap. }
+      apply (ap (fun f => Expression.rename f _)).
+      apply path_forall; intros j.
+      apply Coproduct.assoc_rtoltor.
+    }
+    intros p.
+    simple refine (derive_rename' _ _ _ _ _).
+    4: refine (Closure.hypothesis _ _ _); apply p.
+    { apply Context.instantiate_instantiate_rtol. }
+    apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
+    apply instantiate_instantiate_expression.
+  Defined.
+
+  (* TODO: upstream to [Auxiliary.Closure] *)
+  Lemma closure_compose {X} {C D E : Closure.system X}
+      (F : Closure.map C D) (G : Closure.map D E)
+    : Closure.map C E.
+  Proof.
+    exact (Closure.compose_over F G).
+  Defined.
+
+  (* TODO: upstream to [Auxiliary.Family] *)
+  Lemma family_bind_include {A} (K : family A) {B} (L : A -> family B) (k:K)
+    : Family.map (L (K k)) (Family.bind K L).
+  Proof.
+    exists (fun l => (k;l)).
+    intros; apply idpath.
+  Defined.
+
   (** Structural rules in a metavariable extension,
    translated under an instantiation,
    can always be derived from structural rules over the base signature.
@@ -916,7 +985,41 @@ Section Instantiation.
     - (* subst_apply *) admit.
     - (* subst_equal *) admit.
     - (* variable_rule *) admit.
-    - (* equality_rule *) admit.
-  Admitted.
+    - (* equality_rule *)
+      intros i_eq.
+      destruct i_eq as [i [Δ J]].
+      set (F := instantiate_flat_rule_closure_system I
+                  ((FlatRule.fmap (Signature.empty_rect _))
+                     (equality_flat_rule i))).
+      assert (D := F (Δ;J)); clear F.
+      refine (Closure.derivation_fmap1 _ _).
+      { refine (Closure.sum_rect _ _).
+        - apply Closure.idmap.
+        - refine (closure_compose _ Closure.inr).
+          apply Closure.map_from_family_map.
+          refine (family_bind_include _ _ _).
+          exact i.
+      }
+      (* TODO: can we just use [FlatRule.fmap_compose] here somehow? *)
+      refine (transport (fun c => derivation _ _ c) _ 
+             (transport (fun H => derivation _ H _) _ D)).
+      + apply (ap (Judgement.instantiate _ _)).
+        apply (ap (Judgement.instantiate _ _)).
+        eapply concat. { apply inverse, Judgement.fmap_compose. }
+        refine (ap (fun f => (Judgement.fmap f
+                               (flat_rule_conclusion (equality_flat_rule i)))) _).
+        admit.
+      + apply inverse.
+        eapply concat. 2: { apply Family.fmap_compose. }
+        simple refine (Family.eq _ _). { apply idpath. }
+        intros j.
+        eapply concat. 2: { apply ap. cbn. apply idpath. }
+        apply (ap (Judgement.instantiate _ _)).
+        apply (ap (Judgement.instantiate _ _)).
+        eapply concat. 2: { apply Judgement.fmap_compose. }
+        refine (ap (fun f => (Judgement.fmap f
+                               (flat_rule_premise (equality_flat_rule i) j))) _).
+        admit.
+  Admitted. (* [StructuralRule.instantiate]: hard, quite a bit to do; probably should downstream this to [UtilityDerivations]? *)
 
 End Instantiation.
