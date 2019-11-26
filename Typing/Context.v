@@ -11,7 +11,7 @@ Require Import Syntax.Metavariable.
 
 In a context such as [ x1 : A1, x2 : A2, x3 : A3 ], we do not record the ordering of the variables and types; and, as such, we do not say “A1 is a closed type expression, A2 is a type expression over {x1}, …”, but instead take A1, A2, A3 all as type expressions over the full set of variables {x1, x2, x3}.
 
-This reflects how contexts are *used* in derivations.  When working in a context, one doesn’t know (and doesn’t need to know) what order or earlier context the types were inserted in; one just extracts the variables and their types, as types in the current context itself.  The ordering/stratification is only needed for meta-theoretic constructions, and it can then be reconstructed from the typing derivation for the context. *)
+This reflects how contexts are *used* in derivations.  When working in a context, one doesn’t know (and doesn’t need to know) what order or earlier context the types were inserted in; one just extracts the variables and their types, as types over the current context itself.  The ordering/stratification is only needed for meta-theoretic constructions, and it can then be reconstructed from the typing derivation for the context. *)
 
 Section RawContext.
 
@@ -322,29 +322,26 @@ Section Instantiation.
       {Γ : raw_context _} {a} (I : Metavariable.instantiation a Σ Γ)
       {Δ : raw_context _} {b}
       (J : Metavariable.instantiation b (Metavariable.extend Σ a) Δ)
-      (K : raw_context (Metavariable.extend Σ b))
+      (Θ : raw_context (Metavariable.extend Σ b))
     : typed_renaming 
         (instantiate
           (instantiate _ I Δ)
           (instantiate_instantiation I J)
-          K)
+          Θ)
         (instantiate Γ I
           (instantiate Δ J
-            (fmap (Metavariable.fmap1 include_symbol _) K))).
+            (fmap (Metavariable.fmap1 include_symbol _) Θ))).
   Proof.
     exists shape_assoc_ltor.
     refine (respects_types_equiv_inverse
              (instantiate _ _ (instantiate _ _ (fmap _ _)))
-             (instantiate (instantiate _ _ _) _ K)
+             (instantiate (instantiate _ _ _) _ Θ)
              (shape_assoc _ _ _) _).
     intros i.
-    eapply concat. { apply (instantiate_instantiate_pointwise I J K). }
-    revert i.
-    refine (coproduct_rect shape_is_sum _ _ _); intros i.
-    - apply (ap (Expression.rename _)).
-      admit.
-    - admit.
-  Admitted. (* TODO: [Context.instantiate_instantiate]; should be self-contained but seems tough. *)
+    eapply concat. { apply (instantiate_instantiate_pointwise I J Θ). }
+    apply (ap (Expression.rename _)), ap.
+    apply eissect.
+  Defined.
 
 End Instantiation.
 
