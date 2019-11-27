@@ -264,6 +264,14 @@ Proof.
   exact (transport (fun m => map_over m K M) e^ (compose_over ff gg)).
 Defined.
 
+Local Definition compose {X}
+    {C D E : system X} (F : map C D) (G : map D E)
+  : map C E.
+Proof.
+  exact (compose_over F G).
+Defined.
+
+
 End Closure_System_Maps.
 
 Section Sums.

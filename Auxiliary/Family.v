@@ -295,8 +295,8 @@ Proof.
 Defined.
 
 Local Definition empty_rect_unique `{Funext} {X Y} (f : X -> Y)
-  {K} (ff : map_over f (empty X) K)
-  : ff = empty_rect.
+  {K} (ff gg : map_over f (empty X) K)
+  : ff = gg.
 Proof.
   apply map_over_eq'; intros [].
 Defined.
@@ -330,6 +330,28 @@ Proof.
   simple refine (_;_).
   - intros [ x | x ]; [apply ff1 | apply ff2]; apply x. 
   - intros [ x | x ]; cbn; apply map_over_commutes.
+Defined.
+
+Local Lemma sum_eq_rect `{Funext} {X Y} {f : X -> Y}
+    {K1 K2 : family X} {L : family Y}
+    (ff : map_over f (K1 + K2) L)
+  : ff = sum_rect (compose_over ff inl) (compose_over ff inr).
+Proof.
+  apply map_over_eq'.
+  intros [? | ?]; exists idpath; refine ((concat_1p _ @ concat_p1 _)^).
+Defined.
+
+Local Lemma sum_unique `{Funext} {X Y} {f : X -> Y}
+    {K1 K2 : family X} {L : family Y}
+    {ff gg : map_over f (K1 + K2) L}
+    (e_l : compose_over ff inl = compose_over gg inl)
+    (e_r : compose_over ff inr = compose_over gg inr)
+  : ff = gg.
+Proof.
+  eapply concat. apply sum_eq_rect.
+  eapply concat. 2: { apply inverse, sum_eq_rect. }
+  eapply concat. { apply ap, e_r. } 
+  apply ap10, ap, e_l.
 Defined.
 
 Local Definition sum_fmap
@@ -457,6 +479,15 @@ Proof.
   exists { i : K & f (K i) }.
   intros [i j].
   exact (f (K i) j).
+Defined.
+
+(* TODO: consider naming! *)
+Local Lemma bind_include {A B}
+    (K : family A) (L : A -> family B) (k:K)
+  : map (L (K k)) (bind K L).
+Proof.
+  exists (fun l => (k;l)).
+  intros; apply idpath.
 Defined.
 
 (* TODO: unify the functoriality lemmas for [bind]. *)
