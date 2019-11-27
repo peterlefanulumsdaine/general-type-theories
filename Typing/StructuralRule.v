@@ -968,7 +968,25 @@ Section Instantiation.
       intros p; refine (Closure.hypothesis _ _ p).
     - (* subst_apply *) admit.
     - (* subst_equal *) admit.
-    - (* variable_rule *) admit.
+    - (* variable_rule *) 
+      intros [Δ i]; cbn.
+      simple refine (Closure.deduce' _ _ _).
+      { apply variable_rule.
+        exists (Context.instantiate _ I Δ).
+        exact (coproduct_inj2 shape_is_sum i).
+      }
+      { apply Judgement.eq_by_expressions.
+        - intros; apply idpath.
+        - intros [[] | ].
+          + refine (coproduct_comp_inj2 _).
+          + apply idpath.
+      }
+      intros p. simple refine (Closure.hypothesis' _ _).
+      { exact p. }
+      apply Judgement.eq_by_expressions.
+      + intros; apply idpath.
+      + intros [[] | ].
+        apply inverse; refine (coproduct_comp_inj2 _).
     - (* equality_rule *)
       intros i_eq.
       destruct i_eq as [i [Δ J]].
