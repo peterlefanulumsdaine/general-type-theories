@@ -955,6 +955,36 @@ Section Instantiation.
     intros; apply idpath.
   Defined.
 
+  (* TODO: upstream to [Auxiliary.Family] *)
+  Lemma family_sum_eq_rect {X Y} {f : X -> Y} {K1 K2 : family X} {L : family Y}
+      (ff : Family.map_over f (K1 + K2) L)
+    : ff = Family.sum_rect (Family.compose_over ff Family.inl) (Family.compose_over ff Family.inr).
+  Proof.
+    apply Family.map_over_eq'.
+    intros [? | ?]; exists idpath; refine ((concat_1p _ @ concat_p1 _)^).
+  Defined.
+
+  (* TODO: upstream to [Auxiliary.Family] *)
+  Lemma family_sum_unique {X Y} {f : X -> Y} {K1 K2 : family X} {L : family Y}
+      {ff gg : Family.map_over f (K1 + K2) L}
+      (e_l : Family.compose_over ff Family.inl = Family.compose_over gg Family.inl)
+      (e_r : Family.compose_over ff Family.inr = Family.compose_over gg Family.inr)
+    : ff = gg.
+  Proof.
+    eapply concat. apply family_sum_eq_rect.
+    eapply concat. 2: { apply inverse, family_sum_eq_rect. }
+    eapply concat. { apply ap, e_r. } 
+    apply ap10, ap, e_l.
+  Defined.
+
+  (* TODO: upstream to [Auxiliary.Family] *)
+  Lemma family_empty_unique {X Y} {f : X -> Y} {L : family Y}
+      (ff gg : Family.map_over f (Family.empty X) L)
+    : ff = gg.
+  Proof.
+    simple refine (Family.map_over_eq _ _); intros [].
+  Defined.
+
   (** Structural rules in a metavariable extension,
    translated under an instantiation,
    can always be derived from structural rules over the base signature.
@@ -1000,26 +1030,30 @@ Section Instantiation.
           refine (family_bind_include _ _ _).
           exact i.
       }
-      (* TODO: can we just use [FlatRule.fmap_compose] here somehow? *)
+      (* TODO: can we streamline the following somehow with e.g. [FlatRule.fmap_compose]? *)
       refine (transport (fun c => derivation _ _ c) _ 
              (transport (fun H => derivation _ H _) _ D)).
       + apply (ap (Judgement.instantiate _ _)).
         apply (ap (Judgement.instantiate _ _)).
         eapply concat. { apply inverse, Judgement.fmap_compose. }
-        refine (ap (fun f => (Judgement.fmap f
-                               (flat_rule_conclusion (equality_flat_rule i)))) _).
-        admit.
-      + apply inverse.
+        refine (ap (fun f => (Judgement.fmap f _)) _).
+        apply family_sum_unique.
+        * apply family_empty_unique.
+        * apply idpath.
+      + eapply concat. { apply inverse, Family.fmap_compose. }
+        eapply concat. { apply inverse, Family.fmap_compose. }
+        eapply concat. { apply inverse, Family.fmap_compose. }
         eapply concat. 2: { apply Family.fmap_compose. }
-        simple refine (Family.eq _ _). { apply idpath. }
-        intros j.
-        eapply concat. 2: { apply ap. cbn. apply idpath. }
+        eapply concat. 2: { apply Family.fmap_compose. }
+        refine (ap (fun f => (Family.fmap f _)) _).
+        apply path_forall; intros j.
         apply (ap (Judgement.instantiate _ _)).
         apply (ap (Judgement.instantiate _ _)).
-        eapply concat. 2: { apply Judgement.fmap_compose. }
-        refine (ap (fun f => (Judgement.fmap f
-                               (flat_rule_premise (equality_flat_rule i) j))) _).
-        admit.
+        eapply concat. { apply inverse, Judgement.fmap_compose. }
+        refine (ap (fun f => (Judgement.fmap f _)) _).
+        apply family_sum_unique.
+        * apply family_empty_unique.
+        * apply idpath.
   Admitted. (* [StructuralRule.instantiate]: hard, quite a bit to do; probably should downstream this to [UtilityDerivations]? *)
 
 End Instantiation.
