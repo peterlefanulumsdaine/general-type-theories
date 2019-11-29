@@ -226,6 +226,8 @@ so usage of these often needs to be preceded by [apply Judgement.canonicalise.]
 We could easily generalise the statements here to apply directly to aritrary
 judgements, but the statements would become less readable. But probably we should do this! *)
 
+(* TODO: complete this section [Usable_Structural_Rules], giving usable forms of all structural rules. *)
+
 Definition derive_variable
     { Γ : raw_context Σ } { i : Γ }
     ( d_Γi : derivation T H [! Γ |- Γ i !] )
