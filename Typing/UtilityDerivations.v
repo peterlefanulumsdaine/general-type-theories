@@ -7,6 +7,7 @@ Require Import Syntax.ShapeSystem.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
+Require Import Typing.FlatRule.
 Require Import Typing.StructuralRule.
 
 (** Some “utility derivations”: small bits of infrastructure frequently used for all sorts of derivations. *)
@@ -214,12 +215,16 @@ Section Usable_Structural_Rules.
 (** Here we give more directly usable forms of the structural rules. *)
 
 Context `{H_Funext : Funext}
-        {σ : shape_system} (Σ : signature σ)
+        {σ : shape_system} {Σ : signature σ}
         {C : Closure.system (judgement Σ)} (T := (structural_rule Σ + C))
         {H : family (judgement Σ) }.
 
 (* TODO: perhaps improve modularity and usability of these lemmas by making type-classes for closure systems admitting each structural rule? *)
 
+(* TODO: at the moment, these only work for “canonical” judgements,
+so usage of these often needs to be preceded by [apply Judgement.canonicalise.]
+We could easily generalise the statements here to apply directly to aritrary
+judgements, but the statements would become less readable. But probably we should do this! *)
 
 Definition derive_variable
     { Γ : raw_context Σ } { i : Γ }
@@ -236,9 +241,35 @@ Proof.
 Defined.
 
 
+(** A slightly technical lemma, useful under
+[Judgement.eq_by_expressions] for the types of a context
+reindexed under [shape_sum_empty_inl]. *)
+Lemma instantiate_empty_ptwise
+    (Γ : raw_context Σ)
+    (f : shape_empty σ -> raw_type Σ _)
+    (i : shape_sum Γ (shape_empty σ))
+  : coproduct_rect (shape_is_sum) _
+      (fun j:Γ => rename (shape_sum_empty_inl _) (Γ j))
+      f i
+  = Context.rename Γ (shape_sum_empty_inl _)^-1 i.
+Proof.
+  revert i. cbn.
+  apply (coproduct_rect shape_is_sum).
+  + intros ?.
+    eapply concat. { refine (coproduct_comp_inj1 _). }
+    cbn. apply ap, ap.
+    apply inverse. refine (coproduct_comp_inj1 _).
+  + exact (empty_rect _ shape_is_empty _).
+Defined.
+
+(* TODO: lemma saying something like:
+  in an arity, given a meta with empty binding,
+  its instantiation in the empty context is just that meta of the instantiation, renamed along shape_sum_inl
+*)
+
 Definition derive_tyeq_refl
-    { Γ : raw_context Σ } { A : raw_expression Σ class_type Γ }
-    ( d_A : derivation T H [! Γ |- A !] )
+    (Γ : raw_context Σ) (A : raw_expression Σ class_type Γ)
+    (d_A : derivation T H [! Γ |- A !])
   : derivation T H [! Γ |- A ≡ A !].
 Proof.
   apply derive_from_reindexing_to_empty_sum.
@@ -249,12 +280,7 @@ Proof.
     refine (rename _ A). 
     apply shape_sum_empty_inl. }
   { refine (Judgement.eq_by_expressions _ _).
-    - apply (coproduct_rect shape_is_sum).
-      + intros ?.
-        eapply concat. { refine (coproduct_comp_inj1 _). }
-        apply ap, ap.
-        apply inverse. refine (coproduct_comp_inj1 _).
-      + exact (empty_rect _ shape_is_empty _).
+    - intros i. apply instantiate_empty_ptwise.
     - intros i; recursive_destruct i;
         refine (substitute_rename _ _ _ @ _);
         refine (_ @ substitute_raw_variable _ _);
@@ -266,12 +292,7 @@ Proof.
   refine (transport _ _
             (derive_reindexing_to_empty_sum _ d_A)).
   apply Judgement.eq_by_expressions.
-  - apply (coproduct_rect shape_is_sum).
-    + intros ?.
-      eapply concat. 2: { refine (coproduct_comp_inj1 _)^. }
-      simpl. apply ap, ap.
-      refine (coproduct_comp_inj1 _).
-    + exact (empty_rect _ shape_is_empty _).
+  - intros i. apply inverse, instantiate_empty_ptwise.
   - intros i; recursive_destruct i.
     apply inverse;
     eapply concat. { apply substitute_rename. }
@@ -290,9 +311,9 @@ Defined.
  ⊢ u : B
 *)
 Definition derive_term_convert
-    { Γ : raw_context Σ }
-    { A B : raw_expression Σ class_type Γ }
-    { u : raw_expression Σ class_term Γ }
+    ( Γ : raw_context Σ )
+    ( A B : raw_expression Σ class_type Γ )
+    ( u : raw_expression Σ class_term Γ )
     ( d_A : derivation T H [! Γ |- A !] )
     ( d_B : derivation T H [! Γ |- B !] )
     ( d_AB : derivation T H [! Γ |- A ≡ B !] )
@@ -310,12 +331,7 @@ Proof.
     + exact u.
   }
   { refine (Judgement.eq_by_expressions _ _).
-    - apply (coproduct_rect shape_is_sum).
-      2: { apply (empty_rect _ shape_is_empty). }
-      intros ?.
-      eapply concat. { refine (coproduct_comp_inj1 _). }
-      apply ap, ap.
-      apply inverse. refine (coproduct_comp_inj1 _).
+    - apply instantiate_empty_ptwise.
     - intros i; recursive_destruct i;
         refine (substitute_rename _ _ _ @ _);
         refine (_ @ substitute_raw_variable _ _);
@@ -332,12 +348,7 @@ Proof.
     refine (transport _ _
             (derive_reindexing_to_empty_sum _ d));
     (apply Judgement.eq_by_expressions;
-    [ apply (coproduct_rect shape_is_sum);
-      [ intros ?;
-        refine (_ @ (coproduct_comp_inj1 _)^);
-        apply ap, ap;
-        refine (coproduct_comp_inj1 _)
-      |  exact (empty_rect _ shape_is_empty _) ]
+    [ intros; apply inverse, instantiate_empty_ptwise
     | intros i; recursive_destruct i;
       apply inverse;
         refine (substitute_rename _ _ _ @ _);
@@ -346,10 +357,6 @@ Proof.
         apply path_forall; intros x;
           refine (coproduct_comp_inj1 _)]).
 Time Defined.
-(* TODO: can we simplify the above with lemmas something like that:
-  - instantiation of empty context over Γ is (Γ + [::]);
-  - instantiation of a meta over the empty context is that meta, renamed along shape_sum_inl
-*)
 
 (* TODO: once this section done, rewrite the derivations in [TypedStructuralRules] using these. *)
 

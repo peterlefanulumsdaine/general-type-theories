@@ -393,8 +393,7 @@ Section TypedStructuralRule.
       + apply Judgement.eq_by_eta, idpath.
     - (* LHS presup :   |- u : B *)
       apply Judgement.canonicalise.
-      simple refine (derive_term_convert _ _ _ _ _).
-      + exact [M/ A /].
+      apply (derive_term_convert _ [M/ A /]).
       + simple refine (Closure.hypothesis' _ _).
         * apply inl. refine (Some (Some (Some (Some (Some tt))))).
         * apply idpath.
@@ -409,8 +408,7 @@ Section TypedStructuralRule.
         * apply idpath.
     - (* RHS presup :   |- u' : B *)
       apply Judgement.canonicalise.
-      simple refine (derive_term_convert _ _ _ _ _).
-      + exact [M/ A /].
+      apply (derive_term_convert _ [M/ A /]).
       + simple refine (Closure.hypothesis' _ _).
         * apply inl. refine (Some (Some (Some (Some (Some tt))))).
         * apply idpath.
