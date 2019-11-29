@@ -392,67 +392,37 @@ Section TypedStructuralRule.
       + apply inl. refine (Some (Some (Some (Some None)))).
       + apply Judgement.eq_by_eta, idpath.
     - (* LHS presup :   |- u : B *)
-      apply derive_from_reindexing_to_empty_sum.
-      simple refine (Closure.deduce' _ _ _).
-      + apply inl, term_convert.
-        exists [::]. intros [ [ [] | ] | ].
-        * exact [M/ A /].
-        * exact [M/ B /].
-        * exact [M/ u /].
-      + refine (Judgement.eq_by_expressions _ _).
-        * apply (coproduct_rect shape_is_sum);
-            exact (empty_rect _ shape_is_empty _).
-        * intros [ [] | ]; cbn; apply ap, path_forall;
-            exact (empty_rect _ shape_is_empty _).
-      + intros i. set (i_keep := i).
-   (* Note: the following chain, though slow, is substantially faster than I (PLL)
-   was able to get any other way. To compare this with solving the goals
-   individually, see commit f648e3e. *)
-        destruct i as [[[[] | ] | ] | ];
-          apply derive_judgement_over_empty_sum;
-          (simple refine (Closure.hypothesis' _ _);
-           [ exact (inl (Some (Some i_keep)))
-           | refine (Judgement.eq_by_expressions _ _);
-             [ refine (empty_rect _ shape_is_empty _)
-             | intros i; recursive_destruct i;
-               cbn; apply ap, path_forall;
-               refine (empty_rect _ shape_is_empty _)
-             ]
-          ] ).
+      apply Judgement.canonicalise.
+      simple refine (derive_term_convert _ _ _ _ _).
+      + exact [M/ A /].
+      + simple refine (Closure.hypothesis' _ _).
+        * apply inl. refine (Some (Some (Some (Some (Some tt))))).
+        * apply idpath.
+      + simple refine (Closure.hypothesis' _ _).
+        * apply inl. refine (Some (Some (Some (Some None)))).
+        * apply idpath.
+      + simple refine (Closure.hypothesis' _ _).
+        * apply inl. refine (Some (Some (Some None))).
+        * apply idpath.
+      + simple refine (Closure.hypothesis' _ _).
+        * apply inl. refine (Some (Some None)).
+        * apply idpath.
     - (* RHS presup :   |- u' : B *)
-      apply derive_from_reindexing_to_empty_sum.
-      simple refine (Closure.deduce' _ _ _).
-      + apply inl, term_convert.
-        exists [::]. intros [ [ [] | ] | ].
-        * exact [M/ A /].
-        * exact [M/ B /].
-        * exact [M/ u' /].
-      + refine (Judgement.eq_by_expressions _ _).
-        * apply (coproduct_rect shape_is_sum);
-            exact (empty_rect _ shape_is_empty _).
-        * intros [ [] | ]; cbn; apply ap, path_forall;
-            exact (empty_rect _ shape_is_empty _).
-      + intros i. set (i_keep := i).
-        destruct i as [[[[] | ] | ] | ];
-          apply derive_judgement_over_empty_sum;
-          try (simple refine (Closure.hypothesis' _ _);
-               [ exact (inl (Some (Some i_keep)))
-               | refine (Judgement.eq_by_expressions _ _);
-                 [ refine (empty_rect _ shape_is_empty _)
-                 | intros i; recursive_destruct i;
-                   cbn; apply ap, path_forall;
-                   refine (empty_rect _ shape_is_empty _)
-                 ]
-              ] ).
-        (* remaining hypothesis : |- b : B *)
-        simple refine (Closure.hypothesis' _ _).
-        * exact (inl (Some None)).
-        * refine (Judgement.eq_by_expressions _ _);
-            [ refine (empty_rect _ shape_is_empty _)
-            | intros i; recursive_destruct i;
-              cbn; apply ap, path_forall;
-              refine (empty_rect _ shape_is_empty _)
-            ].
+      apply Judgement.canonicalise.
+      simple refine (derive_term_convert _ _ _ _ _).
+      + exact [M/ A /].
+      + simple refine (Closure.hypothesis' _ _).
+        * apply inl. refine (Some (Some (Some (Some (Some tt))))).
+        * apply idpath.
+      + simple refine (Closure.hypothesis' _ _).
+        * apply inl. refine (Some (Some (Some (Some None)))).
+        * apply idpath.
+      + simple refine (Closure.hypothesis' _ _).
+        * apply inl. refine (Some (Some (Some None))).
+        * apply idpath.
+      + simple refine (Closure.hypothesis' _ _).
+        * apply inl. refine (Some None).
+        * apply idpath.
   Defined.
 
   Local Definition equality_flat_rule_is_well_typed
