@@ -186,9 +186,9 @@ Context {σ : shape_system}.
 Context {Σ : signature σ}.
 
 (* Access functions for supplying arguments to arities specified as finite extensions of the empty shape. *)
-Local Definition empty_args {γ}
-  : arguments Σ (Arity.simple (shape_empty _)) γ
-  := empty_rect _ shape_is_empty _.
+Local Definition empty_args {ϵ : σ} (H_ϵ : is_empty ϵ) {γ}
+  : arguments Σ (Arity.simple ϵ) γ
+  := empty_rect _ H_ϵ _.
 
 Local Definition extend_args {γ δ : σ}
   : arguments Σ (Arity.simple δ) γ
@@ -205,11 +205,12 @@ Defined.
 End MetavariableNotations.
 
 Notation " '[M/' A /] "
-  := (raw_symbol (include_metavariable A) empty_args) : syntax_scope.
+  := (raw_symbol (include_metavariable A) (empty_args shape_is_empty)) : syntax_scope.
 
 Notation " '[M/' A ; x , .. , z /] "
   := (raw_symbol (include_metavariable A)
-       (extend_args .. (extend_args (empty_args) x) .. z)) : raw_syntax_scope.
+       (extend_args .. (extend_args (empty_args shape_is_empty) x) .. z))
+    : raw_syntax_scope.
 
 Open Scope syntax_scope.
 

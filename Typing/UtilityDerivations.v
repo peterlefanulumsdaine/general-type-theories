@@ -262,10 +262,28 @@ Proof.
   + exact (empty_rect _ shape_is_empty _).
 Defined.
 
-(* TODO: lemma saying something like:
-  in an arity, given a meta with empty binding,
-  its instantiation in the empty context is just that meta of the instantiation, renamed along shape_sum_inl
-*)
+(** A slightly technical lemma, useful under
+[Judgement.eq_by_expressions] for the expressions coming from
+instantiating a metavariable with empty binder. *)
+Lemma instantiate_binderless_metavariable
+  {γ : σ} {cl}
+  (E : raw_expression Σ cl (shape_sum γ (shape_empty _)))
+  {f}
+  : substitute
+      (coproduct_rect shape_is_sum _
+        (fun i => raw_variable (coproduct_inj1 shape_is_sum i))
+        f)
+      E
+    = E.
+Proof.
+  eapply concat. 2: { apply rename_idmap. }
+  eapply concat. 2: { apply substitute_raw_variable. }
+  apply (ap (fun g => substitute g _)).
+  apply path_forall.
+  refine (coproduct_rect shape_is_sum _ _ _).
+  - intros i; refine (coproduct_comp_inj1 _).
+  - apply (empty_rect _ shape_is_empty).
+Defined.
 
 Definition derive_tyeq_refl
     (Γ : raw_context Σ) (A : raw_expression Σ class_type Γ)
@@ -282,24 +300,15 @@ Proof.
   { refine (Judgement.eq_by_expressions _ _).
     - intros i. apply instantiate_empty_ptwise.
     - intros i; recursive_destruct i;
-        refine (substitute_rename _ _ _ @ _);
-        refine (_ @ substitute_raw_variable _ _);
-        apply (ap (fun f => substitute f _));
-        apply path_forall; intros x;
-        refine (coproduct_comp_inj1 _).
+      apply instantiate_binderless_metavariable.
   }
   intros [].
   refine (transport _ _
             (derive_reindexing_to_empty_sum _ d_A)).
   apply Judgement.eq_by_expressions.
   - intros i. apply inverse, instantiate_empty_ptwise.
-  - intros i; recursive_destruct i.
-    apply inverse;
-    eapply concat. { apply substitute_rename. }
-    eapply concat. 2: { apply substitute_raw_variable. }
-    apply (ap (fun f => substitute f _)).
-    apply path_forall; intros x.
-    refine (coproduct_comp_inj1 _).
+  - intros i; recursive_destruct i;
+      apply inverse, instantiate_binderless_metavariable.
 Defined.
 
 (* rule term_convert
@@ -333,30 +342,17 @@ Proof.
   { refine (Judgement.eq_by_expressions _ _).
     - apply instantiate_empty_ptwise.
     - intros i; recursive_destruct i;
-        refine (substitute_rename _ _ _ @ _);
-        refine (_ @ substitute_raw_variable _ _);
-        apply (ap (fun f => substitute f _));
-        apply path_forall; intros x;
-        refine (coproduct_comp_inj1 _).
+        apply instantiate_binderless_metavariable.
   }
   intros p. set (p_keep := p).
   recursive_destruct p;
-    [ set (d := d_A)
-    | set (d := d_B)
-    | set (d := d_AB)
-    | set (d := d_u) ];                 
-    refine (transport _ _
-            (derive_reindexing_to_empty_sum _ d));
+    [ set (d := d_A) | set (d := d_B) | set (d := d_AB) | set (d := d_u) ];
+    refine (transport _ _ (derive_reindexing_to_empty_sum _ d));
     (apply Judgement.eq_by_expressions;
     [ intros; apply inverse, instantiate_empty_ptwise
     | intros i; recursive_destruct i;
-      apply inverse;
-        refine (substitute_rename _ _ _ @ _);
-        refine (_ @ substitute_raw_variable _ _);
-        apply (ap (fun f => substitute f _));
-        apply path_forall; intros x;
-          refine (coproduct_comp_inj1 _)]).
-Time Defined.
+        apply inverse, instantiate_binderless_metavariable]).
+Defined.
 
 (* TODO: once this section done, rewrite the derivations in [TypedStructuralRules] using these. *)
 
