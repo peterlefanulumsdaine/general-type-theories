@@ -647,9 +647,32 @@ Section Renaming.
    and some frequently-used special cases. *)
 
   Context `{H_Funext : Funext}
-        {σ : shape_system} {Σ : signature σ}
-        {C : Closure.system (judgement Σ)} (T := (structural_rule Σ + C))
-        {H : family (judgement Σ) }.
+        {σ : shape_system} {Σ : signature σ}.
+
+  (* TODO: consider naming *)
+  Class has_derivable_renaming (C : Closure.system (judgement Σ))
+    := { derivable_renaming : Closure.map (rename_instance Σ) C }.
+
+  Global Instance trivial_derivable_renaming
+    : has_derivable_renaming (rename_instance Σ).
+  Proof.
+    constructor. apply Closure.idmap.
+  Defined.
+
+  Global Instance sum_left_has_derivable_renaming
+      {C D : Closure.system (judgement Σ)}
+      `{ H_C : has_derivable_renaming C }
+    : has_derivable_renaming (C + D).
+  Proof.
+    constructor.
+    eapply Closure.compose.
+    - apply derivable_renaming.
+    - apply Closure.inl.
+  Defined.
+
+  Context
+    {T : Closure.system (judgement Σ)} `{H_T : has_derivable_renaming T}
+    {H : family (judgement Σ) }.
 
   Lemma derive_rename 
       (Γ Γ' : raw_context Σ)
@@ -660,8 +683,8 @@ Section Renaming.
       (Build_judgement Γ' (rename_hypothetical_judgement f J)).
   Proof.
     intros D.
-    simple refine (Closure.deduce' _ _ _).
-    { apply inl, rename. exists Γ, Γ', f; exact J. }
+    simple refine (Closure.deduce'_via_map derivable_renaming _ _ _).
+    { exists Γ, Γ', f; exact J. }
     { apply idpath. }
     { intros; apply D. }
   Defined.
@@ -676,9 +699,8 @@ Section Renaming.
     -> Closure.derivation T H J.
   Proof.
     intros D.
-    simple refine (Closure.deduce' _ _ _).
-    { apply inl, rename.
-      refine (_;(_;(f;_))). exact J'. }
+    simple refine (Closure.deduce'_via_map derivable_renaming _ _ _).
+    { refine (_;(_;(f;_))). exact J'. }
     { apply (ap (Build_judgement _)), inverse, e. }
     { intros; apply D. }
   Defined.

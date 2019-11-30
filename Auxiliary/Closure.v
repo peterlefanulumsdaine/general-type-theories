@@ -98,7 +98,7 @@ Defined.
 (** For using [graft] interactively, similar to [deduce'], [hypothesis']. 
  Use as:
 
-  refine (graft _ _ _).
+  refine (graft' _ _ _).
   - (give derivation d for grafting) 
   - (show it has correct conclusion)
   - (derive premises of d)
@@ -199,6 +199,37 @@ Proof.
     intro p. apply hypothesis.
 Defined.
 
+(** Interface functions for using derivable rules,
+ typed to be directly analogous to [deduce], [deduce']. *)
+Local Definition deduce_via_map_over
+    {X' X} {f : X -> X'}
+    {C'} {C} (ff : map_over f C' C) {H}
+    (r : C')
+    (P_r : forall p : premises (C' r), derivation C H (f (premises _ p)))
+  : derivation C H (f (conclusion (C' r))).
+Proof.
+  refine (graft _ (ff r) _).
+  intros i; apply P_r.
+Defined.
+
+Local Definition deduce_via_map
+    {X} {C' C : system X} (f : map C' C) {H}
+    (r : C')
+    (P_r : forall p : premises (C' r), derivation C H (premises _ p))
+  : derivation C H (conclusion (C' r)).
+Proof.
+  exact (deduce_via_map_over f r P_r).
+Defined.
+
+Local Definition deduce'_via_map
+    {X} {C' C : system X} (f : map C' C) {H}
+    {x:X} (r : C') (e : conclusion (C' r) = x)
+    (P_r : forall p : premises (C' r), derivation C H (premises _ p))
+  : derivation C H x.
+Proof.
+  exact (transport _ e (deduce_via_map f r P_r)).
+Defined.
+
 (** Our most general functoriality statement for derivations:
   given a closure system map from [C] to [D],
   and a family map of hypotheses [H] to [H'],
@@ -214,7 +245,7 @@ Proof.
   destruct d as [i | r d_prems].
   - simple refine (hypothesis' _ _). { exact (fH i). }
     apply Family.map_over_commutes.
-  - refine (graft _ (fC r) _).
+  - refine (deduce_via_map_over fC r _).
     intro i. apply (derivation_fmap_over _ _ _ _ _ fC _ _ fH), d_prems.
 Defined.
 
