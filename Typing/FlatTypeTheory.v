@@ -245,41 +245,33 @@ Section Derivations.
     : flat_rule_derivation T (T r).
   Proof.
     unfold flat_rule_derivation.
-    simple refine (deduce_modulo_rename _ _ _ _).
-    - apply inr. exists r, [::]. apply unit_instantiation.
-    - apply shape_sum_empty_inr.
-    - cbn.
-      (* TODO: the following should be much simpler, using
-      [Judgement.unit_instantiate], but the typing of [Judgement.rename]
-      (in particular, the way it uses [shape_of_judgement]) makes it
-      very difficult.  This would work better if judgements were
-      parametrised over shapes independently of the context expressions? *)
-      set (J := (T.(family_element) r).(flat_rule_conclusion)).
-      clearbody J.
-      (* hypothetical judgement *)
-        apply Judgement.eq_by_expressions; intros i.
-        * (* context part *)
-        cbn. eapply concat.
-        { apply ap. refine (coproduct_comp_inj2 _). }
-        eapply concat. { apply ap, unit_instantiate_expression. }
-        eapply concat. { apply rename_rename. }
-        eapply concat. 2: { apply rename_idmap. }
-        apply (ap (fun f => Expression.rename f _)).
-        apply path_forall; intros j.
-        refine (coproduct_comp_inj2 _).          
-        * cbn.
-        eapply concat. { apply ap. refine (unit_instantiate_expression _). }
-        eapply concat. { apply rename_rename. }
-        eapply concat. 2: { apply rename_idmap. }
-        apply (ap (fun f => Expression.rename f _)).
-        apply path_forall; intros j.
-        refine (coproduct_comp_inj2 _).
-    - cbn. intros p.
-      simple refine (hypothesis_modulo_rename _ _ _).
-      + exact p.
-      + apply equiv_inverse, shape_sum_empty_inr.
-      + cbn. apply inverse, Judgement.unit_instantiate.
-  Defined.
+    simple refine (derive_from_renaming_along_equiv _ _ _).
+    2: { apply equiv_inverse, shape_sum_empty_inr. }
+    simple refine (Closure.deduce' _ _ _).
+    { apply inr. exists r, [::]. apply unit_instantiation. }
+    { refine (Judgement.eq_by_expressions _ _).
+      - apply (coproduct_rect shape_is_sum).
+        { apply empty_rect, shape_is_empty. }
+        intros.
+        eapply concat. { refine (coproduct_comp_inj2 _). }
+        eapply concat. { apply unit_instantiate_expression. }
+        apply ap, ap, inverse, eissect.
+      - intros; cbn.
+        apply unit_instantiate_expression. }
+    simpl. intros p.
+    simple refine (derive_rename' _ (flat_rule_premise (T r) p) _ _ _).
+    { simple refine (Build_typed_renaming _ _ _ _ _).
+      + apply shape_sum_empty_inr.
+      + intros i.
+        eapply concat. { refine (coproduct_comp_inj2 _). }
+        apply unit_instantiate_expression.
+    }
+    { apply (ap (Build_hypothetical_judgement _)).
+      apply path_forall; intros s.
+      apply unit_instantiate_expression.
+    }
+    exact (Closure.hypothesis _ _ p).
+  Defined.    
 
 End Derivations.
 

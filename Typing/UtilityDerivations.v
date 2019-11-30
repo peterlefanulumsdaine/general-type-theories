@@ -12,64 +12,6 @@ Require Import Typing.StructuralRule.
 
 (** Some “utility derivations”: small bits of infrastructure frequently used for all sorts of derivations. *)
 
-Section Renaming.
-
-  Context `{H_Funext : Funext} {σ : shape_system}.
-
-  (** Commonly-required analogue of [Closure.deduce']. *)
-  (* TODO: after some use, consider whether this would be more convenient with
-   the equivalence given in the other direction. *)
-  Lemma deduce_modulo_rename {Σ : signature σ}
-      {T : Closure.system (judgement Σ)}
-      (cl_sys_T := structural_rule Σ + T)
-      {H : family _} {J : judgement _}
-      (r : cl_sys_T)
-      (e : shape_of_judgement J
-          <~> shape_of_judgement (Closure.conclusion (cl_sys_T r)))
-      (e_J : Judgement.rename (Closure.conclusion (cl_sys_T r)) e
-             = J)
-      (D : forall p : Closure.premises (cl_sys_T r),
-          Closure.derivation cl_sys_T H (Closure.premises _ p))
-    : Closure.derivation cl_sys_T H J.
-  Proof.
-    simple refine (Closure.deduce' _ _ _).
-    - apply inl, StructuralRule.rename.
-      exists (context_of_judgement (Closure.conclusion (cl_sys_T r))).
-      exists (context_of_judgement J).
-      refine (_; hypothetical_part (Closure.conclusion (cl_sys_T r))).
-      exists (equiv_inverse e).
-      admit.
-    - admit.
-    - intros [].
-      exact (Closure.deduce _ _ r D).
-  Admitted.
-
-  (** Commonly-required analogue of [Closure.deduce'], similar to [deduce_modulo_rename] above. *)
-  (* TODO: after some use, consider whether this would be more convenient with
-   the equivalence given in the other direction. *)
-  Lemma hypothesis_modulo_rename {Σ : signature σ}
-      {T : Closure.system (judgement Σ)}
-      {H : family (judgement _)}
-      {J : judgement _}
-      (h : H)
-      (e : shape_of_judgement J <~> shape_of_judgement (H h))
-      (e_J : Judgement.rename (H h) e = J)
-    : Closure.derivation (structural_rule Σ + T) H J.
-  Proof.
-    simple refine (Closure.deduce' _ _ _).
-    - apply inl, StructuralRule.rename.
-      exists (context_of_judgement (H h)).
-      exists (context_of_judgement J).
-      refine (_; hypothetical_part (H h)).
-      exists (equiv_inverse e).
-      admit.
-    - admit.
-    - intros [].
-      exact (Closure.hypothesis _ _ h).
-  Admitted.
-
-End Renaming.
-
 Section Sum_Shape_Empty.
 (** This section provides infrastructure to deal with a problem
 arising with instantiations of flat rules: their conclusion is typically
@@ -191,6 +133,7 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
     - intros [].
       refine (Closure.hypothesis _ [<_>] tt).
   Defined.
+  (* TODO: simplify this and converse with [derive_renaming_along_equiv]. *)
 
   (** To derive a judgement [ Γ |- J ],
       it’s sufficient to derive [ Γ+0 | - r^* J ],

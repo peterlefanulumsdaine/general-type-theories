@@ -65,10 +65,7 @@ conclusions to arbitrary contexts.
 The specific instances we really use are isomorphisms of the form γ <~> γ+0 and
 (γ+δ)+χ <~> γ+(δ+χ), used for instance in the instantiation of derivations,
 Over some specific shape systems, e.g. de Bruijn shapes, these isomorphisms are
-identities, so this rule should never be required.
-
-In fact we will show it is admissible more generally; but that is a more
-non-trivial metatheorem.` 
+identities, so this rule should never be required over such shape systems.
 *)
 
 (* TODO: naming of this rule not ideal.  Keep seeking better options? *)
@@ -651,8 +648,6 @@ Section InterfaceFunctions.
   Context `{H_Funext : Funext} {σ : shape_system}.
 
   (** Interface to the renaming structural rule *)
-  (* TODO: see if this is more convenient to use in places where older
-   lemmas (eg [deduce_modulo_rename]) are currently used *)
   Lemma derive_rename {Σ : signature σ}
       {T : Closure.system (judgement Σ)} {H : family _}
       (cl_sys_T := structural_rule Σ + T)
@@ -687,6 +682,37 @@ Section InterfaceFunctions.
       refine (_;(_;(f;_))). exact J'. }
     { apply (ap (Build_judgement _)), inverse, e. }
     { intros; apply D. }
+  Defined.
+
+  Lemma derive_renaming_along_equiv {Σ : signature σ}
+      {T : Closure.system (judgement Σ)} {H : family _}
+      (cl_sys_T := structural_rule Σ + T)
+      (J : judgement Σ)
+      {γ' : σ} (e : γ' <~> shape_of_judgement J)
+    : Closure.derivation cl_sys_T H J
+    -> Closure.derivation cl_sys_T H (Judgement.rename J e).
+  Proof.
+    simple refine (derive_rename' _ _ _ _).
+    - apply Context.typed_renaming_to_rename_context.
+    - apply idpath.
+  Defined.
+
+  Lemma derive_from_renaming_along_equiv {Σ : signature σ}
+      {T : Closure.system (judgement Σ)} {H : family _}
+      (cl_sys_T := structural_rule Σ + T)
+      (J : judgement Σ)
+      {γ' : σ} (e : γ' <~> shape_of_judgement J)
+    : Closure.derivation cl_sys_T H (Judgement.rename J e)
+      -> Closure.derivation cl_sys_T H J.
+  Proof.
+    simple refine (derive_rename' _ _ _ _).
+    - apply Context.typed_renaming_from_rename_context.
+    - apply (ap (Build_hypothetical_judgement _)), inverse.
+      apply path_forall; intros s.
+      eapply concat. { apply rename_rename. }
+      eapply concat. 2: { apply rename_idmap. }
+      apply (ap (fun r => Expression.rename r _)).
+      apply path_forall; intro; apply eisretr.
   Defined.
 
   Lemma derive_variable {Σ : signature σ}

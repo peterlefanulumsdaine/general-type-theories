@@ -131,7 +131,7 @@ Section Rename_Variables.
     exact (fun j => Expression.rename (equiv_inverse e) (Γ (e j))).
   Defined.
 
-  Local Definition typed_renaming_to_rename_context
+  Definition typed_renaming_to_rename_context
       (Γ : raw_context Σ) {γ' : shape_carrier σ} (e : γ' <~> Γ)
     : typed_renaming Γ (rename Γ e).
   Proof.
@@ -140,7 +140,7 @@ Section Rename_Variables.
     apply ap, ap, eisretr.
   Defined.
 
-  Local Definition typed_renaming_from_rename_context `{Funext}
+  Definition typed_renaming_from_rename_context `{Funext}
       (Γ : raw_context Σ) {γ' : shape_carrier σ} (e : γ' <~> Γ)
     : typed_renaming (rename Γ e) Γ.
   Proof.
