@@ -642,13 +642,13 @@ Defined.
 
 End StructuralRuleInd.
 
-Section InterfaceFunctions.
-(** More convenient interface functions for using the rules in derivations *)
+Section Renaming.
+  (** Interface to the renaming structural rule,
+   and some frequently-used special cases. *)
 
-  Context `{H_Funext : Funext} {σ : shape_system}.
+  Context `{H_Funext : Funext} {σ : shape_system} {Σ : signature σ}.
 
-  (** Interface to the renaming structural rule *)
-  Lemma derive_rename {Σ : signature σ}
+  Lemma derive_rename 
       {T : Closure.system (judgement Σ)} {H : family _}
       (cl_sys_T := structural_rule Σ + T)
       (Γ Γ' : raw_context Σ)
@@ -665,7 +665,7 @@ Section InterfaceFunctions.
     { intros; apply D. }
   Defined.
 
-  Lemma derive_rename' {Σ : signature σ}
+  Lemma derive_rename'
       {T : Closure.system (judgement Σ)} {H : family _}
       (cl_sys_T := structural_rule Σ + T)
       (J J' : judgement Σ)
@@ -684,7 +684,7 @@ Section InterfaceFunctions.
     { intros; apply D. }
   Defined.
 
-  Lemma derive_renaming_along_equiv {Σ : signature σ}
+  Lemma derive_renaming_along_equiv
       {T : Closure.system (judgement Σ)} {H : family _}
       (cl_sys_T := structural_rule Σ + T)
       (J : judgement Σ)
@@ -697,7 +697,7 @@ Section InterfaceFunctions.
     - apply idpath.
   Defined.
 
-  Lemma derive_from_renaming_along_equiv {Σ : signature σ}
+  Lemma derive_from_renaming_along_equiv
       {T : Closure.system (judgement Σ)} {H : family _}
       (cl_sys_T := structural_rule Σ + T)
       (J : judgement Σ)
@@ -714,6 +714,36 @@ Section InterfaceFunctions.
       apply (ap (fun r => Expression.rename r _)).
       apply path_forall; intro; apply eisretr.
   Defined.
+
+(** A particularly common case: renaming along the equivalence [ Γ <~> Γ+0 ].
+
+This arises with instantiations of flat rules: their conclusion is typically
+over a context [ Γ + 0 ], not just [ Γ ] as one would want. *)
+
+  Definition derive_reindexing_to_empty_sum {T} {h}
+      (J : judgement Σ)
+    : Closure.derivation (structural_rule Σ + T) h J
+    -> Closure.derivation (structural_rule Σ + T) h
+         (Judgement.rename J (equiv_inverse (shape_sum_empty_inl _))).
+  Proof.
+    apply derive_renaming_along_equiv.
+  Defined.
+
+  Definition derive_from_reindexing_to_empty_sum {T} {h}
+      {Γ : raw_context Σ}
+      (J : hypothetical_judgement Σ Γ)
+    : Closure.derivation (structural_rule Σ + T) h
+          (Judgement.rename
+             (Build_judgement Γ J) (equiv_inverse (shape_sum_empty_inl _)))
+    -> Closure.derivation (structural_rule Σ + T) h (Build_judgement Γ J).
+  Proof.
+    apply derive_from_renaming_along_equiv.
+  Defined.
+
+End Renaming.
+
+Section InterfaceFunctions.
+(** More convenient interface functions for using the rules in derivations *)
 
   Lemma derive_variable {Σ : signature σ}
       {T : Closure.system (judgement Σ)} {H : family _}

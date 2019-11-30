@@ -12,44 +12,6 @@ Require Import Typing.StructuralRule.
 
 (** Some “utility derivations”: small bits of infrastructure frequently used for all sorts of derivations. *)
 
-Section Sum_Shape_Empty.
-(** This section provides infrastructure to deal with a problem
-arising with instantiations of flat rules: their conclusion is typically
-over a context whose shape is [ Γ + 0 ], not just [ Γ ]
-as one would expect. 
-
-  So we give here derivations going between a general judgement [ Γ |- J ] and
-its reindexing to [ Γ + 0 ]. 
-
-  It would be good to have some infrastructure (tactics or lemmas?) making
-applications of this less intrusive: i.e. to allow one to use instantiations
-of flat rules as the closure conditions one expects them to be, with just [Γ]
-instead of [ Γ + 0 ]. *)
-
-  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
-
-  Definition derive_reindexing_to_empty_sum {T} {h}
-      (J : judgement Σ)
-    : Closure.derivation (structural_rule Σ + T) h J
-    -> Closure.derivation (structural_rule Σ + T) h
-         (Judgement.rename J (equiv_inverse (shape_sum_empty_inl _))).
-  Proof.
-    apply derive_renaming_along_equiv.
-  Defined.
-
-  Definition derive_from_reindexing_to_empty_sum {T} {h}
-      {Γ : raw_context Σ}
-      (J : hypothetical_judgement Σ Γ)
-    : Closure.derivation (structural_rule Σ + T) h
-          (Judgement.rename
-             (Build_judgement Γ J) (equiv_inverse (shape_sum_empty_inl _)))
-    -> Closure.derivation (structural_rule Σ + T) h (Build_judgement Γ J).
-  Proof.
-    apply derive_from_renaming_along_equiv.
-  Defined.
-
-End Sum_Shape_Empty.
-
 Section Usable_Structural_Rules.
 (** Here we give more directly usable forms of the structural rules. *)
 
