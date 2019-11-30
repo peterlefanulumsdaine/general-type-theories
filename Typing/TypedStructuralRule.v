@@ -380,12 +380,8 @@ Section TypedStructuralRule.
        -------------
        ⊢ u = u' : B
        *)
-    set (metas := flat_rule_metas (@tmeq_convert_rule σ)).
-    pose (A := Some (Some (Some tt)) : metas).
-    pose (B := Some (Some None) : metas).
-    pose (u := Some None : metas).
-    pose (u' := None : metas).
-    subst metas.
+    pose (A := Some (Some (Some tt))
+               : flat_rule_metas (@tmeq_convert_rule σ)).
     intros [ [] | | ].
     - (* type presup :  |- B type *)
       simple refine (Closure.hypothesis' _ _).
@@ -427,9 +423,9 @@ Section TypedStructuralRule.
       (r : @equality_flat_rule σ)
     : TypedFlatRule.weakly_well_typed [<>] (equality_flat_rule r).
   Proof.
-    destruct r as [[[[[[[ ] | ] | ] | ] | ] | ] | ]; cbn.
+    recursive_destruct r; cbn.
     - (* tyeq_refl: Γ |- A  // Γ |- A = A *)
-      intros [ [] | | ].
+      intros p; recursive_destruct p.
       + (* left-hand side presup: Γ |- A *)
         simple refine (Closure.hypothesis' _ _).
         * apply inl. exact tt.
@@ -438,41 +434,82 @@ Section TypedStructuralRule.
         simple refine (Closure.hypothesis' _ _).
         * apply inl. exact tt.
         * apply Judgement.eq_by_eta, idpath.
-    - admit. (* tyeq_sym *)
-    - admit. (* tyeq_trans *)
-    - admit. (* tmeq_refl *)
+    - (* tyeq_sym *)
+      intros p; recursive_destruct p.
+      + (* LHS presup: Γ |- B *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inr. exists tt. apply the_equality_rhs.
+        * apply Judgement.eq_by_eta, idpath.
+      + (* RHS presup: Γ |- A *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inr. exists tt. apply the_equality_lhs.
+        * apply Judgement.eq_by_eta, idpath.
+    - (* tyeq_trans *)
+      intros p; recursive_destruct p.
+      + (* LHS presup: Γ |- A *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inr. exists (Some tt). apply the_equality_lhs.
+        * apply Judgement.eq_by_eta, idpath.
+      + (* RHS presup: Γ |- C *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inr. exists None. apply the_equality_rhs.
+        * apply Judgement.eq_by_eta, idpath.
+    - (* tmeq_refl *)
+      intros p; recursive_destruct p.
+      + (* type presup: Γ |- A type *)        
+        simple refine (Closure.hypothesis' _ _).
+        * apply inr. exists tt. apply the_term_type.
+        * apply Judgement.eq_by_eta, idpath.
+      + (* LHS presup: Γ |- a:A *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inl. exact tt.
+        * apply Judgement.eq_by_eta, idpath.
+      + (* RHS presup: Γ |- a:A *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inl. exact tt.
+        * apply Judgement.eq_by_eta, idpath.
     - (* tmeq_sym :  |- a = b : A //  |- b = a : A *)
-      set (metas := flat_rule_metas (@tmeq_sym_rule σ)).
-      set (A := Some (Some tt) : metas).
-      set (a := Some None : metas).
-      set (b := None : metas).
-      subst metas.
-      intros [ [] | | ].
+      intros p; recursive_destruct p.
       + (* type presup :  |- A type *)
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists tt.
-          refine (the_equality_sort class_term the_term_type).
+        * apply inr. exists tt. apply the_equality_sort, the_term_type.
         * apply Judgement.eq_by_eta, idpath.
       + (* LHS presup :   |- a : A *)
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists tt. exact (the_equality_rhs _).
+        * apply inr. exists tt. apply the_equality_rhs.
         * apply Judgement.eq_by_eta, idpath.
       + (* RHS presup :   |- b : A*)
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists tt. exact (the_equality_lhs _).
-        * apply Judgement.eq_by_eta, idpath. 
-    - admit. (* tmeq_trans *)
-    - admit. (* term_convert *)
+        * apply inr. exists tt. apply the_equality_lhs.
+        * apply Judgement.eq_by_eta, idpath.
+    - (* tmeq_trans *)
+      intros p; recursive_destruct p.
+      + (* type presup: Γ |- A type *)        
+        simple refine (Closure.hypothesis' _ _).
+        * apply inr. exists None. apply the_equality_sort, the_term_type.
+        * apply Judgement.eq_by_eta, idpath.
+      + (* LHS presup: Γ |- a:A *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inr. exists (Some tt). apply the_equality_lhs.
+        * apply Judgement.eq_by_eta, idpath.
+      + (* RHS presup: Γ |- a:A *)
+        simple refine (Closure.hypothesis' _ _).
+        * apply inr. exists None. apply the_equality_rhs.
+        * apply Judgement.eq_by_eta, idpath.
+    - (* term_convert *)
+      intros p; recursive_destruct p.
+      + (* type presup: Γ |- A type *)        
+        simple refine (Closure.hypothesis' _ _).
+        * apply inl. apply Some, Some, None.
+        * apply Judgement.eq_by_eta, idpath.
     - (* tmeq_convert *)
       apply tmeq_convert_is_well_typed.
-  Admitted.
+  Defined.
   (* TODO: some thoughts from this proof:
   - rename [the_equality_sort], to eg [the_equality_boundary]? 
-  - make presuppositions less option-blind? 
+  - make presuppositions and hypothesis selection less option-blind (but how)? 
   - maybe make structural rule accessors take value in closure systems of type theories, not in [structural_rules] itself?  (More convenient for giving derivations; but then recursion over structural rules is less clear.) 
 *)
-
-
   
   End Equality_Flat_Rules.
 

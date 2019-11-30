@@ -246,6 +246,7 @@ Defined.
 (** A slightly technical lemma, useful under
 [Judgement.eq_by_expressions] for the types of a context
 reindexed under [shape_sum_empty_inl]. *)
+(* TODO: perhaps upstream to e.g. [Context]? *)
 Lemma instantiate_empty_ptwise
     (Γ : raw_context Σ)
     (f : shape_empty σ -> raw_type Σ _)
@@ -267,6 +268,7 @@ Defined.
 (** A slightly technical lemma, useful under
 [Judgement.eq_by_expressions] for the expressions coming from
 instantiating a metavariable with empty binder. *)
+(* TODO: perhaps upstream to e.g. [Metavariable]? *)
 Lemma instantiate_binderless_metavariable
   {γ : σ} {cl}
   (E : raw_expression Σ cl (shape_sum γ (shape_empty _)))
