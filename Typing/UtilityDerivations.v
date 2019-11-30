@@ -15,40 +15,18 @@ Require Import Typing.StructuralRule.
 Section Sum_Shape_Empty.
 (** This section provides infrastructure to deal with a problem
 arising with instantiations of flat rules: their conclusion is typically
-over a context whose shape is [ shape_sum Γ (shape_empty σ) ], not just [ Γ ]
+over a context whose shape is [ Γ + 0 ], not just [ Γ ]
 as one would expect. 
 
   So we give here derivations going between a general judgement [ Γ |- J ] and
-its reindexing to [ shape_sum Γ (shape_empty σ) ]. 
+its reindexing to [ Γ + 0 ]. 
 
   It would be good to have some infrastructure (tactics or lemmas?) making
 applications of this less intrusive: i.e. to allow one to use instantiations
 of flat rules as the closure conditions one expects them to be, with just [Γ]
-instead of [ shape_sum Γ (shape_empty σ) ]. *)
+instead of [ Γ + 0 ]. *)
 
   Context `{Funext} {σ : shape_system} {Σ : signature σ}.
-
-  (** From any judgement [ Γ |- J ],
-      one can derive [ Γ+0 |- r^* J ],
-   where [Γ+0] is the sum of Γ with the empty shape,
-   and r^*J is the reindexing of [J] to [Γ+0]. *)
-  Definition derivation_of_reindexing_to_empty_sum {T}
-      (J : judgement Σ)
-    : Closure.derivation (structural_rule Σ + T)
-        [< J >] 
-        (Judgement.rename J (equiv_inverse (shape_sum_empty_inl _))).
-  Proof.
-    simple refine (Closure.deduce' _ _ _).
-    - apply inl, StructuralRule.rename.
-      exists (context_of_judgement J).
-      exists (Context.rename (context_of_judgement J)
-                (equiv_inverse (shape_sum_empty_inl _))).
-      exists (Context.typed_renaming_to_rename_context _ _).
-      exact (hypothetical_part J).
-    - apply idpath.
-    - intros [].
-      refine (Closure.hypothesis _ [<_>] tt).
-  Defined.
 
   Definition derive_reindexing_to_empty_sum {T} {h}
       (J : judgement Σ)
@@ -56,89 +34,9 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
     -> Closure.derivation (structural_rule Σ + T) h
          (Judgement.rename J (equiv_inverse (shape_sum_empty_inl _))).
   Proof.
-    intros D.
-    refine (Closure.graft _ (derivation_of_reindexing_to_empty_sum J) _).
-    intros i. exact D.
+    apply derive_renaming_along_equiv.
   Defined.
 
-  (* TODO: generalise this to arbitrary judgements, and add function
-   [Judgement.rename] (both to make this more general, and to make
-   the statement cleaner). *)
-  (* NOTE: test whether this or [derivation_of_reindexing_to_empty_sum]
-   is easier to use in practice; maybe get rid of whichever is less
-   useful. *)
-  Definition derivation_of_judgement_over_empty_sum {T}
-      {γ : σ} (γ0 := (shape_sum γ (shape_empty _)))
-      {Γ_types : γ0 -> raw_type Σ γ0} (Γ := Build_raw_context γ0 Γ_types)
-      (J : hypothetical_judgement Σ Γ)
-    : Closure.derivation (structural_rule Σ + T)
-        [< Judgement.rename (Build_judgement Γ J) (shape_sum_empty_inl _) >]
-        (Build_judgement Γ J).
-  Proof.
-    simple refine (Closure.deduce' _ _ _).
-    - apply inl, StructuralRule.rename.
-      exists (Context.rename Γ (shape_sum_empty_inl _)).
-      exists Γ.
-      exists (Context.typed_renaming_from_rename_context _ _).
-      refine (rename_hypothetical_judgement _ J).
-      exact (equiv_inverse (shape_sum_empty_inl _)).
-    - apply Judgement.eq_by_expressions.
-      + intros; apply idpath.
-      + intros.
-        eapply concat. { apply rename_rename. }
-        eapply concat. 2: { apply rename_idmap. }
-        apply (ap (fun f => Expression.rename f _)).
-        apply path_forall; intros j; apply eisretr.
-    - intros [].
-      refine (Closure.hypothesis _ [<_>] tt).
-  Defined.
-
-  Definition derive_judgement_over_empty_sum {T} {h}
-      {γ : σ} (γ0 := (shape_sum γ (shape_empty _)))
-      {Γ_types : γ0 -> raw_type Σ γ0} (Γ := Build_raw_context γ0 Γ_types)
-      (J : hypothetical_judgement Σ Γ)
-    : Closure.derivation (structural_rule Σ + T) h
-        (Judgement.rename (Build_judgement Γ J) (shape_sum_empty_inl _) )
-    -> Closure.derivation (structural_rule Σ + T) h (Build_judgement Γ J).
-  Proof.
-    intros D.
-    refine (Closure.graft _ (derivation_of_judgement_over_empty_sum J) _).
-    intros i. exact D.
-  Defined.
-
-  (** Derivation of an arbitrary hypotherical judgement [ Γ |- J ],
-   from its reindexing to the sum-with-empty, [ Γ+0 |- r^* J ].
-
-   Can be used cleanly via [derive_from_reindexing_to_empty_sum] below. *)
-  Definition derivation_from_reindexing_to_empty_sum {T}
-      {Γ : raw_context Σ}
-      (J : hypothetical_judgement Σ Γ)
-    : Closure.derivation (structural_rule Σ + T)
-        [< Judgement.rename
-             (Build_judgement Γ J) (equiv_inverse (shape_sum_empty_inl _)) >]
-        (Build_judgement Γ J).
-  Proof.
-    simple refine (Closure.deduce' _ _ _).
-    - apply inl, StructuralRule.rename.
-      exists (Context.rename Γ (equiv_inverse (shape_sum_empty_inl _))).
-      exists Γ.
-      exists (Context.typed_renaming_from_rename_context _ _).
-      exact (rename_hypothetical_judgement (shape_sum_empty_inl _) J).
-    - apply Judgement.eq_by_expressions; intros i.
-      + apply idpath.
-      + eapply concat. { apply rename_rename. }
-        eapply concat. 2: { apply rename_idmap. }
-        apply (ap (fun f => Expression.rename f _)).
-        apply path_forall; intros j; apply eissect.
-    - intros [].
-      refine (Closure.hypothesis _ [<_>] tt).
-  Defined.
-  (* TODO: simplify this and converse with [derive_renaming_along_equiv]. *)
-
-  (** To derive a judgement [ Γ |- J ],
-      it’s sufficient to derive [ Γ+0 | - r^* J ],
-   where [Γ+0] is the sum of Γ with the empty shape,
-   and r^*J is the reindexing of [J] to [Γ+0]. *)
   Definition derive_from_reindexing_to_empty_sum {T} {h}
       {Γ : raw_context Σ}
       (J : hypothetical_judgement Σ Γ)
@@ -147,9 +45,7 @@ instead of [ shape_sum Γ (shape_empty σ) ]. *)
              (Build_judgement Γ J) (equiv_inverse (shape_sum_empty_inl _)))
     -> Closure.derivation (structural_rule Σ + T) h (Build_judgement Γ J).
   Proof.
-    intros D.
-    refine (Closure.graft _ (derivation_from_reindexing_to_empty_sum J) _).
-    intros i. exact D.
+    apply derive_from_renaming_along_equiv.
   Defined.
 
 End Sum_Shape_Empty.
