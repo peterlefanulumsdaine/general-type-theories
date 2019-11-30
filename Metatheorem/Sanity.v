@@ -17,36 +17,39 @@ Require Import Typing.TypedStructuralRule.
 Require Import Presented.TypedRule.
 Require Import Presented.TypeTheory.
 
-(** The main goal of this file is the metatheorem that all presuppositions
-    of a derivable judgement are derivable, over any type theory: *)
-Theorem derive_presupposition_closed {σ} {T : raw_type_theory σ}
-     {j : judgement (RawTypeTheory.signature T)}
-     (dj : RawTypeTheory.derivation T [<>] j)
-     {p : presupposition j }
+(** The main goal of this file is the “presuppositivity metatheorem”:
+    the presuppositions of a derivable judgement are also derivable,
+    over any well-typed type theory: *)
+Theorem derive_presupposition {σ} {Σ : signature σ}
+    {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
+    {j : judgement (RawTypeTheory.signature T)}
+    (dj : RawTypeTheory.derivation T [<>] j)
+    {p : presupposition j }
   : RawTypeTheory.derivation T [<>] (presupposition j p).
 Abort.
-(** In outline, the high level structure of the proof consists of giving analogues of the notions of “closed under presuppositions” for flat rules/flat type theories and closure rules/closure systems, and then doing the main inductive construction purely in terms of closure systems.
 
-The low-level hard work is showing that the flat rules / closure conditions arising from type theories really are presupposition-closed in the appropriate sense. *)
+(** In outline, the high level structure of the proof consists of giving notions of presuppositivity for flat rules/flat type theories and closure rules/closure systems, and doing the main inductive construction purely in terms of closure systems.
+
+The low-level hard work is showing that the flat rules / closure conditions arising from type theories really are presuppositive in the appropriate sense. *)
 
 
-Section PresuppositionClosureFlat.
-(** In this section, we show how “presupposition-closedness” transfers between the flat world and the closure-system world. *)
+Section PresuppositivityFlat.
+(** In this section, we show how presuppositivity transfers between the flat world and the closure-system world. *)
 
   Context {σ : shape_system} `{Funext}.
 
-  (** A flat type theory is presupposition-closed if all its rules are (weakly) presuppositive over it.
+  (** A flat type theory is presuppositive if all its rules are (weakly) presuppositive over it.
 
   (One might be tempted to call this “well-typed”, but we don’t, because it’s not really strong enough to imply much about the behaviour of the theory.) *)
-  Definition presupposition_closed_flat_type_theory
+  Definition presuppositive_flat_type_theory
       {Σ : signature σ} (T : flat_type_theory Σ)
     : Type
   := forall r : T, TypedFlatRule.weakly_presuppositive T (T r).
 
   (** If a flat type theory T is presup-closed, then so is its associated closure system. *)
-  Theorem closure_system_of_presupposition_closed_flat_type_theory
+  Theorem closure_system_of_presuppositive_flat_type_theory
       {Σ : signature σ} {T : flat_type_theory Σ}
-      (T_presup_closed : presupposition_closed_flat_type_theory T)
+      (T_presup_closed : presuppositive_flat_type_theory T)
     : Closure.weakly_presuppositive_system presupposition
         (FlatTypeTheory.closure_system T).
   Proof.
@@ -65,11 +68,11 @@ Section PresuppositionClosureFlat.
   Defined.
 
   (** Putting the above together: all presuppositions of a derivable judgement
-      over a presupposition-closed flat tpye theory are again derivable,
+      over a presuppositive flat tpye theory are again derivable,
       assuming additionally all presuppositions of the original hypotheses. *)
   Theorem derive_presupposition_from_flat
       {Σ : signature σ}
-      {T : flat_type_theory Σ} (H_T : presupposition_closed_flat_type_theory T)
+      {T : flat_type_theory Σ} (H_T : presuppositive_flat_type_theory T)
       {j : judgement Σ} {hyps : family _}
       (d_j : FlatTypeTheory.derivation T hyps j)
       {p : presupposition j }
@@ -79,13 +82,13 @@ Section PresuppositionClosureFlat.
   Proof.
     simple refine
       (Closure.presupposition_derivation presupposition _ d_j _).
-    apply closure_system_of_presupposition_closed_flat_type_theory.
+    apply closure_system_of_presuppositive_flat_type_theory.
     apply H_T.
   Defined.
 
-End PresuppositionClosureFlat.
+End PresuppositivityFlat.
 
-Section PresuppositionClosure.
+Section Presuppositivity.
 
   Context {σ : shape_system} `{Funext}.
 
@@ -117,9 +120,9 @@ Section PresuppositionClosure.
 
   (** For any raw type theory [T] and a rule [r] of the flattened [T], every
       presupposition in the boundary of the conclusion of [r] can be derived. *)
-  Lemma presupposition_closed_flatten
+  Lemma presuppositive_flatten
       {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
-    : presupposition_closed_flat_type_theory (RawTypeTheory.flatten T).
+    : presuppositive_flat_type_theory (RawTypeTheory.flatten T).
   Proof.
     (* The flattened [T] has logical and congruence rules, two cases to consider. *)
     (* Do these have to be treated separately, or can they be unified better? *)
@@ -146,11 +149,12 @@ Section PresuppositionClosure.
         (presupposition _ p).
   Proof.
     apply derive_presupposition_from_flat; try assumption.
-    apply presupposition_closed_flatten, T_WT.
+    apply presuppositive_flatten, T_WT.
   Defined.
 
-  (** Working in a type theory [T], given a judgment [j] which is derivable
-      without hypotheses, ever presupposition of [j] is derivable. *)
+  (** Over a well-typed type theory [T],
+      if a judgment [j] is derivable without hypotheses,
+      then every presupposition of [j] is also derivable. *)
   Corollary derive_presupposition_closed
       {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
       {j : judgement (RawTypeTheory.signature T)}
@@ -163,4 +167,4 @@ Section PresuppositionClosure.
     - intros i; recursive_destruct i.
   Defined.
 
-End PresuppositionClosure.
+End Presuppositivity.
