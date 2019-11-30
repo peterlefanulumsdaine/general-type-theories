@@ -7,7 +7,6 @@ Require Import Typing.Context.
 Require Import Typing.Judgement.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
-Require Import Typing.UtilityDerivations.
 
 Section Presuppositive.
 

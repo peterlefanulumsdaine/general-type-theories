@@ -747,80 +747,134 @@ Section InterfaceFunctions.
 
   Lemma derive_variable
       (Γ : raw_context Σ) (i : Γ)
-    : Closure.derivation T H [! Γ |- Γ i !]
-    -> Closure.derivation T H [! Γ |- raw_variable i ; Γ i !].
+      (d_Γi : derivation T H [! Γ |- Γ i !])
+    : derivation T H [! Γ |- raw_variable i ; Γ i !].
   Proof.
-    intro D.
     simple refine (Closure.deduce' _ _ _).
-    simple refine (inl (variable_rule (_;_))).
-    3: apply idpath.
-    intro; apply D.
+    { apply inl, variable_rule. exists Γ; exact i. }
+    { apply idpath. }
+    intro; apply d_Γi.
   Defined.
 
-  Lemma derive_tyeq_refl
-      (Γ : raw_context Σ) (A : raw_expression Σ class_type Γ )
-    : Closure.derivation T H [! Γ |- A !]
-    -> Closure.derivation T H [! Γ |- A ≡ A !].
+  (** A slightly technical lemma, useful under [Judgement.eq_by_expressions]
+    for the types of a contexr reindexed under [shape_sum_empty_inl]. *)
+  (* TODO: perhaps upstream to e.g. [Context]? *)
+  Lemma instantiate_empty_ptwise
+      (Γ : raw_context Σ)
+      (f : shape_empty σ -> raw_type Σ _)
+      (i : shape_sum Γ (shape_empty σ))
+    : coproduct_rect (shape_is_sum) _
+        (fun j:Γ => Expression.rename (shape_sum_empty_inl _) (Γ j))
+        f i
+    = Context.rename Γ (shape_sum_empty_inl _)^-1 i.
   Proof.
-    assert (H_A :
-      @instantiate_expression _ _ [<(class_type, σ.(shape_empty)) >] _ _
-        (fun _ => (Expression.rename (shape_sum_empty_inl Γ) A))
-        _ ([M/ (tt : [<(class_type, σ.(shape_empty)) >]) /])
-      = Expression.rename (shape_sum_empty_inl Γ) A).
-    { eapply concat. 2: { apply substitute_idmap. }
-      simpl. apply (ap (fun f => substitute f _)).
-      apply path_forall.
-      refine (coproduct_rect shape_is_sum _ _ _).
-      - intros i. refine (coproduct_comp_inj1 _). 
-      - refine (empty_rect _ shape_is_empty _).
-    }
-    intros D.
-    simple refine (derive_rename' _ _ _ _ _).
-    4: {
-      simple refine (Closure.deduce _ _ _ _).
-      { apply inl, tyeq_refl.
-        exists Γ.
-        intros ?. refine (Expression.rename _ A). apply shape_sum_empty_inl. }
-      intros p; cbn; clear p.
-      simple refine (derive_rename' _ _ _ _ _).
-      4: apply D.
-      { exists (shape_sum_empty_inl _ : _ -> _).
-        apply respects_types_shape_sum_inl. }
-      apply (ap (Build_hypothetical_judgement _)).
-      apply path_forall. intros i; recursive_destruct i.
-      eapply concat. 2: apply H_A.
-      apply ap; cbn; apply ap.
-      apply path_forall. refine (empty_rect _ shape_is_empty _).
-    }
-    { exists (shape_sum_empty_inl _)^-1.
-      apply respects_types_shape_sum_empty_inl_inverse.
-    }
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall. intros i; recursive_destruct i.
-    - eapply concat. 2: apply ap. 
-      { eapply concat. { apply inverse, rename_idmap. }
-        eapply concat. 2: { eapply inverse, rename_rename. }
-        eapply (ap (fun f => Expression.rename f _)).
-        apply inverse, path_forall.
-        apply (eissect (shape_sum_empty_inl _)).
-      }
-      eapply concat. { apply inverse, H_A. }
-      apply (ap (instantiate_expression _)).
-      cbn; apply ap.
-      apply path_forall. refine (empty_rect _ shape_is_empty _).
-    - eapply concat. 2: apply ap. 
-      { eapply concat. { apply inverse, rename_idmap. }
-        eapply concat. 2: { eapply inverse, rename_rename. }
-        eapply (ap (fun f => Expression.rename f _)).
-        apply inverse, path_forall.
-        apply (eissect (shape_sum_empty_inl _)).
-      }
-      eapply concat. { apply inverse, H_A. }
-      apply (ap (instantiate_expression _)).
-      cbn; apply ap.
-      apply path_forall. refine (empty_rect _ shape_is_empty _).
+    revert i. cbn.
+    apply (coproduct_rect shape_is_sum).
+    + intros ?.
+      eapply concat. { refine (coproduct_comp_inj1 _). }
+      cbn. apply ap, ap.
+      apply inverse. refine (coproduct_comp_inj1 _).
+    + exact (empty_rect _ shape_is_empty _).
   Defined.
-  (* TODO: this proof is horrible. What lemmas can we abstract to make it nicer, or what lemmas have we already abstracted that could help?? *)
+
+  (** Another technical lemma, useful under [Judgement.eq_by_expressions]
+      for instantiations of a metavariable with empty binder. *)
+  (* TODO: perhaps upstream to e.g. [Metavariable]? *)
+  Lemma instantiate_binderless_metavariable
+      {γ : σ} {cl}
+      (E : raw_expression Σ cl (shape_sum γ (shape_empty _)))
+      {f}
+    : substitute
+        (coproduct_rect shape_is_sum _
+                        (fun i => raw_variable (coproduct_inj1 shape_is_sum i))
+                        f)
+        E
+      = E.
+  Proof.
+    eapply concat. 2: { apply rename_idmap. }
+    eapply concat. 2: { apply substitute_raw_variable. }
+    apply (ap (fun g => substitute g _)).
+    apply path_forall.
+    refine (coproduct_rect shape_is_sum _ _ _).
+    - intros i; refine (coproduct_comp_inj1 _).
+    - apply (empty_rect _ shape_is_empty).
+  Defined.
+
+  Definition derive_tyeq_refl
+      (Γ : raw_context Σ) (A : raw_expression Σ class_type Γ)
+      (d_A : derivation T H [! Γ |- A !])
+    : derivation T H [! Γ |- A ≡ A !].
+  Proof.
+    apply derive_from_reindexing_to_empty_sum.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, tyeq_refl. 
+      exists Γ.
+      intros i; recursive_destruct i. cbn.
+      refine (Expression.rename _ A). 
+      apply shape_sum_empty_inl. }
+    { refine (Judgement.eq_by_expressions _ _).
+      - intros i. apply instantiate_empty_ptwise.
+      - intros i; recursive_destruct i;
+          apply instantiate_binderless_metavariable.
+    }
+    intros [].
+    refine (transport _ _
+                      (derive_reindexing_to_empty_sum _ d_A)).
+    apply Judgement.eq_by_expressions.
+    - intros i. apply inverse, instantiate_empty_ptwise.
+    - intros i; recursive_destruct i;
+        apply inverse, instantiate_binderless_metavariable.
+  Defined.
+
+  Definition derive_tyeq_sym
+      (Γ : raw_context Σ) (A B : raw_expression Σ class_type Γ)
+      (d_AB : derivation T H [! Γ |- A ≡ B !])
+    : derivation T H [! Γ |- B ≡ A !].
+  Proof.
+  Admitted. (* [derive_tyeq_sym]: straightforward, similar to others in section *)
+
+  (* rule term_convert
+
+     ⊢ A, B type
+     ⊢ A ≡ B type
+     ⊢ u : A
+   -------------
+     ⊢ u : B
+   *)
+  Definition derive_term_convert
+      ( Γ : raw_context Σ )
+      ( A B : raw_expression Σ class_type Γ )
+      ( u : raw_expression Σ class_term Γ )
+      ( d_A : derivation T H [! Γ |- A !] )
+      ( d_B : derivation T H [! Γ |- B !] )
+      ( d_AB : derivation T H [! Γ |- A ≡ B !] )
+      ( d_u : derivation T H [! Γ |- u ; A !] )
+    : derivation T H [! Γ |- u ; B !].
+  Proof.
+    apply derive_from_reindexing_to_empty_sum.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, term_convert.
+      exists Γ.
+      intros i; recursive_destruct i;
+        refine (Expression.rename (shape_sum_empty_inl _) _).
+      + exact A.
+      + exact B.
+      + exact u.
+    }
+    { refine (Judgement.eq_by_expressions _ _).
+      - apply instantiate_empty_ptwise.
+      - intros i; recursive_destruct i;
+          apply instantiate_binderless_metavariable.
+    }
+    intros p. set (p_keep := p).
+    recursive_destruct p;
+      [ set (d := d_A) | set (d := d_B) | set (d := d_AB) | set (d := d_u) ];
+      refine (transport _ _ (derive_reindexing_to_empty_sum _ d));
+      (apply Judgement.eq_by_expressions;
+       [ intros; apply inverse, instantiate_empty_ptwise
+       | intros i; recursive_destruct i;
+         apply inverse, instantiate_binderless_metavariable]).
+  Defined.
 
 End InterfaceFunctions.
 
@@ -1078,6 +1132,6 @@ Section Instantiation.
         apply Family.sum_unique.
         * apply Family.empty_rect_unique.
         * apply idpath.
-  Admitted. (* [StructuralRule.instantiate]: hard, quite a bit to do; probably should downstream this to [UtilityDerivations]? *)
+  Admitted. (* [StructuralRule.instantiate]: a bit thorny, substantial amount remaining. *)
 
 End Instantiation.

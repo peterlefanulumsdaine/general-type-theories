@@ -8,7 +8,6 @@ Require Import Typing.Judgement.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
 Require Import Typing.StructuralRule.
-Require Import Typing.UtilityDerivations.
 Require Import Typing.TypedFlatRule.
 
 (** We show that all the structural rules are presuppositive.

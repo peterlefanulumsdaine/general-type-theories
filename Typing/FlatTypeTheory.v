@@ -7,7 +7,6 @@ Require Import Typing.Context.
 Require Import Typing.Judgement.
 Require Import Typing.FlatRule.
 Require Import Typing.StructuralRule.
-Require Import Typing.UtilityDerivations.
 
 (** A _flat type theory_ [flat_type_theory] is just a collection of flat rules.
 
