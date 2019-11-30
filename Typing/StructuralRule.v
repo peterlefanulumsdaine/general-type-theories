@@ -131,10 +131,10 @@ Proof.
   exists {   Γ : raw_context Σ
     & { Γ' : raw_context Σ
     & { f : raw_context_map Σ Γ' Γ
-    & { f' : raw_context_map Σ Γ' Γ
+    & { g : raw_context_map Σ Γ' Γ
     & { cl : syntactic_class
     & hypothetical_judgement_expressions Σ (form_object cl) Γ}}}}}.
-  intros [Γ [Γ' [f [f' [cl hjfi]]]]].
+  intros [Γ [Γ' [f [g [cl hjfi]]]]].
   split.
   (* premises: *)
   - refine (Family.adjoin (_ + _ + _) _).
@@ -143,19 +143,19 @@ Proof.
       intros i. refine [! Γ' |- _ ; _ !].
       * exact (f i).
       * exact (substitute f (Γ i)).
-    (* f' is a context morphism *)
+    (* g is a context morphism *)
     + exists Γ.
       intros i. refine [! Γ' |- _ ; _ !].
-      * exact (f' i).
-      * exact (substitute f' (Γ i)).
-    (* f ≡ f' *)
+      * exact (g i).
+      * exact (substitute g (Γ i)).
+    (* f ≡ g *)
     + exists Γ.
       intros i. refine [! Γ' |- _ ≡ _ ; _ !].
     (* TODO: note inconsistent ordering of arguments in [give_Tm_ji] compared to
       other [give_Foo_ji]. Consider, consistentise? *)
       * exact (substitute f (Γ i)).
       * exact (f i).
-      * exact (f' i).
+      * exact (g i).
     (* the target judgement holds over Γ *)
     + exists Γ, (form_object cl).
       exact hjfi.
@@ -167,7 +167,7 @@ Proof.
     + (* LHS *)
       exact (substitute f (hjfi (the_head _))).
     + (* RHS *)
-      exact (substitute f' (hjfi (the_head _))).
+      exact (substitute g (hjfi (the_head _))).
 Defined.
 
 Definition substitution_instance : Closure.system (judgement Σ)

@@ -315,6 +315,13 @@ Proof.
       apply inverse, instantiate_binderless_metavariable.
 Defined.
 
+Definition derive_tyeq_sym
+    (Γ : raw_context Σ) (A B : raw_expression Σ class_type Γ)
+    (d_AB : derivation T H [! Γ |- A ≡ B !])
+  : derivation T H [! Γ |- B ≡ A !].
+Proof.
+Admitted. (* [derive_tyeq_sym]: straightforward, similar to others in section *)
+
 (* rule term_convert
 
  ⊢ A, B type
