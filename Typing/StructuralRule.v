@@ -646,16 +646,17 @@ Section Renaming.
   (** Interface to the renaming structural rule,
    and some frequently-used special cases. *)
 
-  Context `{H_Funext : Funext} {σ : shape_system} {Σ : signature σ}.
+  Context `{H_Funext : Funext}
+        {σ : shape_system} {Σ : signature σ}
+        {C : Closure.system (judgement Σ)} (T := (structural_rule Σ + C))
+        {H : family (judgement Σ) }.
 
   Lemma derive_rename 
-      {T : Closure.system (judgement Σ)} {H : family _}
-      (cl_sys_T := structural_rule Σ + T)
       (Γ Γ' : raw_context Σ)
       (f : typed_renaming Γ Γ')
       (J : hypothetical_judgement Σ Γ)
-    : Closure.derivation cl_sys_T H (Build_judgement Γ J)
-    -> Closure.derivation cl_sys_T H
+    : Closure.derivation T H (Build_judgement Γ J)
+    -> Closure.derivation T H
       (Build_judgement Γ' (rename_hypothetical_judgement f J)).
   Proof.
     intros D.
@@ -666,15 +667,13 @@ Section Renaming.
   Defined.
 
   Lemma derive_rename'
-      {T : Closure.system (judgement Σ)} {H : family _}
-      (cl_sys_T := structural_rule Σ + T)
       (J J' : judgement Σ)
       (f : typed_renaming
              (context_of_judgement J') (context_of_judgement J))
       (e : hypothetical_part J
            = rename_hypothetical_judgement f (hypothetical_part J'))
-    : Closure.derivation cl_sys_T H J'
-    -> Closure.derivation cl_sys_T H J.
+    : Closure.derivation T H J'
+    -> Closure.derivation T H J.
   Proof.
     intros D.
     simple refine (Closure.deduce' _ _ _).
@@ -685,12 +684,10 @@ Section Renaming.
   Defined.
 
   Lemma derive_renaming_along_equiv
-      {T : Closure.system (judgement Σ)} {H : family _}
-      (cl_sys_T := structural_rule Σ + T)
       (J : judgement Σ)
       {γ' : σ} (e : γ' <~> shape_of_judgement J)
-    : Closure.derivation cl_sys_T H J
-    -> Closure.derivation cl_sys_T H (Judgement.rename J e).
+    : Closure.derivation T H J
+    -> Closure.derivation T H (Judgement.rename J e).
   Proof.
     simple refine (derive_rename' _ _ _ _).
     - apply Context.typed_renaming_to_rename_context.
@@ -698,12 +695,10 @@ Section Renaming.
   Defined.
 
   Lemma derive_from_renaming_along_equiv
-      {T : Closure.system (judgement Σ)} {H : family _}
-      (cl_sys_T := structural_rule Σ + T)
       (J : judgement Σ)
       {γ' : σ} (e : γ' <~> shape_of_judgement J)
-    : Closure.derivation cl_sys_T H (Judgement.rename J e)
-      -> Closure.derivation cl_sys_T H J.
+    : Closure.derivation T H (Judgement.rename J e)
+      -> Closure.derivation T H J.
   Proof.
     simple refine (derive_rename' _ _ _ _).
     - apply Context.typed_renaming_from_rename_context.
@@ -720,22 +715,22 @@ Section Renaming.
 This arises with instantiations of flat rules: their conclusion is typically
 over a context [ Γ + 0 ], not just [ Γ ] as one would want. *)
 
-  Definition derive_reindexing_to_empty_sum {T} {h}
+  Definition derive_reindexing_to_empty_sum
       (J : judgement Σ)
-    : Closure.derivation (structural_rule Σ + T) h J
-    -> Closure.derivation (structural_rule Σ + T) h
+    : Closure.derivation T H J
+    -> Closure.derivation T H
          (Judgement.rename J (equiv_inverse (shape_sum_empty_inl _))).
   Proof.
     apply derive_renaming_along_equiv.
   Defined.
 
-  Definition derive_from_reindexing_to_empty_sum {T} {h}
+  Definition derive_from_reindexing_to_empty_sum
       {Γ : raw_context Σ}
       (J : hypothetical_judgement Σ Γ)
-    : Closure.derivation (structural_rule Σ + T) h
+    : Closure.derivation T H
           (Judgement.rename
              (Build_judgement Γ J) (equiv_inverse (shape_sum_empty_inl _)))
-    -> Closure.derivation (structural_rule Σ + T) h (Build_judgement Γ J).
+    -> Closure.derivation T H (Build_judgement Γ J).
   Proof.
     apply derive_from_renaming_along_equiv.
   Defined.
@@ -745,12 +740,15 @@ End Renaming.
 Section InterfaceFunctions.
 (** More convenient interface functions for using the rules in derivations *)
 
-  Lemma derive_variable {Σ : signature σ}
-      {T : Closure.system (judgement Σ)} {H : family _}
-      (cl_sys_T := structural_rule Σ + T)
+  Context `{H_Funext : Funext}
+        {σ : shape_system} {Σ : signature σ}
+        {C : Closure.system (judgement Σ)} (T := (structural_rule Σ + C))
+        {H : family (judgement Σ) }.
+
+  Lemma derive_variable
       (Γ : raw_context Σ) (i : Γ)
-    : Closure.derivation cl_sys_T H [! Γ |- Γ i !]
-    -> Closure.derivation cl_sys_T H [! Γ |- raw_variable i ; Γ i !].
+    : Closure.derivation T H [! Γ |- Γ i !]
+    -> Closure.derivation T H [! Γ |- raw_variable i ; Γ i !].
   Proof.
     intro D.
     simple refine (Closure.deduce' _ _ _).
@@ -759,12 +757,10 @@ Section InterfaceFunctions.
     intro; apply D.
   Defined.
 
-  Lemma derive_tyeq_refl {Σ : signature σ}
-      {T : Closure.system (judgement Σ)} {H : family _}
-      (cl_sys_T := structural_rule Σ + T)
+  Lemma derive_tyeq_refl
       (Γ : raw_context Σ) (A : raw_expression Σ class_type Γ )
-    : Closure.derivation cl_sys_T H [! Γ |- A !]
-    -> Closure.derivation cl_sys_T H [! Γ |- A ≡ A !].
+    : Closure.derivation T H [! Γ |- A !]
+    -> Closure.derivation T H [! Γ |- A ≡ A !].
   Proof.
     assert (H_A :
       @instantiate_expression _ _ [<(class_type, σ.(shape_empty)) >] _ _
