@@ -523,9 +523,11 @@ End Equality.
 
 End HypotheticalStructuralRules.
 
+Definition structural_rule_without_subst : Closure.system (judgement Σ)
+  := rename_instance + variable_instance + equality_instance.
+
 Definition structural_rule : Closure.system (judgement Σ)
-  := rename_instance + substitution_instance
-     + variable_instance + equality_instance.
+  := structural_rule_without_subst + substitution_instance.
 
 End StructuralRules.
 
@@ -541,45 +543,45 @@ Context {σ : shape_system} {Σ : signature σ}.
 Local Definition rename : rename_instance Σ -> structural_rule Σ
   := fun i => inl (inl (inl i)).
 Definition subst_apply : subst_apply_instance Σ -> structural_rule Σ
-  := fun i => inl (inl (inr (inl i))).
+  := fun i => inr (inl i).
 Definition subst_equal : subst_equal_instance Σ -> structural_rule Σ
-  := fun i => inl (inl (inr (inr i))).
+  := fun i => inr (inr i).
 Definition variable_rule : variable_instance Σ -> structural_rule Σ
-  := fun i => inl (inr i).
+  := fun i => inl (inl (inr i)).
 Definition equality_rule : equality_instance Σ -> structural_rule Σ
-  := fun i => inr i.
+  := fun i => inl (inr i).
 Definition tyeq_refl : FlatRule.closure_system
       (FlatRule.fmap (Signature.empty_rect _) tyeq_refl_rule)
     -> structural_rule Σ
-  := fun i => inr (Some (Some (Some (Some (Some (Some (Some tt)))))) ; i).
+  := fun i => equality_rule (Some (Some (Some (Some (Some (Some (Some tt)))))) ; i).
 Definition tyeq_sym : FlatRule.closure_system
       (FlatRule.fmap (Signature.empty_rect _) tyeq_sym_rule)
     -> structural_rule Σ
-  := fun i => inr (Some (Some (Some (Some (Some (Some None))))) ; i).
+  := fun i => equality_rule (Some (Some (Some (Some (Some (Some None))))) ; i).
 Definition tyeq_trans : FlatRule.closure_system
       (FlatRule.fmap (Signature.empty_rect _) tyeq_trans_rule)
     -> structural_rule Σ
-  := fun i => inr (Some (Some (Some (Some (Some None)))) ; i).
+  := fun i => equality_rule (Some (Some (Some (Some (Some None)))) ; i).
 Definition tmeq_refl : FlatRule.closure_system
       (FlatRule.fmap (Signature.empty_rect _) tmeq_refl_rule)
     -> structural_rule Σ
-  := fun i => inr (Some (Some (Some (Some None))) ; i).
+  := fun i => equality_rule (Some (Some (Some (Some None))) ; i).
 Definition tmeq_sym : FlatRule.closure_system
       (FlatRule.fmap (Signature.empty_rect _) tmeq_sym_rule)
     -> structural_rule Σ
-  := fun i => inr (Some (Some (Some None)) ; i).
+  := fun i => equality_rule (Some (Some (Some None)) ; i).
 Definition tmeq_trans : FlatRule.closure_system
       (FlatRule.fmap (Signature.empty_rect _) tmeq_trans_rule)
     -> structural_rule Σ
-  := fun i => inr (Some (Some None) ; i).
+  := fun i => equality_rule (Some (Some None) ; i).
 Definition term_convert : FlatRule.closure_system
       (FlatRule.fmap (Signature.empty_rect _) term_convert_rule)
     -> structural_rule Σ
-  := fun i => inr (Some None ; i).
+  := fun i => equality_rule (Some None ; i).
 Definition tmeq_convert : FlatRule.closure_system
       (FlatRule.fmap (Signature.empty_rect _) tmeq_convert_rule)
     -> structural_rule Σ
-  := fun i => inr (None ; i).
+  := fun i => equality_rule (None ; i).
 
 End StructuralRuleAccessors.
 
@@ -600,9 +602,9 @@ Proof.
   intros P ? ? ? ? ? s.
   destruct s as
       [ [ [ i_rename
-          | [i_sub_ap | i_sub_eq] ]
-        | i_var ]
-      | i_eq ]
+          | i_var ]
+        | i_eq ]
+      | [i_sub_ap | i_sub_eq] ]
   ; eauto.
 Defined.
 
@@ -760,7 +762,10 @@ over a context [ Γ + 0 ], not just [ Γ ] as one would want. *)
 End Renaming.
 
 Section InterfaceFunctions.
-(** More convenient interface functions for using the rules in derivations *)
+(** More convenient interface functions for using the structural rules *)
+
+(* TODO: make type class for other structural rules (individually or grouped),
+  analogously to [has_derivable_renaming]. *)
 
   Context `{H_Funext : Funext}
         {σ : shape_system} {Σ : signature σ}
@@ -1145,7 +1150,8 @@ Section Instantiation.
       refine (Closure.derivation_fmap1 _ _).
       { refine (Closure.sum_rect _ _).
         - apply Closure.idmap.
-        - refine (Closure.compose _ Closure.inr).
+        - refine (Closure.compose _ Closure.inl).
+          refine (Closure.compose _ Closure.inr).
           apply Closure.map_from_family_map.
           refine (Family.bind_include _ _ _).
           exact i.
