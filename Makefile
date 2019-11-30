@@ -36,7 +36,7 @@ MODULES := \
 	Presented/RawTypeTheory \
 	Presented/TypedRule \
 	Presented/TypeTheory \
-	Metatheorem/Sanity \
+	Metatheorem/Presuppositions \
 	Metatheorem/CutElimination \
 	Metatheorem/UniqueTyping \
 	Example/ShapeSystemExamples
