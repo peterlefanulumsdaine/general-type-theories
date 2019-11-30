@@ -831,7 +831,27 @@ Section InterfaceFunctions.
       (d_AB : derivation T H [! Γ |- A ≡ B !])
     : derivation T H [! Γ |- B ≡ A !].
   Proof.
-  Admitted. (* [derive_tyeq_sym]: straightforward, similar to others in section *)
+    apply derive_from_reindexing_to_empty_sum.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, tyeq_sym.
+      exists Γ.
+      intros i; recursive_destruct i;
+        refine (Expression.rename (shape_sum_empty_inl _) _);
+        [ exact A | exact B ].
+    }
+    { refine (Judgement.eq_by_expressions _ _).
+      - apply instantiate_empty_ptwise.
+      - intros i; recursive_destruct i;
+          apply instantiate_binderless_metavariable.
+    }
+    intros [].
+    refine (transport _ _
+                      (derive_reindexing_to_empty_sum _ d_AB)).
+    apply Judgement.eq_by_expressions.
+    - intros i. apply inverse, instantiate_empty_ptwise.
+    - intros i; recursive_destruct i;
+        apply inverse, instantiate_binderless_metavariable.
+  Defined.
 
   (* rule term_convert
 
