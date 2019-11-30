@@ -185,7 +185,7 @@ Section Flattening.
 
   Context {σ : shape_system} `{Funext}.
 
-  Definition weakly_well_typed_flatten
+  Definition weakly_presuppositive_flatten
       {Σ : signature σ} {T : flat_type_theory Σ}
       {a} {hjf_concl}
       {R : rule Σ a hjf_concl}
@@ -193,7 +193,7 @@ Section Flattening.
       (Sr : Judgement.is_object hjf_concl ->
         {S : Σ.(family_index) &
         (symbol_arity S = a) * (symbol_class S = Judgement.class_of hjf_concl)})
-    : TypedFlatRule.weakly_well_typed T (RawRule.flatten R Sr).
+    : TypedFlatRule.weakly_presuppositive T (RawRule.flatten R Sr).
   Proof.
     apply snd in T_WT.
     intros i.
@@ -203,7 +203,7 @@ Section Flattening.
       exact (Closure.hypothesis _ (_+_) (inl i)).
   Qed.
   (* NOTE: in fact, we should be able to extend this to showing
-   that [flatten R] is _strongly_ well-typed. *)
+   that [flatten R] is _strongly_ presuppositive. *)
   
 End Flattening.
 

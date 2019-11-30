@@ -35,32 +35,32 @@ Section PresuppositionClosureFlat.
 
   Context {σ : shape_system} `{Funext}.
 
-  (** A flat type theory is presupposition-closed if all its rules are (weakly) well-typed over it.
+  (** A flat type theory is presupposition-closed if all its rules are (weakly) presuppositive over it.
 
   (One might be tempted to call this “well-typed”, but we don’t, because it’s not really strong enough to imply much about the behaviour of the theory.) *)
   Definition presupposition_closed_flat_type_theory
       {Σ : signature σ} (T : flat_type_theory Σ)
     : Type
-  := forall r : T, TypedFlatRule.weakly_well_typed T (T r).
+  := forall r : T, TypedFlatRule.weakly_presuppositive T (T r).
 
   (** If a flat type theory T is presup-closed, then so is its associated closure system. *)
   Theorem closure_system_of_presupposition_closed_flat_type_theory
       {Σ : signature σ} {T : flat_type_theory Σ}
       (T_presup_closed : presupposition_closed_flat_type_theory T)
-    : Closure.weakly_well_typed_system presupposition
+    : Closure.weakly_presuppositive_system presupposition
         (FlatTypeTheory.closure_system T).
   Proof.
     intros [r_str | r_log ].
     - intros p.
       refine (Closure.derivation_fmap1 _ _).
-      2: { apply TypedStructuralRule.well_typed. }
+      2: { apply TypedStructuralRule.presuppositive. }
       + apply Closure.map_from_family_map.
         apply Family.sum_fmap.
         * apply Family.idmap.
         * apply Family.Build_map'; intros [[]].
     - destruct r_log as [r r_inst]. cbn in r_inst.
       destruct r_inst as [Γ r_args].
-      apply TypedFlatRule.closure_system_weakly_well_typed.
+      apply TypedFlatRule.closure_system_weakly_presuppositive.
       apply T_presup_closed.
   Defined.
 
@@ -123,7 +123,7 @@ Section PresuppositionClosure.
   Proof.
     (* The flattened [T] has logical and congruence rules, two cases to consider. *)
     (* Do these have to be treated separately, or can they be unified better? *)
-    intros [r|r]; apply TypedRule.weakly_well_typed_flatten.
+    intros [r|r]; apply TypedRule.weakly_presuppositive_flatten.
     - (* logical rules *)
       apply rule_of_well_typed_type_theory_is_well_typed, T_WT.
     - (* congruence rules *)

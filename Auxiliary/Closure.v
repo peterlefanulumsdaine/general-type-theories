@@ -361,11 +361,9 @@ Section Presuppositions.
   [presup j := presupposition j].
 *)
 
-(* TODO: consider terminology — the use of _well-typed_ throughout this section might better be called something like _respecting presuppositions_? *)
-
   Context {X : Type} (presup : X -> family X).
 
-  (** A closure rule [r] is _strongly well-typed_ over a closure system [C]
+  (** A closure rule [r] is _strongly presuppositive_ over a closure system [C]
       when all presuppositions of both the premises and the conclusion are
       derivable over [C] from the premises.  Spelled out in more detail:
 
@@ -375,7 +373,7 @@ Section Presuppositions.
       - for each presupposition [c_presup] of the conclusion of [r],
         there is a [C]-derivation of [c_presup] from the premises of [r].
   *)
-  Local Definition strongly_well_typed_rule (C : system X) (r : rule X)
+  Local Definition strongly_presuppositive_rule (C : system X) (r : rule X)
     : Type
   := (forall (p : premises r) (p_presup : presup (premises r p)),
       derivation C (premises r) (presup _ p_presup))
@@ -383,25 +381,25 @@ Section Presuppositions.
      (forall (c_presup : presup (conclusion r)),
        derivation C (premises r) (presup _ c_presup)).
 
-  (** A closure rule [r] is _weakly well-typed_ over a closure system [C] if
+  (** A closure rule [r] is _weakly presuppositive_ over a closure system [C] if
       all presuppositions of the conclusion are derivable over [C] from 
       the premises plus all their presuppositions. 
 
-      So compared to strong well-typedness, we only derive the presuppositions
+      So compared to strong presuppositivity, we only derive the presuppositions
       of the conclusion (not of the premises); and in those derivations, we
       may additionally assume the presuppositions of the premises.
   *)
-  Local Definition weakly_well_typed_rule (C : system X) (r : rule X)
+  Local Definition weakly_presuppositive_rule (C : system X) (r : rule X)
     : Type
   := (forall (c_presup : presup (conclusion r)),
          derivation C
            (premises r + (Family.bind (premises r) presup))
            (presup _ c_presup)).
 
-  (** Strongly well-typed implies weakly well-typed. *)
-  Local Definition weakly_from_strongly_well_typed_rule
+  (** Strongly presuppositive implies weakly presuppositive. *)
+  Local Definition weakly_from_strongly_presuppositive_rule
       (C : system X) (r : rule X)
-    : strongly_well_typed_rule C r -> weakly_well_typed_rule C r.
+    : strongly_presuppositive_rule C r -> weakly_presuppositive_rule C r.
   Proof.
     intros H_r. apply snd in H_r. (* we only need the second half of [H_r] *)
     intro c_presup.
@@ -409,27 +407,27 @@ Section Presuppositions.
     intros i. refine (hypothesis _ (_ + _) (Datatypes.inl i)).
   Defined.
 
-  (** A closure system [C] is strongly well-typed if all its rules are. *)
-  Local Definition strongly_well_typed_system (C : system X) : Type
-  := forall r : C, strongly_well_typed_rule C (C r).
+  (** A closure system [C] is strongly presuppositive if all its rules are. *)
+  Local Definition strongly_presuppositive_system (C : system X) : Type
+  := forall r : C, strongly_presuppositive_rule C (C r).
 
-  (** Similarly, a closure system [C] is weakly well-typed if all its rules are. *)
-  Local Definition weakly_well_typed_system (C : system X) : Type
-  := forall r : C, weakly_well_typed_rule C (C r).
+  (** Similarly, a closure system [C] is weakly presuppositive if all its rules are. *)
+  Local Definition weakly_presuppositive_system (C : system X) : Type
+  := forall r : C, weakly_presuppositive_rule C (C r).
 
-  (** Strongly well-typed implies weakly well-typed. *)
-  Local Definition weakly_from_strongly_well_typed_system (C : system X)
-    : strongly_well_typed_system C -> weakly_well_typed_system C.
+  (** Strongly presuppositive implies weakly presuppositive. *)
+  Local Definition weakly_from_strongly_presuppositive_system (C : system X)
+    : strongly_presuppositive_system C -> weakly_presuppositive_system C.
   Proof.
-    intros H_C r. apply weakly_from_strongly_well_typed_rule, H_C.
+    intros H_C r. apply weakly_from_strongly_presuppositive_rule, H_C.
   Defined.
 
-  (** Given a weakly well-typed closure system [C], and a derivation [D] over [C]
+  (** Given a weakly presuppositive closure system [C], and a derivation [D] over [C]
       with conclusion [x] and hypotheses [H], we can also derive any
       presupposition of [x], from [H] plus its presuppositions. *)
   Theorem presupposition_derivation
       {C : system X}
-      (C_weakly_well_typed : weakly_well_typed_system C)
+      (C_weakly_presuppositive : weakly_presuppositive_system C)
       {H : family X} {x : X} (d : derivation C H x)
       (x_presup : presup x)
     : derivation C (H + (Family.bind H presup)) (presup _ x_presup).
@@ -439,7 +437,7 @@ Section Presuppositions.
       refine (hypothesis _ (_ + Family.bind _ _) (Datatypes.inr (_ ; _))).
     - (* case: derivation ended with a rule of [T] *)
       refine (graft _ _ _).
-      + apply C_weakly_well_typed.
+      + apply C_weakly_presuppositive.
       + intros [ p | [p p_presup]].
         * refine (graft _ (d_r_prems _) _).
           intros i. refine (hypothesis _ (_ + _) (Datatypes.inl i)).
