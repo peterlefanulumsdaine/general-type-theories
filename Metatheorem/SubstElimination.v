@@ -108,7 +108,7 @@ like a typed renaming. *)
                     : weakly_typed T Δ Γ raw_of_weakly_typed_context_map
   }.
  
-  Local Record judgement_renaming (J' J : judgement Σ)
+  Local Record judgement_renaming (J J' : judgement Σ)
   := {
     typed_renaming_of_judgement_renaming
       :> typed_renaming (context_of_judgement J) (context_of_judgement J')
@@ -144,11 +144,31 @@ like a typed renaming. *)
 
 End Judgement_Maps.
 
-Section Subst_Admissible.
+Section Rename_Derivations.
+(** The goal of this section is [rename_derivation]:
+given a judgement-renaming from [J] to [J'],
+and a derivation [d] of [J],
+we can rename throughout [d] to get a derivation of [J']. 
+
+The proof of [rename_derivation] is by direct structural induction on
+derivations; the rest of this section is devoted to the lemmas needed in
+the cases of that induction. *)
 
   Context {σ : shape_system} {Σ : signature σ}.
 
   Section Flat_Rule_Instantiation_Renaming.
+    (* The lemmas of this section build up what’s needed for renaming
+     flat-rule steps in derivations: 
+
+     given an instance of a flat rule in universal form,
+     and a judgement-renaming into its conclusion,
+     get a renamed instance, whose conclusion is renaming-equivalent to the
+     renaming we want to derive, and each of whose premises has a
+     judgement-renaming to some premise of the original rule.
+
+     Cases for non-flat structural rules: should be done by analogous
+     claim for their closure conditions.
+    *)
 
     Context {R : flat_rule Σ} (R_univ : in_universal_form R)
       {Γ : raw_context Σ}
@@ -184,47 +204,79 @@ Section Subst_Admissible.
     Local Lemma rename_flat_rule_instantiation_premise
           (p : flat_rule_premise R)
       : judgement_renaming
-          (Judgement.instantiate Γ'
-             rename_flat_rule_instantiation_instantiation (flat_rule_premise R p))
-          (Judgement.instantiate Γ I (flat_rule_premise R p)).
+          (Judgement.instantiate Γ I (flat_rule_premise R p))
+          (Judgement.instantiate Γ' rename_flat_rule_instantiation_instantiation
+                                                       (flat_rule_premise R p)).
     Proof.
     Admitted. (* [rename_flat_rule_instantiation_premise]: hopefully straightforward following aove dependencies *)
 
   End Flat_Rule_Instantiation_Renaming.
 
-  Fixpoint rename_derivation
+  Definition rename_derivation
       {T : flat_type_theory Σ} (T_sub : substitutive T) 
-      {J} {Γ'} (f : typed_renaming (context_of_judgement J) Γ')
+      {J} {J'} (f : judgement_renaming J J')
       (d_J : subst_free_derivation T (Family.empty _) J)
-    : subst_free_derivation T (Family.empty _)
-        (Build_judgement Γ'
-           (rename_hypothetical_judgement f (hypothetical_part J))).
+    : subst_free_derivation T (Family.empty _) J'.
   Proof.
-    (* Cases for flat rules should be done by [rename_flat_rule_instantiation]:
-
-     given an instance of a flat rule in universal form,
-     and a judgement-renaming into its conclusion,
-     get a renamed instance, whose conclusion is renaming-equivalent to the
-     renaming we want to derive, and each of whose premises has a
-     judgement-renaming to some premise of the original rule.
-
-     Cases for non-flat structural rules: should be done by analogous
-     claim for their closure conditions.
-    *)
+    revert J' f.
+    induction d_J as [ | r d_ps IH ].
+    { destruct i. } (* hypothesis case impossible, no hypotheses *)
+    intros J' f.
+    destruct r as [ r | [r I] ].
+    2: { (* case: instantiation of a flat rule of [T] *)
+      simple refine (derive_rename' _ _
+        (rename_flat_rule_instantiation_conclusion _ _ f) 
+        _ _).
+      { apply T_sub. }
+      { apply inverse, judgement_renaming_hypothetical_part. }
+      simple refine (Closure.deduce' _ _ _).
+      { apply inr. exists r.
+        exists (context_of_judgement J').
+        refine (rename_flat_rule_instantiation_instantiation _ _ f). 
+        apply T_sub. }
+      { apply idpath. }
+      intros p. apply (IH p).
+      refine (rename_flat_rule_instantiation_premise _ _ f p).
+    }
+    (* case: structural rules *)
+    destruct r as [ [ r | r ] | [r I] ] .
+    3: { (* case: equality rule; so again, an instantiation of a flat rule *)
+      simple refine (derive_rename' _ _
+        (rename_flat_rule_instantiation_conclusion _ _ f) 
+        _ _).
+      { admit. }
+      { apply inverse, judgement_renaming_hypothetical_part. }
+      simple refine (Closure.deduce' _ _ _).
+      { apply inl, inr. exists r.
+        exists (context_of_judgement J').
+        refine (rename_flat_rule_instantiation_instantiation _ _ f). 
+        admit. }
+      { apply idpath. }
+      intros p. apply (IH p).
+      refine (rename_flat_rule_instantiation_premise _ _ f p).
+    }
+    - (* case: renaming rule *)
+      admit.
+    - (* case: varialbe rule *)
+      admit.
   Admitted. (* [rename_derivation]: major lemma, probabbly requires a fair bit of work.*)
 
-  Fixpoint substitute_derivation
+End Rename_Derivations.
+
+Section Substitute_Derivations.
+
+  Context {σ : shape_system} {Σ : signature σ}.
+
+  Definition substitute_derivation
       {T : flat_type_theory Σ} (T_sub : substitutive T) 
-      {J} {Γ'} (f : weakly_typed_context_map T Γ' (context_of_judgement J))
+      {J} {J'} (f : weakly_typed_judgement_map T J' J)
       (d_J : subst_free_derivation T (Family.empty _) J)
-    : subst_free_derivation T (Family.empty _)
-        (Build_judgement Γ'
-           (substitute_hypothetical_judgement f (hypothetical_part J))).
+    : subst_free_derivation T (Family.empty _) J'.
   Proof.
   Admitted. (* [sustitute_derivation]: major lemma, probabbly requires a fair bit of work.*)
 
   (* Note: both [rename_derivation] and [sustitute_derivation] have analogues for derivations with hypotheses; these can be phrased rather like [rename_flat_rule_instance]. For now we give just the versions for closed derivations.  *)
-End Subst_Admissible.
+End Substitute_Derivations.
 
 Section Subst_Elimination.
 
