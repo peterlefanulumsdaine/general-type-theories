@@ -266,7 +266,7 @@ the cases of that induction. *)
   Proof.
     revert J' f.
     induction d_J as [ | r d_ps IH ].
-    { destruct i. } (* hypothesis case impossible, no hypotheses *)
+    { destruct i. } (* hypothesis case impossible, as no hypotheses *)
     intros J' f.
     destruct r as [ r | r ].
     2: { (* case: instantiation of a flat rule of [T] *)
@@ -346,9 +346,13 @@ Section Substitute_Derivations.
       (d_J : subst_free_derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J'.
   Proof.
-  Admitted. (* [sustitute_derivation]: major lemma, probabbly requires a fair bit of work.*)
+    (* This proof should be closely analogous to [rename_derivation].
+    One extra ingredient: will require weakening/extending weakly-typed context
+    maps, for going under binders in premises of rules; this will be defined in
+    terms of [rename_derivation]. *)
+  Admitted. (* [sustitute_derivation]: major proposition, probably requires a fair bit of work. *)
 
-  (* Note: both [rename_derivation] and [sustitute_derivation] have analogues for derivations with hypotheses; these can be phrased rather like [rename_flat_rule_instance]. For now we give just the versions for closed derivations.  *)
+  (* Note: both [rename_derivation] and [sustitute_derivation] have analogues for derivations with hypotheses. For now we give just the versions for closed derivations.  *)
 End Substitute_Derivations.
 
 Section Subst_Elimination.
@@ -361,15 +365,11 @@ Section Subst_Elimination.
       {J} (d : FlatTypeTheory.derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J.
   Proof.
-(* Sketch proof: start by roughly paralleling our definition of substitution, then do the main induction.  In detail,
-
-  Lemma 1. given a cut-free derivation of a judgement J and a typed renaming into the context of J, can rename throughout derivation to get a cut-free derivation of the renamed judgement.
-
-  Lemma 2. given a cut-free derivation of a judgement J, and a “context map” into the context of J, can substitute throughout derivation to get a cut-free derivartion of the substituted judgement, using Lemma 1 to extend the context map when going under binders.
-
-  Lemma 3. the main induction to cut-eliminate in all proofs: if the last rule is anything apart from cut, then just cut-eliminate the subderivations inductively; if last rule is a cut into a hypothesis, then cut-eliminate the subderivations of well-typedness of the substitution; if last rule is a cut into a non-hypothesis, then cut-eliminate the derivations of the substitution and the main premise, and then substitute the substitution into the cut-free derivation of the main premise using Lemma 2. *)
-
-  Admitted. (* Theorem [subst_elimination]: major goal, requires a lot of upstream work *)
+    (* Direct structural induction on derivations;
+     most rules are translated to the same rule in the subst-free setting;
+     [subst_apply] is handled by [substitute_derivation]; 
+     [subst_equal] should be handled be [subst_equal_derivation] (to be given!). *)
+  Admitted. (* Theorem [subst_elimination]: major goal, depends on a lot of upstream work *)
 
 End Subst_Elimination.
 
