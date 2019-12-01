@@ -18,7 +18,16 @@ structural rules can be translated into a derivation not using the rules
 The main subsidiary lemmas are [subst_apply_admissible] and
 [subst_equal_admissible], showing that (generalisations of) these rules are
 admissible over the closure system given by [T] together with the other
-structural rules. *)
+structural rules. 
+
+Note: at the moment, our “susbt-free” structural rules still include the
+general renaming rule.  In fact the subst-free derivations we produce will
+only require renaming along _equivalences_ of shapes. *)
+
+(* TODO: perhaps restrict the renaming rule (either in general, or just
+in [structural_rule_without_subst]) to just the case of equivalences,
+so that the results of this file really do show that general renaming is
+admissible. *)
 
 Section Subst_Free_Derivations.
 
@@ -68,6 +77,89 @@ the associated congruence rule should be admissible (?derivable). *)
 
 End Flat_Conditions.
 
+Section Judgement_Maps.
+(** A lot of results can be concisely formulated in terms of maps/renamings of
+judgements.  A map/renaming of judgements from [Γ' |- J'] to [Γ |- J] is just
+a context map/renaming [f] from [Γ'] to [J], such that [J' = f^*J].
+
+(Categorically, these are exactly maps in the total category of judgements,
+viewed as a discrete fibration over contexts.
+
+We also introduce an auxiliary notion of _weakly typed_ context maps:
+maps which at each component look either like a well-typed context map, or
+like a typed renaming. *)
+
+  Context {σ : shape_system} {Σ : signature σ}.
+
+  Local Definition weakly_typed 
+      (T : flat_type_theory Σ)
+      (Δ Γ : raw_context Σ) (f : raw_context_map Σ Δ Γ)
+    : Type
+  := forall i : Γ,
+      { j : Δ & (f i = raw_variable j) * (Δ j = substitute f (Γ i)) }
+    + subst_free_derivation T (Family.empty _)
+                            [! Δ |- f i ; substitute f (Γ i) !].
+
+  Local Record weakly_typed_context_map
+    (T : flat_type_theory Σ) (Δ Γ : raw_context Σ)
+  := {
+    raw_of_weakly_typed_context_map :> raw_context_map Σ Δ Γ
+  ; weakly_typed_context_map_is_weakly_typed
+                    : weakly_typed T Δ Γ raw_of_weakly_typed_context_map
+  }.
+ 
+  Local Record judgement_renaming (J' J : judgement Σ)
+  := {
+    typed_renaming_of_judgement_renaming
+      :> typed_renaming (context_of_judgement J) (context_of_judgement J')
+  ; judgement_renaming_hypothetical_part
+      : rename_hypothetical_judgement
+          typed_renaming_of_judgement_renaming 
+          (hypothetical_part J)
+        = hypothetical_part J'
+  }.
+
+  Local Record weakly_typed_judgement_map
+    (T : flat_type_theory Σ) (J' J : judgement Σ)
+  := {
+    weakly_typed_context_map_of_judgement_map
+      :> weakly_typed_context_map T
+           (context_of_judgement J') (context_of_judgement J)
+  ; weakly_typed_judgement_map_hypothetical_part
+      : substitute_hypothetical_judgement
+          weakly_typed_context_map_of_judgement_map
+          (hypothetical_part J)
+        = hypothetical_part J'
+  }.
+
+End Judgement_Maps.
+
+Section Subst_Admissible.
+
+  Context {σ : shape_system} {Σ : signature σ}.
+
+  Fixpoint rename_derivation
+      {T : flat_type_theory Σ} (T_sub : substitutive T) 
+      {J} {Γ'} (f : typed_renaming (context_of_judgement J) Γ')
+      (d_J : subst_free_derivation T (Family.empty _) J)
+    : subst_free_derivation T (Family.empty _)
+        (Build_judgement Γ'
+           (rename_hypothetical_judgement f (hypothetical_part J))).
+  Proof.
+  Admitted. (* [rename_derivation]: major lemma, probabbly requires a fair bit of work.*)
+
+  Fixpoint substitute_derivation
+      {T : flat_type_theory Σ} (T_sub : substitutive T) 
+      {J} {Γ'} (f : weakly_typed_context_map T Γ' (context_of_judgement J))
+      (d_J : subst_free_derivation T (Family.empty _) J)
+    : subst_free_derivation T (Family.empty _)
+        (Build_judgement Γ'
+           (substitute_hypothetical_judgement f (hypothetical_part J))).
+  Proof.
+  Admitted. (* [sustitute_derivation]: major lemma, probabbly requires a fair bit of work.*)
+
+End Subst_Admissible.
+
 Section Subst_Elimination.
 
   Context {σ : shape_system} {Σ : signature σ}.
@@ -76,7 +168,7 @@ Section Subst_Elimination.
       {T : flat_type_theory Σ}
       (T_sub : substitutive T) (T_cong : congruous T)
       {J} (d : FlatTypeTheory.derivation T (Family.empty _) J)
-    : Closure.derivation (closure_system_without_subst T) (Family.empty _) J.
+    : subst_free_derivation T (Family.empty _) J.
   Proof.
 (* Sketch proof: start by roughly paralleling our definition of substitution, then do the main induction.  In detail,
 

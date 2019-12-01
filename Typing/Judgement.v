@@ -785,13 +785,13 @@ Section Presuppositions.
 
 End Presuppositions.
 
-Section Rename_Variables.
-(** One can rename the variables of a judgement along an _isomorphism_ of shapes.  (Cf. discussion at [Context.rename].) *)
-(* TODO: redo all this now that context judgement expunged. *)
+Section Renaming.
+(** _Hypothetical_ judgements admit renaming along aritrary maps of shapes, just like expressions.
+
+_Complete_ judgements, involving contexts, admit renaming only along _isomorphisms_ of shapes.  (Cf. discussion at [Context.rename].) *)
 
   Context {σ : shape_system} {Σ : signature σ}.
 
-  (** Note: argument order follows general [rename] for expressions, not  [Context.rename]. *)
   Definition rename_hypothetical_boundary_expressions
       {jf} {γ γ' : σ} (f : γ -> γ')
       (B : hypothetical_boundary_expressions Σ jf γ)
@@ -809,8 +809,6 @@ Section Rename_Variables.
     exact (rename_hypothetical_boundary_expressions f B).
   Defined.
 
-  (** Note: argument order follows [Context.rename], not general [rename] for expressions. *)
-  (* TODO: consistentise with [rename_hypothetical_boundary]! *)
   Definition rename_hypothetical_judgement
       {γ γ' : σ} (f : γ -> γ')
       (J : hypothetical_judgement Σ γ)
@@ -820,6 +818,7 @@ Section Rename_Variables.
     exact (fun j => rename f (J j)).
   Defined.
 
+  (** Note: argument order from here on follows [Context.rename], not general [rename] for expressions. *)
   Local Definition rename
       (J : judgement Σ)
       {γ' : shape_carrier σ} (f : γ' <~> shape_of_judgement J)
@@ -883,7 +882,42 @@ Section Rename_Variables.
     apply rename_hypothetical_boundary_expressions_idmap.
   Defined.
 
-End Rename_Variables.
+End Renaming.
+
+Section Substitution.
+(** _Hypothetical_ judgements admit renaming along aritrary maps of shapes, just like expressions.
+
+_Complete_ judgements, involving contexts, admit renaming only along _isomorphisms_ of shapes.  (Cf. discussion at [Context.rename].) *)
+
+  Context {σ : shape_system} {Σ : signature σ}.
+
+  Definition substitute_hypothetical_boundary_expressions
+      {jf} {γ γ' : σ} (f : raw_context_map Σ γ' γ)
+      (B : hypothetical_boundary_expressions Σ jf γ)
+    : hypothetical_boundary_expressions Σ jf γ'.
+  Proof.
+    exact (fun j => substitute f (B j)).
+  Defined.
+
+  Definition substitute_hypothetical_boundary
+      {γ γ' : σ} (f : raw_context_map Σ γ' γ)
+      (B : hypothetical_boundary Σ γ)
+    : hypothetical_boundary Σ γ'.
+  Proof.
+    exists (form_of_boundary B).
+    exact (substitute_hypothetical_boundary_expressions f B).
+  Defined.
+
+  Definition substitute_hypothetical_judgement
+      {γ γ' : σ} (f : raw_context_map Σ γ' γ)
+      (J : hypothetical_judgement Σ γ)
+    : hypothetical_judgement Σ γ'.
+  Proof.
+    exists (form_of_judgement J).
+    exact (fun j => substitute f (J j)).
+  Defined.
+
+End Substitution.
 
 Section Instantiation.
 (** Interaction of judgements with metavariable instantiations *)
