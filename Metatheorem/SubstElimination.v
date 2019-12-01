@@ -212,7 +212,14 @@ the cases of that induction. *)
 
   End Flat_Rule_Instantiation_Renaming.
 
-  Definition rename_derivation
+  Lemma equality_flat_rules_in_universal_form
+    : forall r : @equality_flat_rule σ,
+      in_universal_form (equality_flat_rule r).
+  Proof.
+    intro r; recursive_destruct r; apply shape_is_empty.
+  Defined.
+
+  Definition rename_derivation `{Funext}
       {T : flat_type_theory Σ} (T_sub : substitutive T) 
       {J} {J'} (f : judgement_renaming J J')
       (d_J : subst_free_derivation T (Family.empty _) J)
@@ -222,8 +229,9 @@ the cases of that induction. *)
     induction d_J as [ | r d_ps IH ].
     { destruct i. } (* hypothesis case impossible, no hypotheses *)
     intros J' f.
-    destruct r as [ r | [r I] ].
+    destruct r as [ r | r ].
     2: { (* case: instantiation of a flat rule of [T] *)
+      destruct r as [r I].
       simple refine (derive_rename' _ _
         (rename_flat_rule_instantiation_conclusion _ _ f) 
         _ _).
@@ -239,27 +247,48 @@ the cases of that induction. *)
       refine (rename_flat_rule_instantiation_premise _ _ f p).
     }
     (* case: structural rules *)
-    destruct r as [ [ r | r ] | [r I] ] .
+    destruct r as [ [ r | r ] | r ].
     3: { (* case: equality rule; so again, an instantiation of a flat rule *)
+      destruct r as [r I].
       simple refine (derive_rename' _ _
         (rename_flat_rule_instantiation_conclusion _ _ f) 
         _ _).
-      { admit. }
+      { apply equality_flat_rules_in_universal_form. }
       { apply inverse, judgement_renaming_hypothetical_part. }
       simple refine (Closure.deduce' _ _ _).
       { apply inl, inr. exists r.
         exists (context_of_judgement J').
         refine (rename_flat_rule_instantiation_instantiation _ _ f). 
-        admit. }
+        apply equality_flat_rules_in_universal_form. }
       { apply idpath. }
       intros p. apply (IH p).
       refine (rename_flat_rule_instantiation_premise _ _ f p).
     }
     - (* case: renaming rule *)
       admit.
-    - (* case: varialbe rule *)
-      admit.
-  Admitted. (* [rename_derivation]: major lemma, probabbly requires a fair bit of work.*)
+    - (* case: variable rule *)
+      destruct r as [Γ i]. cbn in f.
+      destruct J' as [Γ' J']. 
+      simple refine (Closure.deduce' _ _ _).
+      { apply inl, inl, inr.
+        exists Γ'. exact (f i). }
+      { cbn. apply (ap (Build_judgement _)). 
+        set (e := judgement_renaming_hypothetical_part _ _ f).
+        eapply concat. 2: { apply e. }
+        apply (ap (Build_hypothetical_judgement _)). 
+        apply path_forall.
+        intros s; recursive_destruct s; try apply idpath.
+        apply typed_renaming_respects_types.        
+      }
+      intros p; set (p_keep := p); recursive_destruct p. cbn.
+      apply (IH p_keep).
+      set (f0 := typed_renaming_of_judgement_renaming _ _ f).
+      cbn in f0. exists f0.
+      apply (ap (Build_hypothetical_judgement _)). 
+      apply path_forall.
+      intros s; recursive_destruct s.
+      apply inverse, typed_renaming_respects_types.
+  Admitted. (* [rename_derivation]: not too much work left in this proof itself (but depends on admitted lemmas above) *)
 
 End Rename_Derivations.
 
