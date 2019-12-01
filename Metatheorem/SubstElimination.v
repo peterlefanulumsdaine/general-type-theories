@@ -56,7 +56,7 @@ as opposed to _hypothetical form_.
 
   For substitution to (admissibly) respect equality, we additionally need to
 know that the theory is _congruous_, in that for each flat rule of object form,
-the associated congruence rule should be admissible (?derivable). *)
+the associated congruence rule should be derivable (?admissible). *)
 
   Context {σ} {Σ : signature σ}.
 
@@ -132,11 +132,65 @@ like a typed renaming. *)
         = hypothetical_part J'
   }.
 
+  (* TODO: not sure if this is really the right definition to be using.  Experiment! *)
+  Local Record closure_rule_renaming (R' R : Closure.rule (judgement Σ))
+  := {
+    closure_rule_renaming_conclusion
+      : judgement_renaming (conclusion R') (conclusion R)
+  ; closure_rule_renaming_premise
+      : forall p : premises R',
+        { q : premises R & judgement_renaming (premises R' p) (premises R q) }
+    }.
+
 End Judgement_Maps.
 
 Section Subst_Admissible.
 
   Context {σ : shape_system} {Σ : signature σ}.
+
+  Section Flat_Rule_Instantiation_Renaming.
+
+    Context {R : flat_rule Σ} (R_univ : in_universal_form R)
+      {Γ : raw_context Σ}
+      (I : Metavariable.instantiation (flat_rule_metas R) Σ Γ)
+      {J' : judgement Σ}
+      (f : judgement_renaming
+             (Judgement.instantiate Γ I (flat_rule_conclusion R))
+             J')
+      (Γ' := context_of_judgement J').
+
+    (* TODO: consider naming of following lemma sequence *)
+    Local Definition rename_flat_rule_instantiation_renaming
+      : typed_renaming Γ Γ'.
+    Proof.
+    Admitted. (* [rename_flat_rule_instantiation_renaming]: hopefully self-contained *)
+
+    Local Definition rename_flat_rule_instantiation_instantiation
+      : Metavariable.instantiation (flat_rule_metas R) Σ Γ'.
+    Proof.
+    Admitted. (* [rename_flat_rule_instantiation_instantiation]: hopefully simple once  [reame_flat_rule_instantiation_renaming] done *)
+
+    Local Lemma rename_flat_rule_instantiation_conclusion
+      : judgement_renaming
+          (Judgement.instantiate Γ'
+            (rename_flat_rule_instantiation_instantiation)
+            (flat_rule_conclusion R))
+          J'.
+    (* NOTE: and moreover this judgement_renaming is an equivalence, which may
+    be needed if we restrict the renaming structural rule to equivalences. *)
+    Proof.
+    Admitted. (* [rename_flat_rule_instantiation_conclusion]: hopefully straightforward following aobve dependencies *)
+
+    Local Lemma rename_flat_rule_instantiation_premise
+          (p : flat_rule_premise R)
+      : judgement_renaming
+          (Judgement.instantiate Γ'
+             rename_flat_rule_instantiation_instantiation (flat_rule_premise R p))
+          (Judgement.instantiate Γ I (flat_rule_premise R p)).
+    Proof.
+    Admitted. (* [rename_flat_rule_instantiation_premise]: hopefully straightforward following aove dependencies *)
+
+  End Flat_Rule_Instantiation_Renaming.
 
   Fixpoint rename_derivation
       {T : flat_type_theory Σ} (T_sub : substitutive T) 
@@ -146,6 +200,17 @@ Section Subst_Admissible.
         (Build_judgement Γ'
            (rename_hypothetical_judgement f (hypothetical_part J))).
   Proof.
+    (* Cases for flat rules should be done by [rename_flat_rule_instantiation]:
+
+     given an instance of a flat rule in universal form,
+     and a judgement-renaming into its conclusion,
+     get a renamed instance, whose conclusion is renaming-equivalent to the
+     renaming we want to derive, and each of whose premises has a
+     judgement-renaming to some premise of the original rule.
+
+     Cases for non-flat structural rules: should be done by analogous
+     claim for their closure conditions.
+    *)
   Admitted. (* [rename_derivation]: major lemma, probabbly requires a fair bit of work.*)
 
   Fixpoint substitute_derivation
@@ -158,6 +223,7 @@ Section Subst_Admissible.
   Proof.
   Admitted. (* [sustitute_derivation]: major lemma, probabbly requires a fair bit of work.*)
 
+  (* Note: both [rename_derivation] and [sustitute_derivation] have analogues for derivations with hypotheses; these can be phrased rather like [rename_flat_rule_instance]. For now we give just the versions for closed derivations.  *)
 End Subst_Admissible.
 
 Section Subst_Elimination.
@@ -182,3 +248,4 @@ Section Subst_Elimination.
 
 End Subst_Elimination.
 
+(* TODO: it could be nice to give (here or elsewhere) a _counterexample_, showing how over a theory that’s not suitably substitutive/congruous, these results may fail. *)
