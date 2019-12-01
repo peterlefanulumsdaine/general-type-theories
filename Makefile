@@ -36,7 +36,7 @@ MODULES := \
 	Presented/TypedRule \
 	Presented/TypeTheory \
 	Metatheorem/Presuppositions \
-	Metatheorem/CutElimination \
+	Metatheorem/SubstElimination \
 	Metatheorem/UniqueTyping \
 	Example/ShapeSystemExamples
 
