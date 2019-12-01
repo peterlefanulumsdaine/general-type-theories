@@ -765,7 +765,8 @@ Section InterfaceFunctions.
 (** More convenient interface functions for using the structural rules *)
 
 (* TODO: make type class for other structural rules (individually or grouped),
-  analogously to [has_derivable_renaming]. *)
+  analogously to [has_derivable_renaming], and then make these interface
+  functions typeclass-based, like [derive_rename]. *)
 
   Context `{H_Funext : Funext}
         {σ : shape_system} {Σ : signature σ}

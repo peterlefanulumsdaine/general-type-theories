@@ -2,150 +2,91 @@ Require Import HoTT.
 Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
+Require Import Auxiliary.Coproduct.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Presented.RawRule.
+Require Import Typing.FlatRule.
+Require Import Typing.StructuralRule.
 Require Import Typing.FlatTypeTheory.
 
-(* TODO: upstream to [Closure]?  Perhaps make some names local? *)
-Section Derivation_Step.
-(* Definition of the steps of a derivation, and various utility functions around them. *)
+(** The main goal of this file is the theorem [subst_elimination], showing
+that for suitable theories [T], any derivation over [T] using the full 
+structural rules can be translated into a derivation not using the rules
+[subst_apply], [subst_equal].
 
-  (** Specialised types for indexing steps of a derivation *)
-  Inductive step_unit : Type := step_hypothesis.
-  Inductive step_deduce {X : Type} (Y : X -> Type)
-    := step_conclusion | step_premise (x:X) (y : Y x).
+The main subsidiary lemmas are [subst_apply_admissible] and
+[subst_equal_admissible], showing that (generalisations of) these rules are
+admissible over the closure system given by [T] together with the other
+structural rules. *)
 
-  (** Steps of a derivation (in a general closure system) *)
-  Fixpoint step {X} {C : Closure.system X}
-      {H} {x} (d : derivation C H x)
-    : Type.
+Section Subst_Free_Derivations.
+
+  Context {σ} {Σ : signature σ}.
+
+  Definition closure_system_without_subst (T : flat_type_theory Σ)
+    := structural_rule_without_subst Σ + Family.bind T FlatRule.closure_system.
+
+  Definition subst_free_derivation (T : flat_type_theory Σ)
+    := derivation (closure_system_without_subst T).
+
+  (* TODO: we will probably need to generalise various lemmas from ordinary to
+  subst-free derivations.  Hopefully this can be done, as far as possible, by
+  proving the original lemmas in type-class based ways, which will then apply
+  automatically to subst-free derivations. *)
+
+End Subst_Free_Derivations.
+
+Section Flat_Conditions.
+(** Conditions on flat rules/type theories sufficient for admissibility of
+substitution to hold over them.
+
+  The main such condition is: every rule should have empty conclusion context.
+To use one established terminology, all rules should be in _universal form_,
+as opposed to _hypothetical form_. 
+
+  For substitution to (admissibly) respect equality, we additionally need to
+know that the theory is _congruous_, in that for each flat rule of object form,
+the associated congruence rule should be admissible (?derivable). *)
+
+  Context {σ} {Σ : signature σ}.
+
+  Definition in_universal_form (R : flat_rule Σ)
+    := is_empty (shape_of_judgement (flat_rule_conclusion R)).
+
+  Definition substitutive (T : flat_type_theory Σ)
+    := forall r : T, in_universal_form (T r).
+
+  (* TODO: once defined, upstream to [FlatRule]? *)
+  Definition flat_congruence_rule (R : flat_rule Σ) : flat_rule Σ.
   Proof.
-    destruct d as [ h | r d_prems ].
-    - exact step_unit.
-    - exact (step_deduce (fun p => step _ _ _ _ (d_prems p))).
-  Defined.
-  (* NOTE: a possible alternative that might give better computational behaviour, but seems conceptually less accurate:
+  Admitted. (* [flat_congruence_rule]: shouldn’t be too much work to define *)
 
-   always use [step_deduce], before destructing on [d], and then give the empty family of premises in case [d] is a hypothesis.  (Of course in this case [step_unit] should be deleted, and [step_deduce] probably renamed.)
+  Definition congruous (T : flat_type_theory Σ) : Type.
+  Admitted. (* [congruous]: requires definition upstream of _admissibiility_
+             of a rule over a closure system/flat type theory. *)
 
-  Advantage: [step] is a more usable type without having to always destruct [d].*)
+End Flat_Conditions.
 
-  (** The justification of each step of a derivation, i.e. either a hypothesis or a rule *)
-  Fixpoint justification {X} {C : Closure.system X}
-      {H} {x} {d : derivation C H x} (i : step d) {struct d}
-    : H + C.
-  Proof.
-    destruct d as [ h | r d_prems ].
-    - exact (inl h).
-    - destruct i as [ | p j].
-      + exact (inr r).
-      + exact (justification _ _ _ _ (d_prems p) j). 
-  Defined.
+Section Subst_Elimination.
 
-  (** The label at each step of a derivation (e.g. the judgement, in the case of typing derivations). *)
-  (* TODO: name not ideal; think of better one? “state”?  “judgement”? *)
-  Fixpoint step_label {X} {C : Closure.system X}
-      {H} {x} {d : derivation C H x} (i : step d) {struct d}
-    : X.
-  Proof.
-    set (e := fun x => x = d).
-    destruct d as [ h | r ? ].
-    - exact (H h).
-    - destruct i as [ | p j].
-      + exact (conclusion (C r)).
-      + exact (step_label _ _ _ _ _ j).
-  Defined.
+  Context {σ : shape_system} {Σ : signature σ}.
 
-  (** Property of _being a rule_, for steps of a derivation. *)
-  (* NOTE: should probably be upgraded to go via booleans, or decidable hprops, or a custom 2-element type… *)  
-  Definition is_rule {X} {C : Closure.system X}
-      {H} {x} {d : derivation C H x} (i : step d)
-    := match (justification i) with inr _ => Unit | inl _ => Empty end.
-
-  (** Family of occurrences of rules in a derivation. *)
-  Definition rule_occurrence {X} {C : Closure.system X}
-      {H} {x} (d : derivation C H x)
-    : family C.
-  Proof.
-    exists { i : step d & is_rule i }.
-    intros [i H_i]. unfold is_rule in H_i.
-    destruct (justification i) as [ h | r ] in *.
-    - destruct H_i.
-    - exact r.
-  Defined.
-
-  (** Property of _being a hypothesis_, for steps of a derivation. *)
-  (* NOTE: should probably be upgraded to go via booleans, or decidable hprops, or a custom 2-element type… *)  
-  Definition is_hypothesis {X} {C : Closure.system X}
-      {H} {x} {d : derivation C H x} (i : step d)
-    := match (justification i) with inl _ => Unit | inr _ => Empty end.
-
-  (** Family of occurrences of hypotheses in a derivation. *)
-  Definition hypothesis_occurrence {X} {C : Closure.system X}
-      {H} {x} (d : derivation C H x)
-    : family H.
-  Proof.
-    exists { i : step d & is_hypothesis i }.
-    intros [i H_i]. unfold is_hypothesis in H_i.
-    destruct (justification i) as [ h | r ] in *.
-    - exact h.
-    - destruct H_i.
-  Defined.
-  
-End Derivation_Step.
-
-
-
-
-Section Cut_Freeness.
-  
-  Context {σ : shape_system}.
-
-  (* Is a rule an instance of [cut] ? *)
-  Definition is_cut {Σ : signature σ}
-      {T : flat_type_theory Σ} (r : FlatTypeTheory.closure_system T)
-    : Type.
-  Admitted.
-
-  (* NOTE: “occurrence” is included because “cut_main_premise” would more naturally refer to the judgement that’s the main premise in the rule (independent of any particular derivation). *)
-  Definition cut_occurrence_main_premise {Σ} {T : flat_type_theory Σ}
-       {j} {H} {d : FlatTypeTheory.derivation T H j}
-       (r : rule_occurrence d) (r_cut : is_cut (rule_occurrence d r))
-    : step d.
-  Admitted.
-
-  (** Cut-freeness of derivations.
-
-  For closed derivations, “cut-free” really means cut-free.
-
-  For derivations with arbitrary hypotheses, completely cut-free would be too strong a property to require; so in general we allow cut, but only directly into hypotheses. *)
-  Definition cut_free {Σ : signature σ} {T : flat_type_theory Σ}
-      {j} {H} (d : FlatTypeTheory.derivation T H j)
-    : Type
-  := (forall (r : rule_occurrence d) (r_cut : is_cut (rule_occurrence d r)),
-         is_hypothesis (cut_occurrence_main_premise _ r_cut)).
-
-End Cut_Freeness.
-
-Section Cut_Elimination.
-
-  Context {σ : shape_system}.
-
-  Theorem cut_elimination {Σ : signature σ} {T : flat_type_theory Σ}
-      {j} {H} (d : FlatTypeTheory.derivation T H j)
-    : { d' : FlatTypeTheory.derivation T H j & cut_free d' }.
+  Theorem subst_elimination
+      {T : flat_type_theory Σ}
+      (T_sub : substitutive T) (T_cong : congruous T)
+      {J} (d : FlatTypeTheory.derivation T (Family.empty _) J)
+    : Closure.derivation (closure_system_without_subst T) (Family.empty _) J.
   Proof.
 (* Sketch proof: start by roughly paralleling our definition of substitution, then do the main induction.  In detail,
 
-  Lemma 1. given a cut-free derivation of a judgement J and a renaming of variables of the context of J, can rename throughout derivation to get a cut-free derivartion of the renamed judgement.
+  Lemma 1. given a cut-free derivation of a judgement J and a typed renaming into the context of J, can rename throughout derivation to get a cut-free derivation of the renamed judgement.
 
-  Lemma 2. given a cut-free derivation of a judgement J, and a context map into the context of J with cut-free typing derivations of the terms in the context map, can substitute throughout derivation to get a cut-free derivartion of the substituted judgement, using Lemma 1 when going under binders.
+  Lemma 2. given a cut-free derivation of a judgement J, and a “context map” into the context of J, can substitute throughout derivation to get a cut-free derivartion of the substituted judgement, using Lemma 1 to extend the context map when going under binders.
 
   Lemma 3. the main induction to cut-eliminate in all proofs: if the last rule is anything apart from cut, then just cut-eliminate the subderivations inductively; if last rule is a cut into a hypothesis, then cut-eliminate the subderivations of well-typedness of the substitution; if last rule is a cut into a non-hypothesis, then cut-eliminate the derivations of the substitution and the main premise, and then substitute the substitution into the cut-free derivation of the main premise using Lemma 2. *)
 
-  Admitted.
+  Admitted. (* Theorem [subst_elimination]: major goal, requires a lot of upstream work *)
 
-End Cut_Elimination.
+End Subst_Elimination.
 
