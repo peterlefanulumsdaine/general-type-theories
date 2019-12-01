@@ -212,6 +212,9 @@ the cases of that induction. *)
 
   End Flat_Rule_Instantiation_Renaming.
 
+  Context `{Funext}.
+
+  (* TODO: upstream? *)
   Lemma equality_flat_rules_in_universal_form
     : forall r : @equality_flat_rule σ,
       in_universal_form (equality_flat_rule r).
@@ -219,7 +222,43 @@ the cases of that induction. *)
     intro r; recursive_destruct r; apply shape_is_empty.
   Defined.
 
-  Definition rename_derivation `{Funext}
+  (* TODO: upstream to [Context] *)
+  Lemma comp_respects_types 
+     {Γ Γ' Γ'': raw_context Σ}
+     {f : Γ' -> Γ''} {g : Γ -> Γ'}
+     (H_f : respects_types Γ' Γ'' f)
+     (H_g : respects_types Γ Γ' g)
+    : respects_types Γ Γ'' (f o g).
+  Proof.
+    intros i.
+    eapply concat. { apply H_f. }
+    eapply concat. { apply ap, H_g. }
+    apply rename_rename.
+  Defined.
+
+  (* TODO: upstream to [Context] *)
+  Definition compose_typed_renaming
+     {Γ Γ' Γ'': raw_context Σ}
+     (f : typed_renaming Γ' Γ'') (g : typed_renaming Γ Γ')
+    : typed_renaming Γ Γ''.
+  Proof.
+    exists (f o g).
+    apply comp_respects_types; apply typed_renaming_respects_types.
+  Defined.
+
+  (* TODO: upstream to [Judgement] *)
+  Definition rename_rename_hypothetical_judgement
+      {γ γ' γ'' : σ} (f : γ -> γ') (g : γ' -> γ'')
+      (J : hypothetical_judgement Σ γ)
+    : rename_hypothetical_judgement g
+        (rename_hypothetical_judgement f J)
+    = rename_hypothetical_judgement (g o f) J.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros i; apply rename_rename.
+  Defined.
+
+  Definition rename_derivation
       {T : flat_type_theory Σ} (T_sub : substitutive T) 
       {J} {J'} (f : judgement_renaming J J')
       (d_J : subst_free_derivation T (Family.empty _) J)
@@ -265,7 +304,12 @@ the cases of that induction. *)
       refine (rename_flat_rule_instantiation_premise _ _ f p).
     }
     - (* case: renaming rule *)
-      admit.
+      cbn in r.
+      destruct r as [Γ [Γ' [g J]]].
+      apply (IH tt).
+      exists (compose_typed_renaming f g).
+      eapply concat. 2: { apply (judgement_renaming_hypothetical_part _ _ f). }
+      apply inverse, @rename_rename_hypothetical_judgement.
     - (* case: variable rule *)
       destruct r as [Γ i]. cbn in f.
       destruct J' as [Γ' J']. 
@@ -288,7 +332,7 @@ the cases of that induction. *)
       apply path_forall.
       intros s; recursive_destruct s.
       apply inverse, typed_renaming_respects_types.
-  Admitted. (* [rename_derivation]: not too much work left in this proof itself (but depends on admitted lemmas above) *)
+  Defined.
 
 End Rename_Derivations.
 
