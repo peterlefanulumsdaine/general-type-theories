@@ -29,6 +29,48 @@ in [structural_rule_without_subst]) to just the case of equivalences,
 so that the results of this file really do show that general renaming is
 admissible. *)
 
+Section Auxiliary.
+
+  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
+
+  (* TODO: upstream to [Context] *)
+  Lemma comp_respects_types 
+     {Γ Γ' Γ'': raw_context Σ}
+     {f : Γ' -> Γ''} {g : Γ -> Γ'}
+     (H_f : respects_types Γ' Γ'' f)
+     (H_g : respects_types Γ Γ' g)
+    : respects_types Γ Γ'' (f o g).
+  Proof.
+    intros i.
+    eapply concat. { apply H_f. }
+    eapply concat. { apply ap, H_g. }
+    apply rename_rename.
+  Defined.
+
+  (* TODO: upstream to [Context] *)
+  Definition compose_typed_renaming
+     {Γ Γ' Γ'': raw_context Σ}
+     (f : typed_renaming Γ' Γ'') (g : typed_renaming Γ Γ')
+    : typed_renaming Γ Γ''.
+  Proof.
+    exists (f o g).
+    apply comp_respects_types; apply typed_renaming_respects_types.
+  Defined.
+
+  (* TODO: upstream to [Judgement] *)
+  Definition rename_rename_hypothetical_judgement
+      {γ γ' γ'' : σ} (f : γ -> γ') (g : γ' -> γ'')
+      (J : hypothetical_judgement Σ γ)
+    : rename_hypothetical_judgement g
+        (rename_hypothetical_judgement f J)
+    = rename_hypothetical_judgement (g o f) J.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros i; apply rename_rename.
+  Defined.
+
+End Auxiliary.
+
 Section Subst_Free_Derivations.
 
   Context {σ} {Σ : signature σ}.
@@ -132,16 +174,6 @@ like a typed renaming. *)
         = hypothetical_part J'
   }.
 
-  (* TODO: not sure if this is really the right definition to be using.  Experiment! *)
-  Local Record closure_rule_renaming (R' R : Closure.rule (judgement Σ))
-  := {
-    closure_rule_renaming_conclusion
-      : judgement_renaming (conclusion R') (conclusion R)
-  ; closure_rule_renaming_premise
-      : forall p : premises R',
-        { q : premises R & judgement_renaming (premises R' p) (premises R q) }
-    }.
-
 End Judgement_Maps.
 
 Section Rename_Derivations.
@@ -154,7 +186,7 @@ The proof of [rename_derivation] is by direct structural induction on
 derivations; the rest of this section is devoted to the lemmas needed in
 the cases of that induction. *)
 
-  Context {σ : shape_system} {Σ : signature σ}.
+  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
 
   Section Flat_Rule_Instantiation_Renaming.
     (* The lemmas of this section build up what’s needed for renaming
@@ -170,6 +202,32 @@ the cases of that induction. *)
      claim for their closure conditions.
     *)
 
+    (* TODO: upstream *)
+    Lemma typed_renaming_to_instantiate_context
+        (Γ : raw_context Σ)
+        {a : arity σ} 
+        (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
+        (Δ : raw_context (Metavariable.extend Σ a))
+      : typed_renaming Γ (Context.instantiate Γ I Δ).
+    Proof.
+      exists (coproduct_inj1 shape_is_sum).
+      intros i. refine (coproduct_comp_inj1 _).
+    Defined.
+
+    (* TODO: upstream *)
+    Lemma typed_renaming_inverse
+        {Γ Δ : raw_context Σ}
+        (f : typed_renaming Γ Δ)
+        (e_f : IsEquiv f)
+      : typed_renaming Δ Γ.
+    Proof.
+      exists (@equiv_inv _ _ _ e_f).
+      refine (respects_types_equiv_inverse _ _ (BuildEquiv _ _ _ _) _).
+      apply typed_renaming_respects_types.
+    Defined.
+
+    (* TODO: consider naming of the whole following lemma sequence *)
+
     Context {R : flat_rule Σ} (R_univ : in_universal_form R)
       {Γ : raw_context Σ}
       (I : Metavariable.instantiation (flat_rule_metas R) Σ Γ)
@@ -179,16 +237,20 @@ the cases of that induction. *)
              J')
       (Γ' := context_of_judgement J').
 
-    (* TODO: consider naming of following lemma sequence *)
     Local Definition rename_flat_rule_instantiation_renaming
       : typed_renaming Γ Γ'.
     Proof.
-    Admitted. (* [rename_flat_rule_instantiation_renaming]: hopefully self-contained *)
+      refine (compose_typed_renaming f _).
+      apply typed_renaming_to_instantiate_context.
+    Defined.
 
     Local Definition rename_flat_rule_instantiation_instantiation
       : Metavariable.instantiation (flat_rule_metas R) Σ Γ'.
     Proof.
-    Admitted. (* [rename_flat_rule_instantiation_instantiation]: hopefully simple once  [reame_flat_rule_instantiation_renaming] done *)
+      exact (rename_instantiation
+               rename_flat_rule_instantiation_renaming
+               I).
+    Defined.
 
     Local Lemma rename_flat_rule_instantiation_conclusion
       : judgement_renaming
@@ -196,6 +258,7 @@ the cases of that induction. *)
             (rename_flat_rule_instantiation_instantiation)
             (flat_rule_conclusion R))
           J'.
+    Proof.
     (* NOTE: and moreover this judgement_renaming is an equivalence, which may
     be needed if we restrict the renaming structural rule to equivalences. *)
     Proof.
@@ -212,9 +275,6 @@ the cases of that induction. *)
 
   End Flat_Rule_Instantiation_Renaming.
 
-  Context `{Funext}.
-
-  (* TODO: upstream? *)
   Lemma equality_flat_rules_in_universal_form
     : forall r : @equality_flat_rule σ,
       in_universal_form (equality_flat_rule r).
@@ -222,41 +282,7 @@ the cases of that induction. *)
     intro r; recursive_destruct r; apply shape_is_empty.
   Defined.
 
-  (* TODO: upstream to [Context] *)
-  Lemma comp_respects_types 
-     {Γ Γ' Γ'': raw_context Σ}
-     {f : Γ' -> Γ''} {g : Γ -> Γ'}
-     (H_f : respects_types Γ' Γ'' f)
-     (H_g : respects_types Γ Γ' g)
-    : respects_types Γ Γ'' (f o g).
-  Proof.
-    intros i.
-    eapply concat. { apply H_f. }
-    eapply concat. { apply ap, H_g. }
-    apply rename_rename.
-  Defined.
-
-  (* TODO: upstream to [Context] *)
-  Definition compose_typed_renaming
-     {Γ Γ' Γ'': raw_context Σ}
-     (f : typed_renaming Γ' Γ'') (g : typed_renaming Γ Γ')
-    : typed_renaming Γ Γ''.
-  Proof.
-    exists (f o g).
-    apply comp_respects_types; apply typed_renaming_respects_types.
-  Defined.
-
-  (* TODO: upstream to [Judgement] *)
-  Definition rename_rename_hypothetical_judgement
-      {γ γ' γ'' : σ} (f : γ -> γ') (g : γ' -> γ'')
-      (J : hypothetical_judgement Σ γ)
-    : rename_hypothetical_judgement g
-        (rename_hypothetical_judgement f J)
-    = rename_hypothetical_judgement (g o f) J.
-  Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros i; apply rename_rename.
-  Defined.
+  Context `{Funext}.
 
   Definition rename_derivation
       {T : flat_type_theory Σ} (T_sub : substitutive T) 
@@ -279,11 +305,12 @@ the cases of that induction. *)
       simple refine (Closure.deduce' _ _ _).
       { apply inr. exists r.
         exists (context_of_judgement J').
-        refine (rename_flat_rule_instantiation_instantiation _ _ f). 
-        apply T_sub. }
+        refine (rename_flat_rule_instantiation_instantiation _ f). 
+      }
       { apply idpath. }
       intros p. apply (IH p).
       refine (rename_flat_rule_instantiation_premise _ _ f p).
+      apply T_sub.
     }
     (* case: structural rules *)
     destruct r as [ [ r | r ] | r ].
@@ -297,11 +324,12 @@ the cases of that induction. *)
       simple refine (Closure.deduce' _ _ _).
       { apply inl, inr. exists r.
         exists (context_of_judgement J').
-        refine (rename_flat_rule_instantiation_instantiation _ _ f). 
-        apply equality_flat_rules_in_universal_form. }
+        refine (rename_flat_rule_instantiation_instantiation _ f).
+      }
       { apply idpath. }
       intros p. apply (IH p).
       refine (rename_flat_rule_instantiation_premise _ _ f p).
+      apply equality_flat_rules_in_universal_form.
     }
     - (* case: renaming rule *)
       cbn in r.
@@ -309,7 +337,7 @@ the cases of that induction. *)
       apply (IH tt).
       exists (compose_typed_renaming f g).
       eapply concat. 2: { apply (judgement_renaming_hypothetical_part _ _ f). }
-      apply inverse, @rename_rename_hypothetical_judgement.
+      apply inverse, @rename_rename_hypothetical_judgement; auto.
     - (* case: variable rule *)
       destruct r as [Γ i]. cbn in f.
       destruct J' as [Γ' J']. 
