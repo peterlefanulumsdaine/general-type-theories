@@ -237,7 +237,7 @@ the cases of that induction. *)
       apply typed_renaming_respects_types.
     Defined.
 
-    (* TODO: upstream (or delete if not needed?) *)
+    (* TODO: upstream *)
     Lemma instantiate_context_over_typed_renaming
         {Γ Γ' : raw_context Σ} (f : typed_renaming Γ Γ')
         {a : arity σ} 
@@ -262,7 +262,7 @@ the cases of that induction. *)
         repeat rewrite coproduct_comp_inj2.
         apply instantiate_rename_instantiation.
     Defined.
-    
+
     (* TODO: upstream *)
     Lemma instantiate_hypothetical_judgement_rename_instantiation
         (γ γ' : σ.(shape_carrier)) (f : γ -> γ')
@@ -277,7 +277,21 @@ the cases of that induction. *)
       apply path_forall; intros i.
       apply instantiate_rename_instantiation.
     Defined.
-    
+
+    (* TODO: upstream *)
+    Lemma instantiate_judgement_over_typed_renaming
+        {Γ Γ' : raw_context Σ} (f : typed_renaming Γ Γ')
+        {a : arity σ} 
+        (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
+        (J : judgement _)
+      : judgement_renaming
+          (Judgement.instantiate Γ I J)
+          (Judgement.instantiate Γ' (rename_instantiation f I) J).
+    Proof.
+      exists (instantiate_context_over_typed_renaming f I _).
+      apply inverse, instantiate_hypothetical_judgement_rename_instantiation.
+    Defined.
+
     (* TODO: upstream *)
     Lemma judgement_renaming_inverse
         (J J' : judgement Σ)
@@ -357,7 +371,8 @@ the cases of that induction. *)
           (Judgement.instantiate Γ' rename_flat_rule_instantiation_instantiation
                                                        (flat_rule_premise R p)).
     Proof.
-    Admitted. (* [rename_flat_rule_instantiation_premise]: hopefully straightforward following above dependencies *)
+      apply instantiate_judgement_over_typed_renaming.
+    Defined.
 
   End Flat_Rule_Instantiation_Renaming.
 
@@ -395,8 +410,7 @@ the cases of that induction. *)
       }
       { apply idpath. }
       intros p. apply (IH p).
-      refine (rename_flat_rule_instantiation_premise _ _ f p).
-      apply T_sub.
+      refine (rename_flat_rule_instantiation_premise _ f p).
     }
     (* case: structural rules *)
     destruct r as [ [ r | r ] | r ].
@@ -414,8 +428,7 @@ the cases of that induction. *)
       }
       { apply idpath. }
       intros p. apply (IH p).
-      refine (rename_flat_rule_instantiation_premise _ _ f p).
-      apply equality_flat_rules_in_universal_form.
+      refine (rename_flat_rule_instantiation_premise _ f p).
     }
     - (* case: renaming rule *)
       cbn in r.
