@@ -69,6 +69,17 @@ Section Auxiliary.
     apply path_forall; intros i; apply rename_rename.
   Defined.
 
+  (* TODO: upstream to [Judgement] *)
+  Definition rename_idmap_hypothetical_judgement
+      {γ : σ}
+      (J : hypothetical_judgement Σ γ)
+    : rename_hypothetical_judgement idmap J
+    = J.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros i; apply rename_idmap.
+  Defined.
+
 End Auxiliary.
 
 Section Subst_Free_Derivations.
@@ -226,6 +237,63 @@ the cases of that induction. *)
       apply typed_renaming_respects_types.
     Defined.
 
+    (* TODO: upstream (or delete if not needed?) *)
+    Lemma instantiate_context_over_typed_renaming
+        {Γ Γ' : raw_context Σ} (f : typed_renaming Γ Γ')
+        {a : arity σ} 
+        (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
+        (Δ : raw_context (Metavariable.extend Σ a))
+      : typed_renaming
+          (Context.instantiate Γ I Δ)
+          (Context.instantiate Γ' (rename_instantiation f I) Δ).
+    Proof.
+      exists (Coproduct.fmap shape_is_sum shape_is_sum f idmap).
+      refine (coproduct_rect shape_is_sum _ _ _).
+      - intros x.
+        cbn; unfold Coproduct.fmap.
+        repeat rewrite coproduct_comp_inj1.
+        eapply concat. { apply ap, typed_renaming_respects_types. }
+        eapply concat. { apply rename_rename. }
+        eapply concat. 2: { apply inverse, rename_rename. }
+        apply (ap (fun r => rename r _)).
+        apply path_forall; intros i; cbn.
+        apply inverse. refine (coproduct_comp_inj1 _).
+      - intros x. unfold Coproduct.fmap; cbn.
+        repeat rewrite coproduct_comp_inj2.
+        apply instantiate_rename_instantiation.
+    Defined.
+    
+    (* TODO: upstream *)
+    Lemma instantiate_hypothetical_judgement_rename_instantiation
+        (γ γ' : σ.(shape_carrier)) (f : γ -> γ')
+        {a}  (I : Metavariable.instantiation a Σ γ)
+        {δ} (J : hypothetical_judgement _ δ)
+      : instantiate_hypothetical_judgement (rename_instantiation f I) J
+      = rename_hypothetical_judgement
+          (Coproduct.fmap shape_is_sum shape_is_sum f idmap)
+          (instantiate_hypothetical_judgement I J).
+    Proof.
+      apply (ap (Build_hypothetical_judgement _)).
+      apply path_forall; intros i.
+      apply instantiate_rename_instantiation.
+    Defined.
+    
+    (* TODO: upstream *)
+    Lemma judgement_renaming_inverse
+        (J J' : judgement Σ)
+        (f : judgement_renaming J J')
+        (e_f : IsEquiv f)
+      : judgement_renaming J' J.
+    Proof.
+      exists (typed_renaming_inverse _ e_f).
+      eapply concat.
+      { apply ap, inverse, (judgement_renaming_hypothetical_part _ _ f). }
+      eapply concat. { apply rename_rename_hypothetical_judgement. }
+      eapply concat. 2: { apply rename_idmap_hypothetical_judgement. }
+      apply (ap (fun r => rename_hypothetical_judgement r _)).
+      apply path_forall; intros i; apply eissect.
+    Defined.
+
     (* TODO: consider naming of the whole following lemma sequence *)
 
     Context {R : flat_rule Σ} (R_univ : in_universal_form R)
@@ -262,7 +330,25 @@ the cases of that induction. *)
     (* NOTE: and moreover this judgement_renaming is an equivalence, which may
     be needed if we restrict the renaming structural rule to equivalences. *)
     Proof.
-    Admitted. (* [rename_flat_rule_instantiation_conclusion]: hopefully straightforward following aobve dependencies *)
+      simple refine (judgement_renaming_inverse _ _ _ _).
+      1: exists (typed_renaming_to_instantiate_context _ _ _).
+      2: { apply coproduct_empty_inj1_is_equiv, R_univ. }
+      eapply concat. 2: { apply inverse,
+                      instantiate_hypothetical_judgement_rename_instantiation. }
+      eapply concat.
+        { apply ap, inverse, (judgement_renaming_hypothetical_part _ _ f). }
+      eapply concat. { apply rename_rename_hypothetical_judgement. }
+      apply (ap (fun r => rename_hypothetical_judgement r _)).
+      apply path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _).
+      2: { refine (empty_rect _ _ _). apply R_univ. }
+      intros x1.
+      unfold Coproduct.fmap. repeat rewrite coproduct_comp_inj1.
+      apply idpath.
+      (* This can be seen more conceptually as a sort of naturality calculation, 
+       involving naturality of [typed_renaming_to_instantiate_context] w.r.t.
+       [instantiate_context_over_typed_renaming]. *)
+    Defined.
 
     Local Lemma rename_flat_rule_instantiation_premise
           (p : flat_rule_premise R)
@@ -271,7 +357,7 @@ the cases of that induction. *)
           (Judgement.instantiate Γ' rename_flat_rule_instantiation_instantiation
                                                        (flat_rule_premise R p)).
     Proof.
-    Admitted. (* [rename_flat_rule_instantiation_premise]: hopefully straightforward following aove dependencies *)
+    Admitted. (* [rename_flat_rule_instantiation_premise]: hopefully straightforward following above dependencies *)
 
   End Flat_Rule_Instantiation_Renaming.
 

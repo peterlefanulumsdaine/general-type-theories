@@ -79,15 +79,7 @@ here from general lemmas about coproducts. *)
     : IsEquiv (coproduct_inj1 shape_is_sum
                : γ -> shape_sum γ (shape_empty _)).
   Proof.
-    simple refine (isequiv_adjointify _ _ _ _).
-    - apply (coproduct_rect shape_is_sum).
-      + intros i; exact i.
-      + apply (empty_rect _ shape_is_empty).
-    - unfold Sect. apply (coproduct_rect shape_is_sum).
-      + intros i. apply ap.
-        refine (coproduct_comp_inj1 _).
-      + apply (empty_rect _ shape_is_empty).
-    - intros i. refine (coproduct_comp_inj1 _).
+    apply coproduct_empty_inj1_is_equiv, shape_is_empty.
   Defined.
 
   Definition shape_sum_empty_inl (γ : σ)
@@ -98,15 +90,7 @@ here from general lemmas about coproducts. *)
     : IsEquiv (coproduct_inj2 shape_is_sum
                : γ -> shape_sum (shape_empty _) γ).
   Proof.
-    simple refine (isequiv_adjointify _ _ _ _).
-    - apply (coproduct_rect shape_is_sum).
-      + apply (empty_rect _ shape_is_empty).
-      + intros i; exact i.
-    - unfold Sect. apply (coproduct_rect shape_is_sum).
-      + apply (empty_rect _ shape_is_empty).
-      + intros i. apply ap.
-        refine (coproduct_comp_inj2 _).
-    - intros i. refine (coproduct_comp_inj2 _).
+    apply coproduct_empty_inj2_is_equiv, shape_is_empty.
   Defined.
 
   Definition shape_sum_empty_inr (γ : σ)

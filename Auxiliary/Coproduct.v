@@ -181,5 +181,35 @@ Proof.
   apply H_Y.
 Defined.
 
+Definition coproduct_empty_inj1_is_equiv
+    {X E XE} (H_XE : is_coproduct XE X E) (H_E : is_empty E)
+  : IsEquiv (coproduct_inj1 H_XE).
+Proof.
+  simple refine (isequiv_adjointify _ _ _ _).
+  - apply (coproduct_rect H_XE).
+    + intros i; exact i.
+    + apply (empty_rect _ H_E).
+  - unfold Sect. apply (coproduct_rect H_XE).
+    + intros i. apply ap.
+      refine (coproduct_comp_inj1 _).
+    + apply (empty_rect _ H_E).
+  - intros i. refine (coproduct_comp_inj1 _).
+Defined.
+
+Definition coproduct_empty_inj2_is_equiv
+    {E Y EY} (H_EY : is_coproduct EY E Y) (H_E : is_empty E)
+  : IsEquiv (coproduct_inj2 H_EY).
+Proof.
+  simple refine (isequiv_adjointify _ _ _ _).
+  - apply (coproduct_rect H_EY).
+    + apply (empty_rect _ H_E).
+    + intros i; exact i.
+  - unfold Sect. apply (coproduct_rect H_EY).
+    + apply (empty_rect _ H_E).
+    + intros i. apply ap.
+      refine (coproduct_comp_inj2 _).
+  - intros i. refine (coproduct_comp_inj2 _).
+Defined.
+
 End BinaryCoproduct.
 
