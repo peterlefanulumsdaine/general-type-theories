@@ -194,10 +194,10 @@ Section Signature_Maps.
     - apply idpath.
     - eapply concat. { apply fmap_transport. }
       simpl. eapply concat. { refine (transport_pp _ _ _ _)^. }
-      eapply concat. { refine (ap (fun p => transport _ p _) _).
+      eapply concat. { rapply @ap_1back.
                        refine (ap_pp fst _ _)^. }
       eapply concat.
-      2: { refine (ap (fun p => transport _ p _) _).
+      2: { rapply @ap_1back.
            apply ap, ap, inverse, ap_idmap. }
       apply ap, ap.
       (* Now that we are under the [raw_symbol], we can abstract and destruct

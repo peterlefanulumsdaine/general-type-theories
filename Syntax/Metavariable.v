@@ -1,4 +1,5 @@
 Require Import HoTT.
+Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Syntax.ShapeSystem.
@@ -313,8 +314,7 @@ Section Instantiations.
       eapply concat. { apply ap, IH_e_args. }
       eapply concat. { apply rename_rename. }
       eapply concat. 2: { apply inverse, rename_rename. }
-      apply (ap (fun f => Expression.rename f _)).
-      apply path_forall.
+      apply (ap_2back rename), path_forall.
       repeat refine (coproduct_rect shape_is_sum _ _ _); intros j;
         cbn; unfold Coproduct.fmap, shape_assoc_rtol, Coproduct.assoc_rtol;
         repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
@@ -322,8 +322,7 @@ Section Instantiations.
     - (* [e] is a metavariable from [a] *)
       simpl.
       eapply concat. 2: { apply inverse, Substitution.rename_substitute. }
-      apply (ap (fun f => substitute f _)).
-      apply path_forall.
+      apply (ap_2back substitute), path_forall.
       refine (coproduct_rect shape_is_sum _ _ _); intros i.
       + eapply concat. { refine (coproduct_comp_inj1 _). }
         apply inverse.
@@ -335,8 +334,7 @@ Section Instantiations.
         apply inverse.
         eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
         eapply concat. { apply rename_rename. }
-        apply (ap (fun f => Expression.rename f _)).
-        apply path_forall.
+        apply (ap_2back rename), path_forall.
         repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
         * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
           eapply concat. { refine (coproduct_comp_inj1 _). }
@@ -374,8 +372,7 @@ Section Instantiations.
       eapply concat. { apply Substitution.rename_substitute. }
       apply inverse.
       eapply concat. { apply substitute_rename. }
-      apply (ap (fun f => substitute f _)).
-      apply path_forall.
+      apply (ap_2back substitute), path_forall.
       repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
       + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         eapply concat. { refine (coproduct_comp_inj1 _). }
@@ -392,8 +389,8 @@ Section Instantiations.
         eapply concat. { apply ap, ap. refine (coproduct_comp_inj1 _). }
         eapply concat. { apply ap, instantiate_rename. }
         eapply concat. { apply rename_rename. }
-        apply (ap (fun f => Expression.rename f _)).
-        apply path_forall. refine (coproduct_rect shape_is_sum _ _ _); intros k.
+        apply (ap_2back rename), path_forall.
+        refine (coproduct_rect shape_is_sum _ _ _); intros k.
         * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
           refine (coproduct_comp_inj1 _).
         * eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
@@ -411,8 +408,7 @@ Section Instantiations.
     - (* [e] is a metavariable from [a] *)
       simpl.
       eapply concat. 2: { apply inverse, substitute_substitute. }
-      apply (ap (fun f => substitute f _)).
-      apply path_forall.
+      apply (ap_2back substitute), path_forall.
       refine (coproduct_rect shape_is_sum _ _ _); intros i.
       + eapply concat. { refine (coproduct_comp_inj1 _). }
         apply inverse.
@@ -424,8 +420,7 @@ Section Instantiations.
         apply inverse.
         eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
         eapply concat. { apply substitute_rename. }
-        apply (ap (fun f => substitute f _)). 
-        apply path_forall.
+        apply (ap_2back substitute), path_forall.
         repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
         * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
           eapply concat. { refine (coproduct_comp_inj1 _). }
@@ -441,8 +436,7 @@ Section Instantiations.
           eapply concat. { apply ap, instantiate_rename. }
           eapply concat. { apply rename_rename. }
           eapply concat. 2: { apply rename_idmap. }
-          apply (ap (fun f => Expression.rename f _)).
-          apply path_forall.
+          apply (ap_2back rename), path_forall.
           refine (coproduct_rect shape_is_sum _ _ _); intros k.
           -- eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
            refine (coproduct_comp_inj1 _).
@@ -471,8 +465,7 @@ Section Instantiations.
       eapply concat. { apply ap, IH_e_args. }
       eapply concat. { apply rename_rename. }
       eapply concat. 2: { apply inverse, rename_rename. }
-      apply (ap (fun f => rename f _)).
-      apply path_forall.
+      apply (ap_2back rename), path_forall.
       repeat refine (coproduct_rect shape_is_sum _ _ _); intros j;
         cbn; unfold Coproduct.fmap, shape_assoc_rtol, Coproduct.assoc_rtol;
         repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
@@ -481,8 +474,7 @@ Section Instantiations.
       simpl. unfold rename_instantiation.
       eapply concat. { apply substitute_rename. }
       eapply concat. 2: { apply inverse, rename_substitute. }      
-      apply (ap (fun f => substitute f _)).
-      apply path_forall.
+      apply (ap_2back substitute), path_forall.
       refine (coproduct_rect shape_is_sum _ _ _); intros j;
         unfold Coproduct.fmap.
       { repeat rewrite coproduct_comp_inj1; cbn.
@@ -491,8 +483,7 @@ Section Instantiations.
       rewrite IH_e_args.
       eapply concat. { apply rename_rename. }
       eapply concat. 2: { apply inverse, rename_rename. }
-      apply (ap (fun f => rename f _)).
-      apply path_forall.
+      apply (ap_2back rename), path_forall.
       repeat refine (coproduct_rect shape_is_sum _ _ _); intros k;
         unfold Coproduct.fmap;
         repeat rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
@@ -519,15 +510,13 @@ Section Instantiations.
       eapply concat. { apply rename_substitute. }
       apply inverse.
       eapply concat. { apply substitute_rename. }
-      apply (ap (fun r => substitute r _)).
-      apply path_forall.
+      apply (ap_2back substitute), path_forall.
       repeat refine (coproduct_rect shape_is_sum _ _ _); intro;
         cbn; unfold Substitution.extend, shape_assoc_rtol, Coproduct.assoc_rtol;
         repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2.
       + eapply concat. { apply rename_rename. }
         eapply concat. 2: { apply inverse, rename_rename. }
-        refine (ap (fun r => rename r _) _).
-        apply inverse, path_forall; intro.
+        apply (ap_2back rename), inverse, path_forall; intro.
         refine (coproduct_comp_inj1 _).
       + cbn. apply ap.
         rewrite coproduct_comp_inj2, coproduct_comp_inj1; apply idpath.
@@ -537,7 +526,7 @@ Section Instantiations.
       simpl. unfold substitute_instantiation.
       eapply concat. { apply substitute_substitute. }
       eapply concat. 2: { apply inverse, substitute_substitute. }      
-      apply (ap (fun f => substitute f _)), path_forall.
+      apply (ap_2back substitute), path_forall.
       refine (coproduct_rect shape_is_sum _ _ _); intros j;
         unfold Substitution.extend.
       { repeat rewrite coproduct_comp_inj1; cbn;
@@ -550,12 +539,12 @@ Section Instantiations.
       rewrite IH_e_args.
       eapply concat. { apply rename_substitute. }
       eapply concat. 2: { apply inverse, substitute_rename. }
-      apply (ap (fun f => substitute f _)), path_forall.
+      apply (ap_2back substitute), path_forall.
       repeat refine (coproduct_rect shape_is_sum _ _ _); intros k;
         unfold Substitution.extend, Coproduct.fmap;
         repeat rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2.
       + eapply concat. { apply rename_rename. }
-        refine (ap (fun r => rename r _) _). apply path_forall; intro.
+        apply (ap_2back rename), path_forall; intro.
         refine (coproduct_comp_inj1 _).
       + cbn. apply ap.
         rewrite coproduct_comp_inj2; apply idpath.
@@ -658,7 +647,7 @@ Section Instantiation_Composition.
       apply ap, path_forall; intros i.
       eapply concat. { apply ap, IH. }
       eapply concat. { apply rename_rename. }
-      apply (ap (fun f => Expression.rename f _)), path_forall.
+      apply (ap_2back rename), path_forall.
       refine (coproduct_rect shape_is_sum _ _ _).
       + intros x.
         eapply concat. { refine (coproduct_comp_inj2 _). }
@@ -675,7 +664,7 @@ Section Instantiation_Composition.
       eapply concat. { apply ap, ap, IH. }
       eapply concat. { apply rename_rename. }
       eapply concat. { apply rename_rename. } 
-      apply (ap (fun f => Expression.rename f _)), path_forall.
+      apply (ap_2back rename), path_forall.
       refine (coproduct_rect shape_is_sum _ _ _).
       + intros x.
         unfold Coproduct.fmap, Coproduct.empty_right;
@@ -711,8 +700,7 @@ Section Instantiation_Composition.
       eapply concat. { apply ap, ap. apply instantiate_rename. }
       eapply concat. { apply rename_rename. }
       eapply concat. { apply rename_rename. }
-      apply (ap (fun f => Expression.rename f _)).
-      apply path_forall.
+      apply (ap_2back rename), path_forall.
       repeat refine (coproduct_rect shape_is_sum _ _ _); intros j;
         cbn; unfold Coproduct.fmap, shape_assoc_rtol, Coproduct.assoc_rtol;
         repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
@@ -722,18 +710,17 @@ Section Instantiation_Composition.
       simpl instantiate_expression.
       simpl Expression.rename.
       eapply concat.
-      { refine (ap (fun f => substitute f _) _).
-        refine (ap (fun f => coproduct_rect _ _ _ f) _).
-        refine (@path_arrow _ _ _ _ (fun i => Expression.rename _ _) _); intros i.
-        apply ap, IH_e_args.   
+      { rapply @ap_2back. 
+        apply ap, path_forall; intros i.
+        refine (ap (rename _) _).
+        apply IH_e_args.   
       } clear IH_e_args.
       unfold instantiate_instantiation.
       eapply concat. { apply substitute_rename. }
       eapply inverse.
       eapply concat. { apply ap, instantiate_substitute. }
       eapply concat. { apply Substitution.rename_substitute. }
-      refine (ap (fun f => substitute f _) _).
-      apply path_forall.
+      apply (ap_2back substitute), path_forall.
       repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
       + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         simpl Expression.rename. eapply concat. { refine (ap _ (coproduct_comp_inj1 _)). }
@@ -757,8 +744,7 @@ Section Instantiation_Composition.
         eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
         eapply concat. { refine (coproduct_comp_inj2 _). }
         eapply concat. { apply rename_rename. }
-        apply (ap (fun f => Expression.rename f _)). clear e_args.
-        apply path_forall.
+        apply (ap_2back rename), path_forall; clear e_args.
         repeat refine (coproduct_rect shape_is_sum _ _ _); intros k;
           cbn; unfold shape_assoc_rtol, Coproduct.assoc_rtol, Coproduct.fmap;
           repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
@@ -780,8 +766,7 @@ Section Instantiation_Composition.
   Proof.
     eapply concat. 2: { apply rename_idmap. }
     eapply concat. 2: { apply substitute_raw_variable. }
-    apply (ap (fun g => substitute g _)).
-    apply path_forall.
+    apply (ap_2back substitute), path_forall.
     refine (coproduct_rect shape_is_sum _ _ _).
     - intros i; refine (coproduct_comp_inj1 _).
     - apply (empty_rect _ shape_is_empty).

@@ -1,5 +1,6 @@
 Require Import HoTT.
 Require Import Syntax.ShapeSystem.
+Require Import Auxiliary.General.
 Require Import Auxiliary.Closure.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
@@ -730,8 +731,7 @@ Section Renaming.
       apply path_forall; intros s.
       eapply concat. { apply rename_rename. }
       eapply concat. 2: { apply rename_idmap. }
-      apply (ap (fun r => Expression.rename r _)).
-      apply path_forall; intro; apply eisretr.
+      apply (ap_2back Expression.rename), path_forall, (eisretr e).
   Defined.
 
 (** A particularly common case: renaming along the equivalence [ Γ <~> Γ+0 ].
@@ -984,7 +984,7 @@ Section SignatureMaps.
       + exists r.
         simple refine (FlatRule.closure_system_fmap' f _ ΓI).
         refine (_ @ _). { apply inverse, FlatRule.fmap_compose. }
-        refine (ap (fun f => FlatRule.fmap f _) _).
+        rapply @ap_1back. 
         apply Signature.empty_rect_unique.
       + refine (Family.map_over_commutes
                   (FlatRule.closure_system_fmap' f _) _).
@@ -1037,8 +1037,7 @@ Section Instantiation.
       eapply concat. { apply ap, instantiate_instantiate_expression. }
       eapply concat. { apply rename_rename. }
       eapply concat. 2: { apply rename_idmap. }
-      apply (ap (fun f => Expression.rename f _)).
-      apply path_forall; intros j.
+      apply (ap_2back Expression.rename), path_forall; intros j.
       apply Coproduct.assoc_rtoltor.
     }
     intros p.
@@ -1119,7 +1118,7 @@ Section Instantiation.
       + apply (ap (Judgement.instantiate _ _)).
         apply (ap (Judgement.instantiate _ _)).
         eapply concat. { apply inverse, Judgement.fmap_compose. }
-        refine (ap (fun f => (Judgement.fmap f _)) _).
+        rapply @ap_1back.
         apply Family.sum_unique.
         * apply Family.empty_rect_unique.
         * apply idpath.
@@ -1128,12 +1127,11 @@ Section Instantiation.
         eapply concat. { apply inverse, Family.fmap_compose. }
         eapply concat. 2: { apply Family.fmap_compose. }
         eapply concat. 2: { apply Family.fmap_compose. }
-        refine (ap (fun f => (Family.fmap f _)) _).
-        apply path_forall; intros j.
+        apply (ap_1back Family.fmap), path_forall; intros j.
         apply (ap (Judgement.instantiate _ _)).
         apply (ap (Judgement.instantiate _ _)).
         eapply concat. { apply inverse, Judgement.fmap_compose. }
-        refine (ap (fun f => (Judgement.fmap f _)) _).
+        apply (ap_1back Judgement.fmap).
         apply Family.sum_unique.
         * apply Family.empty_rect_unique.
         * apply idpath.

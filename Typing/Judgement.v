@@ -1,4 +1,5 @@
 Require Import HoTT.
+Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Syntax.ShapeSystem.
@@ -368,9 +369,9 @@ Section JudgementFmap.
   Proof.
     eapply concat.
       2: { eapply (ap (Build_judgement _)), fmap_hypothetical_judgement_idmap. }
-      refine (ap (fun Γ => Build_judgement (Build_raw_context _ Γ) _) _).
-      apply path_forall; intros i.
-      apply Expression.fmap_idmap.
+    refine (ap (fun Γ => Build_judgement (Build_raw_context _ Γ) _) _).
+    apply path_forall; intros i.
+    apply Expression.fmap_idmap.
     (* TODO: easier if we generalise [eq_by_expressions]? *)
   Defined.
 

@@ -1,4 +1,5 @@
 Require Import HoTT.
+Require Import Auxiliary.General.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
@@ -79,7 +80,7 @@ Section FlatRule.
     - apply idpath.
     - cbn.
       eapply concat.
-      { refine (ap (fun f => Family.fmap f _) _).
+      { rapply @ap_1back.
         eapply concat. { apply ap, Metavariable.fmap1_idmap. }
         apply path_forall; intros i.
         apply Judgement.fmap_idmap. }
@@ -100,7 +101,7 @@ Section FlatRule.
     - apply idpath.
     - cbn.
       eapply concat. 2: { apply Family.fmap_compose. }
-      refine (ap (fun f => Family.fmap f _) _).
+      rapply @ap_1back.
       eapply concat. { apply ap, Metavariable.fmap1_compose. }
       apply path_forall; intros i.
       apply Judgement.fmap_compose.

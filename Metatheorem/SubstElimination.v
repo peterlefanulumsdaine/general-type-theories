@@ -1,5 +1,6 @@
 Require Import HoTT.
 Require Import Syntax.ShapeSystem.
+Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
 Require Import Auxiliary.Coproduct.
@@ -115,8 +116,8 @@ the analogue for (weakly) typed context maps. *)
     { apply ap, inverse, (judgement_renaming_hypothetical_part _ _ f). }
     eapply concat. { apply rename_rename_hypothetical_judgement. }
     eapply concat. 2: { apply rename_idmap_hypothetical_judgement. }
-    apply (ap (fun r => rename_hypothetical_judgement r _)).
-    apply path_forall; intros i; apply eissect.
+    apply (ap_1back rename_hypothetical_judgement), path_forall; intros i.
+    apply eissect.
   Defined.
 
   Lemma instantiate_judgement_over_typed_renaming
@@ -203,8 +204,7 @@ the cases of that induction. *)
       eapply concat.
         { apply ap, inverse, (judgement_renaming_hypothetical_part _ _ f). }
       eapply concat. { apply rename_rename_hypothetical_judgement. }
-      apply (ap (fun r => rename_hypothetical_judgement r _)).
-      apply path_forall.
+      apply (ap_1back rename_hypothetical_judgement), path_forall.
       refine (coproduct_rect shape_is_sum _ _ _).
       2: { refine (empty_rect _ _ _). apply R_univ. }
       intros x1.
@@ -427,8 +427,7 @@ well-formed. *)
           eapply concat. { apply ap, e2. }
           eapply concat. { apply rename_substitute. }
           eapply concat. 2: { apply inverse, substitute_rename. }
-          apply (ap (fun h => substitute h _)).
-          apply path_forall; intros k.
+          apply (ap_2back substitute), path_forall; intros k.
           apply inverse. refine (coproduct_comp_inj1 _).
       + apply inr.
         refine (rename_derivation _ _ d_fi).
@@ -438,8 +437,7 @@ well-formed. *)
         apply path_forall; intros j; recursive_destruct j.
         * eapply concat. { apply rename_substitute. }
           eapply concat. 2: { apply inverse, substitute_rename. }
-          apply (ap (fun h => substitute h _)).
-          apply path_forall; intros j.
+          apply (ap_2back substitute), path_forall; intros j.
           apply inverse. refine (coproduct_comp_inj1 _).
         * apply idpath.
     - intros i. apply inl.
@@ -551,8 +549,7 @@ Section Substitute_Derivations.
       eapply concat.
         { apply ap, inverse, (weakly_typed_judgement_map_hypothetical_part _ _ _ f). }
       eapply concat. { apply rename_substitute_hypothetical_judgement. }
-      apply (ap (fun r => substitute_hypothetical_judgement r _)).
-      apply path_forall.
+      apply (ap_1back substitute_hypothetical_judgement), path_forall.
       refine (coproduct_rect shape_is_sum _ _ _).
       2: { refine (empty_rect _ _ _). apply R_univ. }
       intros x1.

@@ -1,4 +1,5 @@
 Require Import HoTT.
+Require Import Auxiliary.General.
 Require Import Auxiliary.Coproduct.
 Require Import Syntax.ShapeSystem.
 Require Import Syntax.Arity.
@@ -131,8 +132,7 @@ Section Typed_Renamings.
     eapply concat. 2: { apply inverse, ap, H_e. }
     eapply concat. 2: { apply inverse, rename_rename. }
     eapply concat. { apply inverse, rename_idmap. }
-    apply (ap (fun f => Expression.rename f _)).
-    apply inverse, path_forall, (eissect e).
+    apply (ap_2back Expression.rename), inverse, path_forall, (eissect e).
   Defined.
 
   Lemma typed_renaming_inverse
@@ -183,8 +183,7 @@ Section Rename_Variables.
     intros i; cbn.
     eapply concat. { apply inverse, rename_idmap. }
     eapply concat. 2: { apply inverse, rename_rename. }
-    refine (ap (fun f => Expression.rename f _) _).
-    apply path_forall; intros ?; apply inverse, eisretr.
+    apply (ap_2back Expression.rename), inverse, path_forall, (eisretr e).
   Defined.
 
 End Rename_Variables.
@@ -265,8 +264,8 @@ Section Instantiation.
       unfold fmap2_shape_sum, fmap_shape_sum.
       repeat rewrite coproduct_comp_inj1.
       eapply concat. 2: { apply inverse, rename_rename. }
-      apply (ap (fun f => Expression.rename f _)), path_forall.
-      intros j. apply inverse; refine (coproduct_comp_inj1 _).
+      apply (ap_2back Expression.rename), path_forall; intros j.
+      apply inverse; refine (coproduct_comp_inj1 _).
     - intros i; cbn.
       unfold fmap2_shape_sum, fmap_shape_sum.
       repeat rewrite coproduct_comp_inj2.
@@ -351,8 +350,7 @@ renamings [shape_sum_empty_inl] and its inverse. *)
         refine (coproduct_comp_inj1 _).
       }
       eapply concat. { apply rename_rename. }
-      refine (ap (fun f => Expression.rename f _) _).
-      clear i. apply path_forall; intros x.
+      apply (ap_2back Expression.rename), path_forall; intros x.
       refine (coproduct_comp_inj1 _).
     - intros i; cbn.
       eapply concat. { refine (coproduct_comp_inj1 _). }
@@ -367,9 +365,8 @@ renamings [shape_sum_empty_inl] and its inverse. *)
       eapply concat. { apply ap, ap. refine (coproduct_comp_inj1 _). }
       eapply concat. { apply ap, instantiate_rename. }
       eapply concat. { apply rename_rename. }
-      refine (ap (fun f => Expression.rename f _) _).
-      clear i. apply path_forall.
-      refine (coproduct_rect shape_is_sum _ _ _); intros i.
+      apply (ap_2back Expression.rename), path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _); intros.
       + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         refine (coproduct_comp_inj1 _).
       + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
@@ -378,12 +375,12 @@ renamings [shape_sum_empty_inl] and its inverse. *)
     - intros i.
       eapply concat. { refine (coproduct_comp_inj2 _). }
       eapply concat. { apply instantiate_instantiate_expression. }
-      refine ((ap (fun f => Expression.rename f _) _) @ ap _ _).
-      + apply ap, inverse, einv_V. 
-      + apply inverse.
-        eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
-        eapply concat. { refine (coproduct_comp_inj2 _). }
-        apply ap. refine (coproduct_comp_inj2 _).
+      eapply concat.
+      { eapply (ap_2back Expression.rename), ap, inverse, einv_V. }
+      apply inverse, (ap (Expression.rename _)).
+      eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
+      eapply concat. { refine (coproduct_comp_inj2 _). }
+      apply ap. refine (coproduct_comp_inj2 _).
   Qed.
 
   Local Lemma instantiate_instantiate_rtol
@@ -448,8 +445,7 @@ renamings [shape_sum_empty_inl] and its inverse. *)
       eapply concat. { apply ap, typed_renaming_respects_types. }
       eapply concat. { apply rename_rename. }
       eapply concat. 2: { apply inverse, rename_rename. }
-      apply (ap (fun r => Expression.rename r _)).
-      apply path_forall; intros i; cbn.
+      apply (ap_2back Expression.rename), path_forall; intros i; cbn.
       apply inverse. refine (coproduct_comp_inj1 _).
     - intros x. unfold Coproduct.fmap; cbn.
       repeat rewrite coproduct_comp_inj2.

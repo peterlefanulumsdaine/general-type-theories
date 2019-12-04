@@ -1,6 +1,7 @@
 (** * Well-shaped rules *)
 
 Require Import HoTT.
+Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Syntax.ShapeSystem.
@@ -114,7 +115,7 @@ Record rule
     - apply AlgebraicExtension.fmap_idmap.
     - cbn. 
       eapply concat.
-      { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
+      { eapply (ap_3back fmap_hypothetical_boundary_expressions).
         apply Metavariable.fmap1_idmap. }
       apply fmap_hypothetical_boundary_expressions_idmap.
   Defined.
@@ -128,7 +129,7 @@ Record rule
     - apply AlgebraicExtension.fmap_compose.
     - cbn. 
       eapply concat.
-      { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
+      { eapply (ap_3back fmap_hypothetical_boundary_expressions).
         apply Metavariable.fmap1_compose. }
       apply fmap_hypothetical_boundary_expressions_compose.
   Defined.
