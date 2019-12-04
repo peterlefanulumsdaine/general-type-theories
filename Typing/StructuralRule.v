@@ -75,8 +75,9 @@ Proof.
   exists { Γ : raw_context Σ
     & { Γ' : raw_context Σ
     & { f : typed_renaming Γ Γ'
-    & hypothetical_judgement Σ Γ}}}.
-  intros [Γ [Γ' [f J]]]. split.
+    & IsEquiv f
+      * hypothetical_judgement Σ Γ }}}.
+  intros [Γ [Γ' [f [e_f J]]]]. split.
   - (* premises: *)
     refine [< _ >]. exists Γ; exact J.
   - (* conclusion: *)
@@ -679,6 +680,7 @@ Section Renaming.
   Lemma derive_rename 
       (Γ Γ' : raw_context Σ)
       (f : typed_renaming Γ Γ')
+      (e_f : IsEquiv f)
       (J : hypothetical_judgement Σ Γ)
     : Closure.derivation T H (Build_judgement Γ J)
     -> Closure.derivation T H
@@ -686,7 +688,7 @@ Section Renaming.
   Proof.
     intros D.
     simple refine (Closure.deduce'_via_map derivable_renaming _ _ _).
-    { exists Γ, Γ', f; exact J. }
+    { exists Γ, Γ', f; split; assumption. }
     { apply idpath. }
     { intros; apply D. }
   Defined.
@@ -695,6 +697,7 @@ Section Renaming.
       (J J' : judgement Σ)
       (f : typed_renaming
              (context_of_judgement J') (context_of_judgement J))
+      (e_f : IsEquiv f)
       (e : hypothetical_part J
            = rename_hypothetical_judgement f (hypothetical_part J'))
     : Closure.derivation T H J'
@@ -702,7 +705,7 @@ Section Renaming.
   Proof.
     intros D.
     simple refine (Closure.deduce'_via_map derivable_renaming _ _ _).
-    { refine (_;(_;(f;_))). exact J'. }
+    { refine (_;(_;(f;_))); split; [auto | exact J']. }
     { apply (ap (Build_judgement _)), inverse, e. }
     { intros; apply D. }
   Defined.
@@ -713,8 +716,9 @@ Section Renaming.
     : Closure.derivation T H J
     -> Closure.derivation T H (Judgement.rename J e).
   Proof.
-    simple refine (derive_rename' _ _ _ _).
+    simple refine (derive_rename' _ _ _ _ _).
     - apply Context.typed_renaming_to_rename_context.
+    - typeclasses eauto.
     - apply idpath.
   Defined.
 
@@ -724,8 +728,9 @@ Section Renaming.
     : Closure.derivation T H (Judgement.rename J e)
       -> Closure.derivation T H J.
   Proof.
-    simple refine (derive_rename' _ _ _ _).
+    simple refine (derive_rename' _ _ _ _ _).
     - apply Context.typed_renaming_from_rename_context.
+    - typeclasses eauto.
     - apply (ap (Build_hypothetical_judgement _)), inverse.
       apply path_forall; intros s.
       eapply concat. { apply rename_rename. }
@@ -948,13 +953,14 @@ Section SignatureMaps.
     apply structural_rule_rect ; intros.
     (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
     - (* rename *)
-      destruct i_rename as [Γ [Γ' [α J]]].
+      destruct i_rename as [Γ [Γ' [α [e_α J]]]].
       simple refine (_;_).
       + apply rename.
         exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
-        exists (fmap_typed_renaming f α).
-        exact (fmap_hypothetical_judgement f J).
+        exists (fmap_typed_renaming f α); split.
+        * assumption.
+        * exact (fmap_hypothetical_judgement f J).
       + apply Closure.rule_eq.
         * apply idpath.
         * refine (Judgement.eq_by_expressions _ _); intros i.
@@ -1068,13 +1074,14 @@ Section Instantiation.
      ; instantiate_instantiation I J)]
      of the same flat rule, wrapped in renamings along [shape_assoc].
      *)
-    simple refine (derive_rename' _ _ _ _ _).
-    4: simple refine (Closure.deduce' _ _ _);
+    simple refine (derive_rename' _ _ _ _ _ _).
+    5: simple refine (Closure.deduce' _ _ _);
        [ apply inr; 
          exists (Context.instantiate _ I Δ);
          exact (instantiate_instantiation I J)
        | apply idpath | ].
     { apply Context.instantiate_instantiate_ltor. }
+    { apply (equiv_isequiv ((shape_assoc _ _ _)^-1)). }
     { (* TODO: abstract as something like [instantiate_instantiate_hypothetical_judgement], and consider direction. *)
       apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
       cbn; apply inverse.
