@@ -784,50 +784,6 @@ Section InterfaceFunctions.
     intro; apply d_Γi.
   Defined.
 
-  (** A slightly technical lemma, useful under [Judgement.eq_by_expressions]
-    for the types of a contexr reindexed under [shape_sum_empty_inl]. *)
-  (* TODO: perhaps upstream to e.g. [Context]? *)
-  Lemma instantiate_empty_ptwise
-      (Γ : raw_context Σ)
-      (f : shape_empty σ -> raw_type Σ _)
-      (i : shape_sum Γ (shape_empty σ))
-    : coproduct_rect (shape_is_sum) _
-        (fun j:Γ => Expression.rename (shape_sum_empty_inl _) (Γ j))
-        f i
-    = Context.rename Γ (shape_sum_empty_inl _)^-1 i.
-  Proof.
-    revert i. cbn.
-    apply (coproduct_rect shape_is_sum).
-    + intros ?.
-      eapply concat. { refine (coproduct_comp_inj1 _). }
-      cbn. apply ap, ap.
-      apply inverse. refine (coproduct_comp_inj1 _).
-    + exact (empty_rect _ shape_is_empty _).
-  Defined.
-
-  (** Another technical lemma, useful under [Judgement.eq_by_expressions]
-      for instantiations of a metavariable with empty binder. *)
-  (* TODO: perhaps upstream to e.g. [Metavariable]? *)
-  Lemma instantiate_binderless_metavariable
-      {γ : σ} {cl}
-      (E : raw_expression Σ cl (shape_sum γ (shape_empty _)))
-      {f}
-    : substitute
-        (coproduct_rect shape_is_sum _
-                        (fun i => raw_variable (coproduct_inj1 shape_is_sum i))
-                        f)
-        E
-      = E.
-  Proof.
-    eapply concat. 2: { apply rename_idmap. }
-    eapply concat. 2: { apply substitute_raw_variable. }
-    apply (ap (fun g => substitute g _)).
-    apply path_forall.
-    refine (coproduct_rect shape_is_sum _ _ _).
-    - intros i; refine (coproduct_comp_inj1 _).
-    - apply (empty_rect _ shape_is_empty).
-  Defined.
-
   Definition derive_tyeq_refl
       (Γ : raw_context Σ) (A : raw_expression Σ class_type Γ)
       (d_A : derivation T H [! Γ |- A !])
@@ -841,7 +797,7 @@ Section InterfaceFunctions.
       refine (Expression.rename _ A). 
       apply shape_sum_empty_inl. }
     { refine (Judgement.eq_by_expressions _ _).
-      - intros i. apply instantiate_empty_ptwise.
+      - intros i. apply @instantiate_empty_ptwise.
       - intros i; recursive_destruct i;
           apply instantiate_binderless_metavariable.
     }
@@ -849,7 +805,7 @@ Section InterfaceFunctions.
     refine (transport _ _
                       (derive_reindexing_to_empty_sum _ d_A)).
     apply Judgement.eq_by_expressions.
-    - intros i. apply inverse, instantiate_empty_ptwise.
+    - intros i. apply inverse, @instantiate_empty_ptwise.
     - intros i; recursive_destruct i;
         apply inverse, instantiate_binderless_metavariable.
   Defined.
@@ -868,7 +824,7 @@ Section InterfaceFunctions.
         [ exact A | exact B ].
     }
     { refine (Judgement.eq_by_expressions _ _).
-      - apply instantiate_empty_ptwise.
+      - apply @instantiate_empty_ptwise.
       - intros i; recursive_destruct i;
           apply instantiate_binderless_metavariable.
     }
@@ -876,7 +832,7 @@ Section InterfaceFunctions.
     refine (transport _ _
                       (derive_reindexing_to_empty_sum _ d_AB)).
     apply Judgement.eq_by_expressions.
-    - intros i. apply inverse, instantiate_empty_ptwise.
+    - intros i. apply inverse, @instantiate_empty_ptwise.
     - intros i; recursive_destruct i;
         apply inverse, instantiate_binderless_metavariable.
   Defined.
@@ -910,7 +866,7 @@ Section InterfaceFunctions.
       + exact u.
     }
     { refine (Judgement.eq_by_expressions _ _).
-      - apply instantiate_empty_ptwise.
+      - apply @instantiate_empty_ptwise.
       - intros i; recursive_destruct i;
           apply instantiate_binderless_metavariable.
     }
@@ -919,7 +875,7 @@ Section InterfaceFunctions.
       [ set (d := d_A) | set (d := d_B) | set (d := d_AB) | set (d := d_u) ];
       refine (transport _ _ (derive_reindexing_to_empty_sum _ d));
       (apply Judgement.eq_by_expressions;
-       [ intros; apply inverse, instantiate_empty_ptwise
+       [ intros; apply inverse, @instantiate_empty_ptwise
        | intros i; recursive_destruct i;
          apply inverse, instantiate_binderless_metavariable]).
   Defined.

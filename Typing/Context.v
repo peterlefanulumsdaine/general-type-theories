@@ -227,6 +227,8 @@ Section Instantiation.
       apply instantiate_rename. 
   Defined.
 
+(* TODO: [unit_instantiate] should probably be deprecated in favour of the typed
+renamings [shape_sum_empty_inl] and its inverse. *)
   Local Lemma unit_instantiate
       {a} (Γ : raw_context (Metavariable.extend Σ a))
     : instantiate [::] (unit_instantiation a)
@@ -251,6 +253,26 @@ Section Instantiation.
       (shape_sum_empty_inl Γ)^-1.
   Proof.
     apply respects_types_equiv_inverse, respects_types_shape_sum_inl.
+  Defined.
+
+  (** A slightly technical lemma, useful under [Judgement.eq_by_expressions]
+    for the types of a context reindexed under [shape_sum_empty_inl]. *)
+  Lemma instantiate_empty_ptwise
+      (Γ : raw_context Σ)
+      (f : shape_empty σ -> raw_type Σ _)
+      (i : shape_sum Γ (shape_empty σ))
+    : coproduct_rect (shape_is_sum) _
+        (fun j:Γ => Expression.rename (shape_sum_empty_inl _) (Γ j))
+        f i
+    = rename Γ (shape_sum_empty_inl _)^-1 i.
+  Proof.
+    revert i. cbn.
+    apply (coproduct_rect shape_is_sum).
+    + intros ?.
+      eapply concat. { refine (coproduct_comp_inj1 _). }
+      cbn. apply ap, ap.
+      apply inverse. refine (coproduct_comp_inj1 _).
+    + exact (empty_rect _ shape_is_empty _).
   Defined.
 
   Local Lemma instantiate_instantiate_pointwise

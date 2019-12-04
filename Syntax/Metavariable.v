@@ -765,4 +765,26 @@ Section Instantiation_Composition.
           apply idpath.
   Defined.
 
+  (** A somewhat technical lemma, useful under [Judgement.eq_by_expressions]
+      for instantiations of a metavariable with empty binder. *)
+  Lemma instantiate_binderless_metavariable
+      {γ : σ} {cl}
+      (E : raw_expression Σ cl (shape_sum γ (shape_empty _)))
+      {f}
+    : substitute
+        (coproduct_rect shape_is_sum _
+                        (fun i => raw_variable (coproduct_inj1 shape_is_sum i))
+                        f)
+        E
+      = E.
+  Proof.
+    eapply concat. 2: { apply rename_idmap. }
+    eapply concat. 2: { apply substitute_raw_variable. }
+    apply (ap (fun g => substitute g _)).
+    apply path_forall.
+    refine (coproduct_rect shape_is_sum _ _ _).
+    - intros i; refine (coproduct_comp_inj1 _).
+    - apply (empty_rect _ shape_is_empty).
+  Defined.
+
 End Instantiation_Composition.
