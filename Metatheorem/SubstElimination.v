@@ -77,7 +77,7 @@ the associated congruence rule should be derivable (?admissible). *)
 
 End Flat_Conditions.
 
-Section Judgement_Maps.
+Section Judgement_Renamings.
 (** A lot of results can be concisely formulated in terms of maps/renamings of
 judgements.  A map/renaming of judgements from [Γ' |- J'] to [Γ |- J] is just
 a context map/renaming [f] from [Γ'] to [J], such that [J' = f^*J].
@@ -85,9 +85,8 @@ a context map/renaming [f] from [Γ'] to [J], such that [J' = f^*J].
 (Categorically, these are exactly maps in the total category of judgements,
 viewed as a discrete fibration over contexts.)
 
-We also introduce an auxiliary notion of _weakly typed_ context maps:
-maps which at each component look either like a well-typed context map, or
-like a typed renaming. *)
+This section gives judgement renamings; section [Weakly_Typed_Maps] below gives
+the analogue for (weakly) typed context maps. *)
 
   Context `{Funext} {σ : shape_system} {Σ : signature σ}.
 
@@ -133,37 +132,7 @@ like a typed renaming. *)
     apply inverse, instantiate_hypothetical_judgement_rename_instantiation.
   Defined.
 
-  Local Definition weakly_typed 
-      (T : flat_type_theory Σ)
-      (Δ Γ : raw_context Σ) (f : raw_context_map Σ Δ Γ)
-    : Type
-  := forall i : Γ,
-      { j : Δ & (f i = raw_variable j) * (Δ j = substitute f (Γ i)) }
-    + subst_free_derivation T (Family.empty _)
-                            [! Δ |- f i ; substitute f (Γ i) !].
-
-  Local Record weakly_typed_context_map
-    (T : flat_type_theory Σ) (Δ Γ : raw_context Σ)
-  := {
-    raw_of_weakly_typed_context_map :> raw_context_map Σ Δ Γ
-  ; weakly_typed_context_map_is_weakly_typed
-                    : weakly_typed T Δ Γ raw_of_weakly_typed_context_map
-  }.
- 
-  Local Record weakly_typed_judgement_map
-    (T : flat_type_theory Σ) (J' J : judgement Σ)
-  := {
-    weakly_typed_context_map_of_judgement_map
-      :> weakly_typed_context_map T
-           (context_of_judgement J') (context_of_judgement J)
-  ; weakly_typed_judgement_map_hypothetical_part
-      : substitute_hypothetical_judgement
-          weakly_typed_context_map_of_judgement_map
-          (hypothetical_part J)
-        = hypothetical_part J'
-  }.
-
-End Judgement_Maps.
+End Judgement_Renamings.
 
 Section Rename_Derivations.
 (** The goal of this section is [rename_derivation]:
@@ -178,7 +147,7 @@ the cases of that induction. *)
   Context `{Funext} {σ : shape_system} {Σ : signature σ}.
 
   Section Flat_Rule_Instantiation_Renaming.
-    (* The lemmas of this section build up what’s needed for renaming
+    (** The lemmas of this section build up what’s needed for renaming
      flat-rule steps in derivations: 
 
      given an instance of a flat rule in universal form,
@@ -187,7 +156,7 @@ the cases of that induction. *)
      renaming we want to derive, and each of whose premises has a
      judgement-renaming to some premise of the original rule.
 
-     Cases for non-flat structural rules: should be done by analogous
+     The cases for non-flat structural rules are done by analogous
      claim for their closure conditions.
     *)
 
@@ -223,7 +192,6 @@ the cases of that induction. *)
             (rename_flat_rule_instantiation_instantiation)
             (flat_rule_conclusion R))
           J'.
-    Proof.
     (* NOTE: and moreover this judgement_renaming is an equivalence, which may
     be needed if we restrict the renaming structural rule to equivalences. *)
     Proof.
@@ -346,9 +314,150 @@ the cases of that induction. *)
 
 End Rename_Derivations.
 
+Section Weakly_Typed_Maps.
+(** For [sustitute_derivation], we introduce an auxiliary notion of _weakly
+typed_ context maps: maps which at each component look either like a well-typed
+context map, or like a typed renaming.
+
+This slightly subtle definition is essentially motivated by the proof
+of [substitute_derivation], and in particular, the desire to keep that proof
+structurally recursive on the derivation (and also not dependent on any kind
+of well-typedness conditions on the flat rules).  The point is that when
+passing under binders in premises of rules, we want to extend the context map
+by the type-expressions of the binders, without having to check that these are
+well-formed. *)
+
+  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
+
+  Local Definition weakly_typed 
+      (T : flat_type_theory Σ)
+      (Δ Γ : raw_context Σ) (f : raw_context_map Σ Δ Γ)
+    : Type
+  := forall i : Γ,
+      { j : Δ & (f i = raw_variable j) * (Δ j = substitute f (Γ i)) }
+    + subst_free_derivation T (Family.empty _)
+                            [! Δ |- f i ; substitute f (Γ i) !].
+
+  Local Record weakly_typed_context_map
+    (T : flat_type_theory Σ) (Δ Γ : raw_context Σ)
+  := {
+    raw_of_weakly_typed_context_map :> raw_context_map Σ Δ Γ
+  ; weakly_typed_context_map_is_weakly_typed
+                    : weakly_typed T Δ Γ raw_of_weakly_typed_context_map
+  }.
+ 
+  (** Analogous to [judgement_renaming] *)
+  Local Record weakly_typed_judgement_map
+    (T : flat_type_theory Σ) (J' J : judgement Σ)
+  := {
+    weakly_typed_context_map_of_judgement_map
+      :> weakly_typed_context_map T
+           (context_of_judgement J') (context_of_judgement J)
+  ; weakly_typed_judgement_map_hypothetical_part
+      : substitute_hypothetical_judgement
+          weakly_typed_context_map_of_judgement_map
+          (hypothetical_part J)
+        = hypothetical_part J'
+  }.
+
+End Weakly_Typed_Maps.
+
 Section Substitute_Derivations.
 
-  Context {σ : shape_system} {Σ : signature σ}.
+  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
+
+  Section Flat_Rule_Substitute_Instantiation.
+    (** Analogously to section [Flat_Rule_Susbtitute_Renaming],
+     the lemmas of this section build up what’s needed for substituting
+     flat-rule steps in derivations: 
+
+     given an instance of a flat rule in universal form,
+     and a weakly-typed judgement map into its conclusion,
+     get a sustituted instance, whose conclusion is renaming-equivalent to the
+     renaming we want to derive, and each of whose premises has a
+     weakly-typed judgement map to some premise of the original rule.
+
+     The cases for non-flat structural rules should be done by analogous
+     claim for their closure conditions.
+    *)
+
+    (* TODO: consider naming of the whole following lemma sequence 
+     (but keep consistent with renaming versions above). *)
+
+    Context
+      {T : flat_type_theory Σ}
+      {R : flat_rule Σ} (R_univ : in_universal_form R)
+      {Γ : raw_context Σ}
+      (I : Metavariable.instantiation (flat_rule_metas R) Σ Γ)
+      {J' : judgement Σ}
+      (f : weakly_typed_judgement_map T
+             J'
+             (Judgement.instantiate Γ I (flat_rule_conclusion R)))
+      (Γ' := context_of_judgement J').
+
+    Local Definition substitute_flat_rule_instantiation_renaming
+      : weakly_typed_context_map T Γ' Γ.
+    Proof.
+      (*
+      refine (compose_typed_renaming f _).
+      apply typed_renaming_to_instantiate_context.
+      *)
+    Admitted.
+
+    Local Definition substitute_flat_rule_instantiation_instantiation
+      : Metavariable.instantiation (flat_rule_metas R) Σ Γ'.
+    Proof.
+      (*
+      exact (rename_instantiation
+               substitute_flat_rule_instantiation_renaming
+               I).
+      *)
+    Admitted.
+
+    Local Lemma substitute_flat_rule_instantiation_conclusion
+      : judgement_renaming
+          (Judgement.instantiate Γ'
+            (substitute_flat_rule_instantiation_instantiation)
+            (flat_rule_conclusion R))
+          J'.
+    (* NOTE: and moreover this judgement_renaming is an equivalence, which may
+    be needed if we restrict the renaming structural rule to equivalences. *)
+    Proof.
+      (*
+      simple refine (judgement_renaming_inverse _ _ _ _).
+      1: exists (typed_renaming_to_instantiate_context _ _ _).
+      2: { apply coproduct_empty_inj1_is_equiv, R_univ. }
+      eapply concat. 2: { apply inverse,
+                      instantiate_hypothetical_judgement_rename_instantiation. }
+      eapply concat.
+        { apply ap, inverse, (judgement_renaming_hypothetical_part _ _ f). }
+      eapply concat. { apply rename_rename_hypothetical_judgement. }
+      apply (ap (fun r => rename_hypothetical_judgement r _)).
+      apply path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _).
+      2: { refine (empty_rect _ _ _). apply R_univ. }
+      intros x1.
+      unfold Coproduct.fmap. repeat rewrite coproduct_comp_inj1.
+      apply idpath.
+      (* This can be seen more conceptually as a sort of naturality calculation, 
+       involving naturality of [typed_renaming_to_instantiate_context] w.r.t.
+       [instantiate_context_over_typed_renaming]. *)
+      *)
+    Admitted.
+
+    Local Lemma substitute_flat_rule_instantiation_premise
+          (p : flat_rule_premise R)
+      : weakly_typed_judgement_map T
+          (Judgement.instantiate Γ I (flat_rule_premise R p))
+          (Judgement.instantiate Γ' substitute_flat_rule_instantiation_instantiation
+                                                       (flat_rule_premise R p)).
+    Proof.
+      (*
+      apply instantiate_judgement_over_typed_renaming.
+          *)
+    Admitted.
+
+  End Flat_Rule_Substitute_Instantiation.
 
   Definition substitute_derivation
       {T : flat_type_theory Σ} (T_sub : substitutive T) 
