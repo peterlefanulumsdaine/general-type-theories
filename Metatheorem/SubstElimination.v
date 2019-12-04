@@ -29,59 +29,6 @@ in [structural_rule_without_subst]) to just the case of equivalences,
 so that the results of this file really do show that general renaming is
 admissible. *)
 
-Section Auxiliary.
-
-  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
-
-  (* TODO: upstream to [Context] *)
-  Lemma comp_respects_types 
-     {Γ Γ' Γ'': raw_context Σ}
-     {f : Γ' -> Γ''} {g : Γ -> Γ'}
-     (H_f : respects_types Γ' Γ'' f)
-     (H_g : respects_types Γ Γ' g)
-    : respects_types Γ Γ'' (f o g).
-  Proof.
-    intros i.
-    eapply concat. { apply H_f. }
-    eapply concat. { apply ap, H_g. }
-    apply rename_rename.
-  Defined.
-
-  (* TODO: upstream to [Context] *)
-  Definition compose_typed_renaming
-     {Γ Γ' Γ'': raw_context Σ}
-     (f : typed_renaming Γ' Γ'') (g : typed_renaming Γ Γ')
-    : typed_renaming Γ Γ''.
-  Proof.
-    exists (f o g).
-    apply comp_respects_types; apply typed_renaming_respects_types.
-  Defined.
-
-  (* TODO: upstream to [Judgement] *)
-  Definition rename_rename_hypothetical_judgement
-      {γ γ' γ'' : σ} (f : γ -> γ') (g : γ' -> γ'')
-      (J : hypothetical_judgement Σ γ)
-    : rename_hypothetical_judgement g
-        (rename_hypothetical_judgement f J)
-    = rename_hypothetical_judgement (g o f) J.
-  Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros i; apply rename_rename.
-  Defined.
-
-  (* TODO: upstream to [Judgement] *)
-  Definition rename_idmap_hypothetical_judgement
-      {γ : σ}
-      (J : hypothetical_judgement Σ γ)
-    : rename_hypothetical_judgement idmap J
-    = J.
-  Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros i; apply rename_idmap.
-  Defined.
-
-End Auxiliary.
-
 Section Subst_Free_Derivations.
 
   Context {σ} {Σ : signature σ}.
@@ -136,13 +83,55 @@ judgements.  A map/renaming of judgements from [Γ' |- J'] to [Γ |- J] is just
 a context map/renaming [f] from [Γ'] to [J], such that [J' = f^*J].
 
 (Categorically, these are exactly maps in the total category of judgements,
-viewed as a discrete fibration over contexts.
+viewed as a discrete fibration over contexts.)
 
 We also introduce an auxiliary notion of _weakly typed_ context maps:
 maps which at each component look either like a well-typed context map, or
 like a typed renaming. *)
 
-  Context {σ : shape_system} {Σ : signature σ}.
+  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
+
+  (* TODO: perhaps upstream judgement renamings to [Judgement.v], and use them
+  more widely, e.g. in the renaming structural rules?? *)
+
+  Record judgement_renaming (J J' : judgement Σ)
+  := {
+    typed_renaming_of_judgement_renaming
+      :> typed_renaming (context_of_judgement J) (context_of_judgement J')
+  ; judgement_renaming_hypothetical_part
+      : rename_hypothetical_judgement
+          typed_renaming_of_judgement_renaming 
+          (hypothetical_part J)
+        = hypothetical_part J'
+  }.
+
+  Lemma judgement_renaming_inverse
+      (J J' : judgement Σ)
+      (f : judgement_renaming J J')
+      (e_f : IsEquiv f)
+    : judgement_renaming J' J.
+  Proof.
+    exists (typed_renaming_inverse _ e_f).
+    eapply concat.
+    { apply ap, inverse, (judgement_renaming_hypothetical_part _ _ f). }
+    eapply concat. { apply rename_rename_hypothetical_judgement. }
+    eapply concat. 2: { apply rename_idmap_hypothetical_judgement. }
+    apply (ap (fun r => rename_hypothetical_judgement r _)).
+    apply path_forall; intros i; apply eissect.
+  Defined.
+
+  Lemma instantiate_judgement_over_typed_renaming
+      {Γ Γ' : raw_context Σ} (f : typed_renaming Γ Γ')
+      {a : arity σ} 
+      (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
+      (J : judgement _)
+    : judgement_renaming
+        (Judgement.instantiate Γ I J)
+        (Judgement.instantiate Γ' (rename_instantiation f I) J).
+  Proof.
+    exists (instantiate_context_over_typed_renaming f I _).
+    apply inverse, instantiate_hypothetical_judgement_rename_instantiation.
+  Defined.
 
   Local Definition weakly_typed 
       (T : flat_type_theory Σ)
@@ -161,17 +150,6 @@ like a typed renaming. *)
                     : weakly_typed T Δ Γ raw_of_weakly_typed_context_map
   }.
  
-  Local Record judgement_renaming (J J' : judgement Σ)
-  := {
-    typed_renaming_of_judgement_renaming
-      :> typed_renaming (context_of_judgement J) (context_of_judgement J')
-  ; judgement_renaming_hypothetical_part
-      : rename_hypothetical_judgement
-          typed_renaming_of_judgement_renaming 
-          (hypothetical_part J)
-        = hypothetical_part J'
-  }.
-
   Local Record weakly_typed_judgement_map
     (T : flat_type_theory Σ) (J' J : judgement Σ)
   := {
@@ -212,101 +190,6 @@ the cases of that induction. *)
      Cases for non-flat structural rules: should be done by analogous
      claim for their closure conditions.
     *)
-
-    (* TODO: upstream *)
-    Lemma typed_renaming_to_instantiate_context
-        (Γ : raw_context Σ)
-        {a : arity σ} 
-        (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
-        (Δ : raw_context (Metavariable.extend Σ a))
-      : typed_renaming Γ (Context.instantiate Γ I Δ).
-    Proof.
-      exists (coproduct_inj1 shape_is_sum).
-      intros i. refine (coproduct_comp_inj1 _).
-    Defined.
-
-    (* TODO: upstream *)
-    Lemma typed_renaming_inverse
-        {Γ Δ : raw_context Σ}
-        (f : typed_renaming Γ Δ)
-        (e_f : IsEquiv f)
-      : typed_renaming Δ Γ.
-    Proof.
-      exists (@equiv_inv _ _ _ e_f).
-      refine (respects_types_equiv_inverse _ _ (BuildEquiv _ _ _ _) _).
-      apply typed_renaming_respects_types.
-    Defined.
-
-    (* TODO: upstream *)
-    Lemma instantiate_context_over_typed_renaming
-        {Γ Γ' : raw_context Σ} (f : typed_renaming Γ Γ')
-        {a : arity σ} 
-        (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
-        (Δ : raw_context (Metavariable.extend Σ a))
-      : typed_renaming
-          (Context.instantiate Γ I Δ)
-          (Context.instantiate Γ' (rename_instantiation f I) Δ).
-    Proof.
-      exists (Coproduct.fmap shape_is_sum shape_is_sum f idmap).
-      refine (coproduct_rect shape_is_sum _ _ _).
-      - intros x.
-        cbn; unfold Coproduct.fmap.
-        repeat rewrite coproduct_comp_inj1.
-        eapply concat. { apply ap, typed_renaming_respects_types. }
-        eapply concat. { apply rename_rename. }
-        eapply concat. 2: { apply inverse, rename_rename. }
-        apply (ap (fun r => rename r _)).
-        apply path_forall; intros i; cbn.
-        apply inverse. refine (coproduct_comp_inj1 _).
-      - intros x. unfold Coproduct.fmap; cbn.
-        repeat rewrite coproduct_comp_inj2.
-        apply instantiate_rename_instantiation.
-    Defined.
-
-    (* TODO: upstream *)
-    Lemma instantiate_hypothetical_judgement_rename_instantiation
-        (γ γ' : σ.(shape_carrier)) (f : γ -> γ')
-        {a}  (I : Metavariable.instantiation a Σ γ)
-        {δ} (J : hypothetical_judgement _ δ)
-      : instantiate_hypothetical_judgement (rename_instantiation f I) J
-      = rename_hypothetical_judgement
-          (Coproduct.fmap shape_is_sum shape_is_sum f idmap)
-          (instantiate_hypothetical_judgement I J).
-    Proof.
-      apply (ap (Build_hypothetical_judgement _)).
-      apply path_forall; intros i.
-      apply instantiate_rename_instantiation.
-    Defined.
-
-    (* TODO: upstream *)
-    Lemma instantiate_judgement_over_typed_renaming
-        {Γ Γ' : raw_context Σ} (f : typed_renaming Γ Γ')
-        {a : arity σ} 
-        (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
-        (J : judgement _)
-      : judgement_renaming
-          (Judgement.instantiate Γ I J)
-          (Judgement.instantiate Γ' (rename_instantiation f I) J).
-    Proof.
-      exists (instantiate_context_over_typed_renaming f I _).
-      apply inverse, instantiate_hypothetical_judgement_rename_instantiation.
-    Defined.
-
-    (* TODO: upstream *)
-    Lemma judgement_renaming_inverse
-        (J J' : judgement Σ)
-        (f : judgement_renaming J J')
-        (e_f : IsEquiv f)
-      : judgement_renaming J' J.
-    Proof.
-      exists (typed_renaming_inverse _ e_f).
-      eapply concat.
-      { apply ap, inverse, (judgement_renaming_hypothetical_part _ _ f). }
-      eapply concat. { apply rename_rename_hypothetical_judgement. }
-      eapply concat. 2: { apply rename_idmap_hypothetical_judgement. }
-      apply (ap (fun r => rename_hypothetical_judgement r _)).
-      apply path_forall; intros i; apply eissect.
-    Defined.
 
     (* TODO: consider naming of the whole following lemma sequence *)
 

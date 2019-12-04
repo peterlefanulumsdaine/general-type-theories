@@ -866,6 +866,7 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
     apply ap, ecompose_Ve.
   Defined.
 
+  (* TODO: consistentise naming: [rename_idmap_widget] or [rename_widget_idmap]? *)
   Lemma rename_hypothetical_boundary_expressions_idmap
       {jf} {γ : σ} (B : hypothetical_boundary_expressions _ jf γ)
     : rename_hypothetical_boundary_expressions idmap B = B.
@@ -880,6 +881,27 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
   Proof.
     apply (ap (Build_hypothetical_boundary _)).
     apply rename_hypothetical_boundary_expressions_idmap.
+  Defined.
+
+  Definition rename_rename_hypothetical_judgement
+      {γ γ' γ'' : σ} (f : γ -> γ') (g : γ' -> γ'')
+      (J : hypothetical_judgement Σ γ)
+    : rename_hypothetical_judgement g
+        (rename_hypothetical_judgement f J)
+    = rename_hypothetical_judgement (g o f) J.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros i; apply Expression.rename_rename.
+  Defined.
+
+  Definition rename_idmap_hypothetical_judgement
+      {γ : σ}
+      (J : hypothetical_judgement Σ γ)
+    : rename_hypothetical_judgement idmap J
+    = J.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros i; apply Expression.rename_idmap.
   Defined.
 
 End Renaming.
@@ -1007,6 +1029,20 @@ Section Instantiation.
       + intros i. refine (instantiate_instantiate_expression _ _ _).
   Defined.
 
+  Lemma instantiate_hypothetical_judgement_rename_instantiation
+        (γ γ' : σ.(shape_carrier)) (f : γ -> γ')
+        {a}  (I : Metavariable.instantiation a Σ γ)
+        {δ} (J : hypothetical_judgement _ δ)
+    : instantiate_hypothetical_judgement (rename_instantiation f I) J
+    = rename_hypothetical_judgement
+        (Coproduct.fmap shape_is_sum shape_is_sum f idmap)
+        (instantiate_hypothetical_judgement I J).
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros i.
+    apply instantiate_rename_instantiation.
+  Defined.
+
   (** The instantiation under [I] of any presupposition of a judgement [j]
       is equal to the corresponding presupposition of the instantiation of [j]
       itself under [I]. *)
@@ -1026,7 +1062,7 @@ Section Instantiation.
       recursive_destruct i;
       recursive_destruct k;
       apply idpath.
-Defined.
+  Defined.
 
 End Instantiation.
 

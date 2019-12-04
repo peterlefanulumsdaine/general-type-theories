@@ -96,8 +96,32 @@ Section Typed_Renamings.
     apply fmap_rename.
   Defined.
 
-  Lemma respects_types_equiv_inverse `{Funext}
-      {Σ : signature σ} (Γ Δ : raw_context Σ)
+  Context `{Funext} {Σ : signature σ}.
+
+  Lemma compose_respects_types
+     {Γ Γ' Γ'': raw_context Σ}
+     {f : Γ' -> Γ''} {g : Γ -> Γ'}
+     (H_f : respects_types Γ' Γ'' f)
+     (H_g : respects_types Γ Γ' g)
+    : respects_types Γ Γ'' (f o g).
+  Proof.
+    intros i.
+    eapply concat. { apply H_f. }
+    eapply concat. { apply ap, H_g. }
+    apply rename_rename.
+  Defined.
+
+  Definition compose_typed_renaming
+     {Γ Γ' Γ'': raw_context Σ}
+     (f : typed_renaming Γ' Γ'') (g : typed_renaming Γ Γ')
+    : typed_renaming Γ Γ''.
+  Proof.
+    exists (f o g).
+    apply compose_respects_types; apply typed_renaming_respects_types.
+  Defined.
+
+  Lemma respects_types_equiv_inverse
+      (Γ Δ : raw_context Σ)
       (e : Γ <~> Δ)
     : respects_types Γ Δ e
     -> respects_types Δ Γ e^-1.
@@ -109,6 +133,17 @@ Section Typed_Renamings.
     eapply concat. { apply inverse, rename_idmap. }
     apply (ap (fun f => Expression.rename f _)).
     apply inverse, path_forall, (eissect e).
+  Defined.
+
+  Lemma typed_renaming_inverse
+      {Γ Δ : raw_context Σ}
+      (f : typed_renaming Γ Δ)
+      (e_f : IsEquiv f)
+    : typed_renaming Δ Γ.
+  Proof.
+    exists (@equiv_inv _ _ _ e_f).
+    refine (respects_types_equiv_inverse _ _ (BuildEquiv _ _ _ _) _).
+    apply typed_renaming_respects_types.
   Defined.
 
 End Typed_Renamings.
@@ -182,6 +217,18 @@ Section Instantiation.
                    (coproduct_inj1 shape_is_sum).
   Proof.
     intros i. refine (coproduct_comp_inj1 _).
+  Defined.
+
+  (* TODO: consider/consistentise naming of [repects_types_shape_sum_inl], [typed_renaming_to_instantiate_context]. *)
+  Lemma typed_renaming_to_instantiate_context
+      {Σ : signature σ} (Γ : raw_context Σ)
+      {a : arity σ} 
+      (I : Metavariable.instantiation a Σ Γ)
+      (Δ : raw_context (Metavariable.extend Σ a))
+    : typed_renaming Γ (instantiate Γ I Δ).
+  Proof.
+    exists (coproduct_inj1 shape_is_sum).
+    apply respects_types_shape_sum_inl.
   Defined.
 
   Local Definition fmap_instantiate
@@ -381,6 +428,32 @@ renamings [shape_sum_empty_inl] and its inverse. *)
              _).
     exact
       (typed_renaming_respects_types _ _ (instantiate_instantiate_rtol _ _ _)).
+  Defined.
+
+  (* TODO: possible alternate name [Context.instantiate_rename_instantiation]. *)
+  Lemma instantiate_context_over_typed_renaming
+        {Γ Γ' : raw_context Σ} (f : typed_renaming Γ Γ')
+        {a : arity σ} 
+        (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
+        (Δ : raw_context (Metavariable.extend Σ a))
+    : typed_renaming
+        (instantiate Γ I Δ)
+        (instantiate Γ' (rename_instantiation f I) Δ).
+  Proof.
+    exists (Coproduct.fmap shape_is_sum shape_is_sum f idmap).
+    refine (coproduct_rect shape_is_sum _ _ _).
+    - intros x.
+      cbn; unfold Coproduct.fmap.
+      repeat rewrite coproduct_comp_inj1.
+      eapply concat. { apply ap, typed_renaming_respects_types. }
+      eapply concat. { apply rename_rename. }
+      eapply concat. 2: { apply inverse, rename_rename. }
+      apply (ap (fun r => Expression.rename r _)).
+      apply path_forall; intros i; cbn.
+      apply inverse. refine (coproduct_comp_inj1 _).
+    - intros x. unfold Coproduct.fmap; cbn.
+      repeat rewrite coproduct_comp_inj2.
+      apply instantiate_rename_instantiation.
   Defined.
 
 End Instantiation.
