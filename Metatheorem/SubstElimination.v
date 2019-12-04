@@ -345,7 +345,7 @@ well-formed. *)
   ; weakly_typed_context_map_is_weakly_typed
                     : weakly_typed T Δ Γ raw_of_weakly_typed_context_map
   }.
- 
+
   (** Analogous to [judgement_renaming] *)
   Local Record weakly_typed_judgement_map
     (T : flat_type_theory Σ) (J' J : judgement Σ)
@@ -384,8 +384,72 @@ Section Substitute_Derivations.
     (* TODO: consider naming of the whole following lemma sequence 
      (but keep consistent with renaming versions above). *)
 
+    (* TODO: upstream to raw context maps *)
+    (** Required so that weakly typed context maps, and other things that
+        coerce to raw context maps, can be used as functions. *)
+    Identity Coercion map_of_raw_context_map : raw_context_map >-> Funclass.
+
+    (* TODO: upstream to section on context maps *)
+    (* TODO: or perhaps delete, since not actually needed? *)
+    Local Lemma compose_weakly_typed_context_map_renaming
+        {T : flat_type_theory Σ} (T_sub : substitutive T)
+        {Γ Γ' Γ'' : raw_context Σ}
+        (g : weakly_typed_context_map T Γ' Γ)
+        (f : typed_renaming Γ' Γ'')
+      : weakly_typed_context_map T Γ'' Γ.
+    Proof.
+      simple refine (Build_weakly_typed_context_map _ _ _ _ _).
+      - intros i. exact (Expression.rename f (g i)).
+      - intros i.
+        destruct (weakly_typed_context_map_is_weakly_typed _ _ _ g i)
+          as [[j [e1 e2]] | d_gi].
+        + apply inl.
+          exists (f j); split.
+          * exact (ap (rename f) e1).
+          * eapply concat. { apply typed_renaming_respects_types. }
+            eapply concat. { apply ap, e2. }
+            apply rename_substitute.
+        + apply inr.
+          refine (rename_derivation _ _ d_gi).
+          { assumption. }
+          exists f.
+          apply (ap (Build_hypothetical_judgement _)).
+          (* TODO: abstract the above as [hypothetical_judgement_eq_by_expressions?
+           It’s used so often. *)
+          apply path_forall.
+          intros j; recursive_destruct j.
+          * apply rename_substitute.
+          * apply idpath.
+    Defined.
+
+    (* TODO: consider naming; upstream to section on context maps *)
+    Local Lemma compose_renaming_weakly_typed_context_map
+        {T : flat_type_theory Σ} (T_sub : substitutive T)
+        {Γ Γ' Γ'' : raw_context Σ}
+        (g : typed_renaming Γ Γ')
+        (f : weakly_typed_context_map T Γ'' Γ')
+      : weakly_typed_context_map T Γ'' Γ.
+    Proof.
+      simple refine (Build_weakly_typed_context_map _ _ _ _ _).
+      - intros i. exact (f (g i)).
+      - intros i.
+        destruct (weakly_typed_context_map_is_weakly_typed _ _ _ f (g i))
+          as [[j [e1 e2]] | d_gi].
+        + apply inl.
+          exists j; split.
+          * exact e1.
+          * eapply concat. { exact e2. }
+            eapply concat. { apply ap, typed_renaming_respects_types. }
+            apply substitute_rename.
+        + apply inr.
+          refine (transport _ _ d_gi).
+          apply (ap (fun A => [! _ |- _ ; A !])).
+          eapply concat. { apply ap, typed_renaming_respects_types. }
+          apply substitute_rename.
+    Defined.
+
     Context
-      {T : flat_type_theory Σ}
+      {T : flat_type_theory Σ} (T_sub : substitutive T)
       {R : flat_rule Σ} (R_univ : in_universal_form R)
       {Γ : raw_context Σ}
       (I : Metavariable.instantiation (flat_rule_metas R) Σ Γ)
@@ -398,11 +462,11 @@ Section Substitute_Derivations.
     Local Definition substitute_flat_rule_instantiation_renaming
       : weakly_typed_context_map T Γ' Γ.
     Proof.
-      (*
-      refine (compose_typed_renaming f _).
+      (* TODO: composition of a w *)
+      simple refine (compose_renaming_weakly_typed_context_map _ _ f).
+      { assumption. }
       apply typed_renaming_to_instantiate_context.
-      *)
-    Admitted.
+    Defined.
 
     Local Definition substitute_flat_rule_instantiation_instantiation
       : Metavariable.instantiation (flat_rule_metas R) Σ Γ'.
