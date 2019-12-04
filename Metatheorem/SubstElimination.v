@@ -344,6 +344,62 @@ well-formed. *)
                     : weakly_typed T Δ Γ raw_of_weakly_typed_context_map
   }.
 
+  Local Lemma compose_weakly_typed_context_map_renaming
+        {T : flat_type_theory Σ} (T_sub : substitutive T)
+        {Γ Γ' Γ'' : raw_context Σ}
+        (g : weakly_typed_context_map T Γ' Γ)
+        (f : typed_renaming Γ' Γ'')
+    : weakly_typed_context_map T Γ'' Γ.
+  Proof.
+    simple refine (Build_weakly_typed_context_map _ _ _ _ _).
+    - intros i. exact (Expression.rename f (g i)).
+    - intros i.
+      destruct (weakly_typed_context_map_is_weakly_typed _ _ _ g i)
+        as [[j [e1 e2]] | d_gi].
+      + apply inl.
+        exists (f j); split.
+        * exact (ap (rename f) e1).
+        * eapply concat. { apply typed_renaming_respects_types. }
+          eapply concat. { apply ap, e2. }
+          apply rename_substitute.
+      + apply inr.
+        refine (rename_derivation _ _ d_gi).
+        { assumption. }
+        exists f.
+        apply (ap (Build_hypothetical_judgement _)).
+        (* TODO: abstract the above as [hypothetical_judgement_eq_by_expressions?
+           It’s used so often. *)
+        apply path_forall.
+        intros j; recursive_destruct j.
+        * apply rename_substitute.
+        * apply idpath.
+  Defined.
+
+  Local Lemma compose_renaming_weakly_typed_context_map
+        {T : flat_type_theory Σ} (T_sub : substitutive T)
+        {Γ Γ' Γ'' : raw_context Σ}
+        (g : typed_renaming Γ Γ')
+        (f : weakly_typed_context_map T Γ'' Γ')
+    : weakly_typed_context_map T Γ'' Γ.
+  Proof.
+    simple refine (Build_weakly_typed_context_map _ _ _ _ _).
+    - intros i. exact (f (g i)).
+    - intros i.
+      destruct (weakly_typed_context_map_is_weakly_typed _ _ _ f (g i))
+        as [[j [e1 e2]] | d_gi].
+      + apply inl.
+        exists j; split.
+        * exact e1.
+        * eapply concat. { exact e2. }
+          eapply concat. { apply ap, typed_renaming_respects_types. }
+          apply substitute_rename.
+      + apply inr.
+        refine (transport _ _ d_gi).
+        apply (ap (fun A => [! _ |- _ ; A !])).
+        eapply concat. { apply ap, typed_renaming_respects_types. }
+        apply substitute_rename.
+  Defined.
+
   (* TODO: possible alternate names:
      [instantiate_context_substitute_instantiation],
      [extend_weakly_typed_context_map] *)
@@ -446,70 +502,6 @@ Section Substitute_Derivations.
 
     (* TODO: consider naming of the whole following lemma sequence 
      (but keep consistent with renaming versions above). *)
-
-    (* TODO: upstream to raw context maps *)
-    (** Required so that weakly typed context maps, and other things that
-        coerce to raw context maps, can be used as functions. *)
-    Identity Coercion map_of_raw_context_map : raw_context_map >-> Funclass.
-
-    (* TODO: upstream to section on context maps *)
-    (* TODO: or perhaps delete, since not actually needed? *)
-    Local Lemma compose_weakly_typed_context_map_renaming
-        {T : flat_type_theory Σ} (T_sub : substitutive T)
-        {Γ Γ' Γ'' : raw_context Σ}
-        (g : weakly_typed_context_map T Γ' Γ)
-        (f : typed_renaming Γ' Γ'')
-      : weakly_typed_context_map T Γ'' Γ.
-    Proof.
-      simple refine (Build_weakly_typed_context_map _ _ _ _ _).
-      - intros i. exact (Expression.rename f (g i)).
-      - intros i.
-        destruct (weakly_typed_context_map_is_weakly_typed _ _ _ g i)
-          as [[j [e1 e2]] | d_gi].
-        + apply inl.
-          exists (f j); split.
-          * exact (ap (rename f) e1).
-          * eapply concat. { apply typed_renaming_respects_types. }
-            eapply concat. { apply ap, e2. }
-            apply rename_substitute.
-        + apply inr.
-          refine (rename_derivation _ _ d_gi).
-          { assumption. }
-          exists f.
-          apply (ap (Build_hypothetical_judgement _)).
-          (* TODO: abstract the above as [hypothetical_judgement_eq_by_expressions?
-           It’s used so often. *)
-          apply path_forall.
-          intros j; recursive_destruct j.
-          * apply rename_substitute.
-          * apply idpath.
-    Defined.
-
-    (* TODO: consider naming; upstream to section on context maps *)
-    Local Lemma compose_renaming_weakly_typed_context_map
-        {T : flat_type_theory Σ} (T_sub : substitutive T)
-        {Γ Γ' Γ'' : raw_context Σ}
-        (g : typed_renaming Γ Γ')
-        (f : weakly_typed_context_map T Γ'' Γ')
-      : weakly_typed_context_map T Γ'' Γ.
-    Proof.
-      simple refine (Build_weakly_typed_context_map _ _ _ _ _).
-      - intros i. exact (f (g i)).
-      - intros i.
-        destruct (weakly_typed_context_map_is_weakly_typed _ _ _ f (g i))
-          as [[j [e1 e2]] | d_gi].
-        + apply inl.
-          exists j; split.
-          * exact e1.
-          * eapply concat. { exact e2. }
-            eapply concat. { apply ap, typed_renaming_respects_types. }
-            apply substitute_rename.
-        + apply inr.
-          refine (transport _ _ d_gi).
-          apply (ap (fun A => [! _ |- _ ; A !])).
-          eapply concat. { apply ap, typed_renaming_respects_types. }
-          apply substitute_rename.
-    Defined.
 
     Context
       {T : flat_type_theory Σ} (T_sub : substitutive T)
@@ -639,40 +631,38 @@ Section Substitute_Derivations.
       destruct r as [Γ i]. cbn in f.
       destruct (weakly_typed_context_map_is_weakly_typed _ _ _ f i)
         as [[j [e1 e2]] | d_fi].
-      (* TODO: implicit args in […is_weakly_typed]!  It’s bloody long enough already *)
-      2: {
-        refine (transport _ _ d_fi).
-        destruct J' as [Γ' J'].
-        destruct f as [f fJ'].
-        cbn in fJ'. revert fJ' d_fi.
-        admit. (* Use [inverse_sufficient], but first improve it to just involve single-inverting (which is what’s wanted in all applications) 
-        then destruct the inverse of d_fi, and then this should be easy? *)
-      }
-      destruct J' as [Γ' J']. 
+      (* TODO: add implicit args in […is_weakly_typed]!  It’s bloody long enough already *)
+      + (* case: [f i = raw_variable j], [Γ' j = f^* (Γ i) ] *)
+      destruct J' as [Γ' J'].
+      destruct f as [f fJ'].
+      cbn in j, e1, e2 |- *.
       simple refine (Closure.deduce' _ _ _).
-      { apply inl, inl, inr.
+      { apply inl, inl, inr. (* use the variable rule *)
         exists Γ'. exact j. }
-  (*
-      { cbn. apply (ap (Build_judgement _)). 
-        set (e := judgement_renaming_hypothetical_part _ _ _ f).
-        eapply concat. 2: { apply e. }
-        apply (ap (Build_hypothetical_judgement _)). 
-        apply path_forall.
-        intros s; recursive_destruct s; try apply idpath.
-        apply typed_renaming_respects_types.        
+      { cbn in fJ'; destruct fJ'.
+        apply Judgement.eq_by_expressions.
+        - intro; apply idpath.
+        - intro s; recursive_destruct s.
+          + exact e2.
+          + cbn. apply inverse, e1.
       }
       intros p; set (p_keep := p); recursive_destruct p. cbn.
       apply (IH p_keep).
-      set (f0 := typed_renaming_of_judgement_renaming _ _ f).
+      set (f0 := f : weakly_typed_context_map _ _ _).
       cbn in f0. exists f0.
       apply (ap (Build_hypothetical_judgement _)). 
       apply path_forall.
       intros s; recursive_destruct s.
-      apply inverse, typed_renaming_respects_types.
-   *)
-  Admitted. (* [sustitute_derivation]: major proposition, probably requires a fair bit of work. *)
+      apply inverse, e2.
+      + (* case: [f] tells us [ Γ' |- f i : f^* (Γ i) ] *)
+        refine (transport _ _ d_fi).
+        destruct J' as [Γ' J'].
+        destruct f as [f fJ'].
+        cbn in fJ' |- *; destruct fJ'.
+        apply Judgement.eq_by_eta; exact idpath.
+  Defined.
 
-  (* Note: both [rename_derivation] and [sustitute_derivation] have analogues for derivations with hypotheses. For now we give just the versions for closed derivations.  *)
+  (** Note: both [rename_derivation] and [sustitute_derivation] have analogues for derivations with hypotheses.  However, these are rather less clear to state, so for now we give just the versions for closed derivations.  *)
 End Substitute_Derivations.
 
 Section Subst_Elimination.

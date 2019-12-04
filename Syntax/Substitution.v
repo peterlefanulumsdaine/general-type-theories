@@ -23,6 +23,10 @@ Section RawSubstitution.
   Definition raw_context_map (γ δ : σ)
     := δ -> raw_term Σ γ.
 
+  (* Not required now, but required so that later things that coerce to
+  raw context maps can be used as functions. *)
+  Identity Coercion map_of_raw_context_map : raw_context_map >-> Funclass.
+
   (* A substitution from [γ] to [γ'] may be extended to one from [γ + δ] to
   [γ' + δ], by variable-renaming.
 
