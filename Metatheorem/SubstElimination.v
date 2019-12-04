@@ -234,8 +234,6 @@ the cases of that induction. *)
     intro r; recursive_destruct r; apply shape_is_empty.
   Defined.
 
-  Context `{Funext}.
-
   Definition rename_derivation
       {T : flat_type_theory Σ} (T_sub : substitutive T) 
       {J} {J'} (f : judgement_renaming J J')
@@ -346,6 +344,57 @@ well-formed. *)
                     : weakly_typed T Δ Γ raw_of_weakly_typed_context_map
   }.
 
+  (* TODO: possible alternate names:
+     [instantiate_context_substitute_instantiation],
+     [extend_weakly_typed_context_map] *)
+  Lemma instantiate_context_over_weakly_typed_context_map
+      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {Γ Γ' : raw_context Σ} (f : weakly_typed_context_map T Γ' Γ)
+      {a : arity σ} 
+      (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
+      (Δ : raw_context (Metavariable.extend Σ a))
+    : weakly_typed_context_map T
+        (Context.instantiate Γ' (substitute_instantiation f I) Δ)
+        (Context.instantiate Γ I Δ).
+  Proof.
+    exists (Substitution.extend Γ Γ' Δ f).
+    refine (coproduct_rect shape_is_sum _ _ _).
+    - intros i.
+      unfold Substitution.extend; cbn.
+      repeat rewrite coproduct_comp_inj1.
+        destruct (weakly_typed_context_map_is_weakly_typed _ _ _ f i)
+          as [[j [e1 e2]] | d_fi].
+      + apply inl.
+        exists (coproduct_inj1 shape_is_sum j); split.
+        * exact (ap _ e1).
+        * rewrite coproduct_comp_inj1.
+          eapply concat. { apply ap, e2. }
+          eapply concat. { apply rename_substitute. }
+          eapply concat. 2: { apply inverse, substitute_rename. }
+          apply (ap (fun h => substitute h _)).
+          apply path_forall; intros k.
+          apply inverse. refine (coproduct_comp_inj1 _).
+      + apply inr.
+        refine (rename_derivation _ _ d_fi).
+        { assumption. }
+        exists (typed_renaming_to_instantiate_context _ _ _).
+        apply (ap (Build_hypothetical_judgement _)).
+        apply path_forall; intros j; recursive_destruct j.
+        * eapply concat. { apply rename_substitute. }
+          eapply concat. 2: { apply inverse, substitute_rename. }
+          apply (ap (fun h => substitute h _)).
+          apply path_forall; intros j.
+          apply inverse. refine (coproduct_comp_inj1 _).
+        * apply idpath.
+    - intros i. apply inl.
+      exists (coproduct_inj2 shape_is_sum i); split.
+      + unfold Substitution.extend; cbn.
+        refine (coproduct_comp_inj2 _).
+      + cbn.
+        repeat rewrite coproduct_comp_inj2.
+        apply instantiate_substitute_instantiation.
+  Defined.
+
   (** Analogous to [judgement_renaming] *)
   Local Record weakly_typed_judgement_map
     (T : flat_type_theory Σ) (J' J : judgement Σ)
@@ -359,6 +408,20 @@ well-formed. *)
           (hypothetical_part J)
         = hypothetical_part J'
   }.
+
+  Local Lemma instantiate_judgement_over_weakly_typed_context_map
+      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {Γ Γ' : raw_context Σ} (f : weakly_typed_context_map T Γ' Γ)
+      {a : arity σ} 
+      (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
+      (J : judgement _)
+    : weakly_typed_judgement_map T
+        (Judgement.instantiate Γ' (substitute_instantiation f I) J)
+        (Judgement.instantiate Γ I J).
+  Proof.
+    exists (instantiate_context_over_weakly_typed_context_map T_sub f I _).
+    apply inverse, instantiate_hypothetical_judgement_substitute_instantiation.
+  Defined.
 
 End Weakly_Typed_Maps.
 
@@ -459,7 +522,7 @@ Section Substitute_Derivations.
              (Judgement.instantiate Γ I (flat_rule_conclusion R)))
       (Γ' := context_of_judgement J').
 
-    Local Definition substitute_flat_rule_instantiation_renaming
+    Local Definition substitute_flat_rule_instantiation_map
       : weakly_typed_context_map T Γ' Γ.
     Proof.
       (* TODO: composition of a w *)
@@ -471,12 +534,10 @@ Section Substitute_Derivations.
     Local Definition substitute_flat_rule_instantiation_instantiation
       : Metavariable.instantiation (flat_rule_metas R) Σ Γ'.
     Proof.
-      (*
-      exact (rename_instantiation
-               substitute_flat_rule_instantiation_renaming
+      exact (substitute_instantiation
+               substitute_flat_rule_instantiation_map
                I).
-      *)
-    Admitted.
+    Defined.
 
     Local Lemma substitute_flat_rule_instantiation_conclusion
       : judgement_renaming
@@ -487,39 +548,37 @@ Section Substitute_Derivations.
     (* NOTE: and moreover this judgement_renaming is an equivalence, which may
     be needed if we restrict the renaming structural rule to equivalences. *)
     Proof.
-      (*
       simple refine (judgement_renaming_inverse _ _ _ _).
       1: exists (typed_renaming_to_instantiate_context _ _ _).
       2: { apply coproduct_empty_inj1_is_equiv, R_univ. }
+      (* The following can again be seen as a naturality calculation, 
+       involving naturality of [typed_renaming_to_instantiate_context] w.r.t.
+       weakly typed context maps. *)
       eapply concat. 2: { apply inverse,
-                      instantiate_hypothetical_judgement_rename_instantiation. }
+                  instantiate_hypothetical_judgement_substitute_instantiation. }
       eapply concat.
-        { apply ap, inverse, (judgement_renaming_hypothetical_part _ _ f). }
-      eapply concat. { apply rename_rename_hypothetical_judgement. }
-      apply (ap (fun r => rename_hypothetical_judgement r _)).
+        { apply ap, inverse, (weakly_typed_judgement_map_hypothetical_part _ _ _ f). }
+      eapply concat. { apply rename_substitute_hypothetical_judgement. }
+      apply (ap (fun r => substitute_hypothetical_judgement r _)).
       apply path_forall.
       refine (coproduct_rect shape_is_sum _ _ _).
       2: { refine (empty_rect _ _ _). apply R_univ. }
       intros x1.
-      unfold Coproduct.fmap. repeat rewrite coproduct_comp_inj1.
+      unfold Substitution.extend; repeat rewrite coproduct_comp_inj1.
       apply idpath.
-      (* This can be seen more conceptually as a sort of naturality calculation, 
-       involving naturality of [typed_renaming_to_instantiate_context] w.r.t.
-       [instantiate_context_over_typed_renaming]. *)
-      *)
-    Admitted.
+    Defined.
 
     Local Lemma substitute_flat_rule_instantiation_premise
           (p : flat_rule_premise R)
       : weakly_typed_judgement_map T
-          (Judgement.instantiate Γ I (flat_rule_premise R p))
-          (Judgement.instantiate Γ' substitute_flat_rule_instantiation_instantiation
-                                                       (flat_rule_premise R p)).
+          (Judgement.instantiate Γ'
+                  substitute_flat_rule_instantiation_instantiation
+                  (flat_rule_premise R p))
+          (Judgement.instantiate Γ I (flat_rule_premise R p)).
     Proof.
-      (*
-      apply instantiate_judgement_over_typed_renaming.
-          *)
-    Admitted.
+      apply instantiate_judgement_over_weakly_typed_context_map.
+      assumption.
+    Defined.
 
   End Flat_Rule_Substitute_Instantiation.
 

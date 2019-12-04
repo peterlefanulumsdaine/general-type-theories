@@ -883,6 +883,16 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
     apply rename_hypothetical_boundary_expressions_idmap.
   Defined.
 
+  Definition rename_idmap_hypothetical_judgement
+      {γ : σ}
+      (J : hypothetical_judgement Σ γ)
+    : rename_hypothetical_judgement idmap J
+    = J.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros i; apply Expression.rename_idmap.
+  Defined.
+
   Definition rename_rename_hypothetical_judgement
       {γ γ' γ'' : σ} (f : γ -> γ') (g : γ' -> γ'')
       (J : hypothetical_judgement Σ γ)
@@ -892,16 +902,6 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
   Proof.
     apply (ap (Build_hypothetical_judgement _)).
     apply path_forall; intros i; apply Expression.rename_rename.
-  Defined.
-
-  Definition rename_idmap_hypothetical_judgement
-      {γ : σ}
-      (J : hypothetical_judgement Σ γ)
-    : rename_hypothetical_judgement idmap J
-    = J.
-  Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros i; apply Expression.rename_idmap.
   Defined.
 
 End Renaming.
@@ -937,6 +937,19 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
   Proof.
     exists (form_of_judgement J).
     exact (fun j => substitute f (J j)).
+  Defined.
+
+  Context `{Funext}.
+
+  Definition rename_substitute_hypothetical_judgement
+      {γ γ' γ'' : σ} (f : raw_context_map Σ γ' γ) (g : γ' -> γ'')
+      (J : hypothetical_judgement Σ γ)
+    : rename_hypothetical_judgement g
+        (substitute_hypothetical_judgement f J)
+    = substitute_hypothetical_judgement (Expression.rename g o f) J.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros i; apply rename_substitute.
   Defined.
 
 End Substitution.
@@ -1041,6 +1054,20 @@ Section Instantiation.
     apply (ap (Build_hypothetical_judgement _)).
     apply path_forall; intros i.
     apply instantiate_rename_instantiation.
+  Defined.
+
+  Lemma instantiate_hypothetical_judgement_substitute_instantiation
+        (γ γ' : σ.(shape_carrier)) (f : raw_context_map Σ γ' γ)
+        {a}  (I : Metavariable.instantiation a Σ γ)
+        {δ} (J : hypothetical_judgement _ δ)
+    : instantiate_hypothetical_judgement (substitute_instantiation f I) J
+    = substitute_hypothetical_judgement
+        (Substitution.extend γ γ' δ f)
+        (instantiate_hypothetical_judgement I J).
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros i.
+    apply instantiate_substitute_instantiation.
   Defined.
 
   (** The instantiation under [I] of any presupposition of a judgement [j]
