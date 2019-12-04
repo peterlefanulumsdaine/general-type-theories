@@ -503,9 +503,9 @@ Section Judgement_of_Premise.
         clearbody e_S ΣfS ΣS; destruct e_S.
         destruct ΣfS as [cS aS] in *; cbn in *.
         revert e_cS; apply inverse_sufficient;
-          intro e; destruct e^; clear e.          
+          intro e; destruct e.          
         revert e_aS; apply inverse_sufficient;
-          intro e; destruct e^; clear e.
+          intro e; destruct e.
         apply idpath.
   Defined.
   
@@ -552,7 +552,7 @@ Section Judgement_of_Premise.
       destruct e_Sr as [e_S [e_e_aS e_e_cS]].
       revert e_S e_e_aS e_e_cS. refine (inverse_sufficient _ _).
       intros e_S e_e_aS e_e_cS.
-      destruct e_S^; cbn in *.
+      destruct e_S; cbn in *.
       apply ap, path_prod; cbn.
       - eapply concat. { apply e_e_aS. }
         eapply concat. { apply concat_pp_p. }

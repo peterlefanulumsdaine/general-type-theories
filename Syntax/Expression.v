@@ -242,9 +242,8 @@ Section Signature_Maps.
     + apply ap. cbn. apply ap.
       set (ΣfS := Σ' (f S)). change (symbol_arity (f S)) with (snd ΣfS).
       set (p := Family.map_commutes f S : ΣfS = _). clearbody p ΣfS.
-      revert p; apply inverse_sufficient; intros p.
-      set (p' := p^); clearbody p'; clear p.
-      destruct p'; apply idpath.
+      revert p; apply inverse_sufficient; intros q.
+      destruct q; apply idpath.
   Defined.
   (* NOTE: this proof was surprisingly difficult to write; it shows the kind of headaches caused by the appearance of equality in maps of signatures. *)
 

@@ -15,7 +15,7 @@ Proof.
 Defined.
 
 Lemma inverse_sufficient {X} {x y:X} (P : x = y -> Type)
-  : (forall e, P (e^)^) -> (forall e, P e).
+  : (forall e, P (e^)) -> (forall e, P e).
 Proof.
   intros H e.
   eapply transport.

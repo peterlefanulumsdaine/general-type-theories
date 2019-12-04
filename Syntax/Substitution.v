@@ -322,9 +322,8 @@ Section Naturality.
       + apply ap. cbn. apply ap.
         set (ΣfS := Σ' (f S)). change (symbol_arity (f S)) with (snd ΣfS).
         set (p := Family.map_commutes f S : ΣfS = _). clearbody p ΣfS.
-        revert p; apply inverse_sufficient; intros p.
-        set (p' := p^); clearbody p'; clear p.
-        destruct p'. cbn.
+        revert p; apply inverse_sufficient; intros q.
+        destruct q. cbn.
         apply path_forall; intros i.
         apply ap10. refine (apD10 _ _). apply ap.
         apply fmap_extend.
