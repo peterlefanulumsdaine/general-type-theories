@@ -588,10 +588,88 @@ Section Substitute_Derivations.
       (d_J : subst_free_derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J'.
   Proof.
-    (* This proof should be closely analogous to [rename_derivation].
-    One extra ingredient: will require weakening/extending weakly-typed context
-    maps, for going under binders in premises of rules; this will be defined in
-    terms of [rename_derivation]. *)
+    revert J' f.
+    induction d_J as [ | r d_ps IH ].
+    { destruct i. } (* hypothesis case impossible, as no hypotheses *)
+    intros J' f.
+    destruct r as [ r | r ].
+    2: { (* case: instantiation of a flat rule of [T] *)
+      destruct r as [r I].
+      simple refine (derive_rename' _ _
+        (substitute_flat_rule_instantiation_conclusion T_sub _ _ f) 
+        _ _).
+      { apply T_sub. }
+      { apply inverse, judgement_renaming_hypothetical_part. }
+      simple refine (Closure.deduce' _ _ _).
+      { apply inr. exists r.
+        exists (context_of_judgement J').
+        refine (substitute_flat_rule_instantiation_instantiation T_sub _ f).
+      }
+      { apply idpath. }
+      intros p. apply (IH p).
+      refine (substitute_flat_rule_instantiation_premise _ _ f p).
+    }
+    (* case: structural rules *)
+    destruct r as [ [ r | r ] | r ].
+    3: { (* case: equality rule; so again, an instantiation of a flat rule *)
+      destruct r as [r I].
+      simple refine (derive_rename' _ _
+        (substitute_flat_rule_instantiation_conclusion T_sub _ _ f) 
+        _ _).
+      { apply equality_flat_rules_in_universal_form. }
+      { apply inverse, judgement_renaming_hypothetical_part. }
+      simple refine (Closure.deduce' _ _ _).
+      { apply inl, inr. exists r.
+        exists (context_of_judgement J').
+        refine (substitute_flat_rule_instantiation_instantiation T_sub _ f).
+      }
+      { apply idpath. }
+      intros p. apply (IH p).
+      refine (substitute_flat_rule_instantiation_premise _ _ f p).
+    }
+    - (* case: renaming rule *)
+      cbn in r.
+      destruct r as [Γ [Γ' [g J]]].
+      apply (IH tt).
+      exists (compose_renaming_weakly_typed_context_map T_sub g f).
+      eapply concat.
+        2: { apply (weakly_typed_judgement_map_hypothetical_part _ _ _ f). }
+      apply inverse, @substitute_rename_hypothetical_judgement; auto.
+    - (* case: variable rule *)
+      destruct r as [Γ i]. cbn in f.
+      destruct (weakly_typed_context_map_is_weakly_typed _ _ _ f i)
+        as [[j [e1 e2]] | d_fi].
+      (* TODO: implicit args in […is_weakly_typed]!  It’s bloody long enough already *)
+      2: {
+        refine (transport _ _ d_fi).
+        destruct J' as [Γ' J'].
+        destruct f as [f fJ'].
+        cbn in fJ'. revert fJ' d_fi.
+        admit. (* Use [inverse_sufficient], but first improve it to just involve single-inverting (which is what’s wanted in all applications) 
+        then destruct the inverse of d_fi, and then this should be easy? *)
+      }
+      destruct J' as [Γ' J']. 
+      simple refine (Closure.deduce' _ _ _).
+      { apply inl, inl, inr.
+        exists Γ'. exact j. }
+  (*
+      { cbn. apply (ap (Build_judgement _)). 
+        set (e := judgement_renaming_hypothetical_part _ _ _ f).
+        eapply concat. 2: { apply e. }
+        apply (ap (Build_hypothetical_judgement _)). 
+        apply path_forall.
+        intros s; recursive_destruct s; try apply idpath.
+        apply typed_renaming_respects_types.        
+      }
+      intros p; set (p_keep := p); recursive_destruct p. cbn.
+      apply (IH p_keep).
+      set (f0 := typed_renaming_of_judgement_renaming _ _ f).
+      cbn in f0. exists f0.
+      apply (ap (Build_hypothetical_judgement _)). 
+      apply path_forall.
+      intros s; recursive_destruct s.
+      apply inverse, typed_renaming_respects_types.
+   *)
   Admitted. (* [sustitute_derivation]: major proposition, probably requires a fair bit of work. *)
 
   (* Note: both [rename_derivation] and [sustitute_derivation] have analogues for derivations with hypotheses. For now we give just the versions for closed derivations.  *)

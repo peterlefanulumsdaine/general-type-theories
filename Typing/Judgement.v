@@ -941,6 +941,17 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
 
   Context `{Funext}.
 
+  Definition substitute_rename_hypothetical_judgement
+      {γ γ' γ'' : σ} (f : γ -> γ') (g : raw_context_map Σ γ'' γ')
+      (J : hypothetical_judgement Σ γ)
+    : substitute_hypothetical_judgement g
+        (rename_hypothetical_judgement f J)
+    = substitute_hypothetical_judgement (g o f) J.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros i; apply substitute_rename.
+  Defined.
+
   Definition rename_substitute_hypothetical_judgement
       {γ γ' γ'' : σ} (f : raw_context_map Σ γ' γ) (g : γ' -> γ'')
       (J : hypothetical_judgement Σ γ)
