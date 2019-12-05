@@ -119,7 +119,6 @@ Section Substitute_Laws.
     apply idpath.
   Defined.
 
-  (* Note: proof literally identical to that of [rename_idmap]! *)
   Lemma substitute_idmap {γ} {cl} (e : raw_expression Σ cl γ)
     : substitute (id_raw_context γ) e = e.
   Proof.
@@ -129,10 +128,11 @@ Section Substitute_Laws.
       apply path_forall; intros i.
       eapply concat.
       2: { apply IH_es. }
-      apply ap10. refine (apD10 _ _). apply ap.
-      apply path_forall. refine (coproduct_rect shape_is_sum _ _ _).
+      apply (ap_2back substitute), path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _).
       + intros j. refine (coproduct_comp_inj1 _).
       + intros j. refine (coproduct_comp_inj2 _).
+  (* Note: original proof literally identical to that of [rename_idmap]! *)
   Defined.
 
   (* We provide this under two names: [substitute_idmap] follows general
@@ -155,8 +155,7 @@ Section Substitute_Laws.
       apply path_forall; intros i.
       eapply concat.
       2: { apply IH_es. }
-      apply ap10. refine (apD10 _ _). apply ap, path_forall.
-      (* TODO: give lemma showing [f x y z = f x' y z], where z can depend on y, and use that in the MANY situations like the above line, currently done by hand? *)
+      apply (ap_2back substitute), path_forall.
       refine (coproduct_rect shape_is_sum _ _ _); intro; unfold extend.
       + repeat rewrite coproduct_comp_inj1; apply idpath.
       + repeat rewrite coproduct_comp_inj2; apply idpath.
@@ -172,13 +171,13 @@ Section Substitute_Laws.
     { apply idpath. }
     cbn. apply ap. apply path_forall; intros i.
     eapply concat. { apply rename_substitute. }
-    apply ap10. refine (apD10 _ _). apply ap. apply path_arrow.
+    apply (ap_2back substitute), path_forall.
     simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       refine (_ @ _^). { apply rename_rename. }
       eapply concat. { refine (coproduct_comp_inj1 _). }
       refine (_ @ _). { apply rename_rename. }
-      apply ap10. refine (apD10 _ _). apply ap. apply path_arrow. intros y.
+      apply (ap_2back rename), path_forall; intros y.
       refine _^. refine (coproduct_comp_inj1 _).
     - eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
       cbn. refine (_^).
@@ -196,7 +195,7 @@ Section Substitute_Laws.
     { apply idpath. }
     cbn. apply ap. apply path_forall; intros i.
     eapply concat. { apply substitute_rename. }
-    apply ap10. refine (apD10 _ _). apply ap. apply path_arrow.
+    apply (ap_2back substitute), path_arrow.
     simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       eapply concat. { refine (coproduct_comp_inj1 _). }
@@ -217,8 +216,7 @@ Section Substitute_Laws.
     { apply idpath. }
     cbn. apply ap. apply path_forall; intros i.
     eapply concat. { apply assoc_substitute. }
-    apply ap10. refine (apD10 _ _). apply ap.
-    apply path_arrow.
+    apply (ap_2back substitute), path_arrow.
     simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       refine (_ @ _^).
@@ -226,7 +224,7 @@ Section Substitute_Laws.
       + eapply concat. { apply substitute_rename. }
         eapply concat.
         2: { eapply inverse, rename_substitute. }
-        * apply ap10. refine (apD10 _ _). apply ap. apply path_arrow. intros ?.
+        * apply (ap_2back substitute), path_arrow. intros ?.
           refine (coproduct_comp_inj1 _).
     - eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
       refine (_ @ _^).
@@ -329,7 +327,7 @@ Section Naturality.
         revert p; apply inverse_sufficient; intros q.
         destruct q. cbn.
         apply path_forall; intros i.
-        apply ap10. refine (apD10 _ _). apply ap.
+        apply (ap_2back substitute).
         apply fmap_extend.
   Defined.
 

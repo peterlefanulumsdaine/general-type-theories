@@ -105,8 +105,8 @@ Section Renaming.
       apply path_forall; intros i.
       eapply concat.
       2: { apply IH_es. }
-      apply ap10. refine (apD10 _ _). apply ap.
-      apply path_forall. refine (coproduct_rect shape_is_sum _ _ _).
+      apply (ap_2back rename), path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _).
       + intros j. refine (coproduct_comp_inj1 _).
       + intros j. refine (coproduct_comp_inj2 _).
   Defined.
@@ -119,7 +119,7 @@ Section Renaming.
   - reflexivity.
   - cbn. apply ap. apply path_forall; intros i.
     eapply concat. { apply rename_rename. }
-    + apply ap10. refine (apD10 _ _). apply ap, path_forall.
+    + apply (ap_2back rename), path_forall.
       refine (coproduct_rect _ _ _ _); intros x.
       * refine (_ @ _^). 2: { refine (coproduct_comp_inj1 _). }
         eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }

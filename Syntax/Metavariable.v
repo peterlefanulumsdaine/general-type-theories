@@ -532,8 +532,8 @@ Section Instantiations.
       { repeat rewrite coproduct_comp_inj1; cbn;
         rewrite coproduct_comp_inj1; cbn.
         eapply concat. { apply substitute_rename. }
-        eapply concat. 2: { apply substitute_raw_variable. } 
-        apply ap10. refine (apD10 _ _). apply ap, path_forall; intros k.
+        eapply concat. 2: { apply substitute_raw_variable. }
+        apply (ap_2back substitute), path_forall; intros k.
         refine (coproduct_comp_inj1 _). }
       repeat rewrite coproduct_comp_inj2; cbn; rewrite coproduct_comp_inj2.
       rewrite IH_e_args.
@@ -591,8 +591,7 @@ Section Instantiations.
     - simpl instantiate_expression.
       eapply concat. { apply Substitution.fmap_substitute. }
       unfold raw_context_map_fmap, instantiation_fmap.
-      apply ap10. refine (apD10 _ _). apply ap.
-      apply path_forall.
+      apply (ap_2back substitute), path_forall.
       refine (coproduct_rect shape_is_sum _ _ _); intros i.
       + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         cbn. apply inverse. refine (coproduct_comp_inj1 _).
