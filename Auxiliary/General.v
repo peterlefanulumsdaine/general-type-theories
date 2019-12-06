@@ -32,6 +32,19 @@ Proof.
   exact (ap (fun x => f x y1 y2 y3) e).
 Defined.
 
+Definition ap_4back {X Y1} {Y2} {Y3} {Y4} {Z}
+   (f : X ->
+     forall (y1:Y1)
+            (y2 : Y2 y1)
+            (y3 : Y3 y1 y2)
+            (y4 : Y4 y1 y2 y3),
+       Z y1 y2 y3 y4)
+   {x x'} (e : x = x') y1 y2 y3 y4
+  : f x y1 y2 y3 y4 = f x' y1 y2 y3 y4.
+Proof.
+  exact (ap (fun x => f x y1 y2 y3 y4) e).
+Defined.
+
 Definition ap2 {X Y Z} (f : X -> Y -> Z)
     {x x'} (e_x : x = x') {y y'} (e_y : y = y')
   : f x y = f x' y'.

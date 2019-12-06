@@ -139,7 +139,7 @@ Proof.
   destruct e_premises, e_lt; simpl in *.
   refine
     (ap (Build_algebraic_extension _ _ _ _ _) _
-    @ ap (fun rc => Build_algebraic_extension _ _ _ _ rc _) _).
+    @ ap_1back (Build_algebraic_extension _ _ _ _) _ _).
   - clear ae_raw_context0 ae_raw_context1 e_raw_context.
     apply path_forall; intros i.
     refine (_ @ e_hypothetical_boundary i). apply inverse.
@@ -148,7 +148,7 @@ Proof.
       apply rename_hypothetical_boundary_expressions_idmap. }
     unfold fe_signature.
     eapply concat.
-    { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
+    { eapply (ap_3back fmap_hypothetical_boundary_expressions).
       apply Metavariable.fmap2_idmap. }
     apply fmap_hypothetical_boundary_expressions_idmap.
   - clear e_hypothetical_boundary.
@@ -157,7 +157,7 @@ Proof.
     refine (_ @ e_raw_context i j @ _).
     + unfold fe_signature.
     eapply inverse, concat.
-    { refine (ap (fun f => Expression.fmap f _) _).
+    { eapply (ap_3back Expression.fmap).
       apply Metavariable.fmap2_idmap. }
     apply Expression.fmap_idmap.
     + unfold equiv_premise, transport.
@@ -195,11 +195,11 @@ Proof.
   - apply idpath.
   - unfold transport; simpl. intros i j.
     eapply concat.
-    { refine (ap (fun f => Expression.fmap f _) _).
+    { eapply (ap_3back Expression.fmap).
       apply Metavariable.fmap2_idmap. }
     eapply concat. { apply Expression.fmap_idmap. }
     eapply concat.
-    { refine (ap (fun f => Expression.fmap f _) _).
+    { eapply (ap_3back Expression.fmap).
       apply Metavariable.fmap1_idmap. }
     eapply concat. { apply Expression.fmap_idmap. }
     apply inverse, rename_idmap.
@@ -207,11 +207,11 @@ Proof.
     eapply concat.
     { apply rename_hypothetical_boundary_expressions_idmap. }
     eapply concat.
-    { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
+    { eapply (ap_3back fmap_hypothetical_boundary_expressions).
       apply Metavariable.fmap2_idmap. }
     eapply concat. { apply fmap_hypothetical_boundary_expressions_idmap. }
     eapply concat.
-    { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
+    { eapply (ap_3back fmap_hypothetical_boundary_expressions).
       apply Metavariable.fmap1_idmap. }
     apply fmap_hypothetical_boundary_expressions_idmap.
 Defined.
@@ -227,11 +227,11 @@ Proof.
   - apply idpath.
   - unfold transport; simpl. intros i j.
     eapply concat.
-    { refine (ap (fun f => Expression.fmap f _) _).
+    { eapply (ap_3back Expression.fmap).
       apply Metavariable.fmap2_idmap. }
     eapply concat. { apply Expression.fmap_idmap. }
     eapply concat.
-    { refine (ap (fun f => Expression.fmap f _) _).
+    { eapply (ap_3back Expression.fmap).
       apply Metavariable.fmap1_compose. }
     eapply concat. { apply Expression.fmap_compose. }
     apply inverse, rename_idmap.
@@ -239,11 +239,11 @@ Proof.
     eapply concat.
     { apply rename_hypothetical_boundary_expressions_idmap. }
     eapply concat.
-    { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
+    { eapply (ap_3back fmap_hypothetical_boundary_expressions).
       apply Metavariable.fmap2_idmap. }
     eapply concat. { apply fmap_hypothetical_boundary_expressions_idmap. }
     eapply concat.
-    { refine (ap (fun f => fmap_hypothetical_boundary_expressions f _) _).
+    { eapply (ap_3back fmap_hypothetical_boundary_expressions).
       apply Metavariable.fmap1_compose. }
     apply fmap_hypothetical_boundary_expressions_compose.
 Defined.
@@ -450,7 +450,7 @@ Section Judgement_of_Premise.
       apply Expression.fmap_compose.
     - (* hypothetical part *)
       apply ap.
-      apply (ap2 (hypothetical_judgement_expressions_from_boundary_and_head _)).
+      apply ap2.
       + apply fmap_hypothetical_boundary_expressions_compose.
       + apply path_forall; intros i_is_ob.
         destruct i as [i_ob | i_eq]; apply idpath.
@@ -615,10 +615,10 @@ Section Flattening.
       eapply concat. 2: { apply Metavariable.fmap_compose. }
       eapply concat. { apply ap, Family.id_left. }
       eapply concat.
-      { eapply (ap (fun f => Metavariable.fmap f _)), Family.id_right. }
+      { eapply (ap_3back Metavariable.fmap), Family.id_right. }
       apply inverse.                     
       eapply concat. { apply ap, Family.id_right. }
-      eapply (ap (fun f => Metavariable.fmap f _)), Family.id_left.
+      eapply (ap_3back Metavariable.fmap), Family.id_left.
     - apply path_forall. intros i_is_ob.
       destruct i as [i_ob | i_eq].
       + apply idpath.
@@ -802,7 +802,7 @@ Section Initial_Segment.
           eapply concat.
           { apply ap. unfold initial_segment_include_premise_aux; cbn.
             apply idpath. }
-          apply (ap (fun f => Expression.fmap f _)).
+          apply (ap_3back Expression.fmap).
           eapply concat.
           2: { apply ap. unfold initial_segment_include_premise_aux; cbn. 
                apply idpath. }
@@ -825,7 +825,7 @@ Section Initial_Segment.
           eapply concat.
           { apply ap. unfold initial_segment_include_premise_aux; cbn.
             apply idpath. }
-          apply (ap (fun f => Expression.fmap f _)).
+          apply (ap_3back Expression.fmap).
           eapply concat.
           2: { apply ap. unfold initial_segment_include_premise_aux; cbn. 
                apply idpath. }
@@ -848,13 +848,13 @@ Section Initial_Segment.
       destruct i as [ i_ob | i_eq ].
       + simpl. unfold fmap_hypothetical_boundary.
         eapply concat.
-        { eapply (ap (fun f => Expression.fmap f _)). 
+        { eapply (ap_3back Expression.fmap). 
           apply Metavariable.fmap_idmap. }
         eapply concat. { apply Expression.fmap_idmap. }
         eapply concat. { apply Expression.fmap_fmap. }
         apply inverse. 
         eapply concat. { apply Expression.fmap_fmap. }
-        apply (ap (fun f => Expression.fmap f _)).
+        apply (ap_3back Expression.fmap).
         eapply concat. { apply inverse, Metavariable.fmap_compose. }
         eapply concat. 2: { eapply Metavariable.fmap_compose. }
         apply (ap2 (fun f g => Metavariable.fmap f g)).
@@ -864,13 +864,13 @@ Section Initial_Segment.
         * apply idpath.
       + simpl. unfold fmap_hypothetical_boundary.
         eapply concat.
-        { eapply (ap (fun f => Expression.fmap f _)). 
+        { eapply (ap_3back Expression.fmap). 
           apply Metavariable.fmap_idmap. }
         eapply concat. { apply Expression.fmap_idmap. }
         eapply concat. { apply Expression.fmap_fmap. }
         apply inverse. 
         eapply concat. { apply Expression.fmap_fmap. }
-        apply (ap (fun f => Expression.fmap f _)).
+        apply (ap_3back Expression.fmap).
         eapply concat. { apply inverse, Metavariable.fmap_compose. }
         eapply concat. 2: { eapply Metavariable.fmap_compose. }
         apply (ap2 (fun f g => Metavariable.fmap f g)).
@@ -906,7 +906,7 @@ Section Initial_Segment.
       + simpl. apply inverse. 
         eapply concat. { apply Expression.fmap_fmap. }
         eapply concat. { apply Expression.fmap_fmap. }
-        apply (ap (fun f => Expression.fmap f _)).
+        apply (ap_3back Expression.fmap).
         unfold simple_map_signature_of_premise.
         unfold initial_segment_compare_signature.
         eapply concat. { eapply ap10, ap, inverse, Metavariable.fmap_compose. }
@@ -919,7 +919,7 @@ Section Initial_Segment.
       + simpl. apply inverse. 
         eapply concat. { apply Expression.fmap_fmap. }
         eapply concat. { apply Expression.fmap_fmap. }
-        apply (ap (fun f => Expression.fmap f _)).
+        apply (ap_3back Expression.fmap).
         unfold simple_map_signature_of_premise.
         unfold initial_segment_compare_signature.
         eapply concat. { eapply ap10, ap, inverse, Metavariable.fmap_compose. }
@@ -938,13 +938,13 @@ Section Initial_Segment.
         simpl ap. apply path_forall; intros x.
         simpl. unfold fmap_hypothetical_boundary.
         eapply concat.
-        { eapply (ap (fun f => Expression.fmap f _)). 
+        { eapply (ap_3back Expression.fmap). 
           apply Metavariable.fmap_idmap. }
         eapply concat. { apply Expression.fmap_idmap. }
         eapply concat. { apply Expression.fmap_fmap. }
         apply inverse. 
         eapply concat. { apply Expression.fmap_fmap. }
-        apply (ap (fun f => Expression.fmap f _)).
+        apply (ap_3back Expression.fmap).
         eapply concat. { apply inverse, Metavariable.fmap_compose. }
         eapply concat. 2: { eapply Metavariable.fmap_compose. }
         apply (ap2 (fun f g => Metavariable.fmap f g)).
@@ -958,13 +958,13 @@ Section Initial_Segment.
         simpl ap. apply path_forall; intros x.
         simpl. unfold fmap_hypothetical_boundary.
         eapply concat.
-        { eapply (ap (fun f => Expression.fmap f _)). 
+        { eapply (ap_3back Expression.fmap). 
           apply Metavariable.fmap_idmap. }
         eapply concat. { apply Expression.fmap_idmap. }
         eapply concat. { apply Expression.fmap_fmap. }
         apply inverse. 
         eapply concat. { apply Expression.fmap_fmap. }
-        apply (ap (fun f => Expression.fmap f _)).
+        apply (ap_3back Expression.fmap).
         eapply concat. { apply inverse, Metavariable.fmap_compose. }
         eapply concat. 2: { eapply Metavariable.fmap_compose. }
         apply (ap2 (fun f g => Metavariable.fmap f g)).
