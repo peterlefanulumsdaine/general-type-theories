@@ -662,6 +662,35 @@ Section Substitute_Derivations.
   (** Note: both [rename_derivation] and [sustitute_derivation] have analogues for derivations with hypotheses.  However, these are rather less clear to state, so for now we give just the versions for closed derivations.  *)
 End Substitute_Derivations.
 
+Section Equality_Substitution.
+(** Goal of this section: showing that (generalisations of) the [subst_equal] structural rules are admissible.
+
+That is: given a derivale object judgement, e.g. [ Γ |- a : A ], and two derivably judgementally equal context morphisms [ f, g : Γ' -> Γ ], we should be able to derive [ Γ |- f^*a = g^*a : f^* A ].
+
+That result, [subst_equal_derivation], is the main goal of this section; but to make the inductive proof go through we generalise its statement, to raw context maps [f g : Γ' -> Γ] that are what we call _weakly judgementally-equal_.
+
+The idea of this is that it generalises judgemental equality so as to be closed under extending/weakening a pair [f, g] by types either of the form [f^*A] or [g^*A], without any derivability check for [A] (which would be required for the extensions to be still judgementally equal).  Such extensions arise when going under binders in premises of rules.
+
+Since the resulting maps may not be weakly-typed context maps, so not automatically applicable for [substitute_derivation], we also strengthen the statement to conclude additionally that [ Γ |- f^*a : f^*A ] and [ Γ |- g^*a : g^*A ]. *)
+
+  Context {σ : shape_system} {Σ : signature σ}.
+
+  Local Definition weakly_equal
+      (T : flat_type_theory Σ)
+      {Δ Γ : raw_context Σ}
+      (f g : raw_context_map Σ Δ Γ)
+    : Type
+  := forall i : Γ,
+      { j : Δ & (f i = raw_variable j) 
+                * ((Δ j = substitute f (Γ i))
+                  + (Δ j = substitute g (Γ i))) }
+    + subst_free_derivation T (Family.empty _)
+          [! Δ |- f i ≡ g i ; substitute f (Γ i) !].
+
+  (* TODO: main goal [subst_equal_derivation] here. *)
+
+End Equality_Substitution.
+
 Section Subst_Elimination.
 
   Context {σ : shape_system} {Σ : signature σ}.
