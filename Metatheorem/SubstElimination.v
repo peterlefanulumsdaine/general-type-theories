@@ -687,6 +687,50 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
     + subst_free_derivation T (Family.empty _)
           [! Δ |- f i ≡ g i ; substitute f (Γ i) !].
 
+  Local Record weakly_equal_pair
+      (T : flat_type_theory Σ)
+      (Δ Γ : raw_context Σ)
+  := {
+    left : raw_context_map Σ Δ Γ
+  ; right : raw_context_map Σ Δ Γ
+  ; is_weakly_equal : weakly_equal T left right
+  }.
+
+  Arguments left {_ _ _} _.
+  Arguments right {_ _ _} _.
+
+(** If [(f,g)] is a weakly equal pair [Δ -> Γ], and [J] an object judgement
+over [Γ], there is an equality judgement comparing the pullbacks of [J] along
+[f], [g].  E.g. [Γ |- A], this gives [Δ |- f^*A = g^*A]; for [Γ |- a:A], this
+is [Δ |- f^*a = g^*A : f^*A] *)
+  Local Definition subst_weakly_equal_hypothetical_judgement
+      (T : flat_type_theory Σ)
+      {Δ Γ : raw_context Σ}
+      (fg : weakly_equal_pair T Δ Γ)
+      (J : hypothetical_judgement Σ Γ)
+      (J_obj : Judgement.is_object (form_of_judgement J))
+    : hypothetical_judgement Σ Δ.
+  Proof.
+    exists (form_equality (Judgement.class_of (form_of_judgement J))).
+    intros [ s_bdry | | ].
+    - (* boundary slot *)
+      apply (substitute (left fg)).
+      destruct J as [[cl | cl] J].
+      + exact (J (the_boundary _ s_bdry)).
+      + destruct J_obj. (* impossible case *)
+    - (* LHS slot *)
+      (* TODO: give function to extract head of object judgement *)
+      apply (substitute (left fg)).
+      destruct J as [[cl | cl] J].
+      + exact (J (the_head _)).
+      + destruct J_obj. (* impossible case *)
+    - (* RHS slot *)
+      apply (substitute (right fg)).
+      destruct J as [[cl | cl] J].
+      + exact (J (the_head _)).
+      + destruct J_obj. (* impossible case *)
+  Defined.
+
   (* TODO: main goal [subst_equal_derivation] here. *)
 
 End Equality_Substitution.
