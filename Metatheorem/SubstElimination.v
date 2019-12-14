@@ -799,7 +799,7 @@ Section Subst_Elimination.
      most rules are translated to the same rule in the subst-free setting;
      [subst_apply] is handled by [substitute_derivation]; 
      [subst_equal] should be handled be [subst_equal_derivation] (to be given!). *)
-  Admitted. (* Theorem [subst_elimination]: major goal, depends on a lot of upstream work *)
+  Admitted. (* Theorem [subst_elimination]: should now be provable depending on [substitute_derivation], [subst_equal_derivation], which are now stated although still partly admitted. *)
 
 End Subst_Elimination.
 
