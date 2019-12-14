@@ -412,9 +412,10 @@ Defined.
     set (r_flat_rule := equality_flat_rule r).
     intros c_presup.
     refine (TypedFlatRule.closure_system_weakly_presuppositive _ _ _ _ _).
-    (* TODO: [TypedFlatRule.fmap_weakly_presuppositive],
-     then apply to [equality_flat_rule_is_presuppositive]. *)
-  Admitted. (* [equality_is_presuppositive]: requires a little infrastructure, hopefully not too much work *)
+    eapply TypedFlatRule.fmap_weakly_presuppositive.
+    2: apply equality_flat_rule_is_presuppositive.
+    intros [].
+  Defined.
 
   (** Putting the above components together, we obtain the main result:
       all structural rules are presuppositive. *)
