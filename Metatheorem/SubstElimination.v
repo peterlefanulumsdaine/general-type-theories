@@ -780,6 +780,7 @@ is [Δ |- f^*a = g^*A : f^*A] *)
       (d_J : subst_free_derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J'.
   Proof.
+    (* Sketch proof: should be analogous in organisation to proofs of [rename_derivation], [substitute_derivation] above, including a roughly analogous series of lemmas to handle the flat rule cases. *)
   Admitted. (* [substitute_equal_derivation]: substantial amount of work to do. *)
 
 End Equality_Substitution.
