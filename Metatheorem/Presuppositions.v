@@ -115,8 +115,7 @@ Section Presuppositivity.
        - so: simple map of _raw rules_: f : R' —> R: must implies R stably derivable from R'; so, is simple map (premises R —> premises R'), and then conclusion must agree. *)
     apply (Family.map_vs_map_over _ _ _)^-1.
     apply RawTypeTheory.flatten_initial_segment.
-  Admitted. (* Proof actually complete; [Admitted] is just to avoid universe
-  proliferation causing terrible slowdown downstream. *)
+  Defined.
 
   (** For any raw type theory [T] and a rule [r] of the flattened [T], every
       presupposition in the boundary of the conclusion of [r] can be derived. *)
