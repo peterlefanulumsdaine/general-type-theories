@@ -44,14 +44,14 @@ Section JudgementCombinatorics.
 
   Local Definition type_object_boundary := Family.empty syntactic_class.
 
-  Inductive term_boundary_slot_index := the_term_type.
+  Inductive term_boundary_slot_index := the_type_slot.
 
   Definition term_boundary_slot :=
     {| family_index := term_boundary_slot_index ;
        family_element :=
          (fun slot =>
             match slot with
-            | the_term_type => class_type
+            | the_type_slot => class_type
             end)
     |}.
 
@@ -67,19 +67,20 @@ Section JudgementCombinatorics.
 
   Inductive equality_boundary_slot_index cl
   :=
-    | the_equality_sort : family_index (object_boundary_slot cl)
-                          -> equality_boundary_slot_index cl
-    | the_equality_lhs
-    | the_equality_rhs.
+    | the_equality_boundary_slot
+        : family_index (object_boundary_slot cl)
+          -> equality_boundary_slot_index cl
+    | the_lhs_slot
+    | the_rhs_slot.
 
   Local Definition equality_boundary_slot (cl : syntactic_class) :=
     {| family_index := equality_boundary_slot_index cl ;
        family_element :=
          (fun slot =>
             match slot with
-            | the_equality_sort slot' => object_boundary_slot cl slot'
-            | the_equality_lhs => cl
-            | the_equality_rhs => cl
+            | the_equality_boundary_slot slot' => object_boundary_slot cl slot'
+            | the_lhs_slot => cl
+            | the_rhs_slot => cl
             end)
     |}.
 
@@ -95,16 +96,16 @@ Section JudgementCombinatorics.
      end.
 
   Inductive object_slot_index cl :=
-  | the_boundary : object_boundary_slot cl -> object_slot_index cl
-  | the_head : object_slot_index cl.
+  | the_boundary_slot : object_boundary_slot cl -> object_slot_index cl
+  | the_head_slot : object_slot_index cl.
 
   Local Definition object_slot cl :=
     {| family_index := object_slot_index cl ;
        family_element :=
          (fun slot =>
             match slot with
-            | the_boundary slot' => object_boundary_slot cl slot'
-            | the_head => cl
+            | the_boundary_slot slot' => object_boundary_slot cl slot'
+            | the_head_slot => cl
             end)
     |}.
 
@@ -187,7 +188,7 @@ Section Judgements.
     exists (form_of_judgement J).
     intros i. destruct J as [jf j].
       destruct jf as [ ob_jf | eq_jf ].
-      + exact (j (the_boundary _ i)).
+      + exact (j (the_boundary_slot _ i)).
       + exact (j i).
   Defined.
   
@@ -668,12 +669,12 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
         * (* i is in shared bdry of LHS/RHS *)
           cbn in j.
           exists
-            (the_equality_sort _ (object_boundary_from_boundary_slots i' j)).
+            (the_equality_boundary_slot _ (object_boundary_from_boundary_slots i' j)).
           apply (Family.map_commutes _ j).
         * (* i is RHS *)
-          exists (the_equality_sort _ j). apply idpath.
+          exists (the_equality_boundary_slot _ j). apply idpath.
         * (* i is LHS *)
-          exists (the_equality_sort _ j). apply idpath.
+          exists (the_equality_boundary_slot _ j). apply idpath.
     - (* case: j is head of presupposition *)
       exists i. apply idpath.
   Defined.
@@ -683,7 +684,7 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
     : Family.map (boundary_slot hjf) (slot hjf).
   Proof.
     destruct hjf as [ obj_cl | eq_cl ].
-    - exists (the_boundary obj_cl).
+    - exists (the_boundary_slot obj_cl).
       intros ; apply idpath.
     - apply Family.idmap.
   Defined.

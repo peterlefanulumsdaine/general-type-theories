@@ -716,18 +716,18 @@ is [Δ |- f^*a = g^*A : f^*A] *)
     - (* boundary slot *)
       apply (substitute (left fg)).
       destruct J as [[cl | cl] J].
-      + exact (J (the_boundary _ s_bdry)).
+      + exact (J (the_boundary_slot _ s_bdry)).
       + destruct J_obj. (* impossible case *)
     - (* LHS slot *)
       (* TODO: give function to extract head of object judgement *)
       apply (substitute (left fg)).
       destruct J as [[cl | cl] J].
-      + exact (J (the_head _)).
+      + exact (J (the_head_slot _)).
       + destruct J_obj. (* impossible case *)
     - (* RHS slot *)
       apply (substitute (right fg)).
       destruct J as [[cl | cl] J].
-      + exact (J (the_head _)).
+      + exact (J (the_head_slot _)).
       + destruct J_obj. (* impossible case *)
   Defined.
 

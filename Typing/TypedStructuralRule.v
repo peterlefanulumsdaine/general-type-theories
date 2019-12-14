@@ -132,8 +132,8 @@ Section TypedStructuralRule.
          The first two, we get by the [substitution_apply] rule; the third 
          additionally requires the [term_convert] and [substitution_equal]
          rules. *)
-    - set (A := J (the_boundary class_term the_term_type)).
-      set (a := J (the_head class_term)).
+    - set (A := J (the_boundary_slot class_term the_type_slot)).
+      set (a := J (the_head_slot class_term)).
       recursive_destruct p.
       + (* presup [ Γ |- f^*A type ] *)
         simple refine (Closure.deduce' _ _ _).
@@ -149,7 +149,7 @@ Section TypedStructuralRule.
              ** apply idpath.
            -- (* premise: [Γ |- A type ]  *)
              simple refine (Closure.hypothesis' _ _).
-             ** apply inr. exists None. exact (the_term_type).
+             ** apply inr. exists None. exact (the_type_slot).
              ** apply Judgement.eq_by_eta; apply idpath.
       + (* presup [ Γ' |- f^*a : f^*A ] *)
         simple refine (Closure.deduce' _ _ _).
@@ -186,7 +186,7 @@ Section TypedStructuralRule.
             simple refine (Closure.hypothesis' _ _).
             ++ apply inr. (* use a presupposition… *)
                exists None. (* …of the original target judgement… *)
-               apply the_term_type.
+               apply the_type_slot.
             ++ apply Judgement.eq_by_eta, idpath.
         * (* [ Γ' |- f^*A type ] *)
           simple refine (Closure.deduce' _ _ _).
@@ -204,7 +204,7 @@ Section TypedStructuralRule.
             simple refine (Closure.hypothesis' _ _).
             ++ apply inr. (* use a presupposition… *)
                exists None. (* …of the original target judgement… *)
-               apply the_term_type.
+               apply the_type_slot.
             ++ apply Judgement.eq_by_eta, idpath.
         * (* [ Γ' |- g^*A = f^*A ] *)
           apply derive_tyeq_sym.
@@ -223,7 +223,7 @@ Section TypedStructuralRule.
               simple refine (Closure.hypothesis' _ _).
               ** apply inr. (* use a presupposition… *)
                exists None. (* …of the original target judgement… *)
-               apply the_term_type.
+               apply the_type_slot.
               ** apply Judgement.eq_by_eta, idpath.
         * (* Γ' |- g^*a : g^*A *)   
           simple refine (Closure.deduce' _ _ _).
@@ -329,27 +329,27 @@ Defined.
       intros p; recursive_destruct p.
       + (* LHS presup: Γ |- B *)
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists tt. apply the_equality_rhs.
+        * apply inr. exists tt. apply the_rhs_slot.
         * apply Judgement.eq_by_eta, idpath.
       + (* RHS presup: Γ |- A *)
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists tt. apply the_equality_lhs.
+        * apply inr. exists tt. apply the_lhs_slot.
         * apply Judgement.eq_by_eta, idpath.
     - (* tyeq_trans *)
       intros p; recursive_destruct p.
       + (* LHS presup: Γ |- A *)
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists (Some tt). apply the_equality_lhs.
+        * apply inr. exists (Some tt). apply the_lhs_slot.
         * apply Judgement.eq_by_eta, idpath.
       + (* RHS presup: Γ |- C *)
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists None. apply the_equality_rhs.
+        * apply inr. exists None. apply the_rhs_slot.
         * apply Judgement.eq_by_eta, idpath.
     - (* tmeq_refl *)
       intros p; recursive_destruct p.
       + (* type presup: Γ |- A type *)        
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists tt. apply the_term_type.
+        * apply inr. exists tt. apply the_type_slot.
         * apply Judgement.eq_by_eta, idpath.
       + (* LHS presup: Γ |- a:A *)
         simple refine (Closure.hypothesis' _ _).
@@ -363,29 +363,29 @@ Defined.
       intros p; recursive_destruct p.
       + (* type presup :  |- A type *)
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists tt. apply the_equality_sort, the_term_type.
+        * apply inr. exists tt. apply the_equality_boundary_slot, the_type_slot.
         * apply Judgement.eq_by_eta, idpath.
       + (* LHS presup :   |- a : A *)
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists tt. apply the_equality_rhs.
+        * apply inr. exists tt. apply the_rhs_slot.
         * apply Judgement.eq_by_eta, idpath.
       + (* RHS presup :   |- b : A*)
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists tt. apply the_equality_lhs.
+        * apply inr. exists tt. apply the_lhs_slot.
         * apply Judgement.eq_by_eta, idpath.
     - (* tmeq_trans *)
       intros p; recursive_destruct p.
       + (* type presup: Γ |- A type *)        
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists None. apply the_equality_sort, the_term_type.
+        * apply inr. exists None. apply the_equality_boundary_slot, the_type_slot.
         * apply Judgement.eq_by_eta, idpath.
       + (* LHS presup: Γ |- a:A *)
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists (Some tt). apply the_equality_lhs.
+        * apply inr. exists (Some tt). apply the_lhs_slot.
         * apply Judgement.eq_by_eta, idpath.
       + (* RHS presup: Γ |- a:A *)
         simple refine (Closure.hypothesis' _ _).
-        * apply inr. exists None. apply the_equality_rhs.
+        * apply inr. exists None. apply the_rhs_slot.
         * apply Judgement.eq_by_eta, idpath.
     - (* term_convert *)
       intros p; recursive_destruct p.
@@ -397,7 +397,7 @@ Defined.
       apply tmeq_convert_is_presuppositive.
   Defined.
   (* TODO: some thoughts from this proof:
-  - rename [the_equality_sort], to eg [the_equality_boundary]? 
+  - rename [the_equality_boundary_slot], to eg [the_equality_boundary]? 
   - make presuppositions and hypothesis selection less option-blind (but how)? 
   - maybe make structural rule accessors take value in closure systems of type theories, not in [structural_rules] itself?  (More convenient for giving derivations; but then recursion over structural rules is less clear.) 
 *)

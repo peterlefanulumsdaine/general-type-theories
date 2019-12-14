@@ -161,11 +161,11 @@ Proof.
   - exists Γ', (form_equality cl).
     intros [i | | ].
     + (* boundary *)
-      exact (substitute f (hjfi (the_boundary _ i))).
+      exact (substitute f (hjfi (the_boundary_slot _ i))).
     + (* LHS *)
-      exact (substitute f (hjfi (the_head _))).
+      exact (substitute f (hjfi (the_head_slot _))).
     + (* RHS *)
-      exact (substitute g (hjfi (the_head _))).
+      exact (substitute g (hjfi (the_head_slot _))).
 Defined.
 
 Definition substitution_instance : Closure.system (judgement Σ)
