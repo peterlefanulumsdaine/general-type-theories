@@ -38,7 +38,8 @@ MODULES := \
 	Metatheorem/Presuppositions \
 	Metatheorem/SubstElimination \
 	Metatheorem/UniqueTyping \
-	Example/ShapeSystemExamples
+	Example/ShapeSystemExamples \
+	Example/MartinLofTypeTheory
 
 VS      := $(MODULES:%=%.v)
 

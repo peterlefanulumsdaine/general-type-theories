@@ -1,13 +1,13 @@
 Require Import HoTT.
-Require Import Syntax.ShapeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
 Require Import Syntax.All.
+Require Import Typing.Judgement.
+Require Import Presented.AlgebraicExtension.
 Require Import Presented.RawTypeTheory.
-Require Import Raw.SignatureMap.
 Require Import Presented.RawRule.
-Require Import WellPresented.TypeTheory.
+Require Import Presented.TypeTheory.
 
 Section MartinLöfTypeTheory.
   Context {σ : shape_system}.
@@ -19,8 +19,9 @@ Section MartinLöfTypeTheory.
     - simple refine (class_type, [< (class_term, shape_empty σ) >]). (* El *)
   Defined.
 
-  Local Definition U_formation_rule_index : (form * arity σ)
-    := (form_object class_type  (* Formation of a type *)
+  Local Definition U_formation_rule_index
+    : (form * arity σ)
+  := (form_object class_type  (* Formation of a type *)
        , [< >]).                (* With no (object) premises *)
 
   Local Definition El_formation_rule_index : (form * arity σ)
@@ -29,9 +30,9 @@ Section MartinLöfTypeTheory.
 
   (* Definition f : *)
 
-
-  Definition theory : Type_Theory σ.
-   simple refine (Build_Type_Theory _ _ _).
+  Local Definition theory : type_theory σ.
+   simple refine (Build_type_theory _ _ _).
+   simple refine (Build_raw_type_theory _ _ _).
    - exact ([< U_formation_rule_index ; El_formation_rule_index >]).
    - admit.
    - intros.
@@ -49,21 +50,19 @@ Section MartinLöfTypeTheory.
                  destruct f2.
                * destruct z.
                  destruct f1.
-             + 
-
-
- f : 1+0 -> 1
-
-
-pullback
-
+             + admit.
+             + admit.
+           - admit.
+           - admit.
          }
-     + admit.
-  Admitted.
+       * admit.
 
-  Theorem is_well_typed : TypeTheory.is_well_typed theory.
+     + admit.
+  Admitted. (* [MartinLofTypeTheory.theory] : much work to do *)
+
+  Local Theorem is_well_typed : TypeTheory.is_well_typed theory.
   Proof.
     admit.
-  Admitted.
+  Admitted.  (* [MartinLofTypeTheory.is_well_typed] : much work to do *)
 
-End MartinLoefTypeTheory.
+End MartinLöfTypeTheory.

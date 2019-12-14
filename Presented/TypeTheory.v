@@ -26,6 +26,6 @@ Section WellTypedTypeTheory.
 
 End WellTypedTypeTheory.
 
-Record type_theory {σ : shape_system} : Type
+Record type_theory (σ : shape_system) : Type
   := { tt_raw_type_theory :> raw_type_theory σ
      ; tt_well_typed : is_well_typed tt_raw_type_theory }.
