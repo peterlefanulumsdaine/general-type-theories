@@ -787,7 +787,7 @@ End Equality_Substitution.
 
 Section Subst_Elimination.
 
-  Context {σ : shape_system} {Σ : signature σ}.
+  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
 
   Theorem subst_elimination
       {T : flat_type_theory Σ}
@@ -795,20 +795,36 @@ Section Subst_Elimination.
       {J} (d : FlatTypeTheory.derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J.
   Proof.
-    induction d as [ [] | r _ d_sf_prems ].
+    induction d as [ [] | r _ d_prems ].
     (* no hypothesis; derivation must conclude with a rule *)
     destruct r as [ [ r_substfree | [ r_subst | r_substeq ] ] | r_from_t ].
     - simple refine (Closure.deduce' _ _ _).
       + exact (inl r_substfree).
       + apply idpath.
-      + apply d_sf_prems.
-    - admit.
-    - admit.
+      + apply d_prems.
+    - destruct r_subst as [Γ [Γ' [f J]]].
+      simpl in d_prems |- *.
+      simple refine (substitute_derivation _ _ (d_prems None)); try assumption.
+      simple refine (Build_weakly_typed_judgement_map _ _ _ _ _);
+        [ simple refine (Build_weakly_typed_context_map _ _ _ f _) | ].
+      + intros i. apply inr.
+        exact (d_prems (Some i)).          
+      + apply idpath.
+    - destruct r_substeq as [Γ [Γ' [f [g [cl J]]]]].
+      simpl in d_prems.
+      simple refine (substitute_equal_derivation _ _ _ (d_prems None));
+        try assumption.
+      simple refine (Build_weakly_equal_judgement_map _ _ _ _ _);
+        [ simple refine (Build_weakly_equal_pair _ _ _ f g _) | ].
+        * intros i. apply inr.
+          exact (d_prems (Some (inr i))).
+        * apply inr.
+          exists tt; apply idpath.
     - simple refine (Closure.deduce' _ _ _).
       + exact (inr (r_from_t)).
       + apply idpath.
-      + apply d_sf_prems.
-  Admitted. (* Theorem [subst_elimination]: should now be provable depending on [substitute_derivation], [subst_equal_derivation], which are now stated although still partly admitted. *)
+      + apply d_prems.
+  Defined.
 
 End Subst_Elimination.
 
