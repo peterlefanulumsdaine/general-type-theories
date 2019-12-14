@@ -795,10 +795,19 @@ Section Subst_Elimination.
       {J} (d : FlatTypeTheory.derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J.
   Proof.
-    (* Direct structural induction on derivations;
-     most rules are translated to the same rule in the subst-free setting;
-     [subst_apply] is handled by [substitute_derivation]; 
-     [subst_equal] should be handled be [subst_equal_derivation] (to be given!). *)
+    induction d as [ [] | r _ d_sf_prems ].
+    (* no hypothesis; derivation must conclude with a rule *)
+    destruct r as [ [ r_substfree | [ r_subst | r_substeq ] ] | r_from_t ].
+    - simple refine (Closure.deduce' _ _ _).
+      + exact (inl r_substfree).
+      + apply idpath.
+      + apply d_sf_prems.
+    - admit.
+    - admit.
+    - simple refine (Closure.deduce' _ _ _).
+      + exact (inr (r_from_t)).
+      + apply idpath.
+      + apply d_sf_prems.
   Admitted. (* Theorem [subst_elimination]: should now be provable depending on [substitute_derivation], [subst_equal_derivation], which are now stated although still partly admitted. *)
 
 End Subst_Elimination.
