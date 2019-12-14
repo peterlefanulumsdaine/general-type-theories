@@ -703,8 +703,8 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
 over [Γ], there is an equality judgement comparing the pullbacks of [J] along
 [f], [g].  E.g. [Γ |- A], this gives [Δ |- f^*A = g^*A]; for [Γ |- a:A], this
 is [Δ |- f^*a = g^*A : f^*A] *)
-  Local Definition subst_weakly_equal_hypothetical_judgement
-      (T : flat_type_theory Σ)
+  Local Definition substitute_weakly_equal_hypothetical_judgement
+      {T : flat_type_theory Σ}
       {Δ Γ : raw_context Σ}
       (fg : weakly_equal_pair T Δ Γ)
       (J : hypothetical_judgement Σ Γ)
@@ -731,7 +731,56 @@ is [Δ |- f^*a = g^*A : f^*A] *)
       + destruct J_obj. (* impossible case *)
   Defined.
 
-  (* TODO: main goal [subst_equal_derivation] here. *)
+  (** Given a judgement [ Γ |- J ], and a weakly equal pair [ f, g : Γ' -> Γ ],
+   a derivation of [ Γ |- J ] yields derivations of two or possibly three
+   judgements over [Γ']:
+   - [f^* J];
+   - [g^* J];
+   - if [J] is an object judgement, the associated equality judgement [f^* J = g^* J]
+
+   The proof of this has to treat all three together, since they are each
+   defined mutually with the others.
+
+   We thus wrap them up together in the notion of “weakly equal judgement map”:
+   a weakly equal map [ [Γ'|-J'] -> [Γ|-J] ] is a weakly equal pair [f,g] from
+   [Γ'] to [Γ], such that [J'] is one of the judgements listed above as induced
+   from [J] by the [f, g].
+
+   This then allows the theorem [substitute_equal_derivation] to be stated as:
+   given a derivation of [ Γ |- J ] and a weakly equal judgement map
+   [ [Γ'|-J'] -> [Γ|-J] ], get a derivation of [ Γ' |- J' ].
+*)
+  Local Record weakly_equal_judgement_map
+    (T : flat_type_theory Σ) (J' J : judgement Σ)
+   := { 
+     weakly_equal_pair_of_judgement_map
+       :> weakly_equal_pair T (context_of_judgement J') (context_of_judgement J)
+   ; weakly_equal_judgement_map_hypothetical_part
+     : (hypothetical_part J'
+         = substitute_hypothetical_judgement
+           (left weakly_equal_pair_of_judgement_map)
+           (hypothetical_part J))
+     + (hypothetical_part J'
+         = substitute_hypothetical_judgement
+           (right weakly_equal_pair_of_judgement_map)
+           (hypothetical_part J))
+     + { J_obj : Judgement.is_object (form_of_judgement J)
+       & hypothetical_part J'
+         = substitute_weakly_equal_hypothetical_judgement
+           (weakly_equal_pair_of_judgement_map)
+           (hypothetical_part J)
+           J_obj }
+     }.
+
+  
+  Theorem substitute_equal_derivation
+      {T : flat_type_theory Σ}
+      (T_sub : substitutive T) (T_cong : congruous T)
+      {J} {J'} (f : weakly_equal_judgement_map T J' J)
+      (d_J : subst_free_derivation T (Family.empty _) J)
+    : subst_free_derivation T (Family.empty _) J'.
+  Proof.
+  Admitted. (* [substitute_equal_derivation]: substantial amount of work to do. *)
 
 End Equality_Substitution.
 
