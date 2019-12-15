@@ -103,6 +103,8 @@ eq_new i   0        0        0        0        i < j
     : (rule Σ (Family.sum a a)
                  (form_equality (Judgement.class_of hjf_concl))).
   Proof.
+    (* TODO: refactor the following, to unify it with def of flat congruence
+       rules (once given). *)
     simple refine (Build_rule _ _ _ _ _).
     simple refine
            {| ae_equality_premise :=
@@ -116,14 +118,14 @@ eq_new i   0        0        0        0        i < j
       refine (Expression.fmap
         (original_constructor_translation _ _) _).
       set (p_orig := original_premise p).
-      destruct p as [ [ ? | ? ] | [ [ ? | ? ] | ? ] ];
+      recursive_destruct p;
       refine (ae_raw_context_type p_orig i).
       (* alternatively, instead of destructing [p], could use equality reasoning
       on the type of [i]. *)
     - (* ae_hypothetical_boundary *)
       intros p.
       set (p_orig := original_premise p).
-      destruct p as [ [ ? | ? ] | [ [ ? | ? ] | p ] ];
+      recursive_destruct p;
         try (refine (Judgement.fmap_hypothetical_boundary_expressions
           (original_constructor_translation _ _) _) ;
              refine (ae_hypothetical_boundary_expressions _ p_orig)).
@@ -138,7 +140,7 @@ eq_new i   0        0        0        0        i < j
       + (* LHS of new equality premise *)
         cbn. simple refine (raw_symbol' _ _ _).
         * apply Metavariable.include_metavariable.
-          refine (inl p; _).
+          refine (inl _; _).
           cbn. apply inl, inr; split; constructor.
         * apply idpath.
         * intros i.
@@ -146,7 +148,7 @@ eq_new i   0        0        0        0        i < j
       + (* RHS of new equality premise *)
         cbn. simple refine (raw_symbol' _ _ _).
         * apply Metavariable.include_metavariable.
-          refine (inr p; _).
+          refine (inr _; _).
           cbn. apply inl, inr; split; constructor.
         * apply idpath.
         * intros i.
@@ -158,7 +160,7 @@ eq_new i   0        0        0        0        i < j
         * apply Metavariable.fmap2, Family.inl.
         * destruct hjf_concl as [cl | ?].
           -- exact (rule_conclusion_hypothetical_boundary_expressions R i).
-          -- destruct H. (* [hjf_concl] can’t be an equality judgement *)
+          -- destruct H. (* know [hjf_concl] isn’t an equality judgement *)
       + (* LHS of new conclusion *)
         cbn. simple refine (raw_symbol' _ _ _).
         * apply Metavariable.include_symbol, S.

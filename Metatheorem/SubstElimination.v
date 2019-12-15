@@ -715,20 +715,17 @@ is [Δ |- f^*a = g^*A : f^*A] *)
     intros [ s_bdry | | ].
     - (* boundary slot *)
       apply (substitute (left fg)).
-      destruct J as [[cl | cl] J].
-      + exact (J (the_boundary_slot _ s_bdry)).
-      + destruct J_obj. (* impossible case *)
+      refine (transport (fun cl => raw_expression _ cl _) _ _).
+      2: { exact (J (the_boundary_slot
+                    (boundary_slot_from_object_boundary_slot s_bdry))). }
+      eapply concat. { apply Family.map_commutes. }
+      eapply (Family.map_commutes boundary_slot_from_object_boundary_slot).
     - (* LHS slot *)
-      (* TODO: give function to extract head of object judgement *)
       apply (substitute (left fg)).
-      destruct J as [[cl | cl] J].
-      + exact (J (the_head_slot _)).
-      + destruct J_obj. (* impossible case *)
+      exact (Judgement.head J J_obj).
     - (* RHS slot *)
       apply (substitute (right fg)).
-      destruct J as [[cl | cl] J].
-      + exact (J (the_head_slot _)).
-      + destruct J_obj. (* impossible case *)
+      exact (Judgement.head J J_obj).
   Defined.
 
   (** Given a judgement [ Γ |- J ], and a weakly equal pair [ f, g : Γ' -> Γ ],

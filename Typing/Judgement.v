@@ -11,7 +11,10 @@ Require Import Syntax.Substitution.
 Require Import Syntax.Metavariable.
 Require Import Typing.Context.
 
-(** We first set up the combinatorics describing the “shapes” of the judgement forms — specifying how many expressions they will involve, and of what classes — before bringing in the actual syntax, and defining judgements themselves. *)
+(** We first set up the combinatorics describing the “shapes” of the judgement forms — specifying how many expressions they will involve, and of what classes — before bringing in the actual syntax, and defining judgements themselves.
+
+The motivation of this is so that definitions like “to translate a judgement under a signature map, translate each expression of the judgement” can be formalised literally as such (cf. [fmap_hypothetical_judgement] below), without having to case-split according to the form of the judgement and translate each expression component individually.
+*)
 Section JudgementCombinatorics.
 
   (** We take as primitive only the _hypothetical_ judgment forms:
@@ -96,7 +99,7 @@ Section JudgementCombinatorics.
      end.
 
   Inductive object_slot_index cl :=
-  | the_boundary_slot : object_boundary_slot cl -> object_slot_index cl
+  | the_object_boundary_slot : object_boundary_slot cl -> object_slot_index cl
   | the_head_slot : object_slot_index cl.
 
   Local Definition object_slot cl :=
@@ -104,7 +107,7 @@ Section JudgementCombinatorics.
        family_element :=
          (fun slot =>
             match slot with
-            | the_boundary_slot slot' => object_boundary_slot cl slot'
+            | the_object_boundary_slot slot' => object_boundary_slot cl slot'
             | the_head_slot => cl
             end)
     |}.
@@ -121,6 +124,44 @@ Section JudgementCombinatorics.
            object_slot cl
      end.
   (* NOTE: the order of slots for term judgements follows “dependency order” — later slots are (morally) dependent on earlier ones, so the type comes before the term.  However, the functions in section [Judgement_Notations] below follow standard written order, so the term comes before the type. *)
+
+  Definition the_boundary_slot {jf : form}
+    : Family.map (boundary_slot jf) (slot jf).
+  Proof.
+    simple refine (_;_).
+    - destruct jf as [cl_ob | cl_eq].
+      + exact (the_object_boundary_slot cl_ob).
+      + exact idmap.
+    - destruct jf; intros; apply idpath.
+  Defined.
+
+  Definition boundary_slot_from_object_boundary_slot {jf : form}
+    : Family.map (object_boundary_slot (class_of jf)) (boundary_slot jf).
+  Proof.
+    simple refine (_;_).
+    - destruct jf as [cl_ob | cl_eq].
+      + exact idmap.
+      + apply the_equality_boundary_slot.
+    - destruct jf; intros; apply idpath.
+  Defined.
+
+  Definition the_head_slot_from_is_object
+      {jf : form} (jf_obj : is_object jf)
+    : slot jf.
+  Proof.
+    destruct jf.
+    - apply the_head_slot.
+    - destruct jf_obj.
+  Defined.
+
+  Definition class_of_head_slot_from_is_object
+      {jf : form} (jf_obj : is_object jf)
+    : slot jf (the_head_slot_from_is_object jf_obj) = class_of jf.
+  Proof.
+    destruct jf.
+    - apply idpath.
+    - destruct jf_obj.
+  Defined.
 
 End JudgementCombinatorics.
 
@@ -154,6 +195,16 @@ Section Judgements.
   Arguments form_of_judgement {_} _.
   Arguments judgement_expression {_} _.
 
+  Local Definition head {γ}
+      (J : hypothetical_judgement γ)
+      (J_obj : is_object (form_of_judgement J))
+    : raw_expression Σ (class_of (form_of_judgement J)) γ.
+  Proof.
+    refine (transport (fun cl => raw_expression _ cl _) _ _).
+    - apply (class_of_head_slot_from_is_object J_obj).
+    - apply J.
+  Defined.
+
   Local Record boundary : Type
   := { context_of_boundary : raw_context Σ
      ; hypothetical_part_of_boundary
@@ -172,7 +223,7 @@ Section Judgements.
       (head : is_object jf -> raw_expression Σ (class_of jf) γ)
     : hypothetical_judgement_expressions jf γ.
   Proof.
-    destruct jf as [ ocl | ecl ].
+    destruct jf.
     - (* case: object judgement *)
       intros [ i | ].
       + apply bdry.
@@ -186,10 +237,8 @@ Section Judgements.
     : hypothetical_boundary γ.
   Proof.
     exists (form_of_judgement J).
-    intros i. destruct J as [jf j].
-      destruct jf as [ ob_jf | eq_jf ].
-      + exact (j (the_boundary_slot _ i)).
-      + exact (j i).
+    intros i. destruct J as [[jf_ob | jf_eq] j];
+      exact (j (the_boundary_slot i)).
   Defined.
   
   Definition boundary_of_judgement
@@ -205,6 +254,7 @@ Arguments Build_hypothetical_boundary {_ _ _} _ _.
 Arguments form_of_boundary {_ _ _} _. 
 Arguments Build_hypothetical_judgement {_ _ _} _ _.
 Arguments form_of_judgement {_ _ _} _. 
+Arguments head {_ _ _} _ _.
 Arguments Build_boundary {_ _} _ _. 
 Arguments context_of_boundary {_ _} _. 
 Arguments Build_judgement {_ _} _ _. 
@@ -679,16 +729,6 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
       exists i. apply idpath.
   Defined.
 
-  Local Definition slot_from_boundary
-    {hjf : form}
-    : Family.map (boundary_slot hjf) (slot hjf).
-  Proof.
-    destruct hjf as [ obj_cl | eq_cl ].
-    - exists (the_boundary_slot obj_cl).
-      intros ; apply idpath.
-    - apply Family.idmap.
-  Defined.
-
   Local Definition slot_from_presupposition
     {hjf : form} (i : boundary_slot hjf)
     : Family.map
@@ -696,7 +736,7 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
         (slot hjf).
   Proof.
     eapply Family.compose.
-    - apply slot_from_boundary.
+    - apply the_boundary_slot.
     - apply boundary_slot_from_presupposition.
   Defined.
 
@@ -712,11 +752,6 @@ Section Presuppositions.
       {Σ : signature σ} (B : boundary Σ)
     : family (judgement Σ).
   Proof.
-  (* Note: destructing [jf] once early makes this definition look cleaner.
-
-   However, destructing [jf] as late as possible, and clearing [jb] when
-   possible, gives stronger computational behaviour:
-   it keeps the index set and judgement forms independent of [Σ], [jb]. *)
     simple refine (Build_family _ _ _).
     - exact (boundary_slot (form_of_boundary B)).
     - intros i. exists (context_of_boundary B).

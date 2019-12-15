@@ -132,7 +132,7 @@ Section TypedStructuralRule.
          The first two, we get by the [substitution_apply] rule; the third 
          additionally requires the [term_convert] and [substitution_equal]
          rules. *)
-    - set (A := J (the_boundary_slot class_term the_type_slot)).
+    - set (A := J (the_object_boundary_slot class_term the_type_slot)).
       set (a := J (the_head_slot class_term)).
       recursive_destruct p.
       + (* presup [ Γ |- f^*A type ] *)
