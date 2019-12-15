@@ -67,10 +67,68 @@ the associated congruence rule should be derivable (?admissible). *)
   Definition substitutive (T : flat_type_theory Σ)
     := forall r : T, in_universal_form (T r).
 
-  (* TODO: once defined, upstream to [FlatRule]? *)
-  Definition flat_congruence_rule (R : flat_rule Σ) : flat_rule Σ.
+  (* TODO: upstream to [FlatRule]? *)
+  Definition flat_congruence_rule
+      (R : flat_rule Σ)
+      (R_obj : Judgement.is_object (form_of_judgement (flat_rule_conclusion R)))
+    : flat_rule Σ.
   Proof.
-  Admitted. (* [flat_congruence_rule]: shouldn’t be too much work to define *)
+    assert (inl : (Signature.map
+       (Metavariable.extend Σ (flat_rule_metas R))
+       (Metavariable.extend Σ (flat_rule_metas R + flat_rule_metas R)))).
+    { apply Metavariable.fmap2, Family.inl. }
+    assert (inr : (Signature.map
+       (Metavariable.extend Σ (flat_rule_metas R))
+       (Metavariable.extend Σ (flat_rule_metas R + flat_rule_metas R)))).
+    { apply Metavariable.fmap2, Family.inr. }
+    exists (flat_rule_metas R + flat_rule_metas R).
+    - (* premises *)
+      refine (_ + _ + _).
+      + refine (Family.fmap _ (flat_rule_premise R)).
+        apply Judgement.fmap, inl.
+      + refine (Family.fmap _ (flat_rule_premise R)).
+        apply Judgement.fmap, inr.
+      + exists {p : flat_rule_premise R
+                    & Judgement.is_object
+                        (form_of_judgement (flat_rule_premise R p))}.
+        intros [p p_obj].
+        set (J := flat_rule_premise R p).
+        fold J in p_obj.
+        exists (Context.fmap inl (context_of_judgement J)).
+        exists (form_equality (Judgement.class_of (form_of_judgement J))).
+        intros [ s_bdry | | ].        
+        * (* boundary slot *)
+          apply (Expression.fmap inl).
+          refine (transport (fun cl => raw_expression _ cl _) _ _).
+          2: { exact (J (the_boundary_slot
+                          (boundary_slot_from_object_boundary_slot s_bdry))). }
+          eapply concat. { apply Family.map_commutes. }
+          eapply (Family.map_commutes boundary_slot_from_object_boundary_slot).
+        * (* LHS slot *)
+          apply (Expression.fmap inl).
+          exact (Judgement.head J p_obj).
+        * (* RHS slot *)
+          apply (Expression.fmap inr).
+          exact (Judgement.head J p_obj).
+    - (* conclusion *)
+      set (J := flat_rule_conclusion R).
+      exists (Context.fmap inl (context_of_judgement J)).
+      exists (form_equality (Judgement.class_of (form_of_judgement J))).
+      intros [ s_bdry | | ].        
+      * (* boundary slot *)
+        apply (Expression.fmap inl).
+        refine (transport (fun cl => raw_expression _ cl _) _ _).
+        2: { exact (J (the_boundary_slot
+                         (boundary_slot_from_object_boundary_slot s_bdry))). }
+        eapply concat. { apply Family.map_commutes. }
+        eapply (Family.map_commutes boundary_slot_from_object_boundary_slot).
+      * (* LHS slot *)
+        apply (Expression.fmap inl).
+        exact (Judgement.head J R_obj).
+      * (* RHS slot *)
+        apply (Expression.fmap inr).
+        exact (Judgement.head J R_obj).
+  Defined.
 
   Definition congruous (T : flat_type_theory Σ) : Type.
   Admitted. (* [congruous]: requires definition upstream of _admissibiility_
@@ -699,35 +757,6 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
   Arguments left {_ _ _} _.
   Arguments right {_ _ _} _.
 
-(** If [(f,g)] is a weakly equal pair [Δ -> Γ], and [J] an object judgement
-over [Γ], there is an equality judgement comparing the pullbacks of [J] along
-[f], [g].  E.g. [Γ |- A], this gives [Δ |- f^*A = g^*A]; for [Γ |- a:A], this
-is [Δ |- f^*a = g^*A : f^*A] *)
-  Local Definition substitute_weakly_equal_hypothetical_judgement
-      {T : flat_type_theory Σ}
-      {Δ Γ : raw_context Σ}
-      (fg : weakly_equal_pair T Δ Γ)
-      (J : hypothetical_judgement Σ Γ)
-      (J_obj : Judgement.is_object (form_of_judgement J))
-    : hypothetical_judgement Σ Δ.
-  Proof.
-    exists (form_equality (Judgement.class_of (form_of_judgement J))).
-    intros [ s_bdry | | ].
-    - (* boundary slot *)
-      apply (substitute (left fg)).
-      refine (transport (fun cl => raw_expression _ cl _) _ _).
-      2: { exact (J (the_boundary_slot
-                    (boundary_slot_from_object_boundary_slot s_bdry))). }
-      eapply concat. { apply Family.map_commutes. }
-      eapply (Family.map_commutes boundary_slot_from_object_boundary_slot).
-    - (* LHS slot *)
-      apply (substitute (left fg)).
-      exact (Judgement.head J J_obj).
-    - (* RHS slot *)
-      apply (substitute (right fg)).
-      exact (Judgement.head J J_obj).
-  Defined.
-
   (** Given a judgement [ Γ |- J ], and a weakly equal pair [ f, g : Γ' -> Γ ],
    a derivation of [ Γ |- J ] yields derivations of two or possibly three
    judgements over [Γ']:
@@ -763,8 +792,9 @@ is [Δ |- f^*a = g^*A : f^*A] *)
            (hypothetical_part J))
      + { J_obj : Judgement.is_object (form_of_judgement J)
        & hypothetical_part J'
-         = substitute_weakly_equal_hypothetical_judgement
-           (weakly_equal_pair_of_judgement_map)
+         = substitute_equal_hypothetical_judgement
+           (left weakly_equal_pair_of_judgement_map)
+           (right weakly_equal_pair_of_judgement_map)
            (hypothetical_part J)
            J_obj }
      }.

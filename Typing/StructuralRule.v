@@ -124,6 +124,7 @@ Defined.
   --------------------
   Γ' |- f^*J = g^*J  [ over f* of boundary of J ]
  *)
+(* TODO: perhaps refactor to use [substitute_equal_hypothetical_judgement]? *)
 Definition subst_equal_instance : Closure.system (judgement Σ).
 Proof.
   exists {   Γ : raw_context Σ

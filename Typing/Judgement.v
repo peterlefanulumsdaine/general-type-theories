@@ -1000,6 +1000,34 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
     apply path_forall; intros i; apply rename_substitute.
   Defined.
 
+(** If [f g] are two raw context maps [Δ -> Γ], and [J] an object judgement
+over [Γ], there is an equality judgement comparing the pullbacks of [J] along
+[f], [g].  E.g. [Γ |- A], this gives [Δ |- f^*A = g^*A]; for [Γ |- a:A], this
+is [Δ |- f^*a = g^*A : f^*A] *)
+(* TODO: consider naming! *)
+  Definition substitute_equal_hypothetical_judgement
+      {δ γ} (f g : raw_context_map Σ δ γ)
+      (J : hypothetical_judgement Σ γ)
+      (J_obj : is_object (form_of_judgement J))
+    : hypothetical_judgement Σ δ.
+  Proof.
+    exists (form_equality (class_of (form_of_judgement J))).
+    intros [ s_bdry | | ].
+    - (* boundary slot *)
+      apply (substitute f).
+      refine (transport (fun cl => raw_expression _ cl _) _ _).
+      2: { exact (J (the_boundary_slot
+                    (boundary_slot_from_object_boundary_slot s_bdry))). }
+      eapply concat. { apply Family.map_commutes. }
+      eapply (Family.map_commutes boundary_slot_from_object_boundary_slot).
+    - (* LHS slot *)
+      apply (substitute f).
+      exact (head J J_obj).
+    - (* RHS slot *)
+      apply (substitute g).
+      exact (head J J_obj).
+  Defined.
+
 End Substitution.
 
 Section Instantiation.
