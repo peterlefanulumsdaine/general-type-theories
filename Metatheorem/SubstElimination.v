@@ -828,12 +828,21 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
   
   Theorem substitute_equal_derivation
       {T : flat_type_theory Σ}
-      (T_sub : substitutive T) (T_cong : congruous T T_sub)
+      (T_sub : substitutive T) (T_cong : congruous T)
       {J} {J'} (f : weakly_equal_judgement_map T J' J)
       (d_J : subst_free_derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J'.
   Proof.
-    (* Sketch proof: should be analogous in organisation to proofs of [rename_derivation], [substitute_derivation] above, including a roughly analogous series of lemmas to handle the flat rule cases. *)
+    (* Sketch proof: should be roughly analogous in organisation to proofs of [rename_derivation], [substitute_derivation] above. 
+
+  The sequence of lemmas to handle the flat rule cases should show:
+
+  - given a weakly equal judgement map (f,g) from J' into the conclusion of a flat rule instance I_* R, we get two or three new instantiations: two pulled back instantiations f^*I, g^*I for R, and if R was an object rule, an instantiation (f,g)^*I of the congruence rule of R;
+
+  - the three possible things that J can be are precisely, up to equiv-renaming, the conclusions of these three new rule instances;
+
+  - all of the premises of these new rule instances have weakly equal judgement maps to the premises of the original instance of R.
+   *)
   Admitted. (* [substitute_equal_derivation]: substantial amount of work to do. *)
 
 End Equality_Substitution.
@@ -844,7 +853,7 @@ Section Subst_Elimination.
 
   Theorem subst_elimination
       {T : flat_type_theory Σ}
-      (T_sub : substitutive T) (T_cong : congruous T T_sub)
+      (T_sub : substitutive T) (T_cong : congruous T)
       {J} (d : FlatTypeTheory.derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J.
   Proof.
