@@ -131,8 +131,20 @@ the associated congruence rule should be derivable (?admissible). *)
   Defined.
 
   Definition congruous (T : flat_type_theory Σ) : Type.
-  Admitted. (* [congruous]: requires definition upstream of _admissibiility_
-             of a rule over a closure system/flat type theory. *)
+    (*
+  Choosing the right definition here is a bit subtly!  Roughly, we want something like “for each object rule of T, its congruence rule is derivable over T”, or perhaps “admissible over T”, or simply “…in T”.
+
+  “…in T” is simplest, but stronger than ideal; there are multiple formulations of the rules someone might take, and the below argument should apply for any of them.
+
+  “…derivable over T” seems nicest, but our primary reading of “derivable” for flat rules, as “derivable in its metavariable extension”, is problematic because to use it we’ll need to be able to instantiate derivations, which we can only do _either_ by using the subst rules (which for the present metatheorems, we of course want to avoid), else by relying on their admissibility (which requires assuming all rules are in universal form, which should(?) be orthogonal to meaningfulness of a notion of congruence)
+
+  “…admissible over T”: would only allow substitution-eq elimination in _closed_ derivations, which is weaker than should hold; and also this is weaker than we want;
+
+  How about: “every _instance_ or R is subst-free derivable over T”?  This is a slightly ad hoc notion of derivability; compared to the standard notion, it’s roughly what you get from ordinary derivability, but assuming instantiability of derivations.  But it’s not very well-behaved, eg not preserved by translation of T to extended signatures.
+
+  I guess: we really do want “derivable in the metavariable extension” (that’s stable under translation, and is also how one shows it in practice); and we should only _expect_ a subst-free version to be meaningful when T is substitutive, so for the subst-free version it’s OK that it’ll only be meaningful in that case; for non-substitutive T, we can have (elsewhere) a version using subst-less derivations. Indeed, it would suffice here for the derivations to be required just (subst-equal)-free; we will know we can eliminate (subst-apply) already.
+     *)
+  Admitted. (* [congruous]: requires a bit of thought re admissibility, derivability, etc. *)
 
 End Flat_Conditions.
 
