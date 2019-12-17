@@ -32,13 +32,22 @@ admissible. *)
 
 Section Subst_Free_Derivations.
 
-  Context {σ} {Σ : signature σ}.
+  Context {σ : shape_system}.
 
-  Definition closure_system_without_subst (T : flat_type_theory Σ)
-    := structural_rule_without_subst Σ + Family.bind T FlatRule.closure_system.
+  Definition closure_system_without_subst
+      {Σ : signature σ} (T : flat_type_theory Σ)
+  := structural_rule_without_subst Σ + Family.bind T FlatRule.closure_system.
 
-  Definition subst_free_derivation (T : flat_type_theory Σ)
-    := derivation (closure_system_without_subst T).
+  Definition subst_free_derivation
+      {Σ : signature σ} (T : flat_type_theory Σ)
+  := derivation (closure_system_without_subst T).
+
+  Definition subst_free_rule_derivation {Σ : signature σ}
+    (T : flat_type_theory Σ) (R : flat_rule Σ)
+  := subst_free_derivation
+      (FlatTypeTheory.fmap Metavariable.include_symbol T)
+      (flat_rule_premise R)
+      (flat_rule_conclusion R).
 
   (* TODO: we will probably need to generalise various lemmas from ordinary to
   subst-free derivations.  Hopefully this can be done, as far as possible, by
@@ -130,21 +139,39 @@ the associated congruence rule should be derivable (?admissible). *)
         exact (Judgement.head J R_obj).
   Defined.
 
-  Definition congruous (T : flat_type_theory Σ) : Type.
-    (*
-  Choosing the right definition here is a bit subtly!  Roughly, we want something like “for each object rule of T, its congruence rule is derivable over T”, or perhaps “admissible over T”, or simply “…in T”.
+  Local Definition congruous (T : flat_type_theory Σ) (T_sub : substitutive T)
+    : Type.
+  (* Note: the unused [T_sub] parameter is deliberate; see discussion below. *)
+  Proof.
+    refine
+      (forall (r:T)
+              (r_obj : Judgement.is_object
+                         (form_of_judgement (flat_rule_conclusion (T r)))), _).
+    admit.
+  (*
+  Choosing the right definition here is rather subtle!  Roughly, we want something like “for each object rule of T, its congruence rule is derivable over T”, or perhaps “admissible over T”, or simply “…in T”.
 
-  “…in T” is simplest, but stronger than ideal; there are multiple formulations of the rules someone might take, and the below argument should apply for any of them.
+  “…in T” is simplest, but stronger than ideal; there are alternative formulations of the congruence rules someone might take, and the theorems we give should work for theories using any of them.
 
-  “…derivable over T” seems nicest, but our primary reading of “derivable” for flat rules, as “derivable in its metavariable extension”, is problematic because to use it we’ll need to be able to instantiate derivations, which we can only do _either_ by using the subst rules (which for the present metatheorems, we of course want to avoid), else by relying on their admissibility (which requires assuming all rules are in universal form, which should(?) be orthogonal to meaningfulness of a notion of congruence)
+  “…derivable over T” seems nicest, but our primary reading of “derivable” for flat rules, as “derivable in its metavariable extension”, is problematic, since giving such derivations will almost always need the subst rules (both subst-apply and subst-eq!), to use the metavariables applied to arguments other than their variables.
 
   “…admissible over T”: would only allow substitution-eq elimination in _closed_ derivations, which is weaker than should hold; and also this is weaker than we want;
 
   How about: “every _instance_ or R is subst-free derivable over T”?  This is a slightly ad hoc notion of derivability; compared to the standard notion, it’s roughly what you get from ordinary derivability, but assuming instantiability of derivations.  But it’s not very well-behaved, eg not preserved by translation of T to extended signatures.
 
-  I guess: we really do want “derivable in the metavariable extension” (that’s stable under translation, and is also how one shows it in practice); and we should only _expect_ a subst-free version to be meaningful when T is substitutive, so for the subst-free version it’s OK that it’ll only be meaningful in that case; for non-substitutive T, we can have (elsewhere) a version using subst-less derivations. Indeed, it would suffice here for the derivations to be required just (subst-equal)-free; we will know we can eliminate (subst-apply) already.
-     *)
-  Admitted. (* [congruous]: requires a bit of thought re admissibility, derivability, etc. *)
+  So I guess: we want to say something like “derivable in the metavariable extension, using subst and subst-apply _only at the premises_”. That’s stable under translation, and is also how one shows it in practice.  But how can one say it??
+
+  First idea: just add all substitution instances of the rule’s premises as extra premises.  Problem: we don’t want to add all instances, just the well-typed ones (or perhaps weakly-well-typed), so we need to somehow add _rules_ not premises.
+
+  Second idea: go back to the old idea of converting premises to rules, i.e. if the rule had a premise like [ x:A |- B(x) type ], then in the metavariable extension we add two extra rules
+[ |- a:A // |- B(a) type ] and [ |- a = a' : A // |- B(a) = B(a') type ].
+
+  This… should work??  When we instantiate such a derivation at an instantiation [I], we will have to do something clever when those rules are used.  We’ll need to know, roughly, that for the instantiation of each premise of the rule, not just that premise itself but _all further well-typed substitutions/subst-equals_ of it hold?  Something like that.  It feels… right, it feels like it should be right, since that’ll hold in the inductive proof of subst-equal elimination, but the organisation requires some thought.
+
+  But still, this second idea is rather complicated.
+
+  Third idea, less general but simpler for now: just say we actually have _the_ congruence rules for all the flat rules. *)
+  Admitted. (* [congruous]: actually needs further thought! *)
 
 End Flat_Conditions.
 
@@ -814,7 +841,7 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
   
   Theorem substitute_equal_derivation
       {T : flat_type_theory Σ}
-      (T_sub : substitutive T) (T_cong : congruous T)
+      (T_sub : substitutive T) (T_cong : congruous T T_sub)
       {J} {J'} (f : weakly_equal_judgement_map T J' J)
       (d_J : subst_free_derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J'.
@@ -830,7 +857,7 @@ Section Subst_Elimination.
 
   Theorem subst_elimination
       {T : flat_type_theory Σ}
-      (T_sub : substitutive T) (T_cong : congruous T)
+      (T_sub : substitutive T) (T_cong : congruous T T_sub)
       {J} (d : FlatTypeTheory.derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J.
   Proof.
