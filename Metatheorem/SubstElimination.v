@@ -139,39 +139,26 @@ the associated congruence rule should be derivable (?admissible). *)
         exact (Judgement.head J R_obj).
   Defined.
 
-  Local Definition congruous (T : flat_type_theory Σ) (T_sub : substitutive T)
-    : Type.
-  (* Note: the unused [T_sub] parameter is deliberate; see discussion below. *)
-  Proof.
-    refine
-      (forall (r:T)
-              (r_obj : Judgement.is_object
-                         (form_of_judgement (flat_rule_conclusion (T r)))), _).
-    admit.
-  (*
-  Choosing the right definition here is rather subtle!  Roughly, we want something like “for each object rule of T, its congruence rule is derivable over T”, or perhaps “admissible over T”, or simply “…in T”.
+  Local Definition congruous (T : flat_type_theory Σ)
+    : Type
+  := Family.map
+    (Family.bind T
+       (fun R => {| family_element R_obj := flat_congruence_rule R R_obj |}))
+    T.
+  (** More readably: [T] is congruous if for each of its object rules, it also contains the associated congruence rule.
 
-  “…in T” is simplest, but stronger than ideal; there are alternative formulations of the congruence rules someone might take, and the theorems we give should work for theories using any of them.
+  This is not as general as would ideally be nice: ideally we would say something like “for each object rule, the associated congruence rule is _derivable_ over T”. Unfortunately, the obvious concise ways of saying that all seem to be wrong.  
 
-  “…derivable over T” seems nicest, but our primary reading of “derivable” for flat rules, as “derivable in its metavariable extension”, is problematic, since giving such derivations will almost always need the subst rules (both subst-apply and subst-eq!), to use the metavariables applied to arguments other than their variables.
+  For isntance, our main sense of derivable says that the rule itself is derivable over the translation of T to the metavariable extension; this is bad for two reasons.  First, applying this notion relies on being able to instantiate derivations, which requires either the subst-apply rule or a subst-elimination principle, which will not yet be available at the point we need this.  Secondly, in examples, giving derivations with non-trivial hypotheses (as one does for a congruence rule with binders) may genuinely require use of the subst-apply and subst-eq structural rules. 
 
-  “…admissible over T”: would only allow substitution-eq elimination in _closed_ derivations, which is weaker than should hold; and also this is weaker than we want;
+  An alternative would be to just say that the congruence rule should be _admissible_ over T, or that each instance of it should be derivable.  These would work for the present theorems, but are a bit unnatural; e.g. they’re not preserved under translation or extension of theories.
 
-  How about: “every _instance_ or R is subst-free derivable over T”?  This is a slightly ad hoc notion of derivability; compared to the standard notion, it’s roughly what you get from ordinary derivability, but assuming instantiability of derivations.  But it’s not very well-behaved, eg not preserved by translation of T to extended signatures.
-
-  So I guess: we want to say something like “derivable in the metavariable extension, using subst and subst-apply _only at the premises_”. That’s stable under translation, and is also how one shows it in practice.  But how can one say it??
-
-  First idea: just add all substitution instances of the rule’s premises as extra premises.  Problem: we don’t want to add all instances, just the well-typed ones (or perhaps weakly-well-typed), so we need to somehow add _rules_ not premises.
-
-  Second idea: go back to the old idea of converting premises to rules, i.e. if the rule had a premise like [ x:A |- B(x) type ], then in the metavariable extension we add two extra rules
+  The best notion is perhaps obtained by re-defining “derivable rule” to fit the subst-free setting.  For this, we say “the rule’s conclusion should be derivable in the metavariable extension” as before, but instead of saying “…over T, from the rule’s premises”, we convert the premises into extra rules; a premise like [ x:A |- B(x) type ] becomes a pair of rules
 [ |- a:A // |- B(a) type ] and [ |- a = a' : A // |- B(a) = B(a') type ].
 
-  This… should work??  When we instantiate such a derivation at an instantiation [I], we will have to do something clever when those rules are used.  We’ll need to know, roughly, that for the instantiation of each premise of the rule, not just that premise itself but _all further well-typed substitutions/subst-equals_ of it hold?  Something like that.  It feels… right, it feels like it should be right, since that’ll hold in the inductive proof of subst-equal elimination, but the organisation requires some thought.
+  With “derivable rule” thus re-defined, taking “congruous” to be “each associated congruence rule is derivable over T” should now work well: it should suffice for the theorems of this file, and be applicable to natural examples (i.e. theories set up using alternative resonable formulations of congruence rules). More generally, this seems to be the right notion of “derivable rule” in the subst-free setting, so would be good to have in general.
 
-  But still, this second idea is rather complicated.
-
-  Third idea, less general but simpler for now: just say we actually have _the_ congruence rules for all the flat rules. *)
-  Admitted. (* [congruous]: actually needs further thought! *)
+  However, it would take a lot of work to state this and set up the infrastructure to work with it.  So for now we stick with this simpler and cruder notion of congruousness: T should literally contain all its associated congruence rules. *)
 
 End Flat_Conditions.
 
