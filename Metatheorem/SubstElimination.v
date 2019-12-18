@@ -825,6 +825,113 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
            J_obj }
      }.
 
+  Section Flat_Rule_Substitute_Equal_Instantiation.
+    (** Analogously to section [Flat_Rule_Susbtitute_Instantiation],
+     the lemmas of this section build up what’s needed for substituting
+     flat-rule steps in derivations along weakly equal pairs:
+
+    - given a weakly equal judgement map (f,g) from J' into the conclusion of a flat rule instance I_* R, we get two or three new instantiations: two pulled back instantiations f^*I, g^*I for R, and if R was an object rule, an instantiation (f,g)^*I of the congruence rule of R;
+
+    - the three possible things that J can be are precisely, up to equiv-renaming, the conclusions of these three new rule instances;
+
+    - all of the premises of these new rule instances have weakly equal judgement maps to the premises of the original instance of R.
+
+     The cases for non-flat structural rules amount to showing analogous things for their closure conditions. *)
+
+    Context
+      {T : flat_type_theory Σ}
+      (T_sub : substitutive T) (T_cong : congruous T)
+      {R : flat_rule Σ} (R_univ : in_universal_form R)
+      {Γ : raw_context Σ}
+      (I : Metavariable.instantiation (flat_rule_metas R) Σ Γ)
+      (J := Judgement.instantiate Γ I (flat_rule_conclusion R))
+      {J'} (fg : weakly_equal_judgement_map T J' J)
+      (Γ' := context_of_judgement J')
+      (is_obj_R
+        := Judgement.is_object (form_of_judgement (flat_rule_conclusion R))).
+
+  (* Since these lemmas are for internal use only, and their names are getting
+  very long, we for once relax our prohibition on abbreviations *)
+    Local Definition substeq_flat_rule_instantiation_map
+      : weakly_equal_pair T Γ' Γ.
+    Proof.
+      (*
+      simple refine (compose_renaming_weakly_typed_context_map _ _ f).
+      { assumption. }
+      apply typed_renaming_to_instantiate_context.
+      *)
+    Admitted.
+
+    Local Definition substeq_flat_rule_rule
+      : flat_rule Σ.
+    Proof.
+      (* R or its congruence rule, depending on what fg tells us the hypothetical part of J' is *)
+    Admitted.
+
+    Local Definition substeq_flat_rule_instantiation_instantiation
+      : Metavariable.instantiation
+          (flat_rule_metas substeq_flat_rule_rule) Σ Γ'.
+    Proof.
+      (*
+      exact (substitute_instantiation
+               substeq_flat_rule_instantiation_map
+               I).
+       *)
+    Admitted.
+    
+    Local Lemma substeq_flat_rule_instantiation_conclusion
+      : judgement_renaming
+          (Judgement.instantiate Γ'
+            (substeq_flat_rule_instantiation_instantiation)
+            (flat_rule_conclusion substeq_flat_rule_rule))
+          J'.
+    (* NOTE: and the renaming is in each case an equivalence, though we don’t
+       currently need that. *)
+    Proof.
+      (*
+      simple refine (judgement_renaming_inverse _ _ _ _).
+      1: exists (typed_renaming_to_instantiate_context _ _ _).
+      2: { apply coproduct_empty_inj1_is_equiv, R_univ. }
+      (* The following can again be seen as a naturality calculation, 
+       involving naturality of [typed_renaming_to_instantiate_context] w.r.t.
+       weakly typed context maps. *)
+      eapply concat. 2: { apply inverse,
+                  instantiate_hypothetical_judgement_substitute_instantiation. }
+      eapply concat.
+        { apply ap, inverse, (weakly_typed_judgement_map_hypothetical_part _ _ _ f). }
+      eapply concat. { apply rename_substitute_hypothetical_judgement. }
+      apply (ap_1back substitute_hypothetical_judgement), path_forall.
+      refine (coproduct_rect shape_is_sum _ _ _).
+      2: { refine (empty_rect _ _ _). apply R_univ. }
+      intros x1.
+      unfold Substitution.extend; repeat rewrite coproduct_comp_inj1.
+      apply idpath.
+      *)
+    Admitted.
+
+    Local Lemma substeq_flat_rule_instantiation_premise
+          (p : flat_rule_premise substeq_flat_rule_rule)
+      : flat_rule_premise R.
+    Proof.
+    Admitted.
+
+    Local Lemma substeq_flat_rule_instantiation_premise_map
+          (p : flat_rule_premise substeq_flat_rule_rule)
+      : weakly_equal_judgement_map T
+          (Judgement.instantiate Γ'
+                  substeq_flat_rule_instantiation_instantiation
+                  (flat_rule_premise _ p))
+          (Judgement.instantiate Γ I
+            (flat_rule_premise _ (substeq_flat_rule_instantiation_premise p))).
+    Proof.
+      (*
+      apply instantiate_judgement_over_weakly_typed_context_map.
+      assumption.
+      *)
+    Admitted.
+
+  End Flat_Rule_Substitute_Equal_Instantiation.
+
   
   Theorem substitute_equal_derivation
       {T : flat_type_theory Σ}
