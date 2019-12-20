@@ -50,8 +50,8 @@ Section WellTypedRule.
   (* TODO: consider naming.  Currently a bit out of step with our general convention of using e.g. [derivation] not [is_derivable]; but [derivation] would be misleading here, since this is the type of derivations showing that the rule is well-formed, not “derivations of the rule” in the usual sense of derivations showing it’s a derivable rule. *) 
   Local Definition is_well_typed
       {Σ : signature σ} (T : flat_type_theory Σ)
-      {a} {hjf_concl}
-      (R : rule Σ a hjf_concl)
+      {a} {jf_concl}
+      (R : rule Σ a jf_concl)
     : Type.
   Proof.
     refine (is_well_typed_algebraic_extension T (rule_premise R) * _).
@@ -112,7 +112,7 @@ Section Functoriality.
   (** Well-typedness is _covariant_ in the signature *)
   Local Definition fmap_is_well_typed
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {a} {hjf_concl} {R : rule Σ a hjf_concl}
+      {a} {jf_concl} {R : rule Σ a jf_concl}
       {T} (D : is_well_typed T R)
     : is_well_typed (FlatTypeTheory.fmap f T) (RawRule.fmap f R).
   Proof.
@@ -168,7 +168,7 @@ Section Functoriality.
   (* TODO: consider naming! *)
   Definition fmap_is_well_typed_in_theory {Σ : signature σ}
       {T T' : flat_type_theory Σ} (f : FlatTypeTheory.map T T')
-      {a} {hjf_concl} {R : rule Σ a hjf_concl}
+      {a} {jf_concl} {R : rule Σ a jf_concl}
     : is_well_typed T R -> is_well_typed T' R.
   Proof.
     intros R_WT.
@@ -187,18 +187,18 @@ Section Flattening.
 
   Definition weakly_presuppositive_flatten
       {Σ : signature σ} {T : flat_type_theory Σ}
-      {a} {hjf_concl}
-      {R : rule Σ a hjf_concl}
+      {a} {jf_concl}
+      {R : rule Σ a jf_concl}
       (T_WT : is_well_typed T R)
-      (Sr : Judgement.is_object hjf_concl ->
+      (Sr : Judgement.is_object jf_concl ->
         {S : Σ.(family_index) &
-        (symbol_arity S = a) * (symbol_class S = Judgement.class_of hjf_concl)})
+        (symbol_arity S = a) * (symbol_class S = Judgement.class_of jf_concl)})
     : TypedFlatRule.weakly_presuppositive T (RawRule.flatten R Sr).
   Proof.
     apply snd in T_WT.
     intros i.
     refine (Closure.graft' (T_WT i) _ _).
-    - recursive_destruct hjf_concl; apply idpath.
+    - recursive_destruct jf_concl; apply idpath.
     - clear i. intros i.
       exact (Closure.hypothesis _ (_+_) (inl i)).
   Qed.
@@ -213,11 +213,11 @@ Section Congruence_Rules.
 
   Definition congruence_rule_is_well_typed
       {Σ : signature σ} {T : flat_type_theory Σ}
-      {a} {hjf_concl} {R : rule Σ a hjf_concl} (R_WT : is_well_typed T R)
-      (R_is_ob : Judgement.is_object hjf_concl)
+      {a} {jf_concl} {R : rule Σ a jf_concl} (R_WT : is_well_typed T R)
+      (R_is_ob : Judgement.is_object jf_concl)
       (S : Σ)
       (e_a : symbol_arity S = a)
-      (e_cl : symbol_class S = Judgement.class_of hjf_concl)
+      (e_cl : symbol_class S = Judgement.class_of jf_concl)
     : is_well_typed T (congruence_rule R R_is_ob S e_a e_cl).
   Proof.
   Admitted. (* [congruence_rule_is_well_typed]: large, key stress test of functoriality framework for derivability *)

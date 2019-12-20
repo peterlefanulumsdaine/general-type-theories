@@ -47,7 +47,7 @@ Record rule
   {Σ : signature σ}
   {a : arity σ}
     (* arity listing the _object_ premises of the rule *)
-  {hjf_conclusion : Judgement.form}
+  {jf_conclusion : Judgement.form}
     (* judgement form of the conclusion *)
 :=
   {
@@ -55,7 +55,7 @@ Record rule
   ; rule_conclusion_hypothetical_boundary_expressions
       : Judgement.hypothetical_boundary_expressions
           (Metavariable.extend Σ a)
-          hjf_conclusion
+          jf_conclusion
           (shape_empty σ)
   }.
 
@@ -72,13 +72,13 @@ Record rule
   Arguments rule _ _ _ : clear implicits.
 
   Local Definition conclusion_boundary_expressions
-        {Σ} {a} {hjf} (R : rule Σ a hjf)
+        {Σ} {a} {jf} (R : rule Σ a jf)
     : hypothetical_boundary_expressions
-        (Metavariable.extend Σ a) hjf (shape_empty σ)
+        (Metavariable.extend Σ a) jf (shape_empty σ)
   := rule_conclusion_hypothetical_boundary_expressions R.
 
   Local Lemma eq 
-      {Σ} {a} {hjf_concl} (R R' : rule Σ a hjf_concl)
+      {Σ} {a} {jf_concl} (R R' : rule Σ a jf_concl)
       (e_prem : rule_premise R = rule_premise R')
       (e_concl : rule_conclusion_hypothetical_boundary_expressions R
                  = rule_conclusion_hypothetical_boundary_expressions R')
@@ -91,11 +91,11 @@ Record rule
 
   Local Definition fmap
       {Σ} {Σ'} (f : Signature.map Σ Σ')
-      {a} {hjf_concl}
-      (R : rule Σ a hjf_concl)
-    : rule Σ' a hjf_concl.
+      {a} {jf_concl}
+      (R : rule Σ a jf_concl)
+    : rule Σ' a jf_concl.
   Proof.
-    simple refine (Build_rule Σ' a hjf_concl _ _).
+    simple refine (Build_rule Σ' a jf_concl _ _).
     - (* premises *)
       exact (AlgebraicExtension.fmap f (rule_premise R)).
     - (* conclusion *)
@@ -108,7 +108,7 @@ Record rule
   Context `{Funext}.
 
   Local Definition fmap_idmap
-      {Σ} {a} {hjf_concl} (R : rule Σ a hjf_concl)
+      {Σ} {a} {jf_concl} (R : rule Σ a jf_concl)
     : fmap (Signature.idmap _) R = R.
   Proof.
     apply eq.
@@ -122,7 +122,7 @@ Record rule
 
   Local Definition fmap_compose
       {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
-      {a} {hjf_concl} (R : rule Σ a hjf_concl)
+      {a} {jf_concl} (R : rule Σ a jf_concl)
     : fmap (Signature.compose f' f) R = fmap f' (fmap f R).
   Proof.
     apply eq.
@@ -136,7 +136,7 @@ Record rule
 
   Local Definition fmap_fmap
       {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
-      {a} {hjf_concl} (R : rule Σ a hjf_concl)
+      {a} {jf_concl} (R : rule Σ a jf_concl)
     : fmap f' (fmap f R) = fmap (Signature.compose f' f) R.
   Proof.
     apply inverse, fmap_compose.
@@ -144,7 +144,7 @@ Record rule
 
   Local Lemma conclusion_boundary_expressions_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {a} {hjf_concl} (R : rule Σ a hjf_concl)
+      {a} {jf_concl} (R : rule Σ a jf_concl)
     : conclusion_boundary_expressions (fmap f R)
       = fmap_hypothetical_boundary_expressions (Metavariable.fmap1 f a)
                                         (conclusion_boundary_expressions R).
@@ -154,7 +154,7 @@ Record rule
 
   (** Auxiliary access functions *)
   Local Definition conclusion_hypothetical_boundary
-        {Σ} {a} {hjf} (R : rule Σ a hjf)
+        {Σ} {a} {jf} (R : rule Σ a jf)
     : hypothetical_boundary
         (Metavariable.extend Σ a) (shape_empty σ)
   := Build_hypothetical_boundary _
@@ -162,7 +162,7 @@ Record rule
 
   Local Definition conclusion_hypothetical_boundary_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {a} {hjf_concl} (R : rule Σ a hjf_concl)
+      {a} {jf_concl} (R : rule Σ a jf_concl)
     : conclusion_hypothetical_boundary (fmap f R)
       = fmap_hypothetical_boundary (Metavariable.fmap1 f a)
                                         (conclusion_hypothetical_boundary R).
@@ -171,13 +171,13 @@ Record rule
   Defined.
 
   Local Definition conclusion_boundary
-        {Σ} {a} {hjf} (R : rule Σ a hjf)
+        {Σ} {a} {jf} (R : rule Σ a jf)
     : boundary (Metavariable.extend Σ a)
   := Build_boundary [::] (conclusion_hypothetical_boundary R).
 
   Local Definition conclusion_boundary_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {a} {hjf} (R : rule Σ a hjf)
+      {a} {jf} (R : rule Σ a jf)
     : conclusion_boundary (fmap f R)
       = Judgement.fmap_boundary (Metavariable.fmap1 f a)
                                 (conclusion_boundary R).
@@ -241,18 +241,18 @@ Section Flattening.
   
   (* TODO: consider whether this can be unified with [judgement_of_premise] *)
   Local Definition judgement_of_conclusion
-    {a} {hjf_concl}
-    (R : rule Σ a hjf_concl)
-    (Sr : Judgement.is_object hjf_concl
+    {a} {jf_concl}
+    (R : rule Σ a jf_concl)
+    (Sr : Judgement.is_object jf_concl
           -> { S : Σ & (symbol_arity S = a)
-                       * (symbol_class S = Judgement.class_of hjf_concl) })
+                       * (symbol_class S = Judgement.class_of jf_concl) })
       : judgement (Metavariable.extend Σ a).
   Proof.
-    exists [::], hjf_concl.
+    exists [::], jf_concl.
     apply hypothetical_judgement_expressions_from_boundary_and_head.
     - exact (conclusion_boundary_expressions R).
     - intros H_obj.
-      destruct hjf_concl as [ ocl | ecl ]; simpl in *.
+      destruct jf_concl as [ ocl | ecl ]; simpl in *.
       + (* case: R an object rule *)
         destruct (Sr tt) as [S_R [e_a e_cl]]. clear Sr H_obj.
         destruct e_cl. (* TODO: can we simplify here with [raw_symbol']? *)
@@ -275,11 +275,11 @@ Section Flattening.
   equality-rule; in the case of an object-rule, it requires a symbol of
   appropriate arity to give the object introduced. *)
   Local Definition flatten
-    {a} {hjf_concl}
-    (R : rule Σ a hjf_concl)
-    (SR : Judgement.is_object hjf_concl
+    {a} {jf_concl}
+    (R : rule Σ a jf_concl)
+    (SR : Judgement.is_object jf_concl
         -> { S : Σ & (symbol_arity S = a)
-                     * (symbol_class S = Judgement.class_of hjf_concl) })
+                     * (symbol_class S = Judgement.class_of jf_concl) })
   : flat_rule Σ.
   (* This construction involves essentially two aspects:
 

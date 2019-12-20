@@ -133,7 +133,7 @@ Proof.
     & { g : raw_context_map Σ Γ' Γ
     & { cl : syntactic_class
     & hypothetical_judgement_expressions Σ (form_object cl) Γ}}}}}.
-  intros [Γ [Γ' [f [g [cl hjfi]]]]].
+  intros [Γ [Γ' [f [g [cl J]]]]].
   split.
   (* premises: *)
   - refine (Family.adjoin (_ + _ + _) _).
@@ -157,16 +157,16 @@ Proof.
       * exact (g i).
     (* the target judgement holds over Γ *)
     + exists Γ, (form_object cl).
-      exact hjfi.
+      exact J.
   (* conclusion: *)
   - exists Γ', (form_equality cl).
     intros [i | | ].
     + (* boundary *)
-      exact (substitute f (hjfi (the_object_boundary_slot _ i))).
+      exact (substitute f (J (the_object_boundary_slot _ i))).
     + (* LHS *)
-      exact (substitute f (hjfi (the_head_slot _))).
+      exact (substitute f (J (the_head_slot _))).
     + (* RHS *)
-      exact (substitute g (hjfi (the_head_slot _))).
+      exact (substitute g (J (the_head_slot _))).
 Defined.
 
 Definition substitution_instance : Closure.system (judgement Σ)

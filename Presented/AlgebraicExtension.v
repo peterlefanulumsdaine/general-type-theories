@@ -129,7 +129,7 @@ Local Definition eq `{Funext} {Σ} {a}
        : forall i : ae_premise A,
         rename_hypothetical_boundary_expressions (fe_shape i)
         (fmap_hypothetical_boundary_expressions (fe_signature i)
-        (transport (fun hjf => Judgement.hypothetical_boundary_expressions _ hjf _)
+        (transport (fun jf => Judgement.hypothetical_boundary_expressions _ jf _)
                    (ap fst (Family.map_commutes (eq_premise e_premises) i)^)
         (ae_hypothetical_boundary_expressions A i)))
         = ae_hypothetical_boundary_expressions A' (equiv_premise i))
@@ -376,7 +376,7 @@ Section Simple_Maps.
   ; simple_map_hypothetical_boundary_commutes
     : forall (p : A),
       ae_hypothetical_boundary_expressions A' (simple_map_aux_part p) 
-      = transport (fun hjf => Judgement.hypothetical_boundary_expressions _ hjf _)
+      = transport (fun jf => Judgement.hypothetical_boundary_expressions _ jf _)
                   (simple_map_form_commutes _ _)
        (rename_hypothetical_boundary_expressions (simple_map_premise_shape _)
        (fmap_hypothetical_boundary_expressions

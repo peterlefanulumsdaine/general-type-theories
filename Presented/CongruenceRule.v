@@ -58,7 +58,7 @@ eq_new i   0        0        0        0        i < j
 *)
 
   Local Definition original_constructor_translation
-    {a} {hjf_concl} (R : rule Σ a hjf_concl)
+    {a} {jf_concl} (R : rule Σ a jf_concl)
     (p : (a + a)
          + (ae_equality_premise (rule_premise R)
             + ae_equality_premise (rule_premise R)
@@ -95,13 +95,13 @@ eq_new i   0        0        0        0        i < j
   Defined.
 
   Definition congruence_rule
-    {a} {hjf_concl} (R : rule Σ a hjf_concl)
-    (H : Judgement.is_object hjf_concl)
+    {a} {jf_concl} (R : rule Σ a jf_concl)
+    (H : Judgement.is_object jf_concl)
     (S : Σ)
     (e_a : symbol_arity S = a)
-    (e_cl : symbol_class S = Judgement.class_of hjf_concl)
+    (e_cl : symbol_class S = Judgement.class_of jf_concl)
     : (rule Σ (Family.sum a a)
-                 (form_equality (Judgement.class_of hjf_concl))).
+                 (form_equality (Judgement.class_of jf_concl))).
   Proof.
     (* TODO: refactor the following, to unify it with def of flat congruence
        rules (once given). *)
@@ -158,9 +158,9 @@ eq_new i   0        0        0        0        i < j
       + (* boundary of original conclusion *)
         refine (Expression.fmap _ _).
         * apply Metavariable.fmap2, Family.inl.
-        * destruct hjf_concl as [cl | ?].
+        * destruct jf_concl as [cl | ?].
           -- exact (rule_conclusion_hypothetical_boundary_expressions R i).
-          -- destruct H. (* know [hjf_concl] isn’t an equality judgement *)
+          -- destruct H. (* know [jf_concl] isn’t an equality judgement *)
       + (* LHS of new conclusion *)
         cbn. simple refine (raw_symbol' _ _ _).
         * apply Metavariable.include_symbol, S.

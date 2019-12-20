@@ -88,9 +88,9 @@ Section JudgementCombinatorics.
     |}.
 
   (* Syntactic classes of the slots in the boundary of a hypothetical judgement *)
-  Local Definition boundary_slot (hjf : form)
+  Local Definition boundary_slot (jf : form)
     : family syntactic_class
-  := match hjf with
+  := match jf with
        (* object judgement boundary is the boundary of the object *)
        | form_object cl => object_boundary_slot cl
        (* equality judgement boundary: a boundary of the corresponding
@@ -113,9 +113,9 @@ Section JudgementCombinatorics.
     |}.
 
   (* Syntactic classes of the slots in a hypothetical judgement *)
-  Local Definition slot (hjf : form)
+  Local Definition slot (jf : form)
     : family syntactic_class
-  := match hjf with
+  := match jf with
        (* Equality case: boundary is everything *)
        | form_equality cl =>
            boundary_slot (form_equality cl)
@@ -456,7 +456,7 @@ Section JudgementFmap.
         (hypothetical_judgement_expressions_from_boundary_and_head _ B e)
       = hypothetical_judgement_expressions_from_boundary_and_head _
           (fmap_hypothetical_boundary_expressions f B)
-          (fun hjf_ob => Expression.fmap f (e hjf_ob)).
+          (fun jf_ob => Expression.fmap f (e jf_ob)).
   Proof.
     destruct jf as [ocl | ecl].
     - apply path_forall; intros [ ? | ]; apply idpath.
@@ -565,13 +565,13 @@ In lieu of that, we give explicit lemmas for judgement equality:
   difference, [eq_by_eta] may be cleaner. *)
   Local Definition eq_by_expressions
       {γ : σ} {Γ Γ' : γ -> raw_type Σ γ}
-      {hjf : form} {J J' : _}
+      {jf : form} {J J' : _}
       (e_Γ : forall i, Γ i = Γ' i)
       (e_J : forall i, J i = J' i)
     : Build_judgement (Build_raw_context γ Γ)
-                      (Build_hypothetical_judgement hjf J)
+                      (Build_hypothetical_judgement jf J)
     = Build_judgement (Build_raw_context γ Γ')
-                      (Build_hypothetical_judgement hjf J').
+                      (Build_hypothetical_judgement jf J').
   Proof.
     eapply concat.
     { eapply (ap (Build_judgement _)),
@@ -591,13 +591,13 @@ In lieu of that, we give explicit lemmas for judgement equality:
   difference, [eq_by_eta] may be cleaner. *)
   Local Definition boundary_eq_by_expressions
       {γ : σ} {Γ Γ' : γ -> raw_type Σ γ}
-      {hjf : form} {B B' : _}
+      {jf : form} {B B' : _}
       (e_Γ : forall i, Γ i = Γ' i)
       (e_B : forall i, B i = B' i)
     : Build_boundary (Build_raw_context γ Γ)
-                      (Build_hypothetical_boundary hjf B)
+                      (Build_hypothetical_boundary jf B)
     = Build_boundary (Build_raw_context γ Γ')
-                      (Build_hypothetical_boundary hjf B').
+                      (Build_hypothetical_boundary jf B').
   Proof.
     eapply concat.
     { eapply (ap (Build_boundary _)),
@@ -702,19 +702,19 @@ Section PresuppositionsCombinatorics.
 (** Wherever an judgement [I] occurs as a presupposition of a judgement [J],
 there is a canonical embedding of the slots of [I] into the slots of [J]. *)
   Local Definition boundary_slot_from_presupposition
-    {hjf : form} (i : boundary_slot hjf)
+    {jf : form} (i : boundary_slot jf)
     : Family.map
-        (slot (form_object (boundary_slot hjf i)))
-        (boundary_slot hjf).
+        (slot (form_object (boundary_slot jf i)))
+        (boundary_slot jf).
   Proof.
     apply Family.Build_map'.
     intros [ j | ].
     - (* case: j in boundary part of presupposition *)
-      destruct hjf as [ cl | cl ].
-      + (* original hjf is object judgement *)
+      destruct jf as [ cl | cl ].
+      + (* original jf is object judgement *)
         exists (object_boundary_from_boundary_slots i j).
         apply (Family.map_commutes _ j).
-      + (* original hjf is equality judgement *)
+      + (* original jf is equality judgement *)
         destruct i as [ i' |  | ].
         * (* i is in shared bdry of LHS/RHS *)
           cbn in j.
@@ -730,10 +730,10 @@ there is a canonical embedding of the slots of [I] into the slots of [J]. *)
   Defined.
 
   Local Definition slot_from_presupposition
-    {hjf : form} (i : boundary_slot hjf)
+    {jf : form} (i : boundary_slot jf)
     : Family.map
         (slot (form_object (boundary_slot _ i)))
-        (slot hjf).
+        (slot jf).
   Proof.
     eapply Family.compose.
     - apply the_boundary_slot.
@@ -777,8 +777,8 @@ Section Presuppositions.
     : fmap f (presupposition_of_boundary B p)
     = presupposition_of_boundary (fmap_boundary f B) p.
   Proof.
-    destruct B as [Γ [hjf B]].
-    recursive_destruct hjf; recursive_destruct p; try apply idpath;
+    destruct B as [Γ [jf B]].
+    recursive_destruct jf; recursive_destruct p; try apply idpath;
       refine (eq_by_expressions _ _);
       intros j; recursive_destruct j; apply idpath.
   Defined.
@@ -802,8 +802,8 @@ Section Presuppositions.
     : fmap f (presupposition J p)
     = presupposition (fmap f J) p.
   Proof.
-    destruct J as [Γ [hjf J]].
-      recursive_destruct hjf; recursive_destruct p; try apply idpath;
+    destruct J as [Γ [jf J]].
+      recursive_destruct jf; recursive_destruct p; try apply idpath;
         refine (eq_by_expressions _ _);
         intros j; recursive_destruct j; apply idpath.    
   Defined.
@@ -1158,10 +1158,10 @@ Section Instantiation.
   Proof.
     apply (ap (Build_judgement _)). (* context of presup unchanged *)
     apply (ap (Build_hypothetical_judgement _)). (* form of presup unchanged *)
-    destruct j as [Δ [hjf J]].
+    destruct j as [Δ [jf J]].
     (* hypothetical presupposition *)
     apply path_forall; intros k.
-    recursive_destruct hjf;
+    recursive_destruct jf;
       recursive_destruct i;
       recursive_destruct k;
       apply idpath.
