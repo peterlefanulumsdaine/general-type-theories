@@ -30,6 +30,38 @@ in [structural_rule_without_subst]) to just the case of equivalences,
 so that the results of this file really do show that general renaming is
 admissible. *)
 
+Section Auxiliary.
+
+  Context {σ : shape_system}.
+
+  (** Given two object judgements [J] [K] of the same form,
+   combine them into an equality judgement comparing their heads,
+   over the boundary of [J]. *)
+  (* TODO: upstream, consider naming! *)
+  (* TODO: make [class_of] a coercion?
+   also [boundary_slot_from_object_boundary_slot]? *)
+  Definition combine_hypothetical_judgement
+      {Σ : signature σ} {γ}
+      (J K : hypothetical_judgement Σ γ)
+      (e : form_of_judgement J = form_of_judgement K)
+      (J_obj : Judgement.is_object (form_of_judgement J))
+    : hypothetical_judgement Σ γ.
+  Proof.
+    exists (form_equality (Judgement.class_of (form_of_judgement J))).
+    intros [s | | ].
+    - refine (transport (fun cl => raw_expression _ cl _) _ _).
+      2: { exact (J (the_boundary_slot
+                         (boundary_slot_from_object_boundary_slot s))). }
+      eapply concat. { apply Family.map_commutes. }
+      eapply (Family.map_commutes boundary_slot_from_object_boundary_slot).
+    - exact (Judgement.head J J_obj).
+    - refine (transport (fun cl => raw_expression _ cl _) _ _).
+      2: { refine (Judgement.head K _). eapply transport; eassumption. }
+      apply (ap Judgement.class_of), inverse, e.
+  Defined.
+
+End Auxiliary.
+
 Section Subst_Free_Derivations.
 
   Context {σ : shape_system}.
@@ -104,39 +136,31 @@ the associated congruence rule should be derivable (?admissible). *)
         set (J := flat_rule_premise R p).
         fold J in p_obj.
         exists (Context.fmap inl (context_of_judgement J)).
-        exists (form_equality (Judgement.class_of (form_of_judgement J))).
-        intros [ s_bdry | | ].        
-        * (* boundary slot *)
-          apply (Expression.fmap inl).
-          refine (transport (fun cl => raw_expression _ cl _) _ _).
-          2: { exact (J (the_boundary_slot
-                          (boundary_slot_from_object_boundary_slot s_bdry))). }
-          eapply concat. { apply Family.map_commutes. }
-          eapply (Family.map_commutes boundary_slot_from_object_boundary_slot).
-        * (* LHS slot *)
-          apply (Expression.fmap inl).
-          exact (Judgement.head J p_obj).
-        * (* RHS slot *)
-          apply (Expression.fmap inr).
-          exact (Judgement.head J p_obj).
+        simple refine (combine_hypothetical_judgement _ _ _ _).
+        * exact (fmap_hypothetical_judgement inl J).
+        * exact (fmap_hypothetical_judgement inr J).
+        * apply idpath.
+        * apply p_obj.
     - (* conclusion *)
       set (J := flat_rule_conclusion R).
       exists (Context.fmap inl (context_of_judgement J)).
-      exists (form_equality (Judgement.class_of (form_of_judgement J))).
-      intros [ s_bdry | | ].        
-      * (* boundary slot *)
-        apply (Expression.fmap inl).
-        refine (transport (fun cl => raw_expression _ cl _) _ _).
-        2: { exact (J (the_boundary_slot
-                         (boundary_slot_from_object_boundary_slot s_bdry))). }
-        eapply concat. { apply Family.map_commutes. }
-        eapply (Family.map_commutes boundary_slot_from_object_boundary_slot).
-      * (* LHS slot *)
-        apply (Expression.fmap inl).
-        exact (Judgement.head J R_obj).
-      * (* RHS slot *)
-        apply (Expression.fmap inr).
-        exact (Judgement.head J R_obj).
+        simple refine (combine_hypothetical_judgement _ _ _ _).
+        * exact (fmap_hypothetical_judgement inl J).
+        * exact (fmap_hypothetical_judgement inr J).
+        * apply idpath.
+        * apply R_obj.
+  Defined.
+
+  (* TODO: upstead; consider naming! *)
+  Local Definition copair_instantiation
+      {a b : arity σ} {γ}
+      (Ia : Metavariable.instantiation a Σ γ) 
+      (Ib : Metavariable.instantiation b Σ γ) 
+    : Metavariable.instantiation (a+b) Σ γ.
+  Proof.
+    intros [i | j].
+    - apply Ia.
+    - apply Ib.
   Defined.
 
   Local Definition congruous (T : flat_type_theory Σ)
@@ -911,7 +935,7 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
       destruct fg as [fg [ [ e_J'_fJ | e_J'_gJ ] | [ R_obj ?]]].
       - exact (substitute_instantiation f' I).
       - exact (substitute_instantiation g' I).
-      - intros [i | i]; revert i.
+      - apply copair_instantiation.
         + exact (substitute_instantiation f' I).
         + exact (substitute_instantiation g' I).
     Defined.
@@ -957,9 +981,17 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
         1: exists (typed_renaming_to_instantiate_context _ _ _).
         2: { apply coproduct_empty_inj1_is_equiv, R_univ. }
         eapply concat. { apply ap, e_J'_fgJ. }
-        (* TODO: factor out the construction of this instantiation as 
-        eg “sum_instantiation”, then give lemmas that this commutes with
-        renaming/substitution of instantiations. *)
+        simpl substeq_flat_rule_instantiation_instantiation.
+        simpl substeq_flat_rule_rule.
+
+     (* refactor [substitute_equal_hypothetical_judgement]
+        as [combine_hypothetical_judgemnet], [substitute_hypothetical_judgement];
+        then prove lemmas like
+ [instantiate_combine_judgement:
+    instantiate (copair_instantiation a b) (combine_judgement J K)
+    = combine_judgement _ _ ]
+    and similarly [rename_combine_judgement], [substitute_combine_judgement]
+    *)
         admit.
     Admitted.
 
