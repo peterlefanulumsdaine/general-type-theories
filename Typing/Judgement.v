@@ -248,6 +248,31 @@ Section Judgements.
     apply hypothetical_boundary_of_judgement, J.
   Defined.
 
+  (** Given two object judgements [J] [K] of the same form,
+   combine them into an equality judgement comparing their heads,
+   over the boundary of [J]. *)
+  (* TODO: consider naming! *)
+  (* TODO: make [class_of] a coercion?
+   also [boundary_slot_from_object_boundary_slot]? *)
+  Definition combine_hypothetical_judgement
+      {γ} (J K : hypothetical_judgement γ)
+      (e : form_of_judgement J = form_of_judgement K)
+      (J_obj : is_object (form_of_judgement J))
+    : hypothetical_judgement γ.
+  Proof.
+    exists (form_equality (class_of (form_of_judgement J))).
+    intros [s | | ].
+    - refine (transport (fun cl => raw_expression _ cl _) _ _).
+      2: { exact (J (the_boundary_slot
+                         (boundary_slot_from_object_boundary_slot s))). }
+      eapply concat. { apply Family.map_commutes. }
+      eapply (Family.map_commutes boundary_slot_from_object_boundary_slot).
+    - exact (head J J_obj).
+    - refine (transport (fun cl => raw_expression _ cl _) _ _).
+      2: { refine (head K _). eapply transport; eassumption. }
+      apply (ap class_of), inverse, e.
+  Defined.
+
 End Judgements.
 
 Arguments Build_hypothetical_boundary {_ _ _} _ _.
@@ -262,6 +287,7 @@ Arguments context_of_judgement {_ _} _.
 Arguments shape_of_judgement {_ _} _. 
 Arguments hypothetical_part {_ _} _. 
 Arguments boundary_of_judgement {_ _} _.
+Arguments combine_hypothetical_judgement {_ _ _} _ _ _ _.
 (* TODO: reinstate as needed
 Arguments hypothetical_boundary : simpl nomatch.
 Arguments Build_judgement {_ _ _} _ _.
@@ -1011,21 +1037,11 @@ is [Δ |- f^*a = g^*A : f^*A] *)
       (J_obj : is_object (form_of_judgement J))
     : hypothetical_judgement Σ δ.
   Proof.
-    exists (form_equality (class_of (form_of_judgement J))).
-    intros [ s_bdry | | ].
-    - (* boundary slot *)
-      apply (substitute f).
-      refine (transport (fun cl => raw_expression _ cl _) _ _).
-      2: { exact (J (the_boundary_slot
-                    (boundary_slot_from_object_boundary_slot s_bdry))). }
-      eapply concat. { apply Family.map_commutes. }
-      eapply (Family.map_commutes boundary_slot_from_object_boundary_slot).
-    - (* LHS slot *)
-      apply (substitute f).
-      exact (head J J_obj).
-    - (* RHS slot *)
-      apply (substitute g).
-      exact (head J J_obj).
+    simple refine (combine_hypothetical_judgement _ _ _ _).
+    - exact (substitute_hypothetical_judgement f J).
+    - exact (substitute_hypothetical_judgement g J).
+    - apply idpath.
+    - apply J_obj.
   Defined.
 
 End Substitution.
