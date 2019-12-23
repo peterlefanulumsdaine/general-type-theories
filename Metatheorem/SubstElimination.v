@@ -88,15 +88,6 @@ Section Auxiliary.
     destruct e_γ; apply idpath.
   Defined.
 
-  (*
-  Lemma transport_target_raw_context_map
-      {Σ : signature σ}
-      {δ γ γ'} (e_γ : γ = γ')
-      (f : raw_context_map Σ δ γ)
-    : transport _ e_γ f
-    = fun i => .
-   *)
-
   (* TODO: upstream *)
   Lemma instantiate_fmap2
       {a a' : arity σ} (f : Family.map a a')
@@ -138,6 +129,60 @@ Section Auxiliary.
       simpl; fold a_fM a_M; clearbody a_M a_fM.
       destruct e_M.
       cbn; apply idpath.
+  Defined.
+
+  (* TODO: upstream *)
+  Lemma instantiate_fmap2_hypothetical_judgement
+      {a a' : arity σ} (f : Family.map a a')
+      {Σ} {γ} (I : Metavariable.instantiation a' Σ γ)
+      {δ} (J : hypothetical_judgement (Metavariable.extend Σ a) δ)
+    : instantiate_hypothetical_judgement I
+        (fmap_hypothetical_judgement (Metavariable.fmap2 _ f) J)
+    = instantiate_hypothetical_judgement (instantiation_fmap2 f I) J.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros i.
+    apply instantiate_fmap2.
+  Defined.
+
+  (* TODO: upstream; consider naming! *)
+  Local Definition copair_instantiation
+      {Σ} {a b : arity σ} {γ}
+      (Ia : Metavariable.instantiation a Σ γ) 
+      (Ib : Metavariable.instantiation b Σ γ) 
+    : Metavariable.instantiation (a+b) Σ γ.
+  Proof.
+    intros [i | j].
+    - apply Ia.
+    - apply Ib.
+  Defined.
+
+  (* TODO: upstream; consider naming! *)
+  Local Definition copair_instantiation_inl_hypothetical_judgement
+      {Σ} {a b : arity σ} {γ}
+      (Ia : Metavariable.instantiation a Σ γ) 
+      (Ib : Metavariable.instantiation b Σ γ) 
+      {δ} (J : hypothetical_judgement (Metavariable.extend Σ a) δ)
+    : instantiate_hypothetical_judgement
+        (copair_instantiation Ia Ib)
+        (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inl) J)
+      = instantiate_hypothetical_judgement Ia J.
+  Proof.
+    apply instantiate_fmap2_hypothetical_judgement.
+  Defined.
+
+  (* TODO: upstream; consider naming! *)
+  Local Definition copair_instantiation_inr_hypothetical_judgement
+      {Σ} {a b : arity σ} {γ}
+      (Ia : Metavariable.instantiation a Σ γ) 
+      (Ib : Metavariable.instantiation b Σ γ) 
+      {δ} (J : hypothetical_judgement (Metavariable.extend Σ b) δ)
+    : instantiate_hypothetical_judgement
+        (copair_instantiation Ia Ib)
+        (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inr) J)
+      = instantiate_hypothetical_judgement Ib J.
+  Proof.
+    apply instantiate_fmap2_hypothetical_judgement.
   Defined.
 
 End Auxiliary.
@@ -230,46 +275,6 @@ the associated congruence rule should be derivable (?admissible). *)
         * apply idpath.
         * apply R_obj.
   Defined.
-
-  (* TODO: upstream; consider naming! *)
-  Local Definition copair_instantiation
-      {a b : arity σ} {γ}
-      (Ia : Metavariable.instantiation a Σ γ) 
-      (Ib : Metavariable.instantiation b Σ γ) 
-    : Metavariable.instantiation (a+b) Σ γ.
-  Proof.
-    intros [i | j].
-    - apply Ia.
-    - apply Ib.
-  Defined.
-
-  (* TODO: upstream; consider naming! *)
-  Local Definition copair_instantiation_inl_hypothetical_judgement
-      {a b : arity σ} {γ}
-      (Ia : Metavariable.instantiation a Σ γ) 
-      (Ib : Metavariable.instantiation b Σ γ) 
-      {δ} (J : hypothetical_judgement (Metavariable.extend Σ a) δ)
-    : instantiate_hypothetical_judgement
-        (copair_instantiation Ia Ib)
-        (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inl) J)
-      = instantiate_hypothetical_judgement Ia J.
-  Proof.
-    (* use [instantiate_fmap2] *)
-  Admitted. (* [copair_instantiation_inl_hypothetical_judgement]: hopefully reasonably self-contained, straightforward *)
-
-  (* TODO: upstream; consider naming! *)
-  Local Definition copair_instantiation_inr_hypothetical_judgement
-      {a b : arity σ} {γ}
-      (Ia : Metavariable.instantiation a Σ γ) 
-      (Ib : Metavariable.instantiation b Σ γ) 
-      {δ} (J : hypothetical_judgement (Metavariable.extend Σ b) δ)
-    : instantiate_hypothetical_judgement
-        (copair_instantiation Ia Ib)
-        (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inr) J)
-      = instantiate_hypothetical_judgement Ib J.
-  Proof.
-    (* use [instantiate_fmap2] *)
-  Admitted. (* [copair_instantiation_inr_hypothetical_judgement]: hopefully reasonably self-contained, straightforward *)
 
   Local Definition congruous (T : flat_type_theory Σ)
     : Type
