@@ -30,6 +30,118 @@ in [structural_rule_without_subst]) to just the case of equivalences,
 so that the results of this file really do show that general renaming is
 admissible. *)
 
+Section Auxiliary.
+
+  Context `{Funext} {σ : shape_system}.
+
+  (* TODO: upstream *)
+  Lemma instantiation_fmap2
+      {Σ : signature σ}
+      {a a' : arity σ} (f : Family.map a a')
+      {γ} (I : Metavariable.instantiation a' Σ γ)
+    : Metavariable.instantiation a Σ γ.
+  Proof.
+    intros i.
+    unfold argument_class, argument_shape.
+    refine (transport _ _ _). 
+    { apply ap, ap, (Family.map_commutes f). }
+    eapply (transport (fun cl => _ _ cl _)).
+    { apply ap, (Family.map_commutes f). }
+    apply I.
+  Defined.
+
+  (* TODO: upstream *)
+  Lemma transport_class_instantiate
+      {Σ : signature σ} {a}
+      {γ} (I : Metavariable.instantiation a Σ γ)
+      {cl cl'} (e_cl : cl = cl')
+      {δ} (e : raw_expression (Metavariable.extend Σ a) cl δ)
+    : transport (fun cl => raw_expression _ cl _) e_cl
+                (instantiate_expression I e)
+      = instantiate_expression I
+          (transport (fun cl => raw_expression _ cl _) e_cl e).
+  Proof.
+    destruct e_cl; apply idpath.
+  Defined.
+
+  (* TODO: upstream *)
+  Lemma transport_shape_instantiate
+      {Σ : signature σ} {a}
+      {γ} (I : Metavariable.instantiation a Σ γ)
+      {cl} {δ δ'} (e_δ : δ = δ')
+      (e : raw_expression (Metavariable.extend Σ a) cl δ)
+    : transport _ (ap _ e_δ) (instantiate_expression I e)
+      = instantiate_expression I (transport _ e_δ e).
+  Proof.
+    destruct e_δ; apply idpath.
+  Defined.
+
+  (* TODO: upstream *)
+  Lemma substitute_transport_shape
+      {Σ : signature σ}
+      {γ γ'} (e_γ : γ = γ') {δ}
+      (f : raw_context_map Σ δ γ')
+      {cl} (e : raw_expression Σ cl γ)
+    : substitute f (transport (raw_expression _ _) e_γ e)
+      = substitute (transport (raw_context_map _ _) e_γ^ f) e.
+  Proof.
+    destruct e_γ; apply idpath.
+  Defined.
+
+  (*
+  Lemma transport_target_raw_context_map
+      {Σ : signature σ}
+      {δ γ γ'} (e_γ : γ = γ')
+      (f : raw_context_map Σ δ γ)
+    : transport _ e_γ f
+    = fun i => .
+   *)
+
+  (* TODO: upstream *)
+  Lemma instantiate_fmap2
+      {a a' : arity σ} (f : Family.map a a')
+      {Σ} {γ} (I : Metavariable.instantiation a' Σ γ)
+      {cl} {δ} (e : raw_expression (Metavariable.extend Σ a) cl δ)
+    : instantiate_expression I (Expression.fmap (Metavariable.fmap2 _ f) e)
+    = instantiate_expression (instantiation_fmap2 f I) e.
+  Proof.
+    induction e as [δ i | δ [S | M] e_args IH_e_args ].
+    - apply idpath. (* [raw_variable]: easy! *)
+    - (* symbol of signature *)
+      simpl. apply ap.
+      apply path_forall; intros i.
+      apply ap, IH_e_args.
+    - (* metavariable symbol *)
+      simpl.
+      (* first, apply IH *)
+      eapply concat.
+      2: { eapply (ap_2back substitute).
+        apply ap, path_forall; intros i.
+        eapply (ap (rename _)), IH_e_args.
+      }
+      clear IH_e_args.
+      (* from here, just transport lemmas *)
+      eapply concat. { apply inverse, transport_class_instantiate. }
+      simpl.
+      eapply concat. { apply Substitution.transport_substitute. }
+      unfold instantiation_fmap2.
+      eapply concat. 2: { apply inverse, substitute_transport_shape. }
+      refine (ap_2back substitute _ _ _ @ ap (substitute _) _).
+      2: { refine (ap_1back _ _^ _).
+           eapply concat. 2: { refine (ap_compose _ _ _). }
+           apply idpath.
+      }
+      set (e_M := Family.map_commutes f M); clearbody e_M.
+      unfold argument_shape, argument_class, symbol_arity in *; simpl in e_args.
+      set (a_M := a M) in *.
+      set (a_fM := a' (f M)) in *.
+      simpl; fold a_fM a_M; clearbody a_M a_fM.
+      destruct e_M.
+      cbn; apply idpath.
+  Defined.
+
+End Auxiliary.
+
 Section Subst_Free_Derivations.
 
   Context {σ : shape_system}.
@@ -119,7 +231,7 @@ the associated congruence rule should be derivable (?admissible). *)
         * apply R_obj.
   Defined.
 
-  (* TODO: upstead; consider naming! *)
+  (* TODO: upstream; consider naming! *)
   Local Definition copair_instantiation
       {a b : arity σ} {γ}
       (Ia : Metavariable.instantiation a Σ γ) 
@@ -130,6 +242,34 @@ the associated congruence rule should be derivable (?admissible). *)
     - apply Ia.
     - apply Ib.
   Defined.
+
+  (* TODO: upstream; consider naming! *)
+  Local Definition copair_instantiation_inl_hypothetical_judgement
+      {a b : arity σ} {γ}
+      (Ia : Metavariable.instantiation a Σ γ) 
+      (Ib : Metavariable.instantiation b Σ γ) 
+      {δ} (J : hypothetical_judgement (Metavariable.extend Σ a) δ)
+    : instantiate_hypothetical_judgement
+        (copair_instantiation Ia Ib)
+        (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inl) J)
+      = instantiate_hypothetical_judgement Ia J.
+  Proof.
+    (* use [instantiate_fmap2] *)
+  Admitted. (* [copair_instantiation_inl_hypothetical_judgement]: hopefully reasonably self-contained, straightforward *)
+
+  (* TODO: upstream; consider naming! *)
+  Local Definition copair_instantiation_inr_hypothetical_judgement
+      {a b : arity σ} {γ}
+      (Ia : Metavariable.instantiation a Σ γ) 
+      (Ib : Metavariable.instantiation b Σ γ) 
+      {δ} (J : hypothetical_judgement (Metavariable.extend Σ b) δ)
+    : instantiate_hypothetical_judgement
+        (copair_instantiation Ia Ib)
+        (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inr) J)
+      = instantiate_hypothetical_judgement Ib J.
+  Proof.
+    (* use [instantiate_fmap2] *)
+  Admitted. (* [copair_instantiation_inr_hypothetical_judgement]: hopefully reasonably self-contained, straightforward *)
 
   Local Definition congruous (T : flat_type_theory Σ)
     : Type
@@ -972,8 +1112,14 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
         eapply concat. { apply ap, e_J'_fgJ. }
         simpl substeq_flat_rule_instantiation_instantiation.
         simpl substeq_flat_rule_rule.
+        simpl hypothetical_part.
+        rewrite instantiate_combine_hypothetical_judgement.
 
-     (* Here: use lemmas showing how [combine_hypothetical_judgement] interacts with instantiation, renaming, etc; plus lemmas showing how [copair_instantiation] combines with the inl/inr parts of [flat_congruence_rule].  *)
+     (* Remaining expected ingredients:
+        [rename_combine_hypothetical_judgement] (TODO!)
+        [copair_instantiation_inl_hypothetical_judgement]
+        [copair_instantiation_inr_hypothetical_judgement] (TODO!)
+.  *)
         admit.
     Admitted.
 
