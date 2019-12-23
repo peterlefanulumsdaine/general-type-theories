@@ -158,6 +158,34 @@ Section Auxiliary.
   Defined.
 
   (* TODO: upstream; consider naming! *)
+  Local Definition copair_instantiation_inl
+      {Σ} {a b : arity σ} {γ}
+      (Ia : Metavariable.instantiation a Σ γ) 
+      (Ib : Metavariable.instantiation b Σ γ)
+      {cl} {δ} (e : raw_expression (Metavariable.extend Σ a) cl δ)
+    : instantiate_expression
+        (copair_instantiation Ia Ib)
+        (Expression.fmap (Metavariable.fmap2 _ Family.inl) e)
+      = instantiate_expression Ia e.
+  Proof.
+    apply instantiate_fmap2.
+  Defined.
+
+  (* TODO: upstream; consider naming! *)
+  Local Definition copair_instantiation_inr
+      {Σ} {a b : arity σ} {γ}
+      (Ia : Metavariable.instantiation a Σ γ) 
+      (Ib : Metavariable.instantiation b Σ γ)
+      {cl} {δ} (e : raw_expression (Metavariable.extend Σ b) cl δ)
+    : instantiate_expression
+        (copair_instantiation Ia Ib)
+        (Expression.fmap (Metavariable.fmap2 _ Family.inr) e)
+      = instantiate_expression Ib e.
+  Proof.
+    apply instantiate_fmap2.
+  Defined.
+
+  (* TODO: upstream; consider naming! *)
   Local Definition copair_instantiation_inl_hypothetical_judgement
       {Σ} {a b : arity σ} {γ}
       (Ia : Metavariable.instantiation a Σ γ) 
@@ -183,6 +211,48 @@ Section Auxiliary.
       = instantiate_hypothetical_judgement Ib J.
   Proof.
     apply instantiate_fmap2_hypothetical_judgement.
+  Defined.
+
+  (* TODO: upstream *)
+  Lemma instantiate_combine_hypothetical_judgement
+    {Σ : signature σ} {a} {γ} (Ia : Metavariable.instantiation a Σ γ)
+    {δ} (K K' : hypothetical_judgement _ δ)
+    (e : form_of_judgement K = form_of_judgement K')
+    (K_obj : Judgement.is_object (form_of_judgement K))
+    : instantiate_hypothetical_judgement Ia
+                         (combine_hypothetical_judgement K K' e K_obj)
+    = combine_hypothetical_judgement
+        (instantiate_hypothetical_judgement Ia K)
+        (instantiate_hypothetical_judgement Ia K')
+        e K_obj.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros [s | | ];
+      destruct K as [jf K], K' as [jf' K']; cbn in e, K_obj;
+      destruct e, jf; destruct K_obj;
+    (* we destruct enough that all the equalities appearing under transports in the goal become idpaths, and the transports compute. *)
+      apply idpath.
+  Defined.
+
+  (* TODO: upstream *)
+  Lemma rename_combine_hypothetical_judgement
+    {Σ} {γ γ' : σ} (f : γ -> γ')
+    (K K' : hypothetical_judgement Σ γ)
+    (e : form_of_judgement K = form_of_judgement K')
+    (K_obj : Judgement.is_object (form_of_judgement K))
+    : rename_hypothetical_judgement f
+                         (combine_hypothetical_judgement K K' e K_obj)
+    = combine_hypothetical_judgement
+        (rename_hypothetical_judgement f K)
+        (rename_hypothetical_judgement f K')
+        e K_obj.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros [s | | ];
+      destruct K as [jf K], K' as [jf' K']; cbn in e, K_obj;
+      destruct e, jf; destruct K_obj;
+    (* we destruct enough that all the equalities appearing under transports in the goal become idpaths, and the transports compute. *)
+      apply idpath.
   Defined.
 
 End Auxiliary.
@@ -1021,7 +1091,7 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
 
   (* Since these lemmas are for internal use only, and their names are getting
   very long, we for once relax our prohibition on abbreviations *)
-    Local Definition substeq_flat_rule_instantiation_pair
+    Local Definition substeq_flat_rule_pair
         (fg : weakly_equal_judgement_map T J' J)
       : weakly_equal_pair T Γ' Γ.
     Proof.
@@ -1038,13 +1108,13 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
       - eapply flat_congruence_rule, R_obj.
     Defined.
 
-    Local Definition substeq_flat_rule_instantiation_instantiation
+    Local Definition substeq_flat_rule_instantiation
         (fg : weakly_equal_judgement_map T J' J)
       : Metavariable.instantiation
           (flat_rule_metas (substeq_flat_rule_rule fg)) Σ Γ'.
     Proof.
-      set (f' := left (substeq_flat_rule_instantiation_pair fg)).
-      set (g' := right (substeq_flat_rule_instantiation_pair fg)).
+      set (f' := left (substeq_flat_rule_pair fg)).
+      set (g' := right (substeq_flat_rule_pair fg)).
       destruct fg as [fg [ [ e_J'_fJ | e_J'_gJ ] | [ R_obj ?]]].
       - exact (substitute_instantiation f' I).
       - exact (substitute_instantiation g' I).
@@ -1053,32 +1123,11 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
         + exact (substitute_instantiation g' I).
     Defined.
 
-    (* TODO: upstream *)
-    Lemma instantiate_combine_hypothetical_judgement
-      {a} {γ} (Ia : Metavariable.instantiation a Σ γ)
-      {δ} (K K' : hypothetical_judgement _ δ)
-      (e : form_of_judgement K = form_of_judgement K')
-      (K_obj : Judgement.is_object (form_of_judgement K))
-      : instantiate_hypothetical_judgement Ia
-                         (combine_hypothetical_judgement K K' e K_obj)
-      = combine_hypothetical_judgement
-          (instantiate_hypothetical_judgement Ia K)
-          (instantiate_hypothetical_judgement Ia K')
-          e K_obj.
-    Proof.
-      apply (ap (Build_hypothetical_judgement _)).
-      apply path_forall; intros [s | | ];
-        destruct K as [jf K], K' as [jf' K']; cbn in e, K_obj;
-        destruct e, jf; destruct K_obj;
-      (* The point: we’re destructing enough that all the equalities appearing under transports in the goal become idpaths, and the transports compute. *)
-        apply idpath.
-    Defined.
-
-    Local Lemma substeq_flat_rule_instantiation_conclusion
+    Local Lemma substeq_flat_rule_conclusion
         (fg : weakly_equal_judgement_map T J' J)
       : judgement_renaming
           (Judgement.instantiate Γ'
-            (substeq_flat_rule_instantiation_instantiation fg)
+            (substeq_flat_rule_instantiation fg)
             (flat_rule_conclusion (substeq_flat_rule_rule fg)))
           J'.
     (* NOTE: and the renaming is in each case an equivalence, though we don’t
@@ -1115,35 +1164,64 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
         1: exists (typed_renaming_to_instantiate_context _ _ _).
         2: { apply coproduct_empty_inj1_is_equiv, R_univ. }
         eapply concat. { apply ap, e_J'_fgJ. }
-        simpl substeq_flat_rule_instantiation_instantiation.
+        simpl substeq_flat_rule_instantiation.
         simpl substeq_flat_rule_rule.
         simpl hypothetical_part.
         rewrite instantiate_combine_hypothetical_judgement.
+        rewrite rename_combine_hypothetical_judgement.
+        refine (ap2 (fun J K
+                       => combine_hypothetical_judgement
+                            (Build_hypothetical_judgement _ J)
+                            (Build_hypothetical_judgement _ K)
+                            _ _)
+                  _ _).
+        + cbn. apply path_forall; intros i.
+          eapply concat. 2: { apply inverse, copair_instantiation_inl. }
+          eapply concat.
+          2: { apply inverse, instantiate_substitute_instantiation. }
+          eapply concat. { apply rename_substitute. }
+          apply (ap_2back substitute); clear i.
+          apply path_forall.
+          refine (coproduct_rect shape_is_sum _ _ _).
+          2: { apply (empty_rect _ R_univ). }
+          intros i. unfold Substitution.extend.
+          apply inverse. refine (coproduct_comp_inj1 _).
+        + cbn. apply path_forall; intros i.
+          eapply concat. 2: { apply inverse, copair_instantiation_inr. }
+          eapply concat.
+          2: { apply inverse, instantiate_substitute_instantiation. }
+          eapply concat. { apply rename_substitute. }
+          apply (ap_2back substitute); clear i.
+          apply path_forall.
+          refine (coproduct_rect shape_is_sum _ _ _).
+          2: { apply (empty_rect _ R_univ). }
+          intros i. unfold Substitution.extend.
+          apply inverse. refine (coproduct_comp_inj1 _).
+    Defined.
 
-     (* Remaining expected ingredients:
-        [rename_combine_hypothetical_judgement] (TODO!)
-        [copair_instantiation_inl_hypothetical_judgement]
-        [copair_instantiation_inr_hypothetical_judgement] (TODO!)
-.  *)
-        admit.
-    Admitted.
-
-    Local Lemma substeq_flat_rule_instantiation_premise
+    Local Lemma substeq_flat_rule_premise
         {fg : weakly_equal_judgement_map T J' J}
         (p : flat_rule_premise (substeq_flat_rule_rule fg))
       : flat_rule_premise R.
+    (* for each premise of the new rule used,
+       select a premise of the original rule
+       to which the new premise will admit a weakly-equal judgement map *) 
     Proof.
-    Admitted.
+      destruct fg as [fg [ [ ? | ? ] | [ ? ?]]];
+        try (exact p).
+      destruct p as [ [ p | p ] | [p _] ];
+        exact p.
+    Defined.
 
-    Local Lemma substeq_flat_rule_instantiation_premise_map
+    Local Lemma substeq_flat_rule_premise_pair
         {fg : weakly_equal_judgement_map T J' J}
         (p : flat_rule_premise (substeq_flat_rule_rule fg))
       : weakly_equal_judgement_map T
           (Judgement.instantiate Γ'
-                  (substeq_flat_rule_instantiation_instantiation fg)
+                  (substeq_flat_rule_instantiation fg)
                   (flat_rule_premise _ p))
           (Judgement.instantiate Γ I
-            (flat_rule_premise _ (substeq_flat_rule_instantiation_premise p))).
+            (flat_rule_premise _ (substeq_flat_rule_premise p))).
     Proof.
       (*
       apply instantiate_judgement_over_weakly_typed_context_map.
