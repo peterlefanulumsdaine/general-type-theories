@@ -1063,6 +1063,141 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
            J_obj }
      }.
 
+  (** The following two lemmas are definitions are key for the application of weakly equal pairs:
+  given a weakly equal pair [(f,g) : Γ' —> Γ], and a context extension [Δ] of [Γ],
+  we can extend (f,g) to weakly equal pairs [Γ'.f^*Δ —> Γ.Δ] and [Γ'.g^*Δ —> Γ.Δ]. *)
+  Lemma instantiate_context_over_weakly_equal_pair_left
+      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
+      {a : arity σ} 
+      (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
+      (Δ : raw_context (Metavariable.extend Σ a))
+    : weakly_equal_pair T
+        (Context.instantiate Γ' (substitute_instantiation (left fg) I) Δ)
+        (Context.instantiate Γ I Δ).
+  Proof.
+    simple refine
+      (Build_weakly_equal_pair _ _ _).
+    { exact (Substitution.extend Γ Γ' Δ (left fg)). }
+    { exact (Substitution.extend Γ Γ' Δ (right fg)). }
+    refine (coproduct_rect shape_is_sum _ _ _).
+    - intros i.
+      unfold Substitution.extend; cbn.
+      repeat rewrite coproduct_comp_inj1.
+        destruct (is_weakly_equal fg i)
+          as [[j [e_ij e_fg]] | d_fi].
+      + apply inl.
+        exists (coproduct_inj1 shape_is_sum j); split.
+        * exact (ap _ e_ij).
+        * repeat rewrite coproduct_comp_inj1.
+          repeat rewrite substitute_rename.
+          destruct e_fg as [e | e];
+            [ apply inl | apply inr ]; rewrite e;
+            repeat rewrite rename_substitute;
+            apply (ap_2back substitute), path_forall; intros x;
+            cbn; repeat rewrite coproduct_comp_inj1;
+            apply idpath.
+      + apply inr.
+        refine (rename_derivation _ _ d_fi).
+        { assumption. }
+        exists (typed_renaming_to_instantiate_context _ _ _).
+        apply (ap (Build_hypothetical_judgement _)).
+        apply path_forall; intros j; recursive_destruct j;
+          try apply idpath.
+        eapply concat. { apply rename_substitute. }
+        eapply concat. 2: { apply inverse, substitute_rename. }
+        apply (ap_2back substitute), path_forall; intros j.
+        apply inverse. refine (coproduct_comp_inj1 _).
+    - intros i. apply inl.
+      exists (coproduct_inj2 shape_is_sum i); split.
+      + unfold Substitution.extend; cbn.
+        refine (coproduct_comp_inj2 _).
+      + apply inl; cbn.
+        repeat rewrite coproduct_comp_inj2.
+        apply instantiate_substitute_instantiation.
+  Defined.
+
+  Lemma instantiate_context_over_weakly_equal_pair_right
+      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
+      {a : arity σ} 
+      (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
+      (Δ : raw_context (Metavariable.extend Σ a))
+    : weakly_equal_pair T
+        (Context.instantiate Γ' (substitute_instantiation (right fg) I) Δ)
+        (Context.instantiate Γ I Δ).
+  Proof.
+    simple refine
+      (Build_weakly_equal_pair _ _ _).
+    { exact (Substitution.extend Γ Γ' Δ (left fg)). }
+    { exact (Substitution.extend Γ Γ' Δ (right fg)). }
+    refine (coproduct_rect shape_is_sum _ _ _).
+    - intros i.
+      unfold Substitution.extend; cbn.
+      repeat rewrite coproduct_comp_inj1.
+        destruct (is_weakly_equal fg i)
+          as [[j [e_ij e_fg]] | d_fi].
+      + apply inl.
+        exists (coproduct_inj1 shape_is_sum j); split.
+        * exact (ap _ e_ij).
+        * repeat rewrite coproduct_comp_inj1.
+          repeat rewrite substitute_rename.
+          destruct e_fg as [e | e];
+            [ apply inl | apply inr ]; rewrite e;
+            repeat rewrite rename_substitute;
+            apply (ap_2back substitute), path_forall; intros x;
+            cbn; repeat rewrite coproduct_comp_inj1;
+            apply idpath.
+      + apply inr.
+        refine (rename_derivation _ _ d_fi).
+        { assumption. }
+        exists (typed_renaming_to_instantiate_context _ _ _).
+        apply (ap (Build_hypothetical_judgement _)).
+        apply path_forall; intros j; recursive_destruct j;
+          try apply idpath.
+        eapply concat. { apply rename_substitute. }
+        eapply concat. 2: { apply inverse, substitute_rename. }
+        apply (ap_2back substitute), path_forall; intros j.
+        apply inverse. refine (coproduct_comp_inj1 _).
+    - intros i. apply inl.
+      exists (coproduct_inj2 shape_is_sum i); split.
+      + unfold Substitution.extend; cbn.
+        refine (coproduct_comp_inj2 _).
+      + apply inr; cbn.
+        repeat rewrite coproduct_comp_inj2.
+        apply instantiate_substitute_instantiation.
+  Defined.
+
+  Local Lemma instantiate_judgement_over_weakly_equal_pair_left
+      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
+      {a : arity σ} 
+      (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
+      (J : judgement _)
+    : weakly_equal_judgement_map T
+        (Judgement.instantiate Γ' (substitute_instantiation (left fg) I) J)
+        (Judgement.instantiate Γ I J).
+  Proof.
+    exists (instantiate_context_over_weakly_equal_pair_left T_sub fg I _).
+    apply inl, inl,
+      instantiate_hypothetical_judgement_substitute_instantiation.
+  Defined.
+
+  Local Lemma instantiate_judgement_over_weakly_equal_pair_right
+      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
+      {a : arity σ} 
+      (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
+      (J : judgement _)
+    : weakly_equal_judgement_map T
+        (Judgement.instantiate Γ' (substitute_instantiation (right fg) I) J)
+        (Judgement.instantiate Γ I J).
+  Proof.
+    exists (instantiate_context_over_weakly_equal_pair_right T_sub fg I _).
+    apply inl, inr,
+      instantiate_hypothetical_judgement_substitute_instantiation.
+  Defined.
+
   Section Flat_Rule_Substitute_Equal_Instantiation.
     (** Analogously to section [Flat_Rule_Susbtitute_Instantiation],
      the lemmas of this section build up what’s needed for substituting
@@ -1223,11 +1358,19 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
           (Judgement.instantiate Γ I
             (flat_rule_premise _ (substeq_flat_rule_premise p))).
     Proof.
-      (*
-      apply instantiate_judgement_over_weakly_typed_context_map.
-      assumption.
-      *)
-    Admitted.
+      destruct fg as [fg [ [ e_J'_fJ | e_J'_gJ ] | [ R_obj e_jf]]].
+      - (* case: f^* of original rule *)
+        apply instantiate_judgement_over_weakly_equal_pair_left.
+        assumption.
+      - (* case: g^* of original rule *)
+        apply instantiate_judgement_over_weakly_equal_pair_right.
+        assumption.
+      - (* case: congruence rule *)
+        simpl in p|- *. clear e_jf.
+        admit.
+    (* TODO: [instantiate_judgement_over_weakly_equal_pair_combined], 
+     giving this case analogously to the cases above. *) *)
+    Admitted. (* TODO: [substeq_flat_rule_premise_pair], hopefully reasonably straightforward. *) 
 
   End Flat_Rule_Substitute_Equal_Instantiation.
 
