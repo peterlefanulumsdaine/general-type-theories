@@ -367,6 +367,42 @@ the associated congruence rule should be derivable (?admissible). *)
 
   However, it would take a lot of work to state this and set up the infrastructure to work with it.  So for now we stick with this simpler and cruder notion of congruousness: T should literally contain all its associated congruence rules. *)
 
+  Local Definition derive_contained_rule
+      {T : flat_type_theory Σ}
+      {R} {r:T} (e : T r = R)
+      {Γ : raw_context Σ}
+      (I : Metavariable.instantiation (flat_rule_metas R) Σ Γ)
+      {H} (d_prems : forall p : flat_rule_premise R,
+             FlatTypeTheory.derivation T H
+                        (Judgement.instantiate Γ I (flat_rule_premise R p)))
+    : FlatTypeTheory.derivation T H
+        (Judgement.instantiate Γ I (flat_rule_conclusion R)).
+  Proof.
+    destruct e.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inr. exists r, Γ. exact I. }
+    { apply idpath. }
+    assumption.
+  Defined.
+
+  Local Definition derive_congruence {T} (T_cong : congruous T) {H}
+    {r : T} (r_obj : Judgement.is_object (form_of_judgement (flat_rule_conclusion (T r))))
+    (r_cong := flat_congruence_rule (T r) r_obj)
+    {Γ : raw_context Σ}
+    (I0 I1 : Metavariable.instantiation (flat_rule_metas (T r)) Σ Γ)
+    (I := copair_instantiation I0 I1)
+    (d_prems : forall p : flat_rule_premise r_cong,
+        FlatTypeTheory.derivation T H
+          (Judgement.instantiate Γ I (flat_rule_premise r_cong p)))
+    : FlatTypeTheory.derivation T H
+        (Judgement.instantiate Γ I (flat_rule_conclusion r_cong)).
+  Proof.
+    simple refine (derive_contained_rule _ _ _).
+    { apply T_cong. exists r. exact r_obj. }
+    { apply (Family.map_commutes T_cong). }
+    assumption.
+  Defined.
+
 End Flat_Conditions.
 
 Section Judgement_Renamings.
@@ -1369,7 +1405,7 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
         simpl in p|- *. clear e_jf.
         admit.
     (* TODO: [instantiate_judgement_over_weakly_equal_pair_combined], 
-     giving this case analogously to the cases above. *) *)
+     giving this case analogously to the cases above. *)
     Admitted. (* TODO: [substeq_flat_rule_premise_pair], hopefully reasonably straightforward. *) 
 
   End Flat_Rule_Substitute_Equal_Instantiation.
@@ -1392,6 +1428,108 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
 
   - all of the premises of these new rule instances have weakly equal judgement maps to the premises of the original instance of R.
    *)
+    revert J' f.
+    induction d_J as [ | r d_ps IH ].
+    { destruct i. } (* hypothesis case impossible, as no hypotheses *)
+    intros J' f.
+    destruct r as [ r | r ].
+    2: { (* case: instantiation of a flat rule of [T] *)
+      admit.
+    }
+    (* case: structural rules *)
+    destruct r as [ [ r | r ] | r ].
+    3: { (* case: equality rule; so again, an instantiation of a flat rule *)
+      admit.
+    }
+    - (* case: renaming rule *)
+      admit.
+    - (* case: variable rule *)
+      destruct r as [Γ i]. cbn in f.
+      admit.
+(* From proof of [substitute_derivation], for cannibalising:
+    revert J' f.
+    induction d_J as [ | r d_ps IH ].
+    { destruct i. } (* hypothesis case impossible, as no hypotheses *)
+    intros J' f.
+    destruct r as [ r | r ].
+    2: { (* case: instantiation of a flat rule of [T] *)
+      destruct r as [r I].
+      simple refine (derive_rename' _ _
+        (substitute_flat_rule_instantiation_conclusion _ _ f) 
+        _ _).
+      { apply T_sub. }
+      { apply inverse, judgement_renaming_hypothetical_part. }
+      simple refine (Closure.deduce' _ _ _).
+      { apply inr. exists r.
+        exists (context_of_judgement J').
+        refine (substitute_flat_rule_instantiation_instantiation _ f).
+      }
+      { apply idpath. }
+      intros p. apply (IH p).
+      refine (substitute_flat_rule_instantiation_premise _ _ f p).
+      assumption.
+    }
+    (* case: structural rules *)
+    destruct r as [ [ r | r ] | r ].
+    3: { (* case: equality rule; so again, an instantiation of a flat rule *)
+      destruct r as [r I].
+      simple refine (derive_rename' _ _
+        (substitute_flat_rule_instantiation_conclusion _ _ f) 
+        _ _).
+      { apply equality_flat_rules_in_universal_form. }
+      { apply inverse, judgement_renaming_hypothetical_part. }
+      simple refine (Closure.deduce' _ _ _).
+      { apply inl, inr. exists r.
+        exists (context_of_judgement J').
+        refine (substitute_flat_rule_instantiation_instantiation _ f).
+      }
+      { apply idpath. }
+      intros p. apply (IH p).
+      refine (substitute_flat_rule_instantiation_premise _ _ f p).
+      assumption.
+    }
+    - (* case: renaming rule *)
+      cbn in r.
+      destruct r as [Γ [Γ' [g J]]].
+      apply (IH tt).
+      exists (compose_renaming_weakly_typed_context_map g f).
+      eapply concat.
+        2: { apply (weakly_typed_judgement_map_hypothetical_part _ _ _ f). }
+      apply inverse, @substitute_rename_hypothetical_judgement; auto.
+    - (* case: variable rule *)
+      destruct r as [Γ i]. cbn in f.
+      destruct (weakly_typed_context_map_is_weakly_typed _ _ _ f i)
+        as [[j [e1 e2]] | d_fi].
+      (* TODO: add implicit args in […is_weakly_typed]!  It’s bloody long enough already *)
+      + (* case: [f i = raw_variable j], [Γ' j = f^* (Γ i) ] *)
+      destruct J' as [Γ' J'].
+      destruct f as [f fJ'].
+      cbn in j, e1, e2 |- *.
+      simple refine (Closure.deduce' _ _ _).
+      { apply inl, inl, inr. (* use the variable rule *)
+        exists Γ'. exact j. }
+      { cbn in fJ'; destruct fJ'.
+        apply Judgement.eq_by_expressions.
+        - intro; apply idpath.
+        - intro s; recursive_destruct s.
+          + exact e2.
+          + cbn. apply inverse, e1.
+      }
+      intros p; set (p_keep := p); recursive_destruct p. cbn.
+      apply (IH p_keep).
+      set (f0 := f : weakly_typed_context_map _ _ _).
+      cbn in f0. exists f0.
+      apply (ap (Build_hypothetical_judgement _)). 
+      apply path_forall.
+      intros s; recursive_destruct s.
+      apply inverse, e2.
+      + (* case: [f] tells us [ Γ' |- f i : f^* (Γ i) ] *)
+        refine (transport _ _ d_fi).
+        destruct J' as [Γ' J'].
+        destruct f as [f fJ'].
+        cbn in fJ' |- *; destruct fJ'.
+        apply Judgement.eq_by_eta; exact idpath.
+*)
   Admitted. (* [substitute_equal_derivation]: substantial amount of work to do. *)
 
 End Equality_Substitution.
