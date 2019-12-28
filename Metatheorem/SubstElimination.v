@@ -373,9 +373,9 @@ the associated congruence rule should be derivable (?admissible). *)
       {Γ : raw_context Σ}
       (I : Metavariable.instantiation (flat_rule_metas R) Σ Γ)
       {H} (d_prems : forall p : flat_rule_premise R,
-             FlatTypeTheory.derivation T H
+             subst_free_derivation T H
                         (Judgement.instantiate Γ I (flat_rule_premise R p)))
-    : FlatTypeTheory.derivation T H
+    : subst_free_derivation T H
         (Judgement.instantiate Γ I (flat_rule_conclusion R)).
   Proof.
     destruct e.
@@ -385,6 +385,20 @@ the associated congruence rule should be derivable (?admissible). *)
     assumption.
   Defined.
 
+  Local Definition derive_contained_rule'
+      {T : flat_type_theory Σ}
+      {R} {r:T} (e_R : T r = R)
+      {Γ : raw_context Σ}
+      (I : Metavariable.instantiation (flat_rule_metas R) Σ Γ)
+      {J} (e_J : J = Judgement.instantiate Γ I (flat_rule_conclusion R))
+      {H} (d_prems : forall p : flat_rule_premise R,
+             subst_free_derivation T H
+                        (Judgement.instantiate Γ I (flat_rule_premise R p)))
+    : subst_free_derivation T H J.
+  Proof.
+    destruct e_J^; eapply derive_contained_rule; eassumption.
+  Defined.
+
   Local Definition derive_congruence {T} (T_cong : congruous T) {H}
     {r : T} (r_obj : Judgement.is_object (form_of_judgement (flat_rule_conclusion (T r))))
     (r_cong := flat_congruence_rule (T r) r_obj)
@@ -392,9 +406,9 @@ the associated congruence rule should be derivable (?admissible). *)
     (I0 I1 : Metavariable.instantiation (flat_rule_metas (T r)) Σ Γ)
     (I := copair_instantiation I0 I1)
     (d_prems : forall p : flat_rule_premise r_cong,
-        FlatTypeTheory.derivation T H
+        subst_free_derivation T H
           (Judgement.instantiate Γ I (flat_rule_premise r_cong p)))
-    : FlatTypeTheory.derivation T H
+    : subst_free_derivation T H
         (Judgement.instantiate Γ I (flat_rule_conclusion r_cong)).
   Proof.
     simple refine (derive_contained_rule _ _ _).
@@ -1371,7 +1385,7 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
     Defined.
 
     Local Lemma substeq_flat_rule_premise
-        {fg : weakly_equal_judgement_map T J' J}
+        (fg : weakly_equal_judgement_map T J' J)
         (p : flat_rule_premise (substeq_flat_rule_rule fg))
       : flat_rule_premise R.
     (* for each premise of the new rule used,
@@ -1384,15 +1398,15 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
         exact p.
     Defined.
 
-    Local Lemma substeq_flat_rule_premise_pair
-        {fg : weakly_equal_judgement_map T J' J}
+    Local Lemma substeq_flat_rule_premise_map
+        (fg : weakly_equal_judgement_map T J' J)
         (p : flat_rule_premise (substeq_flat_rule_rule fg))
       : weakly_equal_judgement_map T
           (Judgement.instantiate Γ'
                   (substeq_flat_rule_instantiation fg)
                   (flat_rule_premise _ p))
           (Judgement.instantiate Γ I
-            (flat_rule_premise _ (substeq_flat_rule_premise p))).
+            (flat_rule_premise _ (substeq_flat_rule_premise _ p))).
     Proof.
       destruct fg as [fg [ [ e_J'_fJ | e_J'_gJ ] | [ R_obj e_jf]]].
       - (* case: f^* of original rule *)
@@ -1414,7 +1428,7 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
   Theorem substitute_equal_derivation
       {T : flat_type_theory Σ}
       (T_sub : substitutive T) (T_cong : congruous T)
-      {J} {J'} (f : weakly_equal_judgement_map T J' J)
+      {J} {J'} (fg : weakly_equal_judgement_map T J' J)
       (d_J : subst_free_derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J'.
   Proof.
@@ -1428,66 +1442,59 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
 
   - all of the premises of these new rule instances have weakly equal judgement maps to the premises of the original instance of R.
    *)
-    revert J' f.
+    revert J' fg.
     induction d_J as [ | r d_ps IH ].
     { destruct i. } (* hypothesis case impossible, as no hypotheses *)
-    intros J' f.
+    intros J' fg.
     destruct r as [ r | r ].
     2: { (* case: instantiation of a flat rule of [T] *)
-      admit.
+      destruct r as [r I].
+      simple refine (derive_rename' _ _
+        (substeq_flat_rule_conclusion _ _ fg) 
+        _ _).
+      { apply T_sub. }
+      { apply inverse, judgement_renaming_hypothetical_part. }
+      simple refine (derive_contained_rule _ _ _).
+      { destruct fg as [_ [_ | [r_obj _]]].
+        - exact r.
+        - apply T_cong. exists r. assumption.
+      }
+      { destruct fg as [fg [? | [r_obj ?]]]; simpl.
+        - apply idpath.
+        - apply (Family.map_commutes T_cong).
+      }
+      intros p. apply (IH (substeq_flat_rule_premise _ _ p)).
+      refine (substeq_flat_rule_premise_map _ _ _ _ _ p); try assumption.
+      apply T_sub.
     }
     (* case: structural rules *)
     destruct r as [ [ r | r ] | r ].
     3: { (* case: equality rule; so again, an instantiation of a flat rule *)
-      admit.
+      destruct r as [r I].
+      simple refine (derive_rename' _ _
+        (substeq_flat_rule_conclusion _ _ fg) 
+        _ _).
+      { apply equality_flat_rules_in_universal_form. }
+      { apply inverse, judgement_renaming_hypothetical_part. }
+      rename fg into fg_temp; set (fg := fg_temp).
+      destruct fg_temp as [fg_map [J'_fg | [r_obj J'_fg]]].
+      - simple refine (Closure.deduce' _ _ _).
+        { apply inl, inr. exists r.
+          exists (context_of_judgement J').
+          refine (substeq_flat_rule_instantiation _ fg).
+        }
+        { apply idpath. }
+        intros p. apply (IH (substeq_flat_rule_premise _ fg p)).
+        refine (substeq_flat_rule_premise_map _ _ _ _ fg p); try assumption.
+        apply equality_flat_rules_in_universal_form.
+      - admit. (* TODO: lemma that for each equality flat rule, if in object form, each instance of its congruence rule is subst-free derivable. (There’s only one case.) With that done, repeat the bullet above using [Closure.graft']. *)
     }
     - (* case: renaming rule *)
       admit.
     - (* case: variable rule *)
-      destruct r as [Γ i]. cbn in f.
+      destruct r as [Γ i]. cbn in fg.
       admit.
 (* From proof of [substitute_derivation], for cannibalising:
-    revert J' f.
-    induction d_J as [ | r d_ps IH ].
-    { destruct i. } (* hypothesis case impossible, as no hypotheses *)
-    intros J' f.
-    destruct r as [ r | r ].
-    2: { (* case: instantiation of a flat rule of [T] *)
-      destruct r as [r I].
-      simple refine (derive_rename' _ _
-        (substitute_flat_rule_instantiation_conclusion _ _ f) 
-        _ _).
-      { apply T_sub. }
-      { apply inverse, judgement_renaming_hypothetical_part. }
-      simple refine (Closure.deduce' _ _ _).
-      { apply inr. exists r.
-        exists (context_of_judgement J').
-        refine (substitute_flat_rule_instantiation_instantiation _ f).
-      }
-      { apply idpath. }
-      intros p. apply (IH p).
-      refine (substitute_flat_rule_instantiation_premise _ _ f p).
-      assumption.
-    }
-    (* case: structural rules *)
-    destruct r as [ [ r | r ] | r ].
-    3: { (* case: equality rule; so again, an instantiation of a flat rule *)
-      destruct r as [r I].
-      simple refine (derive_rename' _ _
-        (substitute_flat_rule_instantiation_conclusion _ _ f) 
-        _ _).
-      { apply equality_flat_rules_in_universal_form. }
-      { apply inverse, judgement_renaming_hypothetical_part. }
-      simple refine (Closure.deduce' _ _ _).
-      { apply inl, inr. exists r.
-        exists (context_of_judgement J').
-        refine (substitute_flat_rule_instantiation_instantiation _ f).
-      }
-      { apply idpath. }
-      intros p. apply (IH p).
-      refine (substitute_flat_rule_instantiation_premise _ _ f p).
-      assumption.
-    }
     - (* case: renaming rule *)
       cbn in r.
       destruct r as [Γ [Γ' [g J]]].
