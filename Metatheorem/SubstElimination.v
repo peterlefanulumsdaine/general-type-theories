@@ -1424,6 +1424,26 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
 
   End Flat_Rule_Substitute_Equal_Instantiation.
 
+  (* TODO: upstream *)
+  Lemma equality_flat_rules_congruous
+      {C} {r : @equality_flat_rule σ}
+      (r_obj : Judgement.is_object (form_of_judgement
+                               (flat_rule_conclusion (equality_flat_rule r))))
+      (r_cong := flat_congruence_rule
+         (FlatRule.fmap (Signature.empty_rect Σ) (equality_flat_rule r)) r_obj)
+      {Γ : raw_context Σ}
+      (I : Metavariable.instantiation (flat_rule_metas r_cong) Σ Γ)
+    : derivation (structural_rule_without_subst Σ + C)
+        (Family.fmap (Judgement.instantiate Γ I) (flat_rule_premise r_cong))
+        (Judgement.instantiate Γ I (flat_rule_conclusion r_cong)).
+  Proof.
+    recursive_destruct r; destruct r_obj.
+    (* Only one case: [term_convert].  Its congreuence rule is essentially given by [tmeq_convert]. *)
+    simpl Judgement.instantiate.
+    unfold Judgement.fmap.
+    cbn. unfold combine_hypothetical_judgement. cbn.
+    (* Dear lord, this is dreadful. Look back up at how this sort of thing was done palatably in showing the structural rules were well-typed? *)
+  Admitted. (* [equality_flat_rules_congruous]: looks horrifying, but shouldn’t actually be too hard. *)
   
   Theorem substitute_equal_derivation
       {T : flat_type_theory Σ}
@@ -1487,7 +1507,14 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
         intros p. apply (IH (substeq_flat_rule_premise _ fg p)).
         refine (substeq_flat_rule_premise_map _ _ _ _ fg p); try assumption.
         apply equality_flat_rules_in_universal_form.
-      - admit. (* TODO: lemma that for each equality flat rule, if in object form, each instance of its congruence rule is subst-free derivable. (There’s only one case.) With that done, repeat the bullet above using [Closure.graft']. *)
+      - refine (Closure.graft' _ _ _).
+        { refine (equality_flat_rules_congruous r_obj _).
+          refine (substeq_flat_rule_instantiation _ fg).
+        }
+        { apply idpath. }
+        intros p. apply (IH (substeq_flat_rule_premise _ fg p)).
+        refine (substeq_flat_rule_premise_map _ _ _ _ fg p); try assumption.
+        apply equality_flat_rules_in_universal_form.
     }
     - (* case: renaming rule *)
       admit.
