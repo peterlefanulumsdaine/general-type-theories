@@ -255,6 +255,44 @@ Section Auxiliary.
       apply idpath.
   Defined.
 
+  Definition rename_substitute_equal_hypothetical_judgement {Σ}
+      {δ γ} (f g : raw_context_map Σ δ γ) {δ' : σ} {r : δ -> δ'}
+      (J : hypothetical_judgement Σ γ)
+      (J_obj : Judgement.is_object (form_of_judgement J))
+    : rename_hypothetical_judgement r
+        (substitute_equal_hypothetical_judgement f g J J_obj)
+    = substitute_equal_hypothetical_judgement
+        (Expression.rename r o f)
+        (Expression.rename r o g)
+        J J_obj.
+  Proof.
+    eapply concat. { apply rename_combine_hypothetical_judgement. }
+    refine (ap2 (fun J K
+                       => combine_hypothetical_judgement
+                            (Build_hypothetical_judgement _ J)
+                            (Build_hypothetical_judgement _ K)
+                            _ _)
+                  _ _);
+    apply path_forall; intros i; apply rename_substitute.
+  Defined.
+
+  Definition substitute_equal_rename_hypothetical_judgement {Σ}
+      {γ γ' δ : σ} (r : γ -> γ') (f g : raw_context_map Σ δ γ')
+      (J : hypothetical_judgement Σ γ)
+      (J_obj : Judgement.is_object (form_of_judgement J))
+    : substitute_equal_hypothetical_judgement f g
+        (rename_hypothetical_judgement r J) J_obj
+    = substitute_equal_hypothetical_judgement (f o r) (g o r) J J_obj.
+  Proof.
+    refine (ap2 (fun J K
+                       => combine_hypothetical_judgement
+                            (Build_hypothetical_judgement _ J)
+                            (Build_hypothetical_judgement _ K)
+                            _ _)
+                  _ _);
+    apply path_forall; intros i; apply substitute_rename.
+  Defined.
+
 End Auxiliary.
 
 Section Subst_Free_Derivations.
@@ -1517,19 +1555,21 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
         apply equality_flat_rules_in_universal_form.
     }
     - (* case: renaming rule *)
-      admit.
+      destruct r as [Γ [Γ' [r J]]].
+      apply (IH tt).
+      exists (compose_renaming_weakly_equal_pair r fg).
+      set (e := weakly_equal_judgement_map_hypothetical_part _ _ _ fg).
+      (* TODO: make args implicit in […_hypothetical_part] above *)
+      (* TODO: consistentise direction of equality in the various judgement maps *)
+      destruct e as [[e|e] | [J'_obj e]];
+        [ apply inl, inl | apply inl, inr | apply inr; exists J'_obj ];
+        refine (e @ _).
+      1, 2: apply @substitute_rename_hypothetical_judgement; auto.
+      apply @substitute_equal_rename_hypothetical_judgement; auto.
     - (* case: variable rule *)
       destruct r as [Γ i]. cbn in fg.
       admit.
 (* From proof of [substitute_derivation], for cannibalising:
-    - (* case: renaming rule *)
-      cbn in r.
-      destruct r as [Γ [Γ' [g J]]].
-      apply (IH tt).
-      exists (compose_renaming_weakly_typed_context_map g f).
-      eapply concat.
-        2: { apply (weakly_typed_judgement_map_hypothetical_part _ _ _ f). }
-      apply inverse, @substitute_rename_hypothetical_judgement; auto.
     - (* case: variable rule *)
       destruct r as [Γ i]. cbn in f.
       destruct (weakly_typed_context_map_is_weakly_typed _ _ _ f i)
@@ -1564,7 +1604,7 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
         cbn in fJ' |- *; destruct fJ'.
         apply Judgement.eq_by_eta; exact idpath.
 *)
-  Admitted. (* [substitute_equal_derivation]: substantial amount of work to do. *)
+  Admitted. (* [substitute_equal_derivation]: some work still to do. *)
 
 End Equality_Substitution.
 
