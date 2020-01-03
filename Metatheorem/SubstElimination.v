@@ -1568,43 +1568,55 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
       apply @substitute_equal_rename_hypothetical_judgement; auto.
     - (* case: variable rule *)
       destruct r as [Γ i]. cbn in fg.
-      admit.
-(* From proof of [substitute_derivation], for cannibalising:
-    - (* case: variable rule *)
-      destruct r as [Γ i]. cbn in f.
-      destruct (weakly_typed_context_map_is_weakly_typed _ _ _ f i)
-        as [[j [e1 e2]] | d_fi].
-      (* TODO: add implicit args in […is_weakly_typed]!  It’s bloody long enough already *)
-      + (* case: [f i = raw_variable j], [Γ' j = f^* (Γ i) ] *)
-      destruct J' as [Γ' J'].
-      destruct f as [f fJ'].
-      cbn in j, e1, e2 |- *.
-      simple refine (Closure.deduce' _ _ _).
-      { apply inl, inl, inr. (* use the variable rule *)
-        exists Γ'. exact j. }
-      { cbn in fJ'; destruct fJ'.
-        apply Judgement.eq_by_expressions.
-        - intro; apply idpath.
-        - intro s; recursive_destruct s.
-          + exact e2.
-          + cbn. apply inverse, e1.
-      }
-      intros p; set (p_keep := p); recursive_destruct p. cbn.
-      apply (IH p_keep).
-      set (f0 := f : weakly_typed_context_map _ _ _).
-      cbn in f0. exists f0.
-      apply (ap (Build_hypothetical_judgement _)). 
-      apply path_forall.
-      intros s; recursive_destruct s.
-      apply inverse, e2.
+      destruct (is_weakly_equal fg i)
+        as [[j [e_fvar [e_ftype | e_gtype]]] | d_fi].
+      + (* case: [f i = g i = raw_variable j], [Γ' j = f^* (Γ i) ] *)
+        destruct J' as [Γ' J'].
+        destruct fg as [fg [[e|e] | [J'_obj e]]].
+        * simpl hypothetical_part at 1 in e.
+          simpl in fg, j, e_ftype, e_fvar.
+          revert e j e_fvar e_ftype; rapply @inverse_sufficient; revert J'.
+          refine (paths_rect _ (substitute_hypothetical_judgement _ _) _ _).
+          intros j e_fvar e_ftype.
+          simple refine (Closure.deduce' _ _ _).
+          { apply inl, inl, inr. (* use the variable rule *)
+            exists Γ'. exact j. }
+          { apply Judgement.eq_by_expressions.
+            - intro; apply idpath.
+            - intro s; recursive_destruct s.
+              + exact e_ftype.
+              + cbn. apply inverse, e_fvar.
+          }
+          intros p; set (p_keep := p); recursive_destruct p. cbn.
+          apply (IH p_keep).
+          exists fg.
+          apply inl, inl.
+          apply (ap (Build_hypothetical_judgement _)). 
+          apply path_forall.
+          intros s; recursive_destruct s.
+          apply e_ftype.
+        * simpl hypothetical_part at 1 in e.
+          simpl in fg, j, e_ftype, e_fvar.
+          revert e j e_fvar e_ftype; rapply @inverse_sufficient; revert J'.
+          refine (paths_rect _ (substitute_hypothetical_judgement _ _) _ _).
+          intros j e_fvar e_ftype.
+          (* TODO: fix def of weakly equal to include [e_gvar] also! *)
+          (* TODO: make analogue of [derive_term_convert] for the subst-free setting, or better, generalise [derive_term_convert] using type-classes. *)
+          admit. (* With the above done: the derivation here should use the [term_convert] rule, with the inductive hypothesis providing the required type equality, followed by the variable rule as in previous bullet. *)
+        * admit. (* once the def of weakly equal is fixed, this should be [derive_tmeq_refl] followed by the first bullet *)
+      + (* case: [f i = g i = raw_variable j], [Γ' j = g^* (Γ i) ] *)
+        admit. (* Analogous to previous bullet, but with the first two sub-cases swapped. *)
+      + (* case: [fg] tells us [ Γ' |- f i = g i : f^* (Γ i) ] *)
+        admit. (* Hmm… Should we use presuppositions metatheorem here (requires assuming [T] presuppositive), or should we strengthen the definition of [weakly_equal] to provide the presuppositions of the equality?  I guess the latter makes this theorem more general, provided it doesn’t cause problems in extending weakly equal pairs. *)
+  (* From proof of [substitute_derivation], for cannibalising:
       + (* case: [f] tells us [ Γ' |- f i : f^* (Γ i) ] *)
         refine (transport _ _ d_fi).
         destruct J' as [Γ' J'].
         destruct f as [f fJ'].
         cbn in fJ' |- *; destruct fJ'.
         apply Judgement.eq_by_eta; exact idpath.
-*)
-  Admitted. (* [substitute_equal_derivation]: some work still to do. *)
+   *)
+Admitted. (* [substitute_equal_derivation]: some work still to do, some upstream fixes required. *)
 
 End Equality_Substitution.
 
