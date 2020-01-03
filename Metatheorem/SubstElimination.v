@@ -340,6 +340,61 @@ Section Subst_Free_Derivations.
     intro; apply d_Γi.
   Defined.
 
+  Local Definition derive_tyeq_sym
+      (Γ : raw_context Σ) (A B : raw_expression Σ class_type Γ)
+      (d_AB : derivation T H [! Γ |- A ≡ B !])
+    : derivation T H [! Γ |- B ≡ A !].
+  Proof.
+    apply derive_from_reindexing_to_empty_sum.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, inr.
+      exists (Some (Some (Some (Some (Some (Some None)))))), Γ.
+      intros i; recursive_destruct i;
+        refine (Expression.rename (shape_sum_empty_inl _) _);
+        [ exact A | exact B ].
+    }
+    { refine (Judgement.eq_by_expressions _ _).
+      - apply @instantiate_empty_ptwise.
+      - intros i; recursive_destruct i;
+          apply instantiate_binderless_metavariable.
+    }
+    intros [].
+    refine (transport _ _
+                      (derive_reindexing_to_empty_sum _ d_AB)).
+    apply Judgement.eq_by_expressions.
+    - intros i. apply inverse, @instantiate_empty_ptwise.
+    - intros i; recursive_destruct i;
+        apply inverse, instantiate_binderless_metavariable.
+  Defined.
+
+  Local Definition derive_tmeq_refl
+      (Γ : raw_context Σ)
+      (A : raw_type Σ Γ) (a : raw_term Σ Γ)
+      (d_a : derivation T H [! Γ |- a ; A !])
+    : derivation T H [! Γ |- a ≡ a ; A !].
+  Proof.
+    apply derive_from_reindexing_to_empty_sum.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, inr.
+      exists (Some (Some (Some (Some None)))), Γ.
+      intros i; recursive_destruct i;
+        refine (Expression.rename (shape_sum_empty_inl _) _);
+        assumption.
+    }
+    { refine (Judgement.eq_by_expressions _ _).
+      - intros i. apply @instantiate_empty_ptwise.
+      - intros i; recursive_destruct i;
+          refine (instantiate_binderless_metavariable _).
+    }
+    intros [].
+    refine (transport _ _
+                      (derive_reindexing_to_empty_sum _ d_a)).
+    rapply @Judgement.eq_by_expressions.
+    - intros i. apply inverse, @instantiate_empty_ptwise.
+    - intros i; recursive_destruct i;
+        apply inverse, instantiate_binderless_metavariable.
+  Defined.
+
   Local Definition derive_term_convert
       ( Γ : raw_context Σ )
       ( A B : raw_expression Σ class_type Γ )
@@ -373,35 +428,7 @@ Section Subst_Free_Derivations.
        | intros i; recursive_destruct i;
          apply inverse, instantiate_binderless_metavariable]).
   Time Defined.
-  (* NOTE: this is noticeably slower at the [Defined] than the original [derive_term_convert] in [Typing.StructuralRule]; the culprit is at the line marked (1), where the original has a pre-defined accessor into the family. TODO: see if unifying these with typeclasses helps, à la [derive_rename]/[has_derivable_renaming]. *)
-
-  Definition derive_tmeq_refl
-      (Γ : raw_context Σ)
-      (A : raw_type Σ Γ) (a : raw_term Σ Γ)
-      (d_a : derivation T H [! Γ |- a ; A !])
-    : derivation T H [! Γ |- a ≡ a ; A !].
-  Proof.
-    apply derive_from_reindexing_to_empty_sum.
-    simple refine (Closure.deduce' _ _ _).
-    { apply inl, inr.
-      exists (Some (Some (Some (Some None)))), Γ.
-      intros i; recursive_destruct i;
-        refine (Expression.rename (shape_sum_empty_inl _) _);
-        assumption.
-    }
-    { refine (Judgement.eq_by_expressions _ _).
-      - intros i. apply @instantiate_empty_ptwise.
-      - intros i; recursive_destruct i;
-          refine (instantiate_binderless_metavariable _).
-    }
-    intros [].
-    refine (transport _ _
-                      (derive_reindexing_to_empty_sum _ d_a)).
-    rapply @Judgement.eq_by_expressions.
-    - intros i. apply inverse, @instantiate_empty_ptwise.
-    - intros i; recursive_destruct i;
-        apply inverse, instantiate_binderless_metavariable.
-  Defined.
+  (* NOTE: this is noticeably slower at the [Defined] than the original [derive_term_convert] in [Typing.StructuralRule], and similarly with all the interface functions of this section. The culprit is at the line marked (1), where the original has a pre-defined accessor into the family. TODO: see if unifying these with typeclasses helps, à la [derive_rename]/[has_derivable_renaming]. *)
 
   End InterfaceFunctions.
 
@@ -1726,8 +1753,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
           apply Judgement.canonicalise; simpl.
         * rewrite e_fvar.
           apply (derive_term_convert Γ' (substitute (right fg) (Γ i)));
-            try assumption.
-          { admit. (* TODO: [derive_tyeq_sym]*) }
+            try apply derive_tyeq_sym; try assumption.
           rewrite <- e_gtype.
           apply derive_variable.
           rewrite e_gtype.
@@ -1739,8 +1765,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
         * rewrite e_fvar, e_gvar.
           apply derive_tmeq_refl.
           apply (derive_term_convert Γ' (substitute (right fg) (Γ i)));
-            try assumption.
-          { admit. (* TODO: [derive_tyeq_sym]*) }
+            try apply derive_tyeq_sym; try assumption.
           rewrite <- e_gtype.
           apply derive_variable.
           rewrite e_gtype.
@@ -1751,7 +1776,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
           [ set (d := d_fi) | set (d := d_gi) | set (d := d_fgi) ];
           refine (transport _ _ d);
           apply Judgement.eq_by_eta, idpath.
-Admitted. (* [substitute_equal_derivation]: some work still to do, some upstream lemmas required. *)
+Defined.
 
 End Equality_Substitution.
 
