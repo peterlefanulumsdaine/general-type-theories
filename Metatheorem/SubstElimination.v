@@ -320,11 +320,16 @@ Section Subst_Free_Derivations.
   proving the original lemmas in type-class based ways, which will then apply
   automatically to subst-free derivations? (as we did with [derive_rename] etc) *)
 
-  Local Definition derive_variable `{H_Funext : Funext}
+  Section InterfaceFunctions.
+
+  Context
+    `{H_Funext : Funext}
       {Σ : signature σ}
       {C : Closure.system (judgement Σ)}
       (T := (structural_rule_without_subst Σ + C))
-      { H : family (judgement Σ) }
+      { H : family (judgement Σ) }.
+
+  Local Definition derive_variable
       (Γ : raw_context Σ) (i : Γ)
       (d_Γi : derivation T H [! Γ |- Γ i !])
     : derivation T H [! Γ |- raw_variable i ; Γ i !].
@@ -335,11 +340,7 @@ Section Subst_Free_Derivations.
     intro; apply d_Γi.
   Defined.
 
-  Local Definition derive_term_convert `{H_Funext : Funext}
-      {Σ : signature σ}
-      {C : Closure.system (judgement Σ)}
-      (T := (structural_rule_without_subst Σ + C))
-      { H : family (judgement Σ) }
+  Local Definition derive_term_convert
       ( Γ : raw_context Σ )
       ( A B : raw_expression Σ class_type Γ )
       ( u : raw_expression Σ class_term Γ )
@@ -373,6 +374,36 @@ Section Subst_Free_Derivations.
          apply inverse, instantiate_binderless_metavariable]).
   Time Defined.
   (* NOTE: this is noticeably slower at the [Defined] than the original [derive_term_convert] in [Typing.StructuralRule]; the culprit is at the line marked (1), where the original has a pre-defined accessor into the family. TODO: see if unifying these with typeclasses helps, à la [derive_rename]/[has_derivable_renaming]. *)
+
+  Definition derive_tmeq_refl
+      (Γ : raw_context Σ)
+      (A : raw_type Σ Γ) (a : raw_term Σ Γ)
+      (d_a : derivation T H [! Γ |- a ; A !])
+    : derivation T H [! Γ |- a ≡ a ; A !].
+  Proof.
+    apply derive_from_reindexing_to_empty_sum.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, inr.
+      exists (Some (Some (Some (Some None)))), Γ.
+      intros i; recursive_destruct i;
+        refine (Expression.rename (shape_sum_empty_inl _) _);
+        assumption.
+    }
+    { refine (Judgement.eq_by_expressions _ _).
+      - intros i. apply @instantiate_empty_ptwise.
+      - intros i; recursive_destruct i;
+          refine (instantiate_binderless_metavariable _).
+    }
+    intros [].
+    refine (transport _ _
+                      (derive_reindexing_to_empty_sum _ d_a)).
+    rapply @Judgement.eq_by_expressions.
+    - intros i. apply inverse, @instantiate_empty_ptwise.
+    - intros i; recursive_destruct i;
+        apply inverse, instantiate_binderless_metavariable.
+  Defined.
+
+  End InterfaceFunctions.
 
 End Subst_Free_Derivations.
 
@@ -1546,13 +1577,15 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
         (Judgement.instantiate Γ I (flat_rule_conclusion r_cong)).
   Proof.
     recursive_destruct r; destruct r_obj.
-    (* Only one case: [term_convert].  Its congreuence rule is essentially given by [tmeq_convert]. *)
+    (* Only one case: [term_convert].  Its congruence rule is essentially given by [tmeq_convert]. *)
     simpl Judgement.instantiate.
     unfold Judgement.fmap.
     cbn. unfold combine_hypothetical_judgement. cbn.
     (* Dear lord, this is dreadful. Look back up at how this sort of thing was done palatably in showing the structural rules were well-typed? *)
   Admitted. (* [equality_flat_rules_congruous]: looks horrifying, but shouldn’t actually be too hard. *)
   
+  Arguments Judgement.head _ _ _ _/. (* TODO: upstream! *)
+
   Theorem substitute_equal_derivation
       {T : flat_type_theory Σ}
       (T_sub : substitutive T) (T_cong : congruous T)
@@ -1560,7 +1593,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
       (d_J : subst_free_derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J'.
   Proof.
-    (* Sketch proof: should be roughly analogous in organisation to proofs of [rename_derivation], [substitute_derivation] above. 
+    (* Sketch proof: should be roughly analogous in organisation to proofs of [rename_derivation], [substitute_derivation] above.
 
   The sequence of lemmas to handle the flat rule cases should show:
 
@@ -1578,7 +1611,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
     2: { (* case: instantiation of a flat rule of [T] *)
       destruct r as [r I].
       simple refine (derive_rename' _ _
-        (substeq_flat_rule_conclusion _ _ fg) 
+        (substeq_flat_rule_conclusion _ _ fg)
         _ _).
       { apply T_sub. }
       { apply inverse, judgement_renaming_hypothetical_part. }
@@ -1600,7 +1633,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
     3: { (* case: equality rule; so again, an instantiation of a flat rule *)
       destruct r as [r I].
       simple refine (derive_rename' _ _
-        (substeq_flat_rule_conclusion _ _ fg) 
+        (substeq_flat_rule_conclusion _ _ fg)
         _ _).
       { apply equality_flat_rules_in_universal_form. }
       { apply inverse, judgement_renaming_hypothetical_part. }
@@ -1640,8 +1673,8 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
       destruct r as [Γ i]. cbn in fg.
       destruct J' as [Γ' J'].
       destruct fg as [fg fg_J]; simpl in fg; cbn in fg_J.
-      (* There will be nine subcases, according to the three possible cases each for the relationship [fg] gives between [J] and [J'], and for what the weakly equal pair [fg] gives at the variable [i].
-      To avoid duplicated work between these nine cases, we extract the required cases of the inductive hypothesis before case-splitting. *) 
+      (* There will be nine subcases, according to the three possible cases for the relationship [fg] gives between [J] and [J'], and for what the weakly equal pair [fg] gives at the variable [i].
+      To avoid duplicated work between these nine cases, we extract the required cases of the inductive hypothesis before case-splitting. *)
       assert (IH_fΓi : subst_free_derivation T [<>]
                                   [! Γ' |- substitute (left fg) (Γ i) !]).
       { apply (IH tt); exists fg.
@@ -1665,35 +1698,53 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
       }
       clear d_ps IH.
       destruct (is_weakly_equal fg i)
-        as [[j [e_vars [e_ftype | e_gtype]]] | [[d_fi d_gi] d_fgi ]].
+        as [[j [[e_fvar e_gvar] [e_ftype | e_gtype]]] | [[d_fi d_gi] d_fgi ]].
       + (* case: [f i = g i = raw_variable j], [Γ' j = f^* (Γ i) ] *)
-        destruct fg_J as [[e|e] | [J'_obj e]].
-        * simpl hypothetical_part at 1 in e.
-          simpl in *.
-          revert e j e_vars e_ftype; rapply @inverse_sufficient; revert J'.
-          refine (paths_rect _ (substitute_hypothetical_judgement _ _) _ _).
-          intros j [e_fvar _] e_ftype.
+        destruct fg_J as [[e|e] | [J'_obj e]];
+          (eapply transport; [ eapply (ap (Build_judgement _)), inverse, e | ]);
           apply Judgement.canonicalise; simpl.
-          rewrite e_fvar, <- e_ftype.
+        * rewrite e_fvar, <- e_ftype.
           apply derive_variable.
           rewrite e_ftype.
           apply IH_fΓi.
-        * simpl hypothetical_part at 1 in e.
-          simpl in fg, j, e_ftype, e_vars.
-          revert e j e_vars e_ftype; rapply @inverse_sufficient; revert J'.
-          refine (paths_rect _ (substitute_hypothetical_judgement _ _) _ _).
-          intros j [e_fvar e_gvar] e_ftype.
-          apply Judgement.canonicalise; simpl.
-          rewrite e_gvar.
+        * rewrite e_gvar.
           apply (derive_term_convert Γ' (substitute (left fg) (Γ i)));
             try assumption.
           rewrite <- e_ftype.
           apply derive_variable.
           rewrite e_ftype.
           apply IH_fΓi.
-        * admit. (* this should be [derive_tmeq_refl] followed by the first bullet *)
+        * rewrite e_fvar, e_gvar.
+          apply derive_tmeq_refl.
+          rewrite <- e_ftype.
+          apply derive_variable.
+          rewrite e_ftype.
+          exact IH_fΓi.
       + (* case: [f i = g i = raw_variable j], [Γ' j = g^* (Γ i) ] *)
-        admit. (* Analogous to previous bullet [+], but with the first two sub-cases swapped. *)
+        destruct fg_J as [[e|e] | [J'_obj e]];
+          (eapply transport; [ eapply (ap (Build_judgement _)), inverse, e | ]);
+          apply Judgement.canonicalise; simpl.
+        * rewrite e_fvar.
+          apply (derive_term_convert Γ' (substitute (right fg) (Γ i)));
+            try assumption.
+          { admit. (* TODO: [derive_tyeq_sym]*) }
+          rewrite <- e_gtype.
+          apply derive_variable.
+          rewrite e_gtype.
+          apply IH_gΓi.
+        * rewrite e_gvar, <- e_gtype.
+          apply derive_variable.
+          rewrite e_gtype.
+          apply IH_gΓi.
+        * rewrite e_fvar, e_gvar.
+          apply derive_tmeq_refl.
+          apply (derive_term_convert Γ' (substitute (right fg) (Γ i)));
+            try assumption.
+          { admit. (* TODO: [derive_tyeq_sym]*) }
+          rewrite <- e_gtype.
+          apply derive_variable.
+          rewrite e_gtype.
+          apply IH_gΓi.
       + (* case: [fg] tells us [ Γ' |- f i = g i : f^* (Γ i) ] *)
         destruct fg_J as [[e|e] | [J'_obj e]];
           cbn in *; destruct e^;

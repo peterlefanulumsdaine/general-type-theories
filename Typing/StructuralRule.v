@@ -838,6 +838,40 @@ Section InterfaceFunctions.
         apply inverse, instantiate_binderless_metavariable.
   Defined.
 
+(* TODO: derive_tyeq_trans *)
+
+  Definition derive_tmeq_refl
+      (Γ : raw_context Σ)
+      (A : raw_type Σ Γ) (a : raw_term Σ Γ)
+      (d_a : derivation T H [! Γ |- a ; A !])
+    : derivation T H [! Γ |- a ≡ a ; A !].
+  Proof.
+    apply derive_from_reindexing_to_empty_sum.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, tmeq_refl. 
+      exists Γ.
+      intros i; recursive_destruct i;
+        refine (Expression.rename (shape_sum_empty_inl _) _);
+        assumption.
+    }
+    { refine (Judgement.eq_by_expressions _ _).
+      - intros i. apply @instantiate_empty_ptwise.
+      - intros i; recursive_destruct i;
+          refine (instantiate_binderless_metavariable _).
+    }
+    intros [].
+    refine (transport _ _
+                      (derive_reindexing_to_empty_sum _ d_a)).
+    rapply @Judgement.eq_by_expressions.
+    - intros i. apply inverse, @instantiate_empty_ptwise.
+    - intros i; recursive_destruct i;
+        apply inverse, instantiate_binderless_metavariable.
+  Defined.
+
+(* TODO: derive_tmeq_sym *)
+
+(* TODO: derive_tmeq_trans *)
+
   (* rule term_convert
 
      ⊢ A, B type
@@ -880,6 +914,8 @@ Section InterfaceFunctions.
        | intros i; recursive_destruct i;
          apply inverse, instantiate_binderless_metavariable]).
   Defined.
+
+(* TODO: derive_tmeq_convert *)
 
 End InterfaceFunctions.
 
