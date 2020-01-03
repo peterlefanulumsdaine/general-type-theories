@@ -1065,6 +1065,10 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
                 * ((Δ j = substitute f (Γ i))
                   + (Δ j = substitute g (Γ i))) }
     + subst_free_derivation T (Family.empty _)
+          [! Δ |- f i ; substitute f (Γ i) !]
+      * subst_free_derivation T (Family.empty _)
+          [! Δ |- g i ; substitute g (Γ i) !]
+      * subst_free_derivation T (Family.empty _)
           [! Δ |- f i ≡ g i ; substitute f (Γ i) !].
 
   Local Record weakly_equal_pair
@@ -1094,7 +1098,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
     - intros i. exact (g (r i)).
     - intros i.
       destruct (is_weakly_equal fg (r i))
-        as [[j [e1 e2]] | d_fri_gri ].
+        as [[j [e1 e2]] | [[d_fri d_gri] d_fgri] ].
       + apply inl.
         exists j; split.
         * exact e1.
@@ -1104,8 +1108,14 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
             try apply typed_renaming_respects_types;
             apply substitute_rename.
       + apply inr.
-        refine (transport _ _ d_fri_gri).
-        apply (ap (fun A => [! _ |- _ ≡ _ ; A !])).
+        repeat split;
+        [ set (d := d_fri) | set (d := d_gri) | set (d := d_fgri) ];
+        refine (transport _ _ d).
+        1, 2:
+          apply (ap (Judgement.make_term_judgement _ _));
+          refine (ap _ (typed_renaming_respects_types _ _ _ _) @ _);
+          apply substitute_rename.
+        apply (ap_2back (Judgement.make_term_equality_judgement _)).
         eapply concat. { apply ap, typed_renaming_respects_types. }
         apply substitute_rename.
   Defined.
@@ -1174,7 +1184,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
       unfold Substitution.extend; cbn.
       repeat rewrite coproduct_comp_inj1.
         destruct (is_weakly_equal fg i)
-          as [[j [[e_fij e_gij] e_fg]] | d_fi].
+          as [[j [[e_fij e_gij] e_fg]] | [[d_fi d_gi] d_fgi ]].
       + apply inl.
         exists (coproduct_inj1 shape_is_sum j); repeat split.
         * exact (ap _ e_fij).
@@ -1188,16 +1198,17 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
             cbn; repeat rewrite coproduct_comp_inj1;
             apply idpath.
       + apply inr.
-        refine (rename_derivation _ _ d_fi).
-        { assumption. }
-        exists (typed_renaming_to_instantiate_context _ _ _).
-        apply (ap (Build_hypothetical_judgement _)).
-        apply path_forall; intros j; recursive_destruct j;
-          try apply idpath.
-        eapply concat. { apply rename_substitute. }
-        eapply concat. 2: { apply inverse, substitute_rename. }
-        apply (ap_2back substitute), path_forall; intros j.
-        apply inverse. refine (coproduct_comp_inj1 _).
+        repeat split;
+          [ set (d := d_fi) | set (d := d_gi) | set (d := d_fgi) ];
+          refine (rename_derivation T_sub _ d);
+          exists (typed_renaming_to_instantiate_context _ _ _);
+          apply (ap (Build_hypothetical_judgement _));
+          apply path_forall; intros j; recursive_destruct j;
+          try apply idpath;
+          refine (rename_substitute _ _ _ @ _);
+          refine (_ @ (substitute_rename _ _ _)^);
+          apply (ap_2back substitute), inverse, path_forall; intros j;
+          refine (coproduct_comp_inj1 _).
     - intros i. apply inl.
       exists (coproduct_inj2 shape_is_sum i); split.
       + split; unfold Substitution.extend;
@@ -1226,7 +1237,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
       unfold Substitution.extend; cbn.
       repeat rewrite coproduct_comp_inj1.
         destruct (is_weakly_equal fg i)
-          as [[j [[e_fij e_gij] e_fg]] | d_fi].
+          as [[j [[e_fij e_gij] e_fg]] | [[d_fi d_gi] d_fgi ]].
       + apply inl.
         exists (coproduct_inj1 shape_is_sum j); repeat split.
         * exact (ap _ e_fij).
@@ -1240,16 +1251,17 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
             cbn; repeat rewrite coproduct_comp_inj1;
             apply idpath.
       + apply inr.
-        refine (rename_derivation _ _ d_fi).
-        { assumption. }
-        exists (typed_renaming_to_instantiate_context _ _ _).
-        apply (ap (Build_hypothetical_judgement _)).
-        apply path_forall; intros j; recursive_destruct j;
-          try apply idpath.
-        eapply concat. { apply rename_substitute. }
-        eapply concat. 2: { apply inverse, substitute_rename. }
-        apply (ap_2back substitute), path_forall; intros j.
-        apply inverse. refine (coproduct_comp_inj1 _).
+        repeat split;
+          [ set (d := d_fi) | set (d := d_gi) | set (d := d_fgi) ];
+          refine (rename_derivation T_sub _ d);
+          exists (typed_renaming_to_instantiate_context _ _ _);
+          apply (ap (Build_hypothetical_judgement _));
+          apply path_forall; intros j; recursive_destruct j;
+          try apply idpath;
+          refine (rename_substitute _ _ _ @ _);
+          refine (_ @ (substitute_rename _ _ _)^);
+          apply (ap_2back substitute), inverse, path_forall; intros j;
+          refine (coproduct_comp_inj1 _).
     - intros i. apply inl.
       exists (coproduct_inj2 shape_is_sum i); split.
       + split; unfold Substitution.extend;
@@ -1572,7 +1584,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
     - (* case: variable rule *)
       destruct r as [Γ i]. cbn in fg.
       destruct (is_weakly_equal fg i)
-        as [[j [e_fvar [e_ftype | e_gtype]]] | d_fi].
+        as [[j [e_fvar [e_ftype | e_gtype]]] | [[d_fi d_gi] d_fgi ]].
       + (* case: [f i = g i = raw_variable j], [Γ' j = f^* (Γ i) ] *)
         destruct J' as [Γ' J'].
         destruct fg as [fg [[e|e] | [J'_obj e]]].
@@ -1609,16 +1621,13 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
       + (* case: [f i = g i = raw_variable j], [Γ' j = g^* (Γ i) ] *)
         admit. (* Analogous to previous bullet [+], but with the first two sub-cases swapped. *)
       + (* case: [fg] tells us [ Γ' |- f i = g i : f^* (Γ i) ] *)
-        admit. (* Hmm… Should we use presuppositions metatheorem here (requires assuming [T] presuppositive), or should we strengthen the definition of [weakly_equal] to provide the presuppositions of the equality?  I guess the latter makes this theorem more general, provided it doesn’t cause problems in extending weakly equal pairs. *)
-  (* From proof of [substitute_derivation], for cannibalising:
-      + (* case: [f] tells us [ Γ' |- f i : f^* (Γ i) ] *)
-        refine (transport _ _ d_fi).
-        destruct J' as [Γ' J'].
-        destruct f as [f fJ'].
-        cbn in fJ' |- *; destruct fJ'.
-        apply Judgement.eq_by_eta; exact idpath.
-   *)
-Admitted. (* [substitute_equal_derivation]: some work still to do, some upstream fixes required. *)
+        destruct J' as [Γ' J']; cbn in *.
+        destruct fg as [fg [[e|e] | [J'_obj e]]];
+          cbn in *; destruct e^;
+          [ set (d := d_fi) | set (d := d_gi) | set (d := d_fgi) ];
+          refine (transport _ _ d);
+          apply Judgement.eq_by_eta, idpath.
+Admitted. (* [substitute_equal_derivation]: some work still to do, some upstream lemmas required. *)
 
 End Equality_Substitution.
 
@@ -1653,8 +1662,10 @@ Section Subst_Elimination.
         try assumption.
       simple refine (Build_weakly_equal_judgement_map _ _ _ _ _);
         [ simple refine (Build_weakly_equal_pair _ _ _ f g _) | ].
-        * intros i. apply inr.
-          exact (d_prems (Some (inr i))).
+        * intros i. apply inr; repeat split.
+          -- exact (d_prems (Some (inl (inl i)))).
+          -- exact (d_prems (Some (inl (inr i)))).
+          -- exact (d_prems (Some (inr i))).
         * apply inr.
           exists tt; apply idpath.
     - simple refine (Closure.deduce' _ _ _).
