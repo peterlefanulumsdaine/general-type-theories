@@ -314,10 +314,50 @@ Section Subst_Free_Derivations.
       (flat_rule_premise R)
       (flat_rule_conclusion R).
 
-  (* TODO: we will probably need to generalise various lemmas from ordinary to
-  subst-free derivations.  Hopefully this can be done, as far as possible, by
+  (** Next we generalise various lemmas from ordinary to subst-free derivations. *)
+
+  (* TODO: can we cut down on redundancy by
   proving the original lemmas in type-class based ways, which will then apply
-  automatically to subst-free derivations. *)
+  automatically to subst-free derivations? (as we did with [derive_rename] etc) *)
+
+  Local Definition derive_term_convert `{H_Funext : Funext}
+      {Σ : signature σ}
+      {C : Closure.system (judgement Σ)}
+      (T := (structural_rule_without_subst Σ + C))
+      { H : family (judgement Σ) }
+      ( Γ : raw_context Σ )
+      ( A B : raw_expression Σ class_type Γ )
+      ( u : raw_expression Σ class_term Γ )
+      ( d_A : derivation T H [! Γ |- A !] )
+      ( d_B : derivation T H [! Γ |- B !] )
+      ( d_AB : derivation T H [! Γ |- A ≡ B !] )
+      ( d_u : derivation T H [! Γ |- u ; A !] )
+    : derivation T H [! Γ |- u ; B !].
+  Proof.
+    apply derive_from_reindexing_to_empty_sum.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, inr. (* (1) see note at end of proof *)
+      exists (Some None), Γ.
+      intros i; recursive_destruct i;
+        refine (Expression.rename (shape_sum_empty_inl _) _).
+      + exact A.
+      + exact B.
+      + exact u.
+    }
+    { refine (Judgement.eq_by_expressions _ _).
+      - apply @instantiate_empty_ptwise.
+      - intros i; recursive_destruct i;
+          apply instantiate_binderless_metavariable.
+    }
+    intros p; recursive_destruct p;
+      [ set (d := d_A) | set (d := d_B) | set (d := d_AB) | set (d := d_u) ];
+      refine (transport _ _ (derive_reindexing_to_empty_sum _ d));
+      (apply Judgement.eq_by_expressions;
+       [ intros; apply inverse, @instantiate_empty_ptwise
+       | intros i; recursive_destruct i;
+         apply inverse, instantiate_binderless_metavariable]).
+  Time Defined.
+  (* NOTE: this is noticeably slower at the [Defined] than the original [derive_term_convert] in [Typing.StructuralRule]; the culprit is at the line marked (1), where the original has a pre-defined accessor into the family. TODO: see if unifying these with typeclasses helps, à la [derive_rename]/[has_derivable_renaming]. *)
 
 End Subst_Free_Derivations.
 
@@ -1615,8 +1655,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
           revert e j e_fvar e_ftype; rapply @inverse_sufficient; revert J'.
           refine (paths_rect _ (substitute_hypothetical_judgement _ _) _ _).
           intros j e_fvar e_ftype.
-          (* TODO: make analogue of [derive_term_convert] for the subst-free setting, or better, generalise [derive_term_convert] using type-classes. *)
-          admit. (* With the above done: the derivation here should use the [term_convert] rule, with the inductive hypothesis providing the required type equality, followed by the variable rule as in previous bullet. *)
+          admit. (* This derivation here should use [derive_term_convert] rule, with the inductive hypothesis providing the required type equality, followed by the variable rule as in previous bullet. *)
         * admit. (* this should be [derive_tmeq_refl] followed by the first bullet *)
       + (* case: [f i = g i = raw_variable j], [Γ' j = g^* (Γ i) ] *)
         admit. (* Analogous to previous bullet [+], but with the first two sub-cases swapped. *)
