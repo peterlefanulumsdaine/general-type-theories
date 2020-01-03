@@ -1048,9 +1048,9 @@ That is: given a derivale object judgement, e.g. [ Γ |- a : A ], and two deriva
 
 That result, [subst_equal_derivation], is the main goal of this section; but to make the inductive proof go through we generalise its statement, to raw context maps [f g : Γ' -> Γ] that are what we call _weakly judgementally-equal_.
 
-The idea of this is that it generalises judgemental equality so as to be closed under extending/weakening a pair [f, g] by types either of the form [f^*A] or [g^*A], without any derivability check for [A] (which would be required for the extensions to be still judgementally equal).  Such extensions arise when going under binders in premises of rules.
+The idea of this is that it generalises judgemental equality so as to be closed under extending a pair [f, g : Δ -> Γ] to extended pairs [Δ;f^*A -> Γ;A] and [Δ;g^*A -> Γ;A], i.e. with the source context extended by either [f^*A] or [g^*A]); and we must do this without any well-formedness check on [A], so we can’t necessarily derive that the extensions are judgementally equal.  Such extensions arise when going under binders in premises of rules.
 
-Since the resulting maps may not be weakly-typed context maps, so not automatically applicable for [substitute_derivation], we also strengthen the statement to conclude additionally that [ Γ |- f^*a : f^*A ] and [ Γ |- g^*a : g^*A ]. *)
+Since the resulting individual maps [f], [g] may not be weakly-typed context maps, so not automatically applicable for [substitute_derivation], we also strengthen the induction statement to yield additionally that [ Γ |- f^*a : f^*A ] and [ Γ |- g^*a : g^*A ]. *)
 
   Context {σ : shape_system} {Σ : signature σ} `{Funext}.
 
@@ -1060,7 +1060,8 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
       (f g : raw_context_map Σ Δ Γ)
     : Type
   := forall i : Γ,
-      { j : Δ & (f i = raw_variable j) 
+      { j : Δ & (f i = raw_variable j)
+                * (g i = raw_variable j)
                 * ((Δ j = substitute f (Γ i))
                   + (Δ j = substitute g (Γ i))) }
     + subst_free_derivation T (Family.empty _)
@@ -1173,10 +1174,11 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
       unfold Substitution.extend; cbn.
       repeat rewrite coproduct_comp_inj1.
         destruct (is_weakly_equal fg i)
-          as [[j [e_ij e_fg]] | d_fi].
+          as [[j [[e_fij e_gij] e_fg]] | d_fi].
       + apply inl.
-        exists (coproduct_inj1 shape_is_sum j); split.
-        * exact (ap _ e_ij).
+        exists (coproduct_inj1 shape_is_sum j); repeat split.
+        * exact (ap _ e_fij).
+        * exact (ap _ e_gij).
         * repeat rewrite coproduct_comp_inj1.
           repeat rewrite substitute_rename.
           destruct e_fg as [e | e];
@@ -1198,7 +1200,7 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
         apply inverse. refine (coproduct_comp_inj1 _).
     - intros i. apply inl.
       exists (coproduct_inj2 shape_is_sum i); split.
-      + unfold Substitution.extend; cbn.
+      + split; unfold Substitution.extend;
         refine (coproduct_comp_inj2 _).
       + apply inl; cbn.
         repeat rewrite coproduct_comp_inj2.
@@ -1224,10 +1226,11 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
       unfold Substitution.extend; cbn.
       repeat rewrite coproduct_comp_inj1.
         destruct (is_weakly_equal fg i)
-          as [[j [e_ij e_fg]] | d_fi].
+          as [[j [[e_fij e_gij] e_fg]] | d_fi].
       + apply inl.
-        exists (coproduct_inj1 shape_is_sum j); split.
-        * exact (ap _ e_ij).
+        exists (coproduct_inj1 shape_is_sum j); repeat split.
+        * exact (ap _ e_fij).
+        * exact (ap _ e_gij).
         * repeat rewrite coproduct_comp_inj1.
           repeat rewrite substitute_rename.
           destruct e_fg as [e | e];
@@ -1249,7 +1252,7 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
         apply inverse. refine (coproduct_comp_inj1 _).
     - intros i. apply inl.
       exists (coproduct_inj2 shape_is_sum i); split.
-      + unfold Substitution.extend; cbn.
+      + split; unfold Substitution.extend;
         refine (coproduct_comp_inj2 _).
       + apply inr; cbn.
         repeat rewrite coproduct_comp_inj2.
@@ -1600,12 +1603,11 @@ Since the resulting maps may not be weakly-typed context maps, so not automatica
           revert e j e_fvar e_ftype; rapply @inverse_sufficient; revert J'.
           refine (paths_rect _ (substitute_hypothetical_judgement _ _) _ _).
           intros j e_fvar e_ftype.
-          (* TODO: fix def of weakly equal to include [e_gvar] also! *)
           (* TODO: make analogue of [derive_term_convert] for the subst-free setting, or better, generalise [derive_term_convert] using type-classes. *)
           admit. (* With the above done: the derivation here should use the [term_convert] rule, with the inductive hypothesis providing the required type equality, followed by the variable rule as in previous bullet. *)
-        * admit. (* once the def of weakly equal is fixed, this should be [derive_tmeq_refl] followed by the first bullet *)
+        * admit. (* this should be [derive_tmeq_refl] followed by the first bullet *)
       + (* case: [f i = g i = raw_variable j], [Γ' j = g^* (Γ i) ] *)
-        admit. (* Analogous to previous bullet, but with the first two sub-cases swapped. *)
+        admit. (* Analogous to previous bullet [+], but with the first two sub-cases swapped. *)
       + (* case: [fg] tells us [ Γ' |- f i = g i : f^* (Γ i) ] *)
         admit. (* Hmm… Should we use presuppositions metatheorem here (requires assuming [T] presuppositive), or should we strengthen the definition of [weakly_equal] to provide the presuppositions of the equality?  I guess the latter makes this theorem more general, provided it doesn’t cause problems in extending weakly equal pairs. *)
   (* From proof of [substitute_derivation], for cannibalising:
