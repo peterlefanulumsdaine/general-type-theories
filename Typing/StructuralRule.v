@@ -800,7 +800,7 @@ Section InterfaceFunctions.
     { refine (Judgement.eq_by_expressions _ _).
       - intros i. apply @instantiate_empty_ptwise.
       - intros i; recursive_destruct i;
-          apply instantiate_binderless_metavariable.
+          refine (instantiate_binderless_metavariable _).
     }
     intros [].
     refine (transport _ _

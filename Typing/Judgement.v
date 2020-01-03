@@ -491,13 +491,76 @@ Section JudgementFmap.
 
 End JudgementFmap.
 
+Section JudgementNotations.
+
+  Context {σ : shape_system}.
+  Context {Σ : signature σ}.
+
+  Local Definition make_type_judgement
+        (Γ : raw_context Σ) (A : raw_type Σ Γ)
+    : judgement Σ.
+  Proof.
+    exists Γ, (form_object class_type).
+    intros [ [] | ]; exact A.
+  Defined.
+
+  Local Definition make_type_equality_judgement
+             (Γ : raw_context Σ)
+             (A A' : raw_type Σ Γ)
+    : judgement Σ.
+  Proof.
+    exists Γ, (form_equality class_type).
+    intros [ [] |  | ].
+    - exact A.
+    - exact A'.
+  Defined.
+
+  Local Definition make_term_judgement
+             (Γ : raw_context Σ) (a : raw_term Σ Γ) (A : raw_type Σ Γ)
+    : judgement Σ.
+  Proof.
+    exists Γ, (form_object class_term).
+    intros [ [] | ].
+    - exact A.
+    - exact a.
+  Defined.
+
+  (* TODO: consistentise order with [make_term_judgement]. *)
+  Local Definition make_term_equality_judgement
+             (Γ : raw_context Σ) (A : raw_type Σ Γ) (a a': raw_term Σ Γ)
+    : judgement Σ.
+  Proof.
+    exists Γ, (form_equality class_term).
+    intros [ [] | | ].
+    - exact A.
+    - exact a.
+    - exact a'.
+  Defined.
+
+End JudgementNotations.
+
+Notation "'[!' Γ |- A !]" := (make_type_judgement Γ A) : judgement_scope.
+Notation "'[!' Γ |- A ≡ A' !]"
+  := (make_type_equality_judgement Γ A A') : judgement_scope.
+Notation "'[!' Γ |- a ; A !]"
+  :=  (make_term_judgement Γ a A) : judgement_scope.
+Notation "'[!' Γ |- a ≡ a' ; A !]"
+  := (make_term_equality_judgement Γ A a a') : judgement_scope.
+
+Open Scope judgement_scope.
+
+Arguments make_type_judgement : simpl never.
+Arguments make_type_equality_judgement : simpl never.
+Arguments make_term_judgement : simpl never.
+Arguments make_term_equality_judgement : simpl never.
+
 (** A tactic that is often handy working with syntax, especially slots:
 recursively destruct some object of an iterated inductive type.
 
 Currently only supports specific inductive types hand-coded here. *)
 (* TODO: can this be generalised to work for arbitrary inductive types? *)
 Ltac recursive_destruct x :=
-    cbn in x;
+    compute in x;
     try match type of x with
     | form =>
       let cl := fresh "cl" in
@@ -525,6 +588,7 @@ Ltac recursive_destruct x :=
     | _ => idtac
     end.
 
+
 Section Equality_Lemmas.
 (** If judgements were record types, rather than function types over their finite set of slots, they would have judgemental eta, which would be very convenient.
 
@@ -534,25 +598,35 @@ In lieu of that, we give explicit lemmas for judgement equality:
 
   Context {σ : shape_system} {Σ : signature σ} `{Funext}.
 
-  Local Definition eta_expand (j : judgement Σ)
+  Local Definition eta_expand (J : judgement Σ)
     : judgement Σ.
   Proof.
-    exists (context_of_judgement j).
-    exists (form_of_judgement j).
-    destruct j as [Γ [jf j]]. 
-    intros i; set (i_keep := i).
-    recursive_destruct jf;
-        recursive_destruct i;
-        exact (j i_keep).
+    destruct J as [Γ [jf J]].
+    set (jf_keep := jf).
+    recursive_destruct jf.
+    - apply (make_type_judgement Γ).
+      exact (J (the_head_slot _)).
+    - apply (make_term_judgement Γ).
+      + exact (J (the_head_slot _)).
+      + refine (J (@the_boundary_slot
+                     (form_object class_term) the_type_slot)).
+    - apply (make_type_equality_judgement Γ).
+      + exact (J (the_lhs_slot _)).
+      + exact (J (the_rhs_slot _)).
+    - apply (make_term_equality_judgement Γ).
+      + exact (J (the_equality_boundary_slot class_term the_type_slot)).
+      + exact (J (the_lhs_slot _)).
+      + exact (J (the_rhs_slot _)).
   Defined.
+
+  Global Arguments eta_expand / .
 
   Local Definition eta (j : judgement Σ)
     : eta_expand j = j.
   Proof.
-    apply (ap (Build_judgement _)), (ap (Build_hypothetical_judgement _)).
-    destruct j as [Γ [jf j]]. 
-    apply path_forall; intros i.
-    recursive_destruct jf;
+    destruct j as [Γ [jf j]]; recursive_destruct jf;
+      apply (ap (Build_judgement _)), (ap (Build_hypothetical_judgement _));
+      apply path_forall; intros i;
       recursive_destruct i;
       apply idpath.
   Defined.
@@ -565,13 +639,13 @@ In lieu of that, we give explicit lemmas for judgement equality:
   Proof.
     apply transport, eta.
   Defined.
+  (** Typical usage, when giving a derivation, to make the goal judgement more readable: [apply Judgement.canonicalise; simpl] *)
 
-  (* TODO: consider naming *)
   (** To check two judgements are equal, it’s enough to check their eta-expansions.
    Convenient for when modulo eta expansion, judgements are literally equal:
    [apply Judgement.eq_by_eta, idpath.] 
 
-   For other cases, [eq_by_expressions] may be clearer. *)
+   For other cases, [eq_by_expressions] is usually better. *)
   Local Definition eq_by_eta
       (j j' : judgement Σ)
     : eta_expand j = eta_expand j' -> j = j'.
@@ -633,65 +707,6 @@ In lieu of that, we give explicit lemmas for judgement equality:
   Defined.
 
 End Equality_Lemmas.
-
-Section JudgementNotations.
-
-  Context {σ : shape_system}.
-  Context {Σ : signature σ}.
-
-  Local Definition make_type_judgement
-        (Γ : raw_context Σ) (A : raw_type Σ Γ)
-    : judgement Σ.
-  Proof.
-    exists Γ, (form_object class_type).
-    intros [ [] | ]; exact A.
-  Defined.
-
-  Local Definition make_type_equality_judgement
-             (Γ : raw_context Σ)
-             (A A' : raw_type Σ Γ)
-    : judgement Σ.
-  Proof.
-    exists Γ, (form_equality class_type).
-    intros [ [] |  | ].
-    - exact A.
-    - exact A'.
-  Defined.
-
-  Local Definition make_term_judgement
-             (Γ : raw_context Σ) (a : raw_term Σ Γ) (A : raw_type Σ Γ)
-    : judgement Σ.
-  Proof.
-    exists Γ, (form_object class_term).
-    intros [ [] | ].
-    - exact A.
-    - exact a.
-  Defined.
-
-  (* TODO: consistentise order with [make_term_judgement]. *)
-  Local Definition make_term_equality_judgement
-             (Γ : raw_context Σ) (A : raw_type Σ Γ) (a a': raw_term Σ Γ)
-    : judgement Σ.
-  Proof.
-    exists Γ, (form_equality class_term).
-    intros [ [] | | ].
-    - exact A.
-    - exact a.
-    - exact a'.
-  Defined.
-
-End JudgementNotations.
-
-Notation "'[!' Γ |- A !]" := (make_type_judgement Γ A) : judgement_scope.
-Notation "'[!' Γ |- A ≡ A' !]"
-  := (make_type_equality_judgement Γ A A') : judgement_scope.
-Notation "'[!' Γ |- a ; A !]"
-  :=  (make_term_judgement Γ a A) : judgement_scope.
-Notation "'[!' Γ |- a ≡ a' ; A !]"
-  := (make_term_equality_judgement Γ A a a') : judgement_scope.
-
-Open Scope judgement_scope.
-
 
 (** A key notion is the _presuppositions_ of a judgement.
 
