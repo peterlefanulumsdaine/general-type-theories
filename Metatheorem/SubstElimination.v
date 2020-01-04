@@ -293,6 +293,8 @@ Section Auxiliary.
     apply path_forall; intros i; apply substitute_rename.
   Defined.
 
+  Global Arguments Judgement.head _ _ _ _/. (* TODO: upstream! *)
+
 End Auxiliary.
 
 Section Subst_Free_Derivations.
@@ -429,6 +431,44 @@ Section Subst_Free_Derivations.
          apply inverse, instantiate_binderless_metavariable]).
   Time Defined.
   (* NOTE: this is noticeably slower at the [Defined] than the original [derive_term_convert] in [Typing.StructuralRule], and similarly with all the interface functions of this section. The culprit is at the line marked (1), where the original has a pre-defined accessor into the family. TODO: see if unifying these with typeclasses helps, à la [derive_rename]/[has_derivable_renaming]. *)
+
+  Local Definition derive_tmeq_convert
+      ( Γ : raw_context Σ )
+      ( A B : raw_expression Σ class_type Γ )
+      ( u v : raw_expression Σ class_term Γ )
+      ( d_A : derivation T H [! Γ |- A !] )
+      ( d_B : derivation T H [! Γ |- B !] )
+      ( d_AB : derivation T H [! Γ |- A ≡ B !] )
+      ( d_u : derivation T H [! Γ |- u ; A !] )
+      ( d_v : derivation T H [! Γ |- v ; A !] )
+      ( d_uv : derivation T H [! Γ |- u ≡ v ; A !] )
+    : derivation T H [! Γ |- u ≡ v ; B !].
+  Proof.
+    apply derive_from_reindexing_to_empty_sum.
+    simple refine (Closure.deduce' _ _ _).
+    { apply inl, inr.
+      exists None, Γ.
+      intros i; recursive_destruct i;
+        refine (Expression.rename (shape_sum_empty_inl _) _).
+      + exact A.
+      + exact B.
+      + exact u.
+      + exact v.
+    }
+    { refine (Judgement.eq_by_expressions _ _).
+      - apply @instantiate_empty_ptwise.
+      - intros i; recursive_destruct i;
+          apply instantiate_binderless_metavariable.
+    }
+    intros p; recursive_destruct p;
+      [ set (d := d_A) | set (d := d_B) | set (d := d_AB)
+        | set (d := d_u) | set (d := d_v) | set (d := d_uv) ];
+      refine (transport _ _ (derive_reindexing_to_empty_sum _ d));
+      (apply Judgement.eq_by_expressions;
+       [ intros; apply inverse, @instantiate_empty_ptwise
+       | intros i; recursive_destruct i;
+         apply inverse, instantiate_binderless_metavariable]).
+  Defined.
 
   End InterfaceFunctions.
 
@@ -568,6 +608,86 @@ the associated congruence rule should be derivable (?admissible). *)
     assumption.
   Defined.
 
+  (* TODO: upstream *)
+  Lemma equality_flat_rules_congruous `{Funext}
+      {C} (T := structural_rule_without_subst Σ + C)
+      {r : @equality_flat_rule σ}
+      (r_obj : Judgement.is_object (form_of_judgement
+                               (flat_rule_conclusion (equality_flat_rule r))))
+      (r_cong := flat_congruence_rule
+         (FlatRule.fmap (Signature.empty_rect Σ) (equality_flat_rule r)) r_obj)
+      {Γ : raw_context Σ}
+      (I : Metavariable.instantiation (flat_rule_metas r_cong) Σ Γ)
+    : derivation T
+        (Family.fmap (Judgement.instantiate Γ I) (flat_rule_premise r_cong))
+        (Judgement.instantiate Γ I (flat_rule_conclusion r_cong)).
+  Proof.
+    recursive_destruct r; destruct r_obj.
+    (* Only one equality rule is an object rule: [term_convert].  Its congruence rule is essentially:
+  [! Γ |- A !] [! Γ |- A' !] [! Γ |- A ≡ A' !]
+  [! Γ |- B !] [! Γ |- B' !] [! Γ |- B ≡ B' !]
+  [! Γ |- A ≡ B !] [! Γ |- A' ≡ B' !]
+  [! Γ |- u ; A !] [! Γ |- u' ; A' !] [! Γ |- u ≡ u' ; A !]
+---------------------------------------------------------------
+  [! Γ |- u = u' ; B !]
+
+This is derived quite easily, using [tmeq_convert], [term_convert], and [tyeq_sym].
+
+The below proof follows that derivation directly, but giving it is a bit like playing blindfold chess: the bureaucracy of instantiations, reindexings, etc. makes the actual expression/judgements involved mostly unreadable. *)
+    apply Judgement.canonicalise; simpl Judgement.eta_expand.
+    eapply derive_tmeq_convert.
+    - (* [! Γ |- A !] *)
+      simple refine (Closure.hypothesis' _ _).
+      { apply inl, inl, Some, Some, Some, tt. }
+      apply Judgement.eq_by_eta, idpath.
+    - (* [! Γ |- B !] *)
+      simple refine (Closure.hypothesis' _ _).
+      { apply inl, inl, Some, Some, None. }
+      apply Judgement.eq_by_eta, idpath.
+    - (* [! Γ |- A ≡ B !] *)
+      simple refine (Closure.hypothesis' _ _).
+      { apply inl, inl, Some, None. }
+      apply Judgement.eq_by_eta, idpath.
+    - (* [! Γ |- u ; A !] *)
+      simple refine (Closure.hypothesis' _ _).
+      { apply inl, inl, None. }
+      apply Judgement.eq_by_eta, idpath.
+    - (* [! Γ |- u' ; A !] *)
+      eapply derive_term_convert.
+      + (* [! Γ |- A' !] *)
+        simple refine (Closure.hypothesis' _ _).
+        { apply inl, inr, Some, Some, Some, tt. }
+        refine (Judgement.eq_by_expressions _ _).
+        * apply (coproduct_rect shape_is_sum).
+          -- intro i.
+             repeat rewrite coproduct_comp_inj1; apply idpath.
+          -- apply (empty_rect _ shape_is_empty).
+        * intro s; recursive_destruct s; apply idpath.
+      + (* [! Γ |- A !] *)
+      simple refine (Closure.hypothesis' _ _).
+      { apply inl, inl, Some, Some, Some, tt. }
+      apply Judgement.eq_by_eta, idpath.
+      + (* [! Γ |- A' ≡ A !] *)
+        apply derive_tyeq_sym.
+        simple refine (Closure.hypothesis' _ _).
+        { apply inr. exists (Some (Some (Some tt))). exact tt. }
+        apply Judgement.eq_by_eta, idpath.
+      + (* [! Γ |- u' ; A' !] *)
+        simple refine (Closure.hypothesis' _ _).
+        { apply inl, inr, None. }
+        refine (Judgement.eq_by_expressions _ _).
+        * apply (coproduct_rect shape_is_sum).
+          -- intro i.
+             repeat rewrite coproduct_comp_inj1; apply idpath.
+          -- apply (empty_rect _ shape_is_empty).
+        * intro s; recursive_destruct s; apply idpath.
+    - (* [! Γ |- u ≡ u' ; A !] *)
+      simple refine (Closure.hypothesis' _ _).
+      { apply inr. exists None. exact tt. }
+      apply Judgement.eq_by_eta, idpath.
+  Time Defined.
+  (* TODO: trying to bring this timing down seems like a good test case for improving our derivation infrastructure. *)
+  
 End Flat_Conditions.
 
 Section Judgement_Renamings.
@@ -1589,29 +1709,6 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
     Admitted. (* TODO: [substeq_flat_rule_premise_pair], hopefully reasonably straightforward. *) 
 
   End Flat_Rule_Substitute_Equal_Instantiation.
-
-  (* TODO: upstream *)
-  Lemma equality_flat_rules_congruous
-      {C} {r : @equality_flat_rule σ}
-      (r_obj : Judgement.is_object (form_of_judgement
-                               (flat_rule_conclusion (equality_flat_rule r))))
-      (r_cong := flat_congruence_rule
-         (FlatRule.fmap (Signature.empty_rect Σ) (equality_flat_rule r)) r_obj)
-      {Γ : raw_context Σ}
-      (I : Metavariable.instantiation (flat_rule_metas r_cong) Σ Γ)
-    : derivation (structural_rule_without_subst Σ + C)
-        (Family.fmap (Judgement.instantiate Γ I) (flat_rule_premise r_cong))
-        (Judgement.instantiate Γ I (flat_rule_conclusion r_cong)).
-  Proof.
-    recursive_destruct r; destruct r_obj.
-    (* Only one case: [term_convert].  Its congruence rule is essentially given by [tmeq_convert]. *)
-    simpl Judgement.instantiate.
-    unfold Judgement.fmap.
-    cbn. unfold combine_hypothetical_judgement. cbn.
-    (* Dear lord, this is dreadful. Look back up at how this sort of thing was done palatably in showing the structural rules were well-typed? *)
-  Admitted. (* [equality_flat_rules_congruous]: looks horrifying, but shouldn’t actually be too hard. *)
-  
-  Arguments Judgement.head _ _ _ _/. (* TODO: upstream! *)
 
   Theorem substitute_equal_derivation
       {T : flat_type_theory Σ}
