@@ -145,6 +145,27 @@ Section Auxiliary.
     apply instantiate_fmap2.
   Defined.
 
+  (* TODO: upstream *)
+  Lemma instantiate_fmap2_judgement
+      {a a' : arity σ} (f : Family.map a a')
+      {Σ} {Γ : raw_context Σ} (I : Metavariable.instantiation a' Σ Γ)
+      (J : judgement (Metavariable.extend Σ a))
+    : Judgement.instantiate Γ I
+        (Judgement.fmap (Metavariable.fmap2 _ f) J)
+    = Judgement.instantiate Γ (instantiation_fmap2 f I) J.
+  Proof.
+    apply Judgement.eq_by_expressions.
+    - apply (coproduct_rect shape_is_sum).
+      + intros.
+        eapply concat. { rapply coproduct_comp_inj1. }
+        apply inverse. rapply coproduct_comp_inj1.
+      + intros.
+        eapply concat. { rapply coproduct_comp_inj2. }
+        eapply concat. 2: { apply inverse. rapply coproduct_comp_inj2. }
+        apply instantiate_fmap2.
+    - intros; apply instantiate_fmap2.
+  Defined.
+
   (* TODO: upstream; consider naming! *)
   Local Definition copair_instantiation
       {Σ} {a b : arity σ} {γ}
@@ -211,6 +232,34 @@ Section Auxiliary.
       = instantiate_hypothetical_judgement Ib J.
   Proof.
     apply instantiate_fmap2_hypothetical_judgement.
+  Defined.
+
+  (* TODO: upstream; consider naming! *)
+  Local Definition copair_instantiation_inl_judgement
+      {Σ} {a b : arity σ} (Γ : raw_context _)
+      (Ia : Metavariable.instantiation a Σ Γ) 
+      (Ib : Metavariable.instantiation b Σ Γ) 
+      (J : judgement (Metavariable.extend Σ a))
+    : Judgement.instantiate Γ
+        (copair_instantiation Ia Ib)
+        (Judgement.fmap (Metavariable.fmap2 _ Family.inl) J)
+      = Judgement.instantiate Γ Ia J.
+  Proof.
+    apply instantiate_fmap2_judgement.
+  Defined.
+
+  (* TODO: upstream; consider naming! *)
+  Local Definition copair_instantiation_inr_judgement
+      {Σ} {a b : arity σ} (Γ : raw_context _)
+      (Ia : Metavariable.instantiation a Σ Γ) 
+      (Ib : Metavariable.instantiation b Σ Γ) 
+      (J : judgement (Metavariable.extend Σ b))
+    : Judgement.instantiate Γ
+        (copair_instantiation Ia Ib)
+        (Judgement.fmap (Metavariable.fmap2 _ Family.inr) J)
+      = Judgement.instantiate Γ Ib J.
+  Proof.
+    apply instantiate_fmap2_judgement.
   Defined.
 
   (* TODO: upstream *)
@@ -1534,6 +1583,52 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
       instantiate_hypothetical_judgement_substitute_instantiation.
   Defined.
 
+  (* TODO: check if used in the end; if not, delete! *)
+  Local Lemma instantiate_judgement_over_weakly_equal_pair_combined_0
+      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
+      {a : arity σ} 
+      (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
+      (J : judgement _) (J_obj : Judgement.is_object (form_of_judgement J))
+    : weakly_equal_judgement_map T
+        (Build_judgement _
+          (combine_hypothetical_judgement
+            (Judgement.instantiate Γ' (substitute_instantiation (left fg) I) J)
+            (Judgement.instantiate Γ' (substitute_instantiation (right fg) I) J)
+            1 J_obj))
+        (Judgement.instantiate Γ I J).
+  Proof.
+    exists (instantiate_context_over_weakly_equal_pair_left T_sub fg I _).
+    apply inr; exists J_obj.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros [ s | | ];
+      repeat refine (ap (transport _ _) _);
+      apply instantiate_substitute_instantiation.
+  Defined.
+
+  Local Lemma instantiate_judgement_over_weakly_equal_pair_combined
+      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
+      {a : arity σ} 
+      (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
+      (J : judgement (Metavariable.extend Σ a))
+      (J_obj : Judgement.is_object (form_of_judgement J))
+    : weakly_equal_judgement_map T
+        (Judgement.instantiate Γ'
+           (copair_instantiation (substitute_instantiation (left fg) I) 
+                                 (substitute_instantiation (right fg) I))
+           (Build_judgement
+              (Context.fmap (Metavariable.fmap2 _ Family.inl) (context_of_judgement J))
+             (combine_hypothetical_judgement
+               (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inl) J)
+               (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inr) J)
+            1 J_obj)))
+        (Judgement.instantiate Γ I J).
+  Proof.
+    admit.
+  Admitted.
+  (* TODO: check if this is used in the end; if not, delete! *)
+
   Section Flat_Rule_Substitute_Equal_Instantiation.
     (** Analogously to section [Flat_Rule_Susbtitute_Instantiation],
      the lemmas of this section build up what’s needed for substituting
@@ -1694,19 +1789,28 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
           (Judgement.instantiate Γ I
             (flat_rule_premise _ (substeq_flat_rule_premise _ p))).
     Proof.
+      set (fg_orig := fg).
       destruct fg as [fg [ [ e_J'_fJ | e_J'_gJ ] | [ R_obj e_jf]]].
       - (* case: f^* of original rule *)
-        apply instantiate_judgement_over_weakly_equal_pair_left.
-        assumption.
+        apply instantiate_judgement_over_weakly_equal_pair_left, T_sub.
       - (* case: g^* of original rule *)
-        apply instantiate_judgement_over_weakly_equal_pair_right.
-        assumption.
+        apply instantiate_judgement_over_weakly_equal_pair_right, T_sub.
       - (* case: congruence rule *)
-        simpl in p|- *. clear e_jf.
-        admit.
-    (* TODO: [instantiate_judgement_over_weakly_equal_pair_combined], 
-     giving this case analogously to the cases above. *)
-    Admitted. (* TODO: [substeq_flat_rule_premise_pair], hopefully reasonably straightforward. *) 
+        simpl in p. destruct p as [ [p | p] | [p p_obj] ]; simpl.
+        + (* left copy of an original premise *) 
+          rewrite copair_instantiation_inl_judgement.
+          refine (instantiate_judgement_over_weakly_equal_pair_left
+                    _ (substeq_flat_rule_pair fg_orig) _ _).
+          apply T_sub.
+        + (* right copy of an original premise *)
+          rewrite copair_instantiation_inr_judgement.
+          refine (instantiate_judgement_over_weakly_equal_pair_right
+                    _ (substeq_flat_rule_pair fg_orig) _ _).
+          apply T_sub.
+        + (* equality corresponding to an original object premise *)
+          apply (instantiate_judgement_over_weakly_equal_pair_combined
+                 T_sub (substeq_flat_rule_pair fg_orig)).
+    Defined.
 
   End Flat_Rule_Substitute_Equal_Instantiation.
 
@@ -1749,8 +1853,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
         - apply (Family.map_commutes T_cong).
       }
       intros p. apply (IH (substeq_flat_rule_premise _ _ p)).
-      refine (substeq_flat_rule_premise_map _ _ _ _ _ p); try assumption.
-      apply T_sub.
+      refine (substeq_flat_rule_premise_map _ _ _ p); try assumption.
     }
     (* case: structural rules *)
     destruct r as [ [ r | r ] | r ].
@@ -1770,16 +1873,14 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
         }
         { apply idpath. }
         intros p. apply (IH (substeq_flat_rule_premise _ fg p)).
-        refine (substeq_flat_rule_premise_map _ _ _ _ fg p); try assumption.
-        apply equality_flat_rules_in_universal_form.
+        refine (substeq_flat_rule_premise_map _ _ fg p); try assumption.
       - refine (Closure.graft' _ _ _).
         { refine (equality_flat_rules_congruous r_obj _).
           refine (substeq_flat_rule_instantiation _ fg).
         }
         { apply idpath. }
         intros p. apply (IH (substeq_flat_rule_premise _ fg p)).
-        refine (substeq_flat_rule_premise_map _ _ _ _ fg p); try assumption.
-        apply equality_flat_rules_in_universal_form.
+        refine (substeq_flat_rule_premise_map _ _ fg p); try assumption.
     }
     - (* case: renaming rule *)
       destruct r as [Γ [Γ' [r J]]].
