@@ -34,6 +34,19 @@ Section Auxiliary.
 
   Context `{Funext} {σ : shape_system}.
 
+  (* TODO: upstreadm *)
+  Definition combine_judgement
+      {Σ : signature σ}
+      (J : judgement Σ)
+      (K : hypothetical_judgement Σ (context_of_judgement J))
+      (e : form_of_judgement J = form_of_judgement K)
+      (J_obj : Judgement.is_object (form_of_judgement J))
+    : judgement Σ.
+  Proof.
+    exists (context_of_judgement J).
+    apply (combine_hypothetical_judgement J K); try assumption.
+  Defined.
+
   (* TODO: upstream *)
   Lemma instantiation_fmap2
       {Σ : signature σ}
@@ -578,12 +591,9 @@ the associated congruence rule should be derivable (?admissible). *)
         * apply p_obj.
     - (* conclusion *)
       set (J := flat_rule_conclusion R).
-      exists (Context.fmap inl (context_of_judgement J)).
-        simple refine (combine_hypothetical_judgement _ _ _ _).
-        * exact (fmap_hypothetical_judgement inl J).
-        * exact (fmap_hypothetical_judgement inr J).
-        * apply idpath.
-        * apply R_obj.
+      apply (combine_judgement (Judgement.fmap inl J) (Judgement.fmap inr J)).
+      + apply idpath.
+      + apply R_obj.
   Defined.
 
   Local Definition congruous (T : flat_type_theory Σ)
@@ -1591,11 +1601,10 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
       (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
       (J : judgement _) (J_obj : Judgement.is_object (form_of_judgement J))
     : weakly_equal_judgement_map T
-        (Build_judgement _
-          (combine_hypothetical_judgement
+         (combine_judgement
             (Judgement.instantiate Γ' (substitute_instantiation (left fg) I) J)
             (Judgement.instantiate Γ' (substitute_instantiation (right fg) I) J)
-            1 J_obj))
+            1 J_obj)
         (Judgement.instantiate Γ I J).
   Proof.
     exists (instantiate_context_over_weakly_equal_pair_left T_sub fg I _).
@@ -1606,6 +1615,136 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
       apply instantiate_substitute_instantiation.
   Defined.
 
+  (* TODO: upstream!*)
+  (* NOTE: the typing of this lemma is a bit subtle:
+     the “cheat” in [combine_judgement] is exposed here,
+     i.e. the mismatch that the second argument of [combine_judgement]
+     is actually a hypothetical judgement. *)
+  Lemma instantiate_combine_judgement
+      {a} (J : judgement (Metavariable.extend Σ a))
+      (Δ := context_of_judgement J)
+      (K_hyp : hypothetical_judgement (Metavariable.extend Σ a) Δ)
+      {e : form_of_judgement J = form_of_judgement K_hyp}
+      {J_obj : Judgement.is_object (form_of_judgement J)}
+      {Γ : raw_context Σ} (I : Metavariable.instantiation a Σ Γ)
+      {Θ : Δ -> raw_type _ Δ}
+      (K := Build_judgement (Build_raw_context _ Θ) K_hyp)
+    : Judgement.instantiate Γ I (combine_judgement J K e J_obj)
+      = combine_judgement
+          (Judgement.instantiate Γ I J)
+          (Judgement.instantiate Γ I K)
+          e
+          J_obj.
+  Proof.
+    apply (ap (Build_judgement _)).
+    apply instantiate_combine_hypothetical_judgement.
+  Defined.
+
+  (* TODO: upstream within file.  NOTE: keep even if turns out not used, this was a pain in the arse to write and might be useful in future. *)
+  Local Definition compose_renaming_weakly_equal_judgement_map
+        {T : flat_type_theory Σ}
+        {J J' J'' : judgement Σ}
+        (r : judgement_renaming J J')
+        (fg : weakly_equal_judgement_map T J'' J')
+    : weakly_equal_judgement_map T J'' J.
+  Proof.
+    exists (compose_renaming_weakly_equal_pair r fg).
+    destruct fg as [fg fg_J]; simpl.
+    destruct fg_J as [ e_fg | [J'_obj e_fg ] ].
+    - apply inl.
+      destruct e_fg as [ e | e ];
+        [ apply inl | apply inr ];
+        refine (e @ _);
+        refine (_ @ substitute_rename_hypothetical_judgement _ _ _);
+        apply ap, inverse, judgement_renaming_hypothetical_part.
+    - apply inr.
+      destruct r as [r e_r], J' as [Γ' J']; simpl in * |- *.
+      destruct e_r.
+      exists J'_obj.
+      eapply concat. { apply e_fg. }
+      apply substitute_equal_rename_hypothetical_judgement.
+  Defined.
+
+  (* TODO: upstream within file *)
+  Local Definition compose_weakly_equal_pair_renaming
+        {T : flat_type_theory Σ} (T_sub : substitutive T)
+        {Γ Γ' Γ'' : raw_context Σ}
+        (fg : weakly_equal_pair T Γ' Γ)
+        (r : typed_renaming Γ' Γ'')
+    : weakly_equal_pair T Γ'' Γ.
+  Proof.
+    set (f := left fg); set (g := right fg).
+    apply (Build_weakly_equal_pair (rename r o f) (rename r o g)).
+    intros i.
+    destruct (is_weakly_equal fg i)
+      as [[j [e1 e2]] | [[d_fi d_gi] d_fgi] ].
+    - apply inl.
+      exists (r j); split.
+      + split;
+          [ set (e := fst e1) | set (e := snd e1) ];
+          (eapply concat; [ apply ap, e | ]);
+          apply idpath.
+      + destruct e2 as [e2 | e2];
+          [ apply inl | apply inr ];
+          refine (typed_renaming_respects_types _ _ _ _ @ _);
+          refine (ap _ e2 @ _);
+          apply rename_substitute.
+    - apply inr.
+      repeat split;
+        [ set (d := d_fi) | set (d := d_gi) | set (d := d_fgi) ];
+        refine (rename_derivation T_sub _ d);
+        exists r;
+        apply (ap (Build_hypothetical_judgement _)), path_forall;
+          intros s; recursive_destruct s; try apply idpath;
+            apply rename_substitute.
+  Defined.
+
+  (* TODO: upstream within file *)
+  Local Definition compose_weakly_equal_judgement_map_renaming
+        {T : flat_type_theory Σ} (T_sub : substitutive T)
+        {J J' J'' : judgement Σ}
+        (fg : weakly_equal_judgement_map T J' J)
+        (r : judgement_renaming J' J'')
+    : weakly_equal_judgement_map T J'' J.
+  Proof.
+    exists (compose_weakly_equal_pair_renaming T_sub fg r).
+    destruct fg as [fg fg_J]; simpl.
+    destruct fg_J as [ e_fg | [J_obj e_fg ] ].
+    - apply inl.
+      destruct e_fg as [ e | e ];
+        [ apply inl | apply inr ];
+        refine ((judgement_renaming_hypothetical_part _ _ r)^ @ _);
+  (* TODO: try reversing direction of [judgement_renaming_hypothetical_part] *)
+        refine (ap _ e @ _);
+        apply rename_substitute_hypothetical_judgement.
+    - apply inr.
+      destruct r as [r e_r], J' as [Γ' J']; simpl in * |- *.
+      destruct e_r.
+      exists J_obj.
+      eapply concat. { apply ap, e_fg. }
+      apply rename_substitute_equal_hypothetical_judgement.
+  Defined.
+
+  (* TODO: upstream, + refactor to this in other lemmas about [combine_hypothetical_judgement] *)
+  Lemma combine_hypothetical_judgement_eq
+      {γ : σ} {J J' K K' : hypothetical_judgement Σ γ}
+      {e : form_of_judgement J = form_of_judgement K}
+      {e' : form_of_judgement J' = form_of_judgement K'}
+      {J_obj : Judgement.is_object (form_of_judgement J)}
+      {J'_obj : Judgement.is_object (form_of_judgement J')}
+      (p_J : J' = J)
+      (p_K : K' = K)
+      (p_e : ap form_of_judgement p_J^ @ e' @ ap form_of_judgement p_K = e)
+      (p_obj : transport (fun J => _ (form_of_judgement J)) p_J J'_obj
+                                    = J_obj)
+    : combine_hypothetical_judgement J K e J_obj 
+      = combine_hypothetical_judgement J' K' e' J'_obj. 
+  Proof.
+    destruct p_J, p_K, p_e, p_obj; simpl.
+    erapply ap_1back. path_induction_hammer.
+  Defined.
+
+  (* TODO: upstream? *)
   Local Lemma instantiate_judgement_over_weakly_equal_pair_combined
       {T : flat_type_theory Σ} (T_sub : substitutive T)
       {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
@@ -1617,17 +1756,62 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
         (Judgement.instantiate Γ'
            (copair_instantiation (substitute_instantiation (left fg) I) 
                                  (substitute_instantiation (right fg) I))
-           (Build_judgement
-              (Context.fmap (Metavariable.fmap2 _ Family.inl) (context_of_judgement J))
-             (combine_hypothetical_judgement
-               (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inl) J)
-               (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inr) J)
-            1 J_obj)))
+           (combine_judgement
+               (Judgement.fmap (Metavariable.fmap2 _ Family.inl) J)
+               (Judgement.fmap (Metavariable.fmap2 _ Family.inr) J)
+            1 J_obj))
         (Judgement.instantiate Γ I J).
   Proof.
-    admit.
-  Admitted.
-  (* TODO: check if this is used in the end; if not, delete! *)
+    eapply compose_weakly_equal_judgement_map_renaming;
+      try apply T_sub.
+    { apply (instantiate_judgement_over_weakly_equal_pair_combined_0
+                                                    T_sub fg I J J_obj). }
+    simple refine (Build_judgement_renaming _ _
+                                       (Build_typed_renaming _ _ _ _ _) _).
+    - intro i; exact i.
+    - intros i.
+      eapply concat. 2: { apply inverse, rename_idmap. }
+      revert i. apply (coproduct_rect shape_is_sum).
+      + intros i.
+        eapply concat. { rapply coproduct_comp_inj1. }
+        apply inverse; rapply coproduct_comp_inj1.
+      + intros i.
+        eapply concat. { rapply coproduct_comp_inj2. }
+        eapply concat. 2: { apply inverse; rapply coproduct_comp_inj2. }
+        apply copair_instantiation_inl.
+    - simpl.
+      eapply concat. { apply rename_idmap_hypothetical_judgement. }
+      eapply concat.
+      2: { apply inverse, instantiate_combine_hypothetical_judgement. }
+      simple refine (combine_hypothetical_judgement_eq _ _ _ _).
+      + apply copair_instantiation_inl_hypothetical_judgement.
+      + apply copair_instantiation_inr_hypothetical_judgement.
+      + rewrite concat_p1, ap_V.
+        eapply concat.
+        { apply ap.
+          unfold copair_instantiation_inr_hypothetical_judgement,
+                 instantiate_fmap2_hypothetical_judgement.
+          eapply concat.
+          { apply inverse, (ap_compose (Build_hypothetical_judgement _)). }
+          apply ap_const. }
+        eapply concat.
+        { eapply (ap_1back concat), ap.
+          unfold copair_instantiation_inl_hypothetical_judgement,
+                 instantiate_fmap2_hypothetical_judgement.
+          eapply concat.
+          { apply inverse, (ap_compose (Build_hypothetical_judgement _)). }
+          apply ap_const. }
+        apply idpath.
+      + eapply concat.
+        { unfold copair_instantiation_inl_hypothetical_judgement,
+                 instantiate_fmap2_hypothetical_judgement.
+          apply inverse. 
+          refine (transport_compose
+                    (fun J => Judgement.is_object (form_of_judgement J))
+                    (Build_hypothetical_judgement _) _ _).
+        }
+        rapply @transport_const.
+  Defined.
 
   Section Flat_Rule_Substitute_Equal_Instantiation.
     (** Analogously to section [Flat_Rule_Susbtitute_Instantiation],
@@ -1808,8 +1992,8 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
                     _ (substeq_flat_rule_pair fg_orig) _ _).
           apply T_sub.
         + (* equality corresponding to an original object premise *)
-          apply (instantiate_judgement_over_weakly_equal_pair_combined
-                 T_sub (substeq_flat_rule_pair fg_orig)).
+          refine (instantiate_judgement_over_weakly_equal_pair_combined
+                 T_sub (substeq_flat_rule_pair fg_orig) _ _ _).
     Defined.
 
   End Flat_Rule_Substitute_Equal_Instantiation.
