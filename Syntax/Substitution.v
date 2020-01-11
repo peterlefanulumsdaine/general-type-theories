@@ -58,13 +58,25 @@ Section RawSubstitution.
       apply extend. exact f.
   Defined.
 
-  (* Interaction of substitution with transport in the shape argument. *)
+  (** Interaction of substitution with transport *)
+
+  (* TODO: consistentise naming of this and the following *)
   Local Definition transport_substitute {γ γ' : σ} (g : _)
       {cl cl' : syntactic_class} (p : cl = cl') (e : raw_expression Σ cl γ)
     : transport (fun cl => raw_expression Σ cl γ') p (substitute g e)
       = substitute g (transport (fun cl => raw_expression Σ cl γ) p e).
   Proof.
     destruct p. apply idpath.
+  Defined.
+
+  Lemma substitute_transport_shape
+      {γ γ'} (e_γ : γ = γ') {δ}
+      (f : raw_context_map δ γ')
+      {cl} (e : raw_expression Σ cl γ)
+    : substitute f (transport (raw_expression _ _) e_γ e)
+      = substitute (transport (raw_context_map _) e_γ^ f) e.
+  Proof.
+    destruct e_γ; apply idpath.
   Defined.
 
 End RawSubstitution.

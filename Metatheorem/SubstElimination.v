@@ -34,116 +34,6 @@ Section Auxiliary.
 
   Context `{Funext} {σ : shape_system}.
 
-  (* TODO: upstreadm *)
-  Definition combine_judgement
-      {Σ : signature σ}
-      (J : judgement Σ)
-      (K : hypothetical_judgement Σ (context_of_judgement J))
-      (e : form_of_judgement J = form_of_judgement K)
-      (J_obj : Judgement.is_object (form_of_judgement J))
-    : judgement Σ.
-  Proof.
-    exists (context_of_judgement J).
-    apply (combine_hypothetical_judgement J K); try assumption.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma instantiation_fmap2
-      {Σ : signature σ}
-      {a a' : arity σ} (f : Family.map a a')
-      {γ} (I : Metavariable.instantiation a' Σ γ)
-    : Metavariable.instantiation a Σ γ.
-  Proof.
-    intros i.
-    unfold argument_class, argument_shape.
-    refine (transport _ _ _). 
-    { apply ap, ap, (Family.map_commutes f). }
-    eapply (transport (fun cl => _ _ cl _)).
-    { apply ap, (Family.map_commutes f). }
-    apply I.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma transport_class_instantiate
-      {Σ : signature σ} {a}
-      {γ} (I : Metavariable.instantiation a Σ γ)
-      {cl cl'} (e_cl : cl = cl')
-      {δ} (e : raw_expression (Metavariable.extend Σ a) cl δ)
-    : transport (fun cl => raw_expression _ cl _) e_cl
-                (instantiate_expression I e)
-      = instantiate_expression I
-          (transport (fun cl => raw_expression _ cl _) e_cl e).
-  Proof.
-    destruct e_cl; apply idpath.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma transport_shape_instantiate
-      {Σ : signature σ} {a}
-      {γ} (I : Metavariable.instantiation a Σ γ)
-      {cl} {δ δ'} (e_δ : δ = δ')
-      (e : raw_expression (Metavariable.extend Σ a) cl δ)
-    : transport _ (ap _ e_δ) (instantiate_expression I e)
-      = instantiate_expression I (transport _ e_δ e).
-  Proof.
-    destruct e_δ; apply idpath.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma substitute_transport_shape
-      {Σ : signature σ}
-      {γ γ'} (e_γ : γ = γ') {δ}
-      (f : raw_context_map Σ δ γ')
-      {cl} (e : raw_expression Σ cl γ)
-    : substitute f (transport (raw_expression _ _) e_γ e)
-      = substitute (transport (raw_context_map _ _) e_γ^ f) e.
-  Proof.
-    destruct e_γ; apply idpath.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma instantiate_fmap2
-      {a a' : arity σ} (f : Family.map a a')
-      {Σ} {γ} (I : Metavariable.instantiation a' Σ γ)
-      {cl} {δ} (e : raw_expression (Metavariable.extend Σ a) cl δ)
-    : instantiate_expression I (Expression.fmap (Metavariable.fmap2 _ f) e)
-    = instantiate_expression (instantiation_fmap2 f I) e.
-  Proof.
-    induction e as [δ i | δ [S | M] e_args IH_e_args ].
-    - apply idpath. (* [raw_variable]: easy! *)
-    - (* symbol of signature *)
-      simpl. apply ap.
-      apply path_forall; intros i.
-      apply ap, IH_e_args.
-    - (* metavariable symbol *)
-      simpl.
-      (* first, apply IH *)
-      eapply concat.
-      2: { eapply (ap_2back substitute).
-        apply ap, path_forall; intros i.
-        eapply (ap (rename _)), IH_e_args.
-      }
-      clear IH_e_args.
-      (* from here, just transport lemmas *)
-      eapply concat. { apply inverse, transport_class_instantiate. }
-      simpl.
-      eapply concat. { apply Substitution.transport_substitute. }
-      unfold instantiation_fmap2.
-      eapply concat. 2: { apply inverse, substitute_transport_shape. }
-      refine (ap_2back substitute _ _ _ @ ap (substitute _) _).
-      2: { refine (ap_1back _ _^ _).
-           eapply concat. 2: { refine (ap_compose _ _ _). }
-           apply idpath.
-      }
-      set (e_M := Family.map_commutes f M); clearbody e_M.
-      unfold argument_shape, argument_class, symbol_arity in *; simpl in e_args.
-      set (a_M := a M) in *.
-      set (a_fM := a' (f M)) in *.
-      simpl; fold a_fM a_M; clearbody a_M a_fM.
-      destruct e_M.
-      cbn; apply idpath.
-  Defined.
-
   (* TODO: upstream *)
   Lemma instantiate_fmap2_hypothetical_judgement
       {a a' : arity σ} (f : Family.map a a')
@@ -177,46 +67,6 @@ Section Auxiliary.
         eapply concat. 2: { apply inverse. rapply coproduct_comp_inj2. }
         apply instantiate_fmap2.
     - intros; apply instantiate_fmap2.
-  Defined.
-
-  (* TODO: upstream; consider naming! *)
-  Local Definition copair_instantiation
-      {Σ} {a b : arity σ} {γ}
-      (Ia : Metavariable.instantiation a Σ γ) 
-      (Ib : Metavariable.instantiation b Σ γ) 
-    : Metavariable.instantiation (a+b) Σ γ.
-  Proof.
-    intros [i | j].
-    - apply Ia.
-    - apply Ib.
-  Defined.
-
-  (* TODO: upstream; consider naming! *)
-  Local Definition copair_instantiation_inl
-      {Σ} {a b : arity σ} {γ}
-      (Ia : Metavariable.instantiation a Σ γ) 
-      (Ib : Metavariable.instantiation b Σ γ)
-      {cl} {δ} (e : raw_expression (Metavariable.extend Σ a) cl δ)
-    : instantiate_expression
-        (copair_instantiation Ia Ib)
-        (Expression.fmap (Metavariable.fmap2 _ Family.inl) e)
-      = instantiate_expression Ia e.
-  Proof.
-    apply instantiate_fmap2.
-  Defined.
-
-  (* TODO: upstream; consider naming! *)
-  Local Definition copair_instantiation_inr
-      {Σ} {a b : arity σ} {γ}
-      (Ia : Metavariable.instantiation a Σ γ) 
-      (Ib : Metavariable.instantiation b Σ γ)
-      {cl} {δ} (e : raw_expression (Metavariable.extend Σ b) cl δ)
-    : instantiate_expression
-        (copair_instantiation Ia Ib)
-        (Expression.fmap (Metavariable.fmap2 _ Family.inr) e)
-      = instantiate_expression Ib e.
-  Proof.
-    apply instantiate_fmap2.
   Defined.
 
   (* TODO: upstream; consider naming! *)
@@ -275,6 +125,29 @@ Section Auxiliary.
     apply instantiate_fmap2_judgement.
   Defined.
 
+  (* TODO: upstream, + refactor to this in other lemmas about [combine_hypothetical_judgement] *)
+  Lemma combine_hypothetical_judgement_eq
+      {Σ : signature σ}
+      {γ : σ} {J J' K K' : hypothetical_judgement Σ γ}
+      {e : form_of_judgement J = form_of_judgement K}
+      {e' : form_of_judgement J' = form_of_judgement K'}
+      {J_obj : Judgement.is_object (form_of_judgement J)}
+      {J'_obj : Judgement.is_object (form_of_judgement J')}
+      (p_J : J' = J)
+      (p_K : K' = K)
+      (p_e : ap form_of_judgement p_J^ @ e' @ ap form_of_judgement p_K = e)
+      (p_obj : transport (fun J => _ (form_of_judgement J)) p_J J'_obj
+                                    = J_obj)
+    : combine_hypothetical_judgement J K e J_obj 
+      = combine_hypothetical_judgement J' K' e' J'_obj. 
+  Proof.
+    destruct p_J, p_K, p_e, p_obj; simpl.
+    erapply ap_1back.
+    eapply concat. { apply concat_p1. }
+    apply concat_1p.
+  Defined.
+
+
   (* TODO: upstream *)
   Lemma instantiate_combine_hypothetical_judgement
     {Σ : signature σ} {a} {γ} (Ia : Metavariable.instantiation a Σ γ)
@@ -317,6 +190,47 @@ Section Auxiliary.
       apply idpath.
   Defined.
 
+
+  (* TODO: upstream *)
+  Definition combine_judgement
+      {Σ : signature σ}
+      (J : judgement Σ)
+      (K : hypothetical_judgement Σ (context_of_judgement J))
+      (e : form_of_judgement J = form_of_judgement K)
+      (J_obj : Judgement.is_object (form_of_judgement J))
+    : judgement Σ.
+  Proof.
+    exists (context_of_judgement J).
+    apply (combine_hypothetical_judgement J K); try assumption.
+  Defined.
+
+  (* TODO: upstream!*)
+  (* NOTE: the typing of this lemma is a bit subtle:
+     the “cheat” in [combine_judgement] is exposed here,
+     i.e. the mismatch that the second argument of [combine_judgement]
+     is actually a hypothetical judgement. *)
+  Lemma instantiate_combine_judgement
+      {Σ : signature σ}
+      {a} (J : judgement (Metavariable.extend Σ a))
+      (Δ := context_of_judgement J)
+      (K_hyp : hypothetical_judgement (Metavariable.extend Σ a) Δ)
+      {e : form_of_judgement J = form_of_judgement K_hyp}
+      {J_obj : Judgement.is_object (form_of_judgement J)}
+      {Γ : raw_context Σ} (I : Metavariable.instantiation a Σ Γ)
+      {Θ : Δ -> raw_type _ Δ}
+      (K := Build_judgement (Build_raw_context _ Θ) K_hyp)
+    : Judgement.instantiate Γ I (combine_judgement J K e J_obj)
+      = combine_judgement
+          (Judgement.instantiate Γ I J)
+          (Judgement.instantiate Γ I K)
+          e
+          J_obj.
+  Proof.
+    apply (ap (Build_judgement _)).
+    apply instantiate_combine_hypothetical_judgement.
+  Defined.
+
+
   Definition rename_substitute_equal_hypothetical_judgement {Σ}
       {δ γ} (f g : raw_context_map Σ δ γ) {δ' : σ} {r : δ -> δ'}
       (J : hypothetical_judgement Σ γ)
@@ -356,6 +270,47 @@ Section Auxiliary.
   Defined.
 
   Global Arguments Judgement.head _ _ _ _/. (* TODO: upstream! *)
+
+  (* TODO: upstream to [FlatRule]? *)
+  Definition flat_congruence_rule
+      {Σ : signature σ}
+      (R : flat_rule Σ)
+      (R_obj : Judgement.is_object (form_of_judgement (flat_rule_conclusion R)))
+    : flat_rule Σ.
+  Proof.
+    assert (inl : (Signature.map
+       (Metavariable.extend Σ (flat_rule_metas R))
+       (Metavariable.extend Σ (flat_rule_metas R + flat_rule_metas R)))).
+    { apply Metavariable.fmap2, Family.inl. }
+    assert (inr : (Signature.map
+       (Metavariable.extend Σ (flat_rule_metas R))
+       (Metavariable.extend Σ (flat_rule_metas R + flat_rule_metas R)))).
+    { apply Metavariable.fmap2, Family.inr. }
+    exists (flat_rule_metas R + flat_rule_metas R).
+    - (* premises *)
+      refine (_ + _ + _).
+      + refine (Family.fmap _ (flat_rule_premise R)).
+        apply Judgement.fmap, inl.
+      + refine (Family.fmap _ (flat_rule_premise R)).
+        apply Judgement.fmap, inr.
+      + exists {p : flat_rule_premise R
+                    & Judgement.is_object
+                        (form_of_judgement (flat_rule_premise R p))}.
+        intros [p p_obj].
+        set (J := flat_rule_premise R p).
+        fold J in p_obj.
+        exists (Context.fmap inl (context_of_judgement J)).
+        simple refine (combine_hypothetical_judgement _ _ _ _).
+        * exact (fmap_hypothetical_judgement inl J).
+        * exact (fmap_hypothetical_judgement inr J).
+        * apply idpath.
+        * apply p_obj.
+    - (* conclusion *)
+      set (J := flat_rule_conclusion R).
+      apply (combine_judgement (Judgement.fmap inl J) (Judgement.fmap inr J)).
+      + apply idpath.
+      + apply R_obj.
+  Defined.
 
 End Auxiliary.
 
@@ -556,46 +511,6 @@ the associated congruence rule should be derivable (?admissible). *)
   Definition substitutive (T : flat_type_theory Σ)
     := forall r : T, in_universal_form (T r).
 
-  (* TODO: upstream to [FlatRule]? *)
-  Definition flat_congruence_rule
-      (R : flat_rule Σ)
-      (R_obj : Judgement.is_object (form_of_judgement (flat_rule_conclusion R)))
-    : flat_rule Σ.
-  Proof.
-    assert (inl : (Signature.map
-       (Metavariable.extend Σ (flat_rule_metas R))
-       (Metavariable.extend Σ (flat_rule_metas R + flat_rule_metas R)))).
-    { apply Metavariable.fmap2, Family.inl. }
-    assert (inr : (Signature.map
-       (Metavariable.extend Σ (flat_rule_metas R))
-       (Metavariable.extend Σ (flat_rule_metas R + flat_rule_metas R)))).
-    { apply Metavariable.fmap2, Family.inr. }
-    exists (flat_rule_metas R + flat_rule_metas R).
-    - (* premises *)
-      refine (_ + _ + _).
-      + refine (Family.fmap _ (flat_rule_premise R)).
-        apply Judgement.fmap, inl.
-      + refine (Family.fmap _ (flat_rule_premise R)).
-        apply Judgement.fmap, inr.
-      + exists {p : flat_rule_premise R
-                    & Judgement.is_object
-                        (form_of_judgement (flat_rule_premise R p))}.
-        intros [p p_obj].
-        set (J := flat_rule_premise R p).
-        fold J in p_obj.
-        exists (Context.fmap inl (context_of_judgement J)).
-        simple refine (combine_hypothetical_judgement _ _ _ _).
-        * exact (fmap_hypothetical_judgement inl J).
-        * exact (fmap_hypothetical_judgement inr J).
-        * apply idpath.
-        * apply p_obj.
-    - (* conclusion *)
-      set (J := flat_rule_conclusion R).
-      apply (combine_judgement (Judgement.fmap inl J) (Judgement.fmap inr J)).
-      + apply idpath.
-      + apply R_obj.
-  Defined.
-
   Local Definition congruous (T : flat_type_theory Σ)
     : Type
   := Family.map
@@ -617,6 +532,10 @@ the associated congruence rule should be derivable (?admissible). *)
 
   However, it would take a lot of work to state this and set up the infrastructure to work with it.  So for now we stick with this simpler and cruder notion of congruousness: T should literally contain all its associated congruence rules. *)
 
+  (* TODO: this could be improved in several ways, given a bit of upstream refactoring:
+  - factor the definition of [FlatTypeTheory.closure_system] and the [without subst] version to have the second summand defined together, then have this hold for any closure system with a map from that
+  - then can upstream this to [FlatTypeTheory] (along with following couple of rules)
+  - also can possibly add “contains” relation for families, then rewrite this to use that *)
   Local Definition derive_contained_rule
       {T : flat_type_theory Σ}
       {R} {r:T} (e : T r = R)
@@ -635,6 +554,7 @@ the associated congruence rule should be derivable (?admissible). *)
     assumption.
   Defined.
 
+  (* TODO: as with [derive_contained_rule], upstream once refactored to allow that *)
   Local Definition derive_contained_rule'
       {T : flat_type_theory Σ}
       {R} {r:T} (e_R : T r = R)
@@ -667,7 +587,6 @@ the associated congruence rule should be derivable (?admissible). *)
     assumption.
   Defined.
 
-  (* TODO: upstream *)
   Lemma equality_flat_rules_congruous `{Funext}
       {C} (T := structural_rule_without_subst Σ + C)
       {r : @equality_flat_rule σ}
@@ -1615,31 +1534,6 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
       apply instantiate_substitute_instantiation.
   Defined.
 
-  (* TODO: upstream!*)
-  (* NOTE: the typing of this lemma is a bit subtle:
-     the “cheat” in [combine_judgement] is exposed here,
-     i.e. the mismatch that the second argument of [combine_judgement]
-     is actually a hypothetical judgement. *)
-  Lemma instantiate_combine_judgement
-      {a} (J : judgement (Metavariable.extend Σ a))
-      (Δ := context_of_judgement J)
-      (K_hyp : hypothetical_judgement (Metavariable.extend Σ a) Δ)
-      {e : form_of_judgement J = form_of_judgement K_hyp}
-      {J_obj : Judgement.is_object (form_of_judgement J)}
-      {Γ : raw_context Σ} (I : Metavariable.instantiation a Σ Γ)
-      {Θ : Δ -> raw_type _ Δ}
-      (K := Build_judgement (Build_raw_context _ Θ) K_hyp)
-    : Judgement.instantiate Γ I (combine_judgement J K e J_obj)
-      = combine_judgement
-          (Judgement.instantiate Γ I J)
-          (Judgement.instantiate Γ I K)
-          e
-          J_obj.
-  Proof.
-    apply (ap (Build_judgement _)).
-    apply instantiate_combine_hypothetical_judgement.
-  Defined.
-
   (* TODO: upstream within file.  NOTE: keep even if turns out not used, this was a pain in the arse to write and might be useful in future. *)
   Local Definition compose_renaming_weakly_equal_judgement_map
         {T : flat_type_theory Σ}
@@ -1725,26 +1619,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
       apply rename_substitute_equal_hypothetical_judgement.
   Defined.
 
-  (* TODO: upstream, + refactor to this in other lemmas about [combine_hypothetical_judgement] *)
-  Lemma combine_hypothetical_judgement_eq
-      {γ : σ} {J J' K K' : hypothetical_judgement Σ γ}
-      {e : form_of_judgement J = form_of_judgement K}
-      {e' : form_of_judgement J' = form_of_judgement K'}
-      {J_obj : Judgement.is_object (form_of_judgement J)}
-      {J'_obj : Judgement.is_object (form_of_judgement J')}
-      (p_J : J' = J)
-      (p_K : K' = K)
-      (p_e : ap form_of_judgement p_J^ @ e' @ ap form_of_judgement p_K = e)
-      (p_obj : transport (fun J => _ (form_of_judgement J)) p_J J'_obj
-                                    = J_obj)
-    : combine_hypothetical_judgement J K e J_obj 
-      = combine_hypothetical_judgement J' K' e' J'_obj. 
-  Proof.
-    destruct p_J, p_K, p_e, p_obj; simpl.
-    erapply ap_1back. path_induction_hammer.
-  Defined.
-
-  (* TODO: upstream? *)
+  (* TODO: upstream within file? *)
   Local Lemma instantiate_judgement_over_weakly_equal_pair_combined
       {T : flat_type_theory Σ} (T_sub : substitutive T)
       {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)

@@ -253,8 +253,24 @@ Section Instantiations.
     : instantiation a Σ' γ
   := fun i => Expression.fmap f (I i).
 
-  (* Given such an instantiation, one can translate syntax over the extended
+  Definition instantiation_fmap2
+      {Σ : signature σ}
+      {a a' : arity σ} (f : Family.map a a')
+      {γ} (I : instantiation a' Σ γ)
+    : instantiation a Σ γ.
+  Proof.
+    intros i.
+    unfold argument_class, argument_shape.
+    refine (transport _ _ _). 
+    { apply ap, ap, (Family.map_commutes f). }
+    eapply (transport (fun cl => _ _ cl _)).
+    { apply ap, (Family.map_commutes f). }
+    apply I.
+  Defined.
+
+  (** Given such an instantiation, one can translate syntax over the extended
      signature into syntax over the base signature. *)
+  (* TODO: make this not local (and other things about instantiation), for convenience + consistency *)
   Local Fixpoint instantiate_expression
       {cl} {a : @arity σ} {Σ : signature σ} {γ : σ}
       (I : instantiation a Σ γ)
@@ -291,9 +307,33 @@ Section Instantiations.
         (fun i => raw_variable (coproduct_inj1 shape_is_sum i))
         (fun i => instantiate_expression I (f i))).
 
-  (** Interaction of metavariable-instantiation with renaming, substitution. *)
+  (** Interaction of metavariable-instantiation with renaming, substitution, transport. *)
 
   Context `{Funext}.
+
+  Lemma transport_class_instantiate
+      {Σ : signature σ} {a}
+      {γ} (I : instantiation a Σ γ)
+      {cl cl'} (e_cl : cl = cl')
+      {δ} (e : raw_expression (extend Σ a) cl δ)
+    : transport (fun cl => raw_expression _ cl _) e_cl
+                (instantiate_expression I e)
+      = instantiate_expression I
+          (transport (fun cl => raw_expression _ cl _) e_cl e).
+  Proof.
+    destruct e_cl; apply idpath.
+  Defined.
+
+  Lemma transport_shape_instantiate
+      {Σ : signature σ} {a}
+      {γ} (I : instantiation a Σ γ)
+      {cl} {δ δ'} (e_δ : δ = δ')
+      (e : raw_expression (extend Σ a) cl δ)
+    : transport _ (ap _ e_δ) (instantiate_expression I e)
+      = instantiate_expression I (transport _ e_δ e).
+  Proof.
+    destruct e_δ; apply idpath.
+  Defined.
 
   Lemma instantiate_rename {Σ : signature σ}
       {cl} {a : @arity σ} {γ : σ}
@@ -601,6 +641,49 @@ Section Instantiations.
         eapply inverse. { refine (coproduct_comp_inj2 _). }
   Defined.
 
+  (* TODO: rename to e.g. [instantiate_fmap2_instantiation]? *)
+  Lemma instantiate_fmap2
+      {a a' : arity σ} (f : Family.map a a')
+      {Σ} {γ} (I : instantiation a' Σ γ)
+      {cl} {δ} (e : raw_expression (extend Σ a) cl δ)
+    : instantiate_expression I (Expression.fmap (fmap2 _ f) e)
+    = instantiate_expression (instantiation_fmap2 f I) e.
+  Proof.
+    induction e as [δ i | δ [S | M] e_args IH_e_args ].
+    - apply idpath. (* [raw_variable]: easy! *)
+    - (* symbol of signature *)
+      simpl. apply ap.
+      apply path_forall; intros i.
+      apply ap, IH_e_args.
+    - (* metavariable symbol *)
+      simpl.
+      (* first, apply IH *)
+      eapply concat.
+      2: { eapply (ap_2back substitute).
+        apply ap, path_forall; intros i.
+        eapply (ap (rename _)), IH_e_args.
+      }
+      clear IH_e_args.
+      (* from here, just transport lemmas *)
+      eapply concat. { apply inverse, transport_class_instantiate. }
+      simpl.
+      eapply concat. { apply Substitution.transport_substitute. }
+      unfold instantiation_fmap2.
+      eapply concat. 2: { apply inverse, substitute_transport_shape. }
+      refine (ap_2back substitute _ _ _ @ ap (substitute _) _).
+      2: { refine (ap_1back _ _^ _).
+           eapply concat. 2: { refine (ap_compose _ _ _). }
+           apply idpath.
+      }
+      set (e_M := Family.map_commutes f M); clearbody e_M.
+      unfold argument_shape, argument_class, symbol_arity in *; simpl in e_args.
+      set (a_M := a M) in *.
+      set (a_fM := a' (f M)) in *.
+      simpl; fold a_fM a_M; clearbody a_M a_fM.
+      destruct e_M.
+      cbn; apply idpath.
+  Defined.
+
 End Instantiations.
 
 
@@ -772,3 +855,47 @@ Section Instantiation_Composition.
   Defined.
 
 End Instantiation_Composition.
+
+(** When working with congruence rules, one often wants to combine two instantiations for some metavariables into a single instantiation for two copies of the metavariables. *)
+Section Copair_Instantiation.
+
+  Context {σ : shape_system} `{Funext}.
+
+  Definition copair_instantiation
+      {Σ} {a b : arity σ} {γ}
+      (Ia : instantiation a Σ γ) 
+      (Ib : instantiation b Σ γ) 
+    : instantiation (a+b) Σ γ.
+  Proof.
+    intros [i | j].
+    - apply Ia.
+    - apply Ib.
+  Defined.
+
+  Definition copair_instantiation_inl
+      {Σ} {a b : arity σ} {γ}
+      (Ia : instantiation a Σ γ) 
+      (Ib : instantiation b Σ γ)
+      {cl} {δ} (e : raw_expression (extend Σ a) cl δ)
+    : instantiate_expression
+        (copair_instantiation Ia Ib)
+        (Expression.fmap (fmap2 _ Family.inl) e)
+      = instantiate_expression Ia e.
+  Proof.
+    apply instantiate_fmap2.
+  Defined.
+
+  Definition copair_instantiation_inr
+      {Σ} {a b : arity σ} {γ}
+      (Ia : instantiation a Σ γ) 
+      (Ib : instantiation b Σ γ)
+      {cl} {δ} (e : raw_expression (extend Σ b) cl δ)
+    : instantiate_expression
+        (copair_instantiation Ia Ib)
+        (Expression.fmap (fmap2 _ Family.inr) e)
+      = instantiate_expression Ib e.
+  Proof.
+    apply instantiate_fmap2.
+  Defined.
+
+End Copair_Instantiation.
