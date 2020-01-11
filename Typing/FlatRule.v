@@ -165,3 +165,49 @@ End ClosureSystem.
 (** Instantiations?  The interaction between flat rules and instantiations — in particular, the interaction with [FlatRule.closure_system] — can’t be given here, since it depends on structural rules, at least on the rule for variable-renaming.  So see [Typing.FlatTypeTheory] downstream for lemmas on this, and the comments at  [instantiate_flat_rule_closure_system] there for a more detailed explanation. *)
 
 (* NOTE: what we could give in this file, and should if it’s needed anywhere, would be the “functoriality of flat rules under instantiations”: i.e. translating a flat rule over [Σ+a] to a flat rule over [Σ], using [Judgement.instantiate]. *)
+
+Section Congruence.
+
+  Context `{Funext} {σ : shape_system}.
+
+  Definition flat_congruence_rule
+      {Σ : signature σ}
+      (R : flat_rule Σ)
+      (R_obj : Judgement.is_object (form_of_judgement (flat_rule_conclusion R)))
+    : flat_rule Σ.
+  Proof.
+    assert (inl : (Signature.map
+       (Metavariable.extend Σ (flat_rule_metas R))
+       (Metavariable.extend Σ (flat_rule_metas R + flat_rule_metas R)))).
+    { apply Metavariable.fmap2, Family.inl. }
+    assert (inr : (Signature.map
+       (Metavariable.extend Σ (flat_rule_metas R))
+       (Metavariable.extend Σ (flat_rule_metas R + flat_rule_metas R)))).
+    { apply Metavariable.fmap2, Family.inr. }
+    exists (flat_rule_metas R + flat_rule_metas R).
+    - (* premises *)
+      refine (_ + _ + _).
+      + refine (Family.fmap _ (flat_rule_premise R)).
+        apply Judgement.fmap, inl.
+      + refine (Family.fmap _ (flat_rule_premise R)).
+        apply Judgement.fmap, inr.
+      + exists {p : flat_rule_premise R
+                    & Judgement.is_object
+                        (form_of_judgement (flat_rule_premise R p))}.
+        intros [p p_obj].
+        set (J := flat_rule_premise R p).
+        fold J in p_obj.
+        exists (Context.fmap inl (context_of_judgement J)).
+        simple refine (combine_hypothetical_judgement _ _ _ _).
+        * exact (fmap_hypothetical_judgement inl J).
+        * exact (fmap_hypothetical_judgement inr J).
+        * apply idpath.
+        * apply p_obj.
+    - (* conclusion *)
+      set (J := flat_rule_conclusion R).
+      apply (combine_judgement (Judgement.fmap inl J) (Judgement.fmap inr J)).
+      + apply idpath.
+      + apply R_obj.
+  Defined.
+
+End Congruence.

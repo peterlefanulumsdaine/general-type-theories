@@ -248,38 +248,14 @@ Section Judgements.
     apply hypothetical_boundary_of_judgement, J.
   Defined.
 
-  (** Given two object judgements [J] [K] of the same form,
-   combine them into an equality judgement comparing their heads,
-   over the boundary of [J]. *)
-  (* TODO: consider naming! *)
-  (* TODO: make [class_of] a coercion?
-   also [boundary_slot_from_object_boundary_slot]? *)
-  Definition combine_hypothetical_judgement
-      {γ} (J K : hypothetical_judgement γ)
-      (e : form_of_judgement J = form_of_judgement K)
-      (J_obj : is_object (form_of_judgement J))
-    : hypothetical_judgement γ.
-  Proof.
-    exists (form_equality (class_of (form_of_judgement J))).
-    intros [s | | ].
-    - refine (transport (fun cl => raw_expression _ cl _) _ _).
-      2: { exact (J (the_boundary_slot
-                         (boundary_slot_from_object_boundary_slot s))). }
-      eapply concat. { apply Family.map_commutes. }
-      eapply (Family.map_commutes boundary_slot_from_object_boundary_slot).
-    - exact (head J J_obj).
-    - refine (transport (fun cl => raw_expression _ cl _) _ _).
-      2: { refine (head K _). eapply transport; eassumption. }
-      apply (ap class_of), inverse, e.
-  Defined.
-
 End Judgements.
 
+(* TODO: make [Σ] implicit in context of section, so fewer items need [Arguments] redeclaring? *)
 Arguments Build_hypothetical_boundary {_ _ _} _ _.
 Arguments form_of_boundary {_ _ _} _. 
 Arguments Build_hypothetical_judgement {_ _ _} _ _.
 Arguments form_of_judgement {_ _ _} _. 
-Arguments head {_ _ _} _ _.
+Arguments head {_ _ _} _ / _.
 Arguments Build_boundary {_ _} _ _. 
 Arguments context_of_boundary {_ _} _. 
 Arguments Build_judgement {_ _} _ _. 
@@ -287,18 +263,6 @@ Arguments context_of_judgement {_ _} _.
 Arguments shape_of_judgement {_ _} _. 
 Arguments hypothetical_part {_ _} _. 
 Arguments boundary_of_judgement {_ _} _.
-Arguments combine_hypothetical_judgement {_ _ _} _ _ _ _.
-(* TODO: reinstate as needed
-Arguments hypothetical_boundary : simpl nomatch.
-Arguments Build_judgement {_ _ _} _ _.
-Arguments context_of_judgement {_ _ _} j : simpl nomatch.
-Arguments hypothetical_part {_ _ _} j : simpl nomatch.
-Arguments make_context_judgement {_ _} _.
-Arguments Build_judgement {_ _} _ _.
-Arguments form_of_judgement {_ _} j : simpl nomatch.
-Arguments boundary_of_judgement {_ _ _} _ : simpl nomatch.
-Arguments shape_of_judgement {_ _ _} _ : simpl nomatch.
-*)
 
 Section JudgementFmap.
 
@@ -1041,24 +1005,6 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
     apply path_forall; intros i; apply rename_substitute.
   Defined.
 
-(** If [f g] are two raw context maps [Δ -> Γ], and [J] an object judgement
-over [Γ], there is an equality judgement comparing the pullbacks of [J] along
-[f], [g].  E.g. [Γ |- A], this gives [Δ |- f^*A = g^*A]; for [Γ |- a:A], this
-is [Δ |- f^*a = g^*A : f^*A] *)
-(* TODO: consider naming! *)
-  Definition substitute_equal_hypothetical_judgement
-      {δ γ} (f g : raw_context_map Σ δ γ)
-      (J : hypothetical_judgement Σ γ)
-      (J_obj : is_object (form_of_judgement J))
-    : hypothetical_judgement Σ δ.
-  Proof.
-    simple refine (combine_hypothetical_judgement _ _ _ _).
-    - exact (substitute_hypothetical_judgement f J).
-    - exact (substitute_hypothetical_judgement g J).
-    - apply idpath.
-    - apply J_obj.
-  Defined.
-
 End Substitution.
 
 Section Instantiation.
@@ -1109,6 +1055,91 @@ Section Instantiation.
         eapply concat. 2: {apply inverse. refine (coproduct_comp_inj2 _). }
         apply fmap_instantiate_expression.
     - intros i; apply fmap_instantiate_expression.
+  Defined.
+
+  Lemma instantiate_fmap2_hypothetical_judgement
+      {a a' : arity σ} (f : Family.map a a')
+      {Σ} {γ} (I : Metavariable.instantiation a' Σ γ)
+      {δ} (J : hypothetical_judgement (Metavariable.extend Σ a) δ)
+    : instantiate_hypothetical_judgement I
+        (fmap_hypothetical_judgement (Metavariable.fmap2 _ f) J)
+    = instantiate_hypothetical_judgement (instantiation_fmap2 f I) J.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros i.
+    apply instantiate_fmap2.
+  Defined.
+
+  Lemma instantiate_fmap2_judgement
+      {a a' : arity σ} (f : Family.map a a')
+      {Σ} {Γ : raw_context Σ} (I : Metavariable.instantiation a' Σ Γ)
+      (J : judgement (Metavariable.extend Σ a))
+    : instantiate Γ I (fmap (Metavariable.fmap2 _ f) J)
+    = instantiate Γ (instantiation_fmap2 f I) J.
+  Proof.
+    apply eq_by_expressions.
+    - apply (coproduct_rect shape_is_sum).
+      + intros.
+        eapply concat. { rapply coproduct_comp_inj1. }
+        apply inverse. rapply coproduct_comp_inj1.
+      + intros.
+        eapply concat. { rapply coproduct_comp_inj2. }
+        eapply concat. 2: { apply inverse. rapply coproduct_comp_inj2. }
+        apply instantiate_fmap2.
+    - intros; apply instantiate_fmap2.
+  Defined.
+
+  Definition copair_instantiation_inl_hypothetical_judgement
+      {Σ} {a b : arity σ} {γ}
+      (Ia : Metavariable.instantiation a Σ γ) 
+      (Ib : Metavariable.instantiation b Σ γ) 
+      {δ} (J : hypothetical_judgement (Metavariable.extend Σ a) δ)
+    : instantiate_hypothetical_judgement
+        (copair_instantiation Ia Ib)
+        (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inl) J)
+      = instantiate_hypothetical_judgement Ia J.
+  Proof.
+    apply instantiate_fmap2_hypothetical_judgement.
+  Defined.
+
+  Definition copair_instantiation_inr_hypothetical_judgement
+      {Σ} {a b : arity σ} {γ}
+      (Ia : Metavariable.instantiation a Σ γ) 
+      (Ib : Metavariable.instantiation b Σ γ) 
+      {δ} (J : hypothetical_judgement (Metavariable.extend Σ b) δ)
+    : instantiate_hypothetical_judgement
+        (copair_instantiation Ia Ib)
+        (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inr) J)
+      = instantiate_hypothetical_judgement Ib J.
+  Proof.
+    apply instantiate_fmap2_hypothetical_judgement.
+  Defined.
+
+  (* TODO: rename this and following to [Judgement.copair_instantiation_inl], etc. *)
+  Definition copair_instantiation_inl_judgement
+      {Σ} {a b : arity σ} (Γ : raw_context _)
+      (Ia : Metavariable.instantiation a Σ Γ) 
+      (Ib : Metavariable.instantiation b Σ Γ) 
+      (J : judgement (Metavariable.extend Σ a))
+    : instantiate Γ
+        (copair_instantiation Ia Ib)
+        (fmap (Metavariable.fmap2 _ Family.inl) J)
+      = instantiate Γ Ia J.
+  Proof.
+    apply instantiate_fmap2_judgement.
+  Defined.
+
+  Definition copair_instantiation_inr_judgement
+      {Σ} {a b : arity σ} (Γ : raw_context _)
+      (Ia : Metavariable.instantiation a Σ Γ) 
+      (Ib : Metavariable.instantiation b Σ Γ) 
+      (J : judgement (Metavariable.extend Σ b))
+    : instantiate Γ
+        (copair_instantiation Ia Ib)
+        (fmap (Metavariable.fmap2 _ Family.inr) J)
+      = instantiate Γ Ib J.
+  Proof.
+    apply instantiate_fmap2_judgement.
   Defined.
 
   Context {Σ : signature σ}.
@@ -1201,3 +1232,193 @@ Section Instantiation.
 End Instantiation.
 
 Arguments instantiate : simpl nomatch.
+
+(** Combining two object judgements into an equality judgement
+e.g. combining [Γ |- a1 : A1], [Γ |- a2 : A2] into [ Γ |- a1 = a2 : A2 ].
+
+As per the example, we always combine “left-handedly”, taking the boundary of the combination to be the boundary of the first judgement. *)
+Section Combine_Judgement.
+
+  Context {σ : shape_system} `{Funext}.
+
+  (** Given two object judgements [J] [K] of the same form,
+   combine them into an equality judgement comparing their heads,
+   over the boundary of [J]. *)
+  (* TODO: consider naming! *)
+  (* TODO: make [class_of] a coercion?
+   also [boundary_slot_from_object_boundary_slot]? *)
+  (* TODO: play around with definition to see if we can make this easier to reason about. *)
+  Definition combine_hypothetical_judgement
+      {Σ : signature σ}
+      {γ} (J K : hypothetical_judgement Σ γ)
+      (e : form_of_judgement J = form_of_judgement K)
+      (J_obj : is_object (form_of_judgement J))
+    : hypothetical_judgement Σ γ.
+  Proof.
+    exists (form_equality (class_of (form_of_judgement J))).
+    intros [s | | ].
+    - refine (transport (fun cl => raw_expression _ cl _) _ _).
+      2: { exact (J (the_boundary_slot
+                         (boundary_slot_from_object_boundary_slot s))). }
+      eapply concat. { apply Family.map_commutes. }
+      eapply (Family.map_commutes boundary_slot_from_object_boundary_slot).
+    - exact (head J J_obj).
+    - refine (transport (fun cl => raw_expression _ cl _) _ _).
+      2: { refine (head K _). eapply transport; eassumption. }
+      apply (ap class_of), inverse, e.
+  Defined.
+
+  (* TODO: refactor to this in other lemmas below about [combine_hypothetical_judgement] *)
+  (* TODO: remove unnecessary [p_e], [p_obj] arguments, by showing above that things are hprops *)
+  Lemma combine_hypothetical_judgement_eq
+      {Σ : signature σ}
+      {γ : σ} {J J' K K' : hypothetical_judgement Σ γ}
+      {e : form_of_judgement J = form_of_judgement K}
+      {e' : form_of_judgement J' = form_of_judgement K'}
+      {J_obj : is_object (form_of_judgement J)}
+      {J'_obj : is_object (form_of_judgement J')}
+      (p_J : J' = J)
+      (p_K : K' = K)
+      (p_e : ap form_of_judgement p_J^ @ e' @ ap form_of_judgement p_K = e)
+      (p_obj : transport (fun J => _ (form_of_judgement J)) p_J J'_obj
+                                    = J_obj)
+    : combine_hypothetical_judgement J K e J_obj 
+      = combine_hypothetical_judgement J' K' e' J'_obj. 
+  Proof.
+    destruct p_J, p_K, p_e, p_obj; simpl.
+    erapply ap_1back.
+    eapply concat. { apply concat_p1. }
+    apply concat_1p.
+  Defined.
+
+  Lemma rename_combine_hypothetical_judgement
+    {Σ} {γ γ' : σ} (f : γ -> γ')
+    (K K' : hypothetical_judgement Σ γ)
+    (e : form_of_judgement K = form_of_judgement K')
+    (K_obj : is_object (form_of_judgement K))
+    : rename_hypothetical_judgement f
+                         (combine_hypothetical_judgement K K' e K_obj)
+    = combine_hypothetical_judgement
+        (rename_hypothetical_judgement f K)
+        (rename_hypothetical_judgement f K')
+        e K_obj.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros [s | | ];
+      destruct K as [jf K], K' as [jf' K']; cbn in e, K_obj;
+      destruct e, jf; destruct K_obj;
+    (* we destruct enough that all the equalities appearing under transports in the goal become idpaths, and the transports compute. *)
+      apply idpath.
+  Defined.
+
+  Lemma instantiate_combine_hypothetical_judgement
+    {Σ : signature σ} {a} {γ} (Ia : Metavariable.instantiation a Σ γ)
+    {δ} (K K' : hypothetical_judgement _ δ)
+    (e : form_of_judgement K = form_of_judgement K')
+    (K_obj : is_object (form_of_judgement K))
+    : instantiate_hypothetical_judgement Ia
+                         (combine_hypothetical_judgement K K' e K_obj)
+    = combine_hypothetical_judgement
+        (instantiate_hypothetical_judgement Ia K)
+        (instantiate_hypothetical_judgement Ia K')
+        e K_obj.
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)).
+    apply path_forall; intros [s | | ];
+      destruct K as [jf K], K' as [jf' K']; cbn in e, K_obj;
+      destruct e, jf; destruct K_obj;
+    (* we destruct enough that all the equalities appearing under transports in the goal become idpaths, and the transports compute. *)
+      apply idpath.
+  Defined.
+
+(** If [f g] are two raw context maps [Δ -> Γ], and [J] an object judgement
+over [Γ], there is an equality judgement comparing the pullbacks of [J] along
+[f], [g].  E.g. [Γ |- A], this gives [Δ |- f^*A = g^*A]; for [Γ |- a:A], this
+is [Δ |- f^*a = g^*A : f^*A] *)
+  Definition substitute_equal_hypothetical_judgement
+      {Σ : signature σ}
+      {δ γ} (f g : raw_context_map Σ δ γ)
+      (J : hypothetical_judgement Σ γ)
+      (J_obj : is_object (form_of_judgement J))
+    : hypothetical_judgement Σ δ.
+  Proof.
+    simple refine (combine_hypothetical_judgement _ _ _ _).
+    - exact (substitute_hypothetical_judgement f J).
+    - exact (substitute_hypothetical_judgement g J).
+    - apply idpath.
+    - apply J_obj.
+  Defined.
+
+  Definition rename_substitute_equal_hypothetical_judgement {Σ}
+      {δ γ} (f g : raw_context_map Σ δ γ) {δ' : σ} {r : δ -> δ'}
+      (J : hypothetical_judgement Σ γ)
+      (J_obj : is_object (form_of_judgement J))
+    : rename_hypothetical_judgement r
+        (substitute_equal_hypothetical_judgement f g J J_obj)
+    = substitute_equal_hypothetical_judgement
+        (Expression.rename r o f)
+        (Expression.rename r o g)
+        J J_obj.
+  Proof.
+    eapply concat. { apply rename_combine_hypothetical_judgement. }
+    refine (ap2 (fun J K
+                       => combine_hypothetical_judgement
+                            (Build_hypothetical_judgement _ J)
+                            (Build_hypothetical_judgement _ K)
+                            _ _)
+                  _ _);
+    apply path_forall; intros i; apply rename_substitute.
+  Defined.
+
+  Definition substitute_equal_rename_hypothetical_judgement {Σ}
+      {γ γ' δ : σ} (r : γ -> γ') (f g : raw_context_map Σ δ γ')
+      (J : hypothetical_judgement Σ γ)
+      (J_obj : is_object (form_of_judgement J))
+    : substitute_equal_hypothetical_judgement f g
+        (rename_hypothetical_judgement r J) J_obj
+    = substitute_equal_hypothetical_judgement (f o r) (g o r) J J_obj.
+  Proof.
+    refine (ap2 (fun J K
+                       => combine_hypothetical_judgement
+                            (Build_hypothetical_judgement _ J)
+                            (Build_hypothetical_judgement _ K)
+                            _ _)
+                  _ _);
+    apply path_forall; intros i; apply substitute_rename.
+  Defined.
+
+
+  Definition combine_judgement
+      {Σ : signature σ}
+      (J : judgement Σ)
+      (K : hypothetical_judgement Σ (context_of_judgement J))
+      (e : form_of_judgement J = form_of_judgement K)
+      (J_obj : is_object (form_of_judgement J))
+    : judgement Σ.
+  Proof.
+    exists (context_of_judgement J).
+    apply (combine_hypothetical_judgement J K); try assumption.
+  Defined.
+
+  (* NOTE: the typing of this lemma is a bit subtle:
+     the “cheat” in [combine_judgement] is exposed here,
+     i.e. the mismatch that the second argument of [combine_judgement]
+     is actually a hypothetical judgement. *)
+  Lemma instantiate_combine_judgement
+      {Σ : signature σ}
+      {a} (J : judgement (Metavariable.extend Σ a))
+      (Δ := context_of_judgement J)
+      (K_hyp : hypothetical_judgement (Metavariable.extend Σ a) Δ)
+      {e : form_of_judgement J = form_of_judgement K_hyp}
+      {J_obj : is_object (form_of_judgement J)}
+      {Γ : raw_context Σ} (I : Metavariable.instantiation a Σ Γ)
+      {Θ : Δ -> raw_type _ Δ}
+      (K := Build_judgement (Build_raw_context _ Θ) K_hyp)
+    : instantiate Γ I (combine_judgement J K e J_obj)
+      = combine_judgement (instantiate Γ I J) (instantiate Γ I K) e J_obj.
+  Proof.
+    apply (ap (Build_judgement _)).
+    apply instantiate_combine_hypothetical_judgement.
+  Defined.
+
+End Combine_Judgement.
