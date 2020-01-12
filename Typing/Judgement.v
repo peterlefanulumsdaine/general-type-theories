@@ -165,10 +165,44 @@ Section JudgementCombinatorics.
 
 End JudgementCombinatorics.
 
+(** A tactic that is often handy working with syntax, especially slots:
+recursively destruct some object of an iterated inductive type.
+
+Currently only supports specific inductive types hand-coded here. *)
+(* TODO: can this be generalised to work for arbitrary finite types? *)
+Ltac recursive_destruct x :=
+    compute in x;
+    try match type of x with
+    | form =>
+      let cl := fresh "cl" in
+      destruct x as [ cl | cl ]; recursive_destruct cl
+    | syntactic_class => destruct x as [ | ]
+    | option _ =>
+      let y := fresh "y" in
+      destruct x as [ y | ]; [recursive_destruct y | idtac ]
+    | Empty => destruct x
+    | Unit => destruct x as []
+    | sum _ _ =>
+      let y := fresh "y" in
+      destruct x as [ y | y ]; recursive_destruct y
+    | sig _ =>
+      let x1 := fresh "x1" in
+      let x2 := fresh "x2" in
+      destruct x as [ x1 x2 ]; recursive_destruct x1; recursive_destruct x2
+    | term_boundary_slot_index => destruct x as []
+    | object_slot_index _ =>
+      let slot := fresh "slot" in
+      destruct x as [ slot | ] ; [ recursive_destruct slot | idtac ]
+    | equality_boundary_slot_index _ =>
+      let slot := fresh "slot" in
+      destruct x as [ slot | | ] ; [ recursive_destruct slot | idtac | idtac ]
+    | _ => idtac
+    end.
+
 Section Judgements.
 
-  Context {σ : shape_system}.
-  Context (Σ : signature σ).
+  Context {σ : shape_system}
+          {Σ : signature σ}.
 
   Definition hypothetical_boundary_expressions jf γ
   := forall i : boundary_slot jf, raw_expression Σ (boundary_slot jf i) γ.
@@ -250,9 +284,9 @@ Section Judgements.
 
 End Judgements.
 
-(* TODO: make [Σ] implicit in context of section, so fewer items need [Arguments] redeclaring? *)
+(* NOTE: it might seem tempting to make [Σ] implicit in the section above; but because it defines as many types (where [Σ] is wanted explicit) as access functions, that way needs just as many [Arguments] commands later as this. *)
 Arguments Build_hypothetical_boundary {_ _ _} _ _.
-Arguments form_of_boundary {_ _ _} _. 
+Arguments form_of_boundary {_ _ _} _.
 Arguments Build_hypothetical_judgement {_ _ _} _ _.
 Arguments form_of_judgement {_ _ _} _. 
 Arguments head {_ _ _} _ / _.
@@ -517,40 +551,6 @@ Arguments make_type_judgement : simpl never.
 Arguments make_type_equality_judgement : simpl never.
 Arguments make_term_judgement : simpl never.
 Arguments make_term_equality_judgement : simpl never.
-
-(** A tactic that is often handy working with syntax, especially slots:
-recursively destruct some object of an iterated inductive type.
-
-Currently only supports specific inductive types hand-coded here. *)
-(* TODO: can this be generalised to work for arbitrary inductive types? *)
-Ltac recursive_destruct x :=
-    compute in x;
-    try match type of x with
-    | form =>
-      let cl := fresh "cl" in
-      destruct x as [ cl | cl ]; recursive_destruct cl
-    | syntactic_class => destruct x as [ | ]
-    | option _ =>
-      let y := fresh "y" in
-      destruct x as [ y | ]; [recursive_destruct y | idtac ]
-    | Empty => destruct x
-    | Unit => destruct x as []
-    | sum _ _ =>
-      let y := fresh "y" in
-      destruct x as [ y | y ]; recursive_destruct y
-    | sig _ =>
-      let x1 := fresh "x1" in
-      let x2 := fresh "x2" in
-      destruct x as [ x1 x2 ]; recursive_destruct x1; recursive_destruct x2
-    | term_boundary_slot_index => destruct x as []
-    | object_slot_index _ =>
-      let slot := fresh "slot" in
-      destruct x as [ slot | ] ; [ recursive_destruct slot | idtac ]
-    | equality_boundary_slot_index _ =>
-      let slot := fresh "slot" in
-      destruct x as [ slot | | ] ; [ recursive_destruct slot | idtac | idtac ]
-    | _ => idtac
-    end.
 
 
 Section Equality_Lemmas.
