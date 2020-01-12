@@ -598,7 +598,7 @@ the cases of that induction. *)
       simple refine (Closure.deduce' _ _ _).
       { apply inl, inl, inr.
         exists Γ'. exact (f i). }
-      { cbn. apply (ap (Build_judgement _)). 
+      { cbn. apply ap.
         set (e := judgement_renaming_hypothetical_part _ _ f).
         eapply concat. 2: { apply e. }
         apply (ap (Build_hypothetical_judgement _)). 
@@ -1039,10 +1039,10 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
         [ set (d := d_fri) | set (d := d_gri) | set (d := d_fgri) ];
         refine (transport _ _ d).
         1, 2:
-          apply (ap (Judgement.make_term_judgement _ _));
+          apply ap, ap;
           refine (ap _ (typed_renaming_respects_types _ _ _ _) @ _);
           apply substitute_rename.
-        apply (ap_2back (Judgement.make_term_equality_judgement _)).
+        apply (ap (fun A => [! _ |- _ ≡ _ ; A !])).
         eapply concat. { apply ap, typed_renaming_respects_types. }
         apply substitute_rename.
   Defined.
@@ -1701,7 +1701,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
         as [[j [[e_fvar e_gvar] [e_ftype | e_gtype]]] | [[d_fi d_gi] d_fgi ]].
       + (* case: [f i = g i = raw_variable j], [Γ' j = f^* (Γ i) ] *)
         destruct fg_J as [[e|e] | [J'_obj e]];
-          (eapply transport; [ eapply (ap (Build_judgement _)), inverse, e | ]);
+          (eapply transport; [ eapply ap, inverse, e | ]);
           apply Judgement.canonicalise; simpl.
         * rewrite e_fvar, <- e_ftype.
           apply derive_variable.
@@ -1722,7 +1722,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
           exact IH_fΓi.
       + (* case: [f i = g i = raw_variable j], [Γ' j = g^* (Γ i) ] *)
         destruct fg_J as [[e|e] | [J'_obj e]];
-          (eapply transport; [ eapply (ap (Build_judgement _)), inverse, e | ]);
+          (eapply transport; [ eapply ap, inverse, e | ]);
           apply Judgement.canonicalise; simpl.
         * rewrite e_fvar.
           apply (derive_term_convert Γ' (substitute (right fg) (Γ i)));

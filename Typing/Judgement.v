@@ -202,7 +202,7 @@ Ltac recursive_destruct x :=
 Section Judgements.
 
   Context {σ : shape_system}
-          {Σ : signature σ}.
+          (Σ : signature σ).
 
   Definition hypothetical_boundary_expressions jf γ
   := forall i : boundary_slot jf, raw_expression Σ (boundary_slot jf i) γ.
@@ -494,41 +494,40 @@ Section JudgementNotations.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  Local Definition make_type_judgement
-        (Γ : raw_context Σ) (A : raw_type Σ Γ)
-    : judgement Σ.
+  Definition make_type_hypothetical_judgement
+      {γ} (A : raw_type Σ γ)
+    : hypothetical_judgement Σ γ.
   Proof.
-    exists Γ, (form_object class_type).
+    exists (form_object class_type).
     intros [ [] | ]; exact A.
   Defined.
 
-  Local Definition make_type_equality_judgement
-             (Γ : raw_context Σ)
-             (A A' : raw_type Σ Γ)
-    : judgement Σ.
+  Definition make_type_equality_hypothetical_judgement
+      {γ} (A A' : raw_type Σ γ)
+    : hypothetical_judgement Σ γ.
   Proof.
-    exists Γ, (form_equality class_type).
+    exists (form_equality class_type).
     intros [ [] |  | ].
     - exact A.
     - exact A'.
   Defined.
 
-  Local Definition make_term_judgement
-             (Γ : raw_context Σ) (a : raw_term Σ Γ) (A : raw_type Σ Γ)
-    : judgement Σ.
+  Definition make_term_hypothetical_judgement
+      {γ} (a : raw_term Σ γ) (A : raw_type Σ γ)
+    : hypothetical_judgement Σ γ.
   Proof.
-    exists Γ, (form_object class_term).
+    exists (form_object class_term).
     intros [ [] | ].
     - exact A.
     - exact a.
   Defined.
 
   (* TODO: consistentise order with [make_term_judgement]. *)
-  Local Definition make_term_equality_judgement
-             (Γ : raw_context Σ) (A : raw_type Σ Γ) (a a': raw_term Σ Γ)
-    : judgement Σ.
+  Definition make_term_equality_hypothetical_judgement
+      {γ} (A : raw_type Σ γ) (a a': raw_term Σ γ)
+    : hypothetical_judgement Σ γ.
   Proof.
-    exists Γ, (form_equality class_term).
+    exists (form_equality class_term).
     intros [ [] | | ].
     - exact A.
     - exact a.
@@ -537,21 +536,31 @@ Section JudgementNotations.
 
 End JudgementNotations.
 
-Notation "'[!' Γ |- A !]" := (make_type_judgement Γ A) : judgement_scope.
-Notation "'[!' Γ |- A ≡ A' !]"
-  := (make_type_equality_judgement Γ A A') : judgement_scope.
-Notation "'[!' Γ |- a ; A !]"
-  :=  (make_term_judgement Γ a A) : judgement_scope.
-Notation "'[!' Γ |- a ≡ a' ; A !]"
-  := (make_term_equality_judgement Γ A a a') : judgement_scope.
-
+Bind Scope judgement_scope with judgement.
+Bind Scope judgement_scope with hypothetical_judgement.
 Open Scope judgement_scope.
 
-Arguments make_type_judgement : simpl never.
-Arguments make_type_equality_judgement : simpl never.
-Arguments make_term_judgement : simpl never.
-Arguments make_term_equality_judgement : simpl never.
+Notation "[!|- A !]"
+  := (make_type_hypothetical_judgement A) : judgement_scope.
+Notation "[!|- A ≡ A' !]"
+  := (make_type_equality_hypothetical_judgement A A') : judgement_scope.
+Notation "[!|- a ; A !]"
+  :=  (make_term_hypothetical_judgement a A) : judgement_scope.
+Notation "[!|- a ≡ a' ; A !]"
+  := (make_term_equality_hypothetical_judgement A a a') : judgement_scope.
+Notation "[! Γ |- A !]"
+  := (Build_judgement Γ [!|- A !]) : judgement_scope.
+Notation "[! Γ |- A ≡ A' !]"
+  := (Build_judgement Γ [!|- A ≡ A' !]) : judgement_scope.
+Notation "[! Γ |- a ; A !]"
+  := (Build_judgement Γ [!|- a ; A !]) : judgement_scope.
+Notation "[! Γ |- a ≡ a' ; A !]"
+  := (Build_judgement Γ [!|- a ≡ a' ; A !]) : judgement_scope.
 
+Arguments make_type_hypothetical_judgement : simpl never.
+Arguments make_type_equality_hypothetical_judgement : simpl never.
+Arguments make_term_hypothetical_judgement : simpl never.
+Arguments make_term_equality_hypothetical_judgement : simpl never.
 
 Section Equality_Lemmas.
 (** If judgements were record types, rather than function types over their finite set of slots, they would have judgemental eta, which would be very convenient.
@@ -562,22 +571,23 @@ In lieu of that, we give explicit lemmas for judgement equality:
 
   Context {σ : shape_system} {Σ : signature σ} `{Funext}.
 
+  (* TODO: factor the action of this on hypothetical judgements, or maybe even hyp judg exp’ns? *)
   Local Definition eta_expand (J : judgement Σ)
     : judgement Σ.
   Proof.
-    destruct J as [Γ [jf J]].
+    destruct J as [Γ [jf J]]; exists Γ.
     set (jf_keep := jf).
     recursive_destruct jf.
-    - apply (make_type_judgement Γ).
+    - apply make_type_hypothetical_judgement.
       exact (J (the_head_slot _)).
-    - apply (make_term_judgement Γ).
+    - apply make_term_hypothetical_judgement.
       + exact (J (the_head_slot _)).
       + refine (J (@the_boundary_slot
                      (form_object class_term) the_type_slot)).
-    - apply (make_type_equality_judgement Γ).
+    - apply make_type_equality_hypothetical_judgement.
       + exact (J (the_lhs_slot _)).
       + exact (J (the_rhs_slot _)).
-    - apply (make_term_equality_judgement Γ).
+    - apply make_term_equality_hypothetical_judgement.
       + exact (J (the_equality_boundary_slot class_term the_type_slot)).
       + exact (J (the_lhs_slot _)).
       + exact (J (the_rhs_slot _)).
@@ -638,8 +648,7 @@ In lieu of that, we give explicit lemmas for judgement equality:
                       (Build_hypothetical_judgement jf J').
   Proof.
     eapply concat.
-    { eapply (ap (Build_judgement _)),
-      (ap (Build_hypothetical_judgement _)), path_forall; exact e_J. }
+    { eapply ap, ap, path_forall; exact e_J. }
     apply (ap (fun Γ => Build_judgement (Build_raw_context γ Γ) _)).
     apply path_forall; auto.
   Defined.
