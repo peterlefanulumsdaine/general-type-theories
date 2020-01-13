@@ -1039,6 +1039,31 @@ Section Instantiation.
     - intros i; apply unit_instantiate_expression.
   Defined.
 
+  (* TODO: consistentise direction between this and other [instantiate_instantiate] lemmas. Perhaps give both directions, as with [fmap_fmap]/[fmap_compose]? *)
+  Lemma instantiate_instantiate_hypothetical_judgement
+      {Γ : raw_context Σ} {a : arity σ} (Ia : Metavariable.instantiation a Σ Γ)
+      {Δ} {b} (Ib : Metavariable.instantiation b _ Δ)
+      {θ} (J : hypothetical_judgement _ θ)
+    : instantiate_hypothetical_judgement Ia
+        (instantiate_hypothetical_judgement Ib
+          (fmap_hypothetical_judgement
+            (Metavariable.fmap1 include_symbol _)
+            J))
+      =
+      rename_hypothetical_judgement shape_assoc_ltor
+        (instantiate_hypothetical_judgement
+           (instantiate_instantiation Ia Ib)
+           J).
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
+    cbn; apply inverse.
+    eapply concat. { apply ap, instantiate_instantiate_expression. }
+    eapply concat. { apply Expression.rename_rename. }
+    eapply concat. 2: { apply Expression.rename_idmap. }
+    apply (ap_2back Expression.rename), path_forall; intros j.
+    apply Coproduct.assoc_rtoltor.
+  Defined.
+
   Local Lemma instantiate_instantiate
       {Γ : raw_context _} {a} (I : Metavariable.instantiation a Σ Γ)
       {Δ : raw_context _} {b}

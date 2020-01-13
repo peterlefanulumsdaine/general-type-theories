@@ -1107,17 +1107,12 @@ Section SignatureMaps.
         (structural_rule Σ)
         (structural_rule Σ').
   Proof.
-    (* TODO: possible better approach:
-       - [Family.fmap] of families commutes with sums;
-       - then use [repeat apply Family.fmap_sum.] or similar?  *)
-    apply Family.Build_map'.
-    apply structural_rule_rect ; intros.
-    (* MANY cases here!  Really would be better with systematic way to say “in each case, apply [Fmap_Family] to the syntactic data”; perhaps something along the lines of the “judgement slots” approach? TODO: try a few by hand, then consider this. *)
+    repeat apply Family.sum_fmap.
     - (* rename *)
-      destruct i_rename as [Γ [Γ' [α J]]].
+      apply Family.Build_map'.
+      intros [Γ [Γ' [α J]]].
       simple refine (_;_).
-      + apply rename.
-        exists (Context.fmap f Γ).
+      + exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
         exists (fmap_typed_renaming f α).
         exact (fmap_hypothetical_judgement f J).
@@ -1126,18 +1121,40 @@ Section SignatureMaps.
         * refine (Judgement.eq_by_expressions _ _); intros i.
           -- apply idpath.
           -- apply inverse, fmap_rename.
-    - (* subst_apply *)
-      destruct i_sub_ap as [ Γ [Γ' [g hj]]].
+    - (* var rule *)
+      apply Family.Build_map'.
+      intros [Γ x].
       simple refine (_;_).
-      + refine (subst_apply _).
-        exists (Context.fmap f Γ).
+      + exists (Context.fmap f Γ). exact x.
+      + cbn. apply Closure.rule_eq; cbn.
+        * apply inverse.
+          eapply concat. { apply Family.fmap_singleton. }
+          apply ap.
+          apply Judgement.eq_by_eta, idpath.
+        * apply Judgement.eq_by_eta, idpath.
+    - (* equality rules *)
+      apply Family.Build_map'.
+      intros [r ΓI].
+      simple refine (_;_).
+      + exists r.
+        simple refine (FlatRule.closure_system_fmap' f _ ΓI).
+        refine (_ @ _). { apply inverse, FlatRule.fmap_compose. }
+        rapply @ap_1back. 
+        apply Signature.empty_rect_unique.
+      + refine (Family.map_over_commutes
+                  (FlatRule.closure_system_fmap' f _) _).
+    - (* subst_apply *)
+      apply Family.Build_map'.
+      intros [ Γ [Γ' [g hj]]].
+      simple refine (_;_).
+      + exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
         exists (raw_context_map_fmap f g).
         exact (Judgement.fmap_hypothetical_judgement f hj).
-      + cbn. apply Closure.rule_eq; cbn.
+      + apply Closure.rule_eq; cbn.
         * apply inverse.
           eapply concat. { apply Family.fmap_adjoin. }
-          apply ap011; try apply idpath.
+          apply ap2; try apply idpath.
           unfold Family.fmap.
           apply ap, path_forall; intros i.
           refine (Judgement.eq_by_expressions _ _);
@@ -1147,57 +1164,29 @@ Section SignatureMaps.
             intros; try apply idpath.
           refine (fmap_substitute _ _ _)^.
     - (* subst_equal *)
-      destruct i_sub_eq as [ Γ [Γ' [g [g' [jf hj]]]]].
+      apply Family.Build_map'.
+      intros [ Γ [Γ' [g [g' [jf hj]]]]].
       simple refine (_;_).
-      + refine (subst_equal _).
-        exists (Context.fmap f Γ).
+      + exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
         exists (raw_context_map_fmap f g).
         exists (raw_context_map_fmap f g').
         exists jf.
         intros i. apply (Expression.fmap f), hj.
-      + cbn. apply Closure.rule_eq; cbn.
+      + apply Closure.rule_eq; cbn.
         * apply inverse.
           eapply concat. { apply Family.fmap_adjoin. }
-          apply ap011; try apply idpath.
+          apply ap2; try apply idpath.
           eapply concat. { apply Family.fmap_sum. }
           eapply concat. { eapply (ap (fun K => K + _)), Family.fmap_sum. }
-          apply ap2; try apply ap2; unfold Family.fmap.
-          -- apply ap, path_forall; intros i.
+          repeat apply ap2; unfold Family.fmap;
+            apply ap, path_forall; intros i;
             refine (Judgement.eq_by_expressions _ _);
-            intros j; try apply idpath; recursive_destruct j;
-              try apply idpath; apply fmap_substitute.
-          -- apply ap, path_forall; intros i.
-            refine (Judgement.eq_by_expressions _ _);
-            intros j; try apply idpath; recursive_destruct j;
-              try apply idpath; apply fmap_substitute.
-          -- apply ap, path_forall; intros i.
-            refine (Judgement.eq_by_expressions _ _);
-            intros j; try apply idpath; recursive_destruct j;
+            intros j; recursive_destruct j;
               try apply idpath; apply fmap_substitute.
         * refine (Judgement.eq_by_expressions _ _);
             intros; try apply idpath.
           recursive_destruct i; refine (fmap_substitute _ _ _)^.
-    - (* var rule *)
-      destruct i_var as [Γ x].
-      simple refine (variable_rule _ ; _).
-      + exists (Context.fmap f Γ); exact x.
-      + cbn. apply Closure.rule_eq; cbn.
-        * apply inverse.
-          eapply concat. { apply Family.fmap_singleton. }
-          apply ap.
-          apply Judgement.eq_by_eta, idpath.
-        * apply Judgement.eq_by_eta, idpath.
-    - (* equality rules *)
-      destruct i_eq as [r ΓI].
-      simple refine (equality_rule _;_).
-      + exists r.
-        simple refine (FlatRule.closure_system_fmap' f _ ΓI).
-        refine (_ @ _). { apply inverse, FlatRule.fmap_compose. }
-        rapply @ap_1back. 
-        apply Signature.empty_rect_unique.
-      + refine (Family.map_over_commutes
-                  (FlatRule.closure_system_fmap' f _) _).
   Defined.
 
 End SignatureMaps.
@@ -1241,15 +1230,7 @@ Section Instantiation.
          exact (instantiate_instantiation I J)
        | apply idpath | ].
     { apply Context.instantiate_instantiate_ltor. }
-    { (* TODO: abstract as something like [instantiate_instantiate_hypothetical_judgement], and consider direction. *)
-      apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
-      cbn; apply inverse.
-      eapply concat. { apply ap, instantiate_instantiate_expression. }
-      eapply concat. { apply rename_rename. }
-      eapply concat. 2: { apply rename_idmap. }
-      apply (ap_2back Expression.rename), path_forall; intros j.
-      apply Coproduct.assoc_rtoltor.
-    }
+    { apply instantiate_instantiate_hypothetical_judgement. }
     intros p.
     simple refine (derive_rename' _ _ _ _ _).
     4: refine (Closure.hypothesis _ _ _); apply p.
@@ -1269,43 +1250,28 @@ Section Instantiation.
         (structural_rule (Metavariable.extend Σ a))
         (structural_rule Σ).
   Proof.
-    (* TODO: As with [fmap] above, there really should be a more uniform way to do this. *)
     unfold Closure.map_over.
-    refine (structural_rule_rect _ _ _ _ _ _).
+    apply structural_rule_rect.
     - (* rename*)
       intros [Δ [Δ' [α J]]].
-      simple refine (Closure.deduce' _ _ _).
-      { apply rename.
-        exists (Context.instantiate Γ I Δ),
-               (Context.instantiate Γ I Δ'),
-               (instantiate_typed_renaming Γ I α).
-        exact (instantiate_hypothetical_judgement I J).
-      }
-      { apply Judgement.eq_by_expressions; intros;
-          [ apply idpath | apply inverse, instantiate_rename ].
-      }
-      intros p; refine (Closure.hypothesis _ _ p).
+      simple refine (derive_rename' _ _ _ _ _).
+      4: { refine (Closure.hypothesis _ _ _). exact tt. }
+      { apply instantiate_typed_renaming, α. }
+      apply (ap (Build_hypothetical_judgement _)), path_forall.
+      intro; apply instantiate_rename.
     - (* subst_apply *) admit.
     - (* subst_equal *) admit.
     - (* variable_rule *) 
-      intros [Δ i]; cbn.
-      simple refine (Closure.deduce' _ _ _).
-      { apply variable_rule.
-        exists (Context.instantiate _ I Δ).
-        exact (coproduct_inj2 shape_is_sum i).
-      }
-      { apply Judgement.eq_by_expressions.
-        - intros; apply idpath.
-        - intros [[] | ].
-          + refine (coproduct_comp_inj2 _).
-          + apply idpath.
-      }
-      intros p. simple refine (Closure.hypothesis' _ _).
-      { exact p. }
-      apply Judgement.eq_by_expressions.
-      + intros; apply idpath.
-      + intros [[] | ].
+      intros [Δ i]; simpl.
+      simple refine (derive_variable' _ _ _ _).
+      + exact (coproduct_inj2 shape_is_sum i).
+      + apply (ap (Build_hypothetical_judgement _)), path_forall.
+        intros j; recursive_destruct j; try apply idpath.
         apply inverse; refine (coproduct_comp_inj2 _).
+      + simple refine (Closure.hypothesis' _ _).
+        * exact tt.
+        * apply Judgement.eq_by_expressions; intros j; try apply idpath.
+          recursive_destruct j; apply inverse; refine (coproduct_comp_inj2 _).
     - (* equality_rule *)
       intros i_eq.
       destruct i_eq as [i [Δ J]].
