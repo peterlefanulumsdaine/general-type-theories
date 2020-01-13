@@ -979,20 +979,7 @@ Section Instantiation.
     apply instantiate_fmap2_hypothetical_judgement.
   Defined.
 
-  Definition copair_instantiation_inr_hypothetical_judgement
-      {Σ} {a b : arity σ} {γ}
-      (Ia : Metavariable.instantiation a Σ γ) 
-      (Ib : Metavariable.instantiation b Σ γ) 
-      {δ} (J : hypothetical_judgement (Metavariable.extend Σ b) δ)
-    : instantiate_hypothetical_judgement
-        (copair_instantiation Ia Ib)
-        (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inr) J)
-      = instantiate_hypothetical_judgement Ib J.
-  Proof.
-    apply instantiate_fmap2_hypothetical_judgement.
-  Defined.
-
-  (* TODO: rename this and following to [Judgement.copair_instantiation_inl], etc. *)
+  (* TODO: rename this to [Judgement.copair_instantiation_inl], etc. *)
   Definition copair_instantiation_inl_judgement
       {Σ} {a b : arity σ} (Γ : raw_context _)
       (Ia : Metavariable.instantiation a Σ Γ) 
@@ -1006,6 +993,20 @@ Section Instantiation.
     apply instantiate_fmap2_judgement.
   Defined.
 
+  Definition copair_instantiation_inr_hypothetical_judgement
+      {Σ} {a b : arity σ} {γ}
+      (Ia : Metavariable.instantiation a Σ γ) 
+      (Ib : Metavariable.instantiation b Σ γ) 
+      {δ} (J : hypothetical_judgement (Metavariable.extend Σ b) δ)
+    : instantiate_hypothetical_judgement
+        (copair_instantiation Ia Ib)
+        (fmap_hypothetical_judgement (Metavariable.fmap2 _ Family.inr) J)
+      = instantiate_hypothetical_judgement Ib J.
+  Proof.
+    apply instantiate_fmap2_hypothetical_judgement.
+  Defined.
+
+  (* TODO: rename this to [Judgement.copair_instantiation_inl], etc. *)
   Definition copair_instantiation_inr_judgement
       {Σ} {a b : arity σ} (Γ : raw_context _)
       (Ia : Metavariable.instantiation a Σ Γ) 
@@ -1089,188 +1090,11 @@ End Instantiation.
 
 Arguments instantiate : simpl nomatch.
 
-(** A key notion is the _presuppositions_ of a judgement.
-
-For instance, the presuppositions of [ Γ |- a : A ] are the judgements [ |- Γ ] and [ Γ |- A type ].
-
-As with judgements themselves, we first describe set up the combinatorics indexing the constructions involved. *)
-
-Section PresuppositionsCombinatorics.
-(** Whenever an object appears in the boundary of an object judgement, then its
-    boundary embeds into that boundary.
-
-    NOTE. This is a special case of [boundary_slot_from_presupposition] below.
-    It is abstracted out because it’s used twice: directly for object
-    judgements, and as part of the case for equality judgements.
-
-    In fact it’s almost trivial, so could easily be inlined; but conceptually
-    it is the same thing both times, and in type theory with more judgements,
-    it would be less trivial, so we keep it factored out. *)
-
-  Local Definition object_boundary_from_boundary_slots
-    {cl : syntactic_class} (i : object_boundary_slot cl)
-    : Family.map
-        (object_boundary_slot (object_boundary_slot cl i))
-        (object_boundary_slot cl).
-  Proof.
-    apply Family.Build_map'. intros j.
-    destruct cl as [ | ]; cbn in i.
-    (* Ty: nothing to do, no objects in boundary *)
-    - destruct i.
-    (* Tm: i must be type, so again nothing left, no j in its boundary *)
-    - destruct i as []; destruct j.
-  Defined.
-
-(** Wherever an judgement [I] occurs as a presupposition of a judgement [J],
-there is a canonical embedding of the slots of [I] into the slots of [J]. *)
-  Local Definition boundary_slot_from_presupposition
-    {jf : form} (i : boundary_slot jf)
-    : Family.map
-        (slot (form_object (boundary_slot jf i)))
-        (boundary_slot jf).
-  Proof.
-    apply Family.Build_map'.
-    intros [ j | ].
-    - (* case: j in boundary part of presupposition *)
-      destruct jf as [ cl | cl ].
-      + (* original jf is object judgement *)
-        exists (object_boundary_from_boundary_slots i j).
-        apply (Family.map_commutes _ j).
-      + (* original jf is equality judgement *)
-        destruct i as [ i' |  | ].
-        * (* i is in shared bdry of LHS/RHS *)
-          cbn in j.
-          exists
-            (the_equality_boundary_slot _ (object_boundary_from_boundary_slots i' j)).
-          apply (Family.map_commutes _ j).
-        * (* i is RHS *)
-          exists (the_equality_boundary_slot _ j). apply idpath.
-        * (* i is LHS *)
-          exists (the_equality_boundary_slot _ j). apply idpath.
-    - (* case: j is head of presupposition *)
-      exists i. apply idpath.
-  Defined.
-
-  Local Definition slot_from_presupposition
-    {jf : form} (i : boundary_slot jf)
-    : Family.map
-        (slot (form_object (boundary_slot _ i)))
-        (slot jf).
-  Proof.
-    eapply Family.compose.
-    - apply the_boundary_slot.
-    - apply boundary_slot_from_presupposition.
-  Defined.
-
-End PresuppositionsCombinatorics.
-
-Section Presuppositions.
-(** TODO: the naming in this section seems a bit ugly. *)
-
-  Context {σ : shape_system}.
-
-  (** The presuppositions of a judgment boundary [jb] *)
-  Definition presupposition_of_boundary
-      {Σ : signature σ} (B : boundary Σ)
-    : family (judgement Σ).
-  Proof.
-    simple refine (Build_family _ _ _).
-    - exact (boundary_slot (form_of_boundary B)).
-    - intros i. exists (context_of_boundary B).
-      exists (form_object (boundary_slot _ i)).
-      intros j.
-      refine (transport (fun cl => raw_expression _ cl _) _ _).
-      + exact (Family.map_commutes (boundary_slot_from_presupposition i) j).
-      + exact (B (boundary_slot_from_presupposition i j)).
-  Defined.
-
-  (** The presuppositions of judgement [j]. *)
-  Definition presupposition
-      {Σ : signature σ} (j : judgement Σ)
-    : family (judgement Σ)
-  := presupposition_of_boundary (boundary_of_judgement j).
-
-  (** Interactions between functoriality under signature maps,
-   and taking presuppositions. *)
-
-  Local Definition fmap_presupposition_of_boundary `{Funext}
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      (B : boundary Σ) (p : presupposition_of_boundary B)
-    : fmap f (presupposition_of_boundary B p)
-    = presupposition_of_boundary (fmap_boundary f B) p.
-  Proof.
-    destruct B as [Γ [jf B]].
-    recursive_destruct jf; recursive_destruct p; try apply idpath;
-      refine (eq_by_expressions _ _);
-      intros j; recursive_destruct j; apply idpath.
-  Defined.
-
-  (* TODO: this should be an iso! *)
-  Local Definition presupposition_fmap_boundary `{Funext}
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      (B : boundary Σ)
-    : Family.map
-        (presupposition_of_boundary (fmap_boundary f B))
-        (Family.fmap (fmap f) (presupposition_of_boundary B)).
-  Proof.
-    exists idmap.
-    intros i; apply fmap_presupposition_of_boundary.
-  Defined.
-
-  Local Definition fmap_presupposition `{Funext}
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      (J : judgement Σ)
-      (p : presupposition J)
-    : fmap f (presupposition J p)
-    = presupposition (fmap f J) p.
-  Proof.
-    destruct J as [Γ [jf J]].
-      recursive_destruct jf; recursive_destruct p; try apply idpath;
-        refine (eq_by_expressions _ _);
-        intros j; recursive_destruct j; apply idpath.    
-  Defined.
-
-  (* TODO: this should be an iso!  And consistentise with [presupposition_fmap_boundary]. *)
-  Local Definition fmap_presupposition_family `{Funext}
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      (J : judgement Σ)
-    : Family.map
-        (Family.fmap (fmap f) (presupposition J))
-        (presupposition (fmap f J)).
-  Proof.
-    exists (fun p => p).
-    intros p; apply inverse, fmap_presupposition.
-  Defined.
-
-  (** The instantiation under [I] of any presupposition of a judgement [j]
-      is equal to the corresponding presupposition of the instantiation of [j]
-      itself under [I]. *)
-  Definition instantiate_presupposition `{Funext}
-      {Σ : signature σ}
-      {Γ : raw_context Σ} {a} (I : Metavariable.instantiation a Σ Γ)
-      (j : judgement _)
-      (i : presupposition (instantiate Γ I j))
-    : instantiate Γ I (presupposition j i)
-      = presupposition (instantiate Γ I j) i.
-  Proof.
-    apply (ap (Build_judgement _)). (* context of presup unchanged *)
-    apply (ap (Build_hypothetical_judgement _)). (* form of presup unchanged *)
-    destruct j as [Δ [jf J]].
-    (* hypothetical presupposition *)
-    apply path_forall; intros k.
-    recursive_destruct jf;
-      recursive_destruct i;
-      recursive_destruct k;
-      apply idpath.
-  Defined.
-
-End Presuppositions.
-
-
-(** Combining two object judgements into an equality judgement
+(** Next section is on a common construction:
+Combining two object judgements into an equality judgement,
 e.g. combining [Γ |- a1 : A1], [Γ |- a2 : A2] into [ Γ |- a1 = a2 : A2 ].
 
-As per the example, we always combine “left-handedly”, taking the boundary of the combination to be the boundary of the first judgement. *)
+We always combine “left-handedly”, as in the example, taking the boundary of the combination to be the boundary of the first judgement. *)
 Section Combine_Judgement.
 
   Context {σ : shape_system} `{Funext}.
@@ -1421,7 +1245,7 @@ is [Δ |- f^*a = g^*A : f^*A] *)
     apply path_forall; intros i; apply substitute_rename.
   Defined.
 
-
+  (* TODO: rename to [Judgement.combine]. *)
   Definition combine_judgement
       {Σ : signature σ}
       (J : judgement Σ)

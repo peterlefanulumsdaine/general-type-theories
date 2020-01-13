@@ -5,8 +5,10 @@ Require Import Syntax.ShapeSystem.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
+Require Import Typing.Presuppositions.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
+(* TODO: roll this file into [Typing.Presuppositions]? *)
 
 Section Presuppositive.
 
@@ -46,7 +48,7 @@ Section SignatureMaps.
   Proof.
     intros p.
     refine (transport _ _ _).
-    - apply Judgement.fmap_presupposition.
+    - apply fmap_presupposition.
     - simple refine (Closure.derivation_fmap2 _
         (FlatTypeTheory.derivation_fmap1_over _ (r_wt p))).
       + cbn.
@@ -57,7 +59,7 @@ Section SignatureMaps.
         refine (Family.compose _ (Family.fmap_bind _ _ _)).
         refine (Family.compose (Family.bind_fmap_mid _ _ _) _).
         apply Family.bind_fmap2. intros a.
-        apply Judgement.fmap_presupposition_family.
+        apply fmap_presupposition_family.
       + (* TODO: the following could possibly be better abstracted in terms of the fibrational properties of flat type theory maps? *)
         intros R.
         refine (transport _ _

@@ -24,6 +24,7 @@ MODULES := \
 	Syntax/All \
 	Typing/Context \
 	Typing/Judgement \
+	Typing/Presuppositions \
 	Typing/FlatRule \
 	Typing/StructuralRule \
 	Typing/FlatTypeTheory \

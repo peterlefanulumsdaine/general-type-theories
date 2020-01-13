@@ -8,7 +8,9 @@ Require Import Typing.Judgement.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
 Require Import Typing.StructuralRule.
+Require Import Typing.Presuppositions.
 Require Import Typing.TypedFlatRule.
+(* TODO: rename file to “presuppositive…”; perhaps roll into [Typing.Presuppositions]? *)
 
 (** We show that all the structural rules are presuppositive.
 

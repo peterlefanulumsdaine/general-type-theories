@@ -9,6 +9,7 @@ Require Import Typing.Context.
 Require Import Typing.Judgement.
 Require Import Presented.RawRule.
 Require Import Presented.RawTypeTheory.
+Require Import Typing.Presuppositions.
 Require Import Typing.StructuralRule.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.

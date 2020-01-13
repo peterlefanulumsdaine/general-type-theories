@@ -12,6 +12,7 @@ Require Import Typing.FlatTypeTheory.
 Require Import Presented.RawRule.
 Require Import Presented.RawTypeTheory.
 Require Import Presented.CongruenceRule.
+Require Import Typing.Presuppositions.
 Require Import Typing.TypedFlatRule.
 
 (** In this file: definition of well-typedness of an algebraic extension, and a (well-presented) rule. *)
@@ -84,10 +85,10 @@ Section Functoriality.
             (Metavariable.fmap1 f _)
             (@AlgebraicExtension.premise_boundary _ _ _ A p)). 
     intros i.
-    set (Di := D p (Judgement.presupposition_fmap_boundary _ _ i)).
+    set (Di := D p (presupposition_fmap_boundary _ _ i)).
     (* [Di] is essentially what we want, modulo some translation. *)
     refine (transport _
-      (Family.map_commutes (Judgement.presupposition_fmap_boundary _ _) i) _).
+      (Family.map_commutes (presupposition_fmap_boundary _ _) i) _).
     match goal with
     | [|- FlatTypeTheory.derivation _ _ ?JJ ] => set (J := (JJ)) in *
     | _ => fail
@@ -127,10 +128,10 @@ Section Functoriality.
       { apply RawRule.conclusion_boundary_fmap. }
     clearbody fR_concl. destruct e_concl^.
     intros i.
-    set (Di := (snd D) (Judgement.presupposition_fmap_boundary _ _ i)).
+    set (Di := (snd D) (presupposition_fmap_boundary _ _ i)).
     (* [Di] is essentially what we want, modulo some translation. *)
     refine (transport _
-      (Family.map_commutes (Judgement.presupposition_fmap_boundary _ _) i) _).
+      (Family.map_commutes (presupposition_fmap_boundary _ _) i) _).
     match goal with
     | [|- FlatTypeTheory.derivation _ _ ?JJ ] => set (J := (JJ)) in *
     | _ => fail
