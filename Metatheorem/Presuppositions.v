@@ -14,7 +14,7 @@ Require Import Typing.StructuralRule.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
 Require Import Presented.CongruenceRule.
-Require Import Typing.TypedStructuralRule.
+Require Import Typing.StructuralRulePresuppositions.
 Require Import Presented.TypedRule.
 Require Import Presented.TypeTheory.
 
@@ -60,7 +60,7 @@ Section PresuppositivityFlat.
     intros [r_str | r_log ].
     - intros p.
       refine (Closure.derivation_fmap1 _ _).
-      2: { apply TypedStructuralRule.presuppositive. }
+      2: { apply is_presuppositive_structural_rule. }
       + apply Closure.map_from_family_map.
         apply Family.sum_fmap.
         * apply Family.idmap.

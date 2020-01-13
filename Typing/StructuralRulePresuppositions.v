@@ -420,7 +420,7 @@ Defined.
 
   (** Putting the above components together, we obtain the main result:
       all structural rules are presuppositive. *)
-  Local Definition presuppositive
+  Definition is_presuppositive_structural_rule
     : forall r : structural_rule Σ, is_presuppositive (structural_rule Σ r).
   Proof.
     apply structural_rule_rect.
