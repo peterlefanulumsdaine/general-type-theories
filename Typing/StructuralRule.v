@@ -114,9 +114,10 @@ Proof.
     (* the target judgement holds over Γ *)
     + exists Γ; exact hj.
   (* conclusion: *)
-  - exists Γ', (form_of_judgement hj).
-    intros i. exact (substitute f (hj i)).
+  - exists Γ'.
+    exact (substitute_hypothetical_judgement f hj).
 Defined.
+  (* TODO: refactor to use [substitute_hypothetical_judgement] *)
 
 (** Substitution respects *equality* of context morphisms:
 
@@ -845,10 +846,11 @@ Section Substitution_Class.
         {σ : shape_system} {Σ : signature σ}.
 
   Class has_derivable_substitution_rules (C : Closure.system (judgement Σ))
-    := { derivable_substitution_rules : Closure.map (variable_instance Σ) C }.
+    := { derivable_substitution_rules
+         : Closure.map (substitution_instance Σ) C }.
 
   Global Instance trivial_derivable_substitution_rules
-    : has_derivable_substitution_rules (variable_instance Σ).
+    : has_derivable_substitution_rules (substitution_instance Σ).
   Proof.
     constructor. apply Closure.idmap.
   Defined.
@@ -880,8 +882,43 @@ Section Substitution_Class.
     `{H_T : has_derivable_substitution_rules T}
     {H : family (judgement Σ) }.
 
-  (* TODO: [derive_subst], [derive_substeq]? *)
+  Definition derive_subst_apply
+      ( Γ Γ' : raw_context Σ )
+      ( f : raw_context_map Σ Γ' Γ )
+      ( J : hypothetical_judgement Σ Γ )
+      ( d_f : forall i, derivation T H
+                                   [! Γ' |- f i ; substitute f (Γ i) !] )
+      ( d_J : derivation T H (Build_judgement Γ J))
+    : derivation T H
+             (Build_judgement Γ' (substitute_hypothetical_judgement f J)).
+  Proof.
+    simple refine (Closure.deduce'_via_map derivable_substitution_rules _ _ _).
+    { apply inl. exists Γ, Γ', f; exact J. }
+    { apply idpath. }
+    intros [ i | ]. 
+    - apply d_f. 
+    - apply d_J.
+  Defined.
 
+  Definition derive_subst_apply'
+      ( J J' : judgement Σ )
+      ( Γ := context_of_judgement J )
+      ( Γ' := context_of_judgement J' )
+      ( f : raw_context_map Σ Γ' Γ )
+      ( e : hypothetical_part J' = substitute_hypothetical_judgement f J)
+      ( d_f : forall i, derivation T H
+                                   [! Γ' |- f i ; substitute f (Γ i) !] )
+      ( d_J : derivation T H J)
+    : derivation T H J'.
+  Proof.
+    simple refine (Closure.deduce'_via_map derivable_substitution_rules _ _ _).
+    { apply inl. exists Γ, Γ', f; exact J. }
+    { apply (ap (Build_judgement _)), inverse, e. }
+    intros [ i | ]. 
+    - apply d_f. 
+    - apply d_J.
+  Defined.
+     
 End Substitution_Class.
 
 Section Equality_Class.
@@ -1239,9 +1276,25 @@ Section Instantiation.
     apply instantiate_instantiate_expression.
   Defined.
 
-  (** Structural rules in a metavariable extension,
-   translated under an instantiation,
-   can always be derived from structural rules over the base signature.
+  (* TODO: upstream *)
+  Lemma instantiate_substitute_hypothetical_judgement
+      {γ} {a} {I : Metavariable.instantiation a Σ γ}
+      {δ δ'}
+      (f : raw_context_map (Metavariable.extend Σ a) δ' δ)
+      (J : hypothetical_judgement (Metavariable.extend Σ a) δ)
+    : instantiate_hypothetical_judgement I
+        (substitute_hypothetical_judgement f J)
+      = substitute_hypothetical_judgement
+          (instantiate_raw_context_map I f)
+          (instantiate_hypothetical_judgement I J).
+  Proof.
+    apply (ap (Build_hypothetical_judgement _)), path_forall; intros i.
+    apply instantiate_substitute.
+  Defined.
+
+(** Structural rules in a metavariable extension,
+  translated under an instantiation,
+  can always be derived from structural rules over the base signature.
 
   Essentially, any structural rule gets translated into an instance of the same structural rule, possibly wrapped in a variable-renaming to reassociate iterated context extensions *)
   Local Definition instantiate
@@ -1259,7 +1312,44 @@ Section Instantiation.
       { apply instantiate_typed_renaming, α. }
       apply (ap (Build_hypothetical_judgement _)), path_forall.
       intro; apply instantiate_rename.
-    - (* subst_apply *) admit.
+    - (* subst_apply *)
+      intros [Δ [Δ' [f J]]].
+      simple refine (derive_subst_apply' _ _ _ _ _ _).
+      + apply (Judgement.instantiate Γ I).
+        exists Δ. exact J.
+      + exact (instantiate_raw_context_map I f).
+      + apply instantiate_substitute_hypothetical_judgement.
+      + simpl. refine (coproduct_rect shape_is_sum _ _ _). 
+        * intros i; simpl.
+          unfold instantiate_raw_context_map.
+          repeat rewrite coproduct_comp_inj1.
+          simple refine (derive_variable' _ _ _ _).
+          -- apply (coproduct_inj1 shape_is_sum), i.
+          -- apply (ap (Build_hypothetical_judgement _)), path_forall;
+               intros j; recursive_destruct j.
+             ++ simpl.
+                rewrite coproduct_comp_inj1.
+                eapply concat. { apply substitute_rename. }
+                eapply concat. 2: { apply substitute_raw_variable. }
+                apply (ap_2back substitute), path_forall.
+                intros j. refine (coproduct_comp_inj1 _).
+             ++ apply idpath.
+          -- simpl.
+             rewrite coproduct_comp_inj1.
+             admit.
+(* Interesting: this is genuinely not available, we have a mismatch in the setup! TODO: need to either restrict this theorem to instantiations over (flatly) well-typed contexts; or else generalise the subst-apply rule to something like the “weakly well-typed context maps” as currently used in [Metatheorems.SubstElimination], and [subst_eq] similarly *)
+        * intros i. simple refine (Closure.hypothesis' _ _).
+          { apply Some, i. }
+          apply Judgement.eq_by_expressions.
+          { intros; apply idpath. }
+          intros j; recursive_destruct j; simpl.
+          -- repeat rewrite coproduct_comp_inj2.
+             apply instantiate_substitute.
+          -- unfold instantiate_raw_context_map.
+             apply inverse; refine (coproduct_comp_inj2 _).
+      + simple refine (Closure.hypothesis' _ _).
+        { apply None. }
+        apply idpath.
     - (* subst_equal *) admit.
     - (* variable_rule *) 
       intros [Δ i]; simpl.
@@ -1311,6 +1401,6 @@ Section Instantiation.
         apply Family.sum_unique.
         * apply Family.empty_rect_unique.
         * apply idpath.
-  Admitted. (* [StructuralRule.instantiate]: a bit thorny, substantial amount remaining. *)
+  Admitted. (* [StructuralRule.instantiate]: a little work remaining here; but also, serious upstream fix required (this doesn’t hold with current definitions) *)
 
 End Instantiation.
