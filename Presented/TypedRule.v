@@ -13,7 +13,6 @@ Require Import Presented.RawRule.
 Require Import Presented.RawTypeTheory.
 Require Import Presented.CongruenceRule.
 Require Import Typing.Presuppositions.
-Require Import Typing.TypedFlatRule.
 
 (** In this file: definition of well-typedness of an algebraic extension, and a (well-presented) rule. *)
 
@@ -194,7 +193,7 @@ Section Flattening.
       (Sr : Judgement.is_object jf_concl ->
         {S : Σ.(family_index) &
         (symbol_arity S = a) * (symbol_class S = Judgement.class_of jf_concl)})
-    : TypedFlatRule.weakly_presuppositive T (RawRule.flatten R Sr).
+    : weakly_presuppositive_flat_rule T (RawRule.flatten R Sr).
   Proof.
     apply snd in T_WT.
     intros i.

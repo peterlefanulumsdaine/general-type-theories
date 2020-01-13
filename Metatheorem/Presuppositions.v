@@ -18,6 +18,9 @@ Require Import Typing.TypedStructuralRule.
 Require Import Presented.TypedRule.
 Require Import Presented.TypeTheory.
 
+(* TODO: upstream the flat parts of this file to [Typing.Presuppositions]?? *)
+
+
 (** The main goal of this file is the “presuppositivity metatheorem”:
     the presuppositions of a derivable judgement are also derivable,
     over any well-typed type theory: *)
@@ -45,7 +48,7 @@ Section PresuppositivityFlat.
   Definition presuppositive_flat_type_theory
       {Σ : signature σ} (T : flat_type_theory Σ)
     : Type
-  := forall r : T, TypedFlatRule.weakly_presuppositive T (T r).
+  := forall r : T, weakly_presuppositive_flat_rule T (T r).
 
   (** If a flat type theory T is presup-closed, then so is its associated closure system. *)
   Theorem closure_system_of_presuppositive_flat_type_theory
@@ -64,7 +67,7 @@ Section PresuppositivityFlat.
         * apply Family.Build_map'; intros [[]].
     - destruct r_log as [r r_inst]. cbn in r_inst.
       destruct r_inst as [Γ r_args].
-      apply TypedFlatRule.closure_system_weakly_presuppositive.
+      apply flat_rule_closure_system_weakly_presuppositive.
       apply T_presup_closed.
   Defined.
 

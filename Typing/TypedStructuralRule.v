@@ -9,7 +9,6 @@ Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
 Require Import Typing.StructuralRule.
 Require Import Typing.Presuppositions.
-Require Import Typing.TypedFlatRule.
 (* TODO: rename file to “presuppositive…”; perhaps roll into [Typing.Presuppositions]? *)
 
 (** We show that all the structural rules are presuppositive.
@@ -263,7 +262,7 @@ Defined.
   the particularly long cases beforehand individually. *)
 
   Local Definition tmeq_convert_is_presuppositive
-    : TypedFlatRule.weakly_presuppositive [<>] (@tmeq_convert_rule σ). 
+    : weakly_presuppositive_flat_rule [<>] (@tmeq_convert_rule σ). 
   Proof.
     (* tmeq_convert: 
        ⊢ A, B type
@@ -314,7 +313,7 @@ Defined.
 
   Local Definition equality_flat_rule_is_presuppositive
       (r : @equality_flat_rule σ)
-    : TypedFlatRule.weakly_presuppositive [<>] (equality_flat_rule r).
+    : weakly_presuppositive_flat_rule [<>] (equality_flat_rule r).
   Proof.
     recursive_destruct r; cbn.
     - (* tyeq_refl: Γ |- A  // Γ |- A = A *)
@@ -413,8 +412,8 @@ Defined.
     destruct r as [r [Γ I]].
     set (r_flat_rule := equality_flat_rule r).
     intros c_presup.
-    refine (TypedFlatRule.closure_system_weakly_presuppositive _ _ _ _ _).
-    eapply TypedFlatRule.fmap_weakly_presuppositive.
+    refine (flat_rule_closure_system_weakly_presuppositive _ _ _ _ _).
+    eapply fmap_weakly_presuppositive_flat_rule.
     2: apply equality_flat_rule_is_presuppositive.
     intros [].
   Defined.

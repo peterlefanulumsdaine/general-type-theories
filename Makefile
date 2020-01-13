@@ -28,7 +28,6 @@ MODULES := \
 	Typing/FlatRule \
 	Typing/StructuralRule \
 	Typing/FlatTypeTheory \
-	Typing/TypedFlatRule \
 	Typing/TypedStructuralRule \
 	Presented/AlgebraicExtension \
 	Presented/RawRule \
