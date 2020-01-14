@@ -69,24 +69,20 @@ Section TypedStructuralRule.
     intros p.
     transparent assert (p' : (presupposition J_orig)). { exact p. }
     (* [p] a hypothetical presupposition *)
-    simple refine (Closure.deduce' _ _ _).
-    (* Aim here: apply the same substitution rule, with the same substition,
-       but with target the presupposition [p] of the original target. *)
-    - apply inl, subst_apply.
-      exists Γ, Γ', f.
-      exists (form_object (Judgement.boundary_slot _ p)).
-      exact (hypothetical_part (presupposition _ p')).
+    simple refine (derive_subst_apply' _ _ _ _ _ _).
+    - exact (presupposition _ p').
+    - exact f.
     - recursive_destruct jf; recursive_destruct p;
-        apply Judgement.eq_by_eta; apply idpath.
-    - intros [ q | ].
-      + (* premises: show the substitution OK. *)
-        simple refine (Closure.hypothesis' _ _).
-        * exact (inl (Some q)).
-        * apply idpath.
-      + (* premises: new presupposition *)
-        simple refine (Closure.hypothesis' _ _).
-        * exact (inr (None; p')).
-        * apply idpath.
+        apply Judgement.eq_by_eta_hypothetical_judgement, idpath.
+    - (* premises: show the substitution OK. *)
+      intros q.
+      simple refine (Closure.hypothesis' _ _).
+      + exact (inl (Some q)).
+      + apply idpath.
+    - (* premises: new presupposition *)
+      simple refine (Closure.hypothesis' _ _).
+      + exact (inr (None; p')).
+      + apply idpath.
   Defined.
 
   (** Substitution-equality rules are presuppositive *)

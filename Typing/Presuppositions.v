@@ -178,15 +178,9 @@ Section Presuppositions.
     : Judgement.instantiate Γ I (presupposition j i)
       = presupposition (Judgement.instantiate Γ I j) i.
   Proof.
-    apply (ap (Build_judgement _)). (* context of presup unchanged *)
-    apply (ap (Build_hypothetical_judgement _)). (* form of presup unchanged *)
-    destruct j as [Δ [jf J]].
-    (* hypothetical presupposition *)
-    apply path_forall; intros k.
-    recursive_destruct jf;
-      recursive_destruct i;
-      recursive_destruct k;
-      apply idpath.
+    destruct j as [Δ [jf J]];
+      recursive_destruct jf; recursive_destruct i;
+      apply Judgement.eq_by_eta, idpath.
   Defined.
 
 End Presuppositions.

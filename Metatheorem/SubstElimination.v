@@ -1523,22 +1523,19 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
                                   [! Γ' |- substitute (left fg) (Γ i) !]).
       { apply (IH tt); exists fg.
         apply inl, inl.
-        apply (ap (Build_hypothetical_judgement _)), path_forall.
-        intros s; recursive_destruct s; apply idpath.
+        apply eq_by_eta_hypothetical_judgement, idpath.
       }
       assert (IH_gΓi : subst_free_derivation T [<>]
                                   [! Γ' |- substitute (right fg) (Γ i) !]).
       { apply (IH tt); exists fg.
         apply inl, inr.
-        apply (ap (Build_hypothetical_judgement _)), path_forall.
-        intros s; recursive_destruct s; apply idpath.
+        apply eq_by_eta_hypothetical_judgement, idpath.
       }
       assert (IH_fgΓi : subst_free_derivation T [<>]
          [! Γ' |- substitute (left fg) (Γ i) ≡ substitute (right fg) (Γ i) !]).
       { apply (IH tt); exists fg.
         apply inr; exists tt.
-        apply (ap (Build_hypothetical_judgement _)), path_forall.
-        intros s; recursive_destruct s; apply idpath.
+        apply eq_by_eta_hypothetical_judgement, idpath.
       }
       clear d_ps IH.
       destruct (is_weakly_equal fg i)

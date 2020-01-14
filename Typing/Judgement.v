@@ -404,10 +404,11 @@ In lieu of that, we give explicit lemmas for judgement equality:
   Context {σ : shape_system} {Σ : signature σ} `{Funext}.
 
   (* TODO: factor the action of this on hypothetical judgements, or maybe even hyp judg exp’ns? *)
-  Local Definition eta_expand (J : judgement Σ)
-    : judgement Σ.
+  Local Definition eta_expand_hypothetical_judgement {γ}
+      (J : hypothetical_judgement Σ γ)
+    : hypothetical_judgement Σ γ.
   Proof.
-    destruct J as [Γ [jf J]]; exists Γ.
+    destruct J as [jf J].
     set (jf_keep := jf).
     recursive_destruct jf.
     - apply make_type_hypothetical_judgement.
@@ -425,16 +426,31 @@ In lieu of that, we give explicit lemmas for judgement equality:
       + exact (J (the_rhs_slot _)).
   Defined.
 
-  Global Arguments eta_expand / .
+  Local Definition eta_expand (J : judgement Σ)
+    : judgement Σ.
+  Proof.
+    exists (context_of_judgement J).
+    exact (eta_expand_hypothetical_judgement J).
+  Defined.
+
+  Global Arguments eta_expand_hypothetical_judgement {_} _ / .
+  Global Arguments eta_expand _ / .
+
+  Definition eta_hypothetical_judgement
+      {γ} (J : hypothetical_judgement Σ γ)
+    : eta_expand_hypothetical_judgement J = J.
+  Proof.
+    destruct J as [jf J]; recursive_destruct jf;
+      apply (ap (Build_hypothetical_judgement _));
+      apply path_forall; intros i;
+      recursive_destruct i;
+      apply idpath.
+  Defined.
 
   Local Definition eta (j : judgement Σ)
     : eta_expand j = j.
   Proof.
-    destruct j as [Γ [jf j]]; recursive_destruct jf;
-      apply (ap (Build_judgement _)), (ap (Build_hypothetical_judgement _));
-      apply path_forall; intros i;
-      recursive_destruct i;
-      apply idpath.
+    apply (ap (Build_judgement _)), eta_hypothetical_judgement.
   Defined.
 
   (** To give something for a judgement (e.g. to derive it), one can always eta-expand the judgement first. *)
@@ -452,6 +468,16 @@ In lieu of that, we give explicit lemmas for judgement equality:
    [apply Judgement.eq_by_eta, idpath.] 
 
    For other cases, [eq_by_expressions] is usually better. *)
+  Definition eq_by_eta_hypothetical_judgement {γ}
+      (j j' : hypothetical_judgement Σ γ)
+    : eta_expand_hypothetical_judgement j
+      = eta_expand_hypothetical_judgement j'
+    -> j = j'.
+  Proof.
+    intros e.
+    exact ((eta_hypothetical_judgement j)^ @ e @ eta_hypothetical_judgement j').
+  Defined.
+
   Local Definition eq_by_eta
       (j j' : judgement Σ)
     : eta_expand j = eta_expand j' -> j = j'.
@@ -1186,12 +1212,9 @@ Section Combine_Judgement.
         (rename_hypothetical_judgement f K')
         e K_obj.
   Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros [s | | ];
-      destruct K as [jf K], K' as [jf' K']; cbn in e, K_obj;
-      destruct e, jf; destruct K_obj;
-    (* we destruct enough that all the equalities appearing under transports in the goal become idpaths, and the transports compute. *)
-      apply idpath.
+    destruct K as [jf K], K' as [jf' K']; cbn in e, K_obj;
+    destruct e; recursive_destruct jf; destruct K_obj;
+    apply eq_by_eta_hypothetical_judgement, idpath.
   Defined.
 
   Lemma instantiate_combine_hypothetical_judgement
@@ -1206,12 +1229,9 @@ Section Combine_Judgement.
         (instantiate_hypothetical_judgement Ia K')
         e K_obj.
   Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros [s | | ];
-      destruct K as [jf K], K' as [jf' K']; cbn in e, K_obj;
-      destruct e, jf; destruct K_obj;
-    (* we destruct enough that all the equalities appearing under transports in the goal become idpaths, and the transports compute. *)
-      apply idpath.
+    destruct K as [jf K], K' as [jf' K']; cbn in e, K_obj;
+    destruct e; recursive_destruct jf; destruct K_obj;
+    apply eq_by_eta_hypothetical_judgement, idpath.
   Defined.
 
 (** If [f g] are two raw context maps [Δ -> Γ], and [J] an object judgement
