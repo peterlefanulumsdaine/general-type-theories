@@ -809,15 +809,21 @@ Section Variable_Interface.
   Defined.
 
   Lemma derive_variable'
-      (J : judgement Σ) (Γ := context_of_judgement J)
+      (Γ : raw_context Σ)
+      (Je : hypothetical_judgement_expressions Σ (form_object class_term) Γ)
+      (J := Build_judgement Γ (Build_hypothetical_judgement _ Je) : judgement Σ)
       (i : Γ)
-      (e : hypothetical_part J = [! Γ |- raw_variable i ; Γ i !])
+      (e_tm : Je (@the_boundary_slot
+                     (form_object class_term) the_type_slot) = Γ i)
+      (e_ty : Je (the_head_slot _) = raw_variable i)
       (d_Γi : derivation T H [! Γ |- Γ i !])
     : derivation T H J.
   Proof.
     simple refine (Closure.deduce'_via_map (use_derivable _) _ _ _).
     { exists Γ; exact i. }
-    { apply (ap (Build_judgement _)), inverse, e. }
+    { apply Judgement.eq_by_eta; simpl.
+      apply ap, ap2; apply inverse; assumption.
+    }
     { intros; assumption. }
   Defined.
 
@@ -1015,6 +1021,22 @@ Section Equality_Interface.
     - intros i. apply inverse, @instantiate_empty_ptwise.
     - intros i; recursive_destruct i;
         apply inverse, instantiate_binderless_metavariable.
+  Defined.
+
+  Definition derive_tmeq_refl'
+      (Γ : raw_context Σ)
+      (Je : hypothetical_judgement_expressions Σ (form_equality class_term) Γ) 
+      (A : raw_type Σ Γ) (a : raw_term Σ Γ)
+      (e_A : Je (the_equality_boundary_slot class_term the_type_slot)
+             = A)
+      (e_lhs : Je (the_lhs_slot _) = a)
+      (e_rhs : Je (the_rhs_slot _) = a)
+      (d_a : derivation T H [! Γ |- a ; A !])
+    : derivation T H (Build_judgement Γ (Build_hypothetical_judgement _ Je)).
+  Proof.
+    refine (transport _ _ (derive_tmeq_refl _ _ _ d_a)).
+    apply Judgement.eq_by_eta; simpl.
+    apply ap, ap3; apply inverse; assumption.
   Defined.
 
 (* TODO: derive_tmeq_sym *)
@@ -1298,19 +1320,16 @@ Section Instantiation.
         * intros i; simpl.
           unfold instantiate_raw_context_map.
           repeat rewrite coproduct_comp_inj1.
-          simple refine (derive_variable' _ _ _ _).
-          -- apply (coproduct_inj1 shape_is_sum), i.
-          -- apply eq_by_expressions_hypothetical_judgement; intros j.
-             recursive_destruct j; try apply idpath.
-             simpl.
-             rewrite coproduct_comp_inj1.
-             eapply concat. { apply substitute_rename. }
-             eapply concat. 2: { apply substitute_raw_variable. }
-             apply (ap_2back substitute), path_forall.
-             intros j. refine (coproduct_comp_inj1 _).
-          -- simpl.
-             rewrite coproduct_comp_inj1.
-             admit.
+          simple refine (derive_variable' _ _ _ _ _ _); try apply idpath.
+          { simpl.
+            rewrite coproduct_comp_inj1.
+            eapply concat. { apply substitute_rename. }
+            eapply concat. 2: { apply substitute_raw_variable. }
+            apply (ap_2back substitute), path_forall.
+            intros j. refine (coproduct_comp_inj1 _). }
+          simpl.
+          rewrite coproduct_comp_inj1.
+          admit.
 (* Interesting: this is genuinely not available, we have a mismatch in the setup! TODO: need to either restrict this theorem to instantiations over (flatly) well-typed contexts; or else generalise the subst-apply rule to something like the “weakly well-typed context maps” as currently used in [Metatheorems.SubstElimination], and [subst_eq] similarly *)
         * intros i. simple refine (Closure.hypothesis' _ _).
           { apply Some, i. }
@@ -1337,20 +1356,16 @@ Section Instantiation.
         * intros i; simpl.
           unfold instantiate_raw_context_map.
           repeat rewrite coproduct_comp_inj1.
-          simple refine (derive_variable' _ _ _ _).
-          (* TODO: improve equalities [derive_variable] asks for *)
-          -- apply (coproduct_inj1 shape_is_sum), i.
-          -- apply eq_by_expressions_hypothetical_judgement; intros j.
-             recursive_destruct j; try apply idpath.
-             simpl.
-             rewrite coproduct_comp_inj1.
-             eapply concat. { apply substitute_rename. }
-             eapply concat. 2: { apply substitute_raw_variable. }
-             apply (ap_2back substitute), path_forall.
-             intros j. refine (coproduct_comp_inj1 _).
-          -- simpl.
-             rewrite coproduct_comp_inj1.
-             admit. (* as in [subst_apply], requires fixing rule def upstream *)
+          simple refine (derive_variable' _ _ _ _ _ _); try apply idpath.
+          { simpl.
+            rewrite coproduct_comp_inj1.
+            eapply concat. { apply substitute_rename. }
+            eapply concat. 2: { apply substitute_raw_variable. }
+            apply (ap_2back substitute), path_forall.
+            intros j. refine (coproduct_comp_inj1 _). }
+          simpl.
+          rewrite coproduct_comp_inj1.
+          admit. (* as in [subst_apply], requires fixing rule def upstream *)
         * intros i. simple refine (Closure.hypothesis' _ _).
           { apply Some, inl, inl, i. }
           apply Judgement.eq_by_expressions.
@@ -1364,20 +1379,16 @@ Section Instantiation.
         * intros i; simpl.
           unfold instantiate_raw_context_map.
           repeat rewrite coproduct_comp_inj1.
-          simple refine (derive_variable' _ _ _ _).
-          (* TODO: improve equalities [derive_variable] asks for *)
-          -- apply (coproduct_inj1 shape_is_sum), i.
-          -- apply eq_by_expressions_hypothetical_judgement; intros j.
-             recursive_destruct j; try apply idpath.
-             simpl.
-             rewrite coproduct_comp_inj1.
-             eapply concat. { apply substitute_rename. }
-             eapply concat. 2: { apply substitute_raw_variable. }
-             apply (ap_2back substitute), path_forall.
-             intros j. refine (coproduct_comp_inj1 _).
-          -- simpl.
-             rewrite coproduct_comp_inj1.
-             admit. (* as in [subst_apply], requires fixing rule def upstream *)
+          simple refine (derive_variable' _ _ _ _ _ _); try apply idpath.
+          { simpl.
+            rewrite coproduct_comp_inj1.
+            eapply concat. { apply substitute_rename. }
+            eapply concat. 2: { apply substitute_raw_variable. }
+            apply (ap_2back substitute), path_forall.
+            intros j. refine (coproduct_comp_inj1 _). }
+          simpl.
+          rewrite coproduct_comp_inj1.
+          admit. (* as in [subst_apply], requires fixing rule def upstream *)
         * intros i. simple refine (Closure.hypothesis' _ _).
           { apply Some, inl, inr, i. }
           apply Judgement.eq_by_expressions.
@@ -1391,32 +1402,35 @@ Section Instantiation.
         * intros i; simpl.
           unfold instantiate_raw_context_map.
           repeat rewrite coproduct_comp_inj1.
-          admit. (* TODO: [derive_tmeq_refl']; thereafter similar to cases with [derive_variable'] above *)
+          simple refine (derive_tmeq_refl' _ _ _ _ _ _ _ _); try apply idpath.
+          simple refine (derive_variable' _ _ _ _ _ _); try apply idpath.
+          { simpl.
+            rewrite coproduct_comp_inj1.
+            eapply concat. { apply substitute_rename. }
+            eapply concat. 2: { apply substitute_raw_variable. }
+            apply (ap_2back substitute), path_forall.
+            intros j. refine (coproduct_comp_inj1 _). }
+          simpl.
+          rewrite coproduct_comp_inj1.
+          admit. (* as above requires fixing rule def upstream *)
         * intros i. simple refine (Closure.hypothesis' _ _).
           { apply Some, inr, i. }
           apply Judgement.eq_by_expressions.
           { intros; apply idpath. }
-          intros j; recursive_destruct j; simpl.
-          -- repeat rewrite coproduct_comp_inj2.
-             apply instantiate_substitute.
-          -- unfold instantiate_raw_context_map.
-             apply inverse; refine (coproduct_comp_inj2 _).
-          -- unfold instantiate_raw_context_map.
-             apply inverse; refine (coproduct_comp_inj2 _).
+          intros j; recursive_destruct j;
+            [ refine (instantiate_substitute _ _ _ @ ap _ _) | | ];
+            apply inverse; refine (coproduct_comp_inj2 _).
       + simple refine (Closure.hypothesis' _ _).
         { apply None. }
         apply idpath.
     - (* variable_rule *) 
       intros [Δ i]; simpl.
-      simple refine (derive_variable' _ _ _ _).
-      + exact (coproduct_inj2 shape_is_sum i).
-      + apply eq_by_expressions_hypothetical_judgement; intros j.
-        recursive_destruct j; try apply idpath.
-        apply inverse; refine (coproduct_comp_inj2 _).
-      + simple refine (Closure.hypothesis' _ _).
-        * exact tt.
-        * apply Judgement.eq_by_expressions; intros j; try apply idpath.
-          recursive_destruct j; apply inverse; refine (coproduct_comp_inj2 _).
+      simple refine (derive_variable' _ _ _ _ _ _); try apply idpath.
+      { apply inverse; refine (coproduct_comp_inj2 _). }
+      simple refine (Closure.hypothesis' _ _).
+      + exact tt.
+      + apply Judgement.eq_by_expressions; intros j; try apply idpath.
+        recursive_destruct j; apply inverse; refine (coproduct_comp_inj2 _).
     - (* equality_rule *)
       intros i_eq.
       destruct i_eq as [i [Δ J]].
@@ -1456,6 +1470,6 @@ Section Instantiation.
         apply Family.sum_unique.
         * apply Family.empty_rect_unique.
         * apply idpath.
-  Admitted. (* [StructuralRule.instantiate]: a little work remaining here; but also, serious upstream fix required (this is unprovable with current definitions) *)
+  Admitted. (* [StructuralRule.instantiate]: upstream definition fixes required (this is unprovable with current definitions); then a little more work here to do. *)
 
 End Instantiation.

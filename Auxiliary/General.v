@@ -58,6 +58,15 @@ If the build ever breaks here, that’s good news: it presumably means [apply ap
     rapply @ap_1back. apply e_x.
 Defined.
 
+Definition ap3 {X1 X2 X3 Y} (f : X1 -> X2 -> X3 -> Y)
+    {x1 x1'} (e1 : x1 = x1')
+    {x2 x2'} (e2 : x2 = x2')
+    {x3 x3'} (e3 : x3 = x3')
+  : f x1 x2 x3 = f x1' x2' x3'.
+Proof.
+  destruct e1, e2, e3; apply idpath.
+Defined.
+
 (* This lemma could profitaly be factored as a general principle about equivalences:
 given [e:X<~>Y], to prove [forall y, P y], it suffices to prove [forall x, P (e x)]. *)
 Lemma inverse_sufficient {X} {x y:X} (P : x = y -> Type)
