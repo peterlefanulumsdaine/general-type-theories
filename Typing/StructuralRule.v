@@ -654,38 +654,59 @@ Defined.
 
 End StructuralRuleInd.
 
-(* TODO: can we reduce the code duplication between these various classes,
-by making a general [has_derivable] class? *)
+(** For using the structural rules conveniently in derivations, we provide functions [derive_rename], [derive_variable] etc below.
 
-Section Renaming_Class.
-  (** Interface to the renaming structural rule,
-   and some frequently-used special cases. *)
+To make those functions usable not just over the standard structural rules but also over the subst-free structural rules and other variants, we base them on a type-class [has_derivable].  [has_derivable R C] should be thought of as: the structural rules [R] have a canonical inclusion into the closure system [C], and so are available for derivaitons there. *)
+
+Section Structural_Rule_Classes.
 
   Context `{H_Funext : Funext}
         {σ : shape_system} {Σ : signature σ}.
 
-  Class has_derivable_renaming (C : Closure.system (judgement Σ))
-    := { derivable_renaming : Closure.map (rename_instance Σ) C }.
+  Class has_derivable (Rs C : Closure.system (judgement Σ))
+    := { use_derivable : Closure.map Rs C }.
 
-  Global Instance trivial_derivable_renaming
-    : has_derivable_renaming (rename_instance Σ).
+  Global Arguments use_derivable _ {_ _}.
+
+  Global Instance trivial_has_derivable {Rs}
+    : has_derivable Rs Rs.
   Proof.
     constructor. apply Closure.idmap.
   Defined.
 
-  Global Instance sum_left_has_derivable_renaming
+  Global Instance sum_left_has_derivable {Rs}
       {C D : Closure.system (judgement Σ)}
-      `{ H_C : has_derivable_renaming C }
-    : has_derivable_renaming (C + D).
+      `{ H_C : has_derivable Rs C }
+    : has_derivable Rs (C + D).
   Proof.
     constructor.
     eapply Closure.compose.
-    - apply derivable_renaming.
-    - apply Closure.inl.
+    2: { apply Closure.inl. }
+    apply (use_derivable Rs).
   Defined.
 
+  Global Instance sum_right_has_derivable {Rs}
+      {C D : Closure.system (judgement Σ)}
+      `{ H_D : has_derivable Rs D }
+    : has_derivable Rs (C + D).
+  Proof.
+    constructor.
+    eapply Closure.compose.
+    2: { apply Closure.inr. }
+    apply (use_derivable Rs).
+  Defined.
+
+End Structural_Rule_Classes.
+
+Section Renaming_Interface.
+  (** Interface to the renaming structural rule,
+   and some frequently-used special cases. *)
+
   Context
-    {T : Closure.system (judgement Σ)} `{H_T : has_derivable_renaming T}
+    `{H_Funext : Funext}
+    {σ : shape_system} {Σ : signature σ}
+    {T : Closure.system (judgement Σ)}
+    `{H_T : has_derivable _ _ (rename_instance Σ) T}
     {H : family (judgement Σ) }.
 
   Lemma derive_rename 
@@ -697,7 +718,7 @@ Section Renaming_Class.
       (Build_judgement Γ' (rename_hypothetical_judgement f J)).
   Proof.
     intros D.
-    simple refine (Closure.deduce'_via_map derivable_renaming _ _ _).
+    simple refine (Closure.deduce'_via_map (use_derivable _) _ _ _).
     { exists Γ, Γ', f; exact J. }
     { apply idpath. }
     { intros; apply D. }
@@ -713,7 +734,7 @@ Section Renaming_Class.
     -> Closure.derivation T H J.
   Proof.
     intros D.
-    simple refine (Closure.deduce'_via_map derivable_renaming _ _ _).
+    simple refine (Closure.deduce'_via_map (use_derivable _) _ _ _).
     { refine (_;(_;(f;_))). exact J'. }
     { apply (ap (Build_judgement _)), inverse, e. }
     { intros; apply D. }
@@ -770,47 +791,16 @@ over a context [ Γ + 0 ], not just [ Γ ] as one would want. *)
     apply derive_from_renaming_along_equiv.
   Defined.
 
-End Renaming_Class.
+End Renaming_Interface.
 
-Section Variable_Class.
+Section Variable_Interface.
   (** Interface to the variable structural rule *)
 
-  Context `{H_Funext : Funext}
-        {σ : shape_system} {Σ : signature σ}.
-
-  Class has_derivable_variable_rule (C : Closure.system (judgement Σ))
-    := { derivable_variable_rule : Closure.map (variable_instance Σ) C }.
-
-  Global Instance trivial_derivable_variable_rule
-    : has_derivable_variable_rule (variable_instance Σ).
-  Proof.
-    constructor. apply Closure.idmap.
-  Defined.
-
-  Global Instance sum_left_has_derivable_variable_rule
-      {C D : Closure.system (judgement Σ)}
-      `{ H_C : has_derivable_variable_rule C }
-    : has_derivable_variable_rule (C + D).
-  Proof.
-    constructor.
-    eapply Closure.compose.
-    - apply derivable_variable_rule.
-    - apply Closure.inl.
-  Defined.
-
-  Global Instance sum_right_has_derivable_variable_rule
-      {C D : Closure.system (judgement Σ)}
-      `{ H_D : has_derivable_variable_rule D }
-    : has_derivable_variable_rule (C + D).
-  Proof.
-    constructor.
-    eapply Closure.compose.
-    - apply derivable_variable_rule.
-    - apply Closure.inr.
-  Defined.
-
   Context
-    {T : Closure.system (judgement Σ)} `{H_T : has_derivable_variable_rule T}
+    `{H_Funext : Funext}
+    {σ : shape_system} {Σ : signature σ}
+    {T : Closure.system (judgement Σ)}
+    `{H_T : has_derivable _ _ (variable_instance Σ) T}
     {H : family (judgement Σ) }.
 
   Lemma derive_variable 
@@ -818,7 +808,7 @@ Section Variable_Class.
       (d_Γi : derivation T H [! Γ |- Γ i !])
     : derivation T H [! Γ |- raw_variable i ; Γ i !].
   Proof.
-    simple refine (Closure.deduce'_via_map derivable_variable_rule _ _ _).
+    simple refine (Closure.deduce'_via_map (use_derivable _) _ _ _).
     { exists Γ; exact i. }
     { apply idpath. }
     { intros; assumption. }
@@ -831,55 +821,22 @@ Section Variable_Class.
       (d_Γi : derivation T H [! Γ |- Γ i !])
     : derivation T H J.
   Proof.
-    simple refine (Closure.deduce'_via_map derivable_variable_rule _ _ _).
+    simple refine (Closure.deduce'_via_map (use_derivable _) _ _ _).
     { exists Γ; exact i. }
     { apply (ap (Build_judgement _)), inverse, e. }
     { intros; assumption. }
   Defined.
 
-End Variable_Class.
+End Variable_Interface.
 
-Section Substitution_Class.
+Section Substitution_Interface.
   (** Interface to the substitution structural rules *)
 
-  Context `{H_Funext : Funext}
-        {σ : shape_system} {Σ : signature σ}.
-
-  Class has_derivable_substitution_rules (C : Closure.system (judgement Σ))
-    := { derivable_substitution_rules
-         : Closure.map (substitution_instance Σ) C }.
-
-  Global Instance trivial_derivable_substitution_rules
-    : has_derivable_substitution_rules (substitution_instance Σ).
-  Proof.
-    constructor. apply Closure.idmap.
-  Defined.
-
-  Global Instance sum_left_has_derivable_substitution_rules
-      {C D : Closure.system (judgement Σ)}
-      `{ H_C : has_derivable_substitution_rules C }
-    : has_derivable_substitution_rules (C + D).
-  Proof.
-    constructor.
-    eapply Closure.compose.
-    - apply derivable_substitution_rules.
-    - apply Closure.inl.
-  Defined.
-
-  Global Instance sum_right_has_derivable_substitution_rules
-      {C D : Closure.system (judgement Σ)}
-      `{ H_D : has_derivable_substitution_rules D }
-    : has_derivable_substitution_rules (C + D).
-  Proof.
-    constructor.
-    eapply Closure.compose.
-    - apply derivable_substitution_rules.
-    - apply Closure.inr.
-  Defined.
-
   Context
+    `{H_Funext : Funext}
+    {σ : shape_system} {Σ : signature σ}
     {T : Closure.system (judgement Σ)}
-    `{H_T : has_derivable_substitution_rules T}
+    `{H_T : has_derivable _ _ (substitution_instance Σ) T}
     {H : family (judgement Σ) }.
 
   Definition derive_subst_apply
@@ -892,7 +849,7 @@ Section Substitution_Class.
     : derivation T H
              (Build_judgement Γ' (substitute_hypothetical_judgement f J)).
   Proof.
-    simple refine (Closure.deduce'_via_map derivable_substitution_rules _ _ _).
+    simple refine (Closure.deduce'_via_map (use_derivable _) _ _ _).
     { apply inl. exists Γ, Γ', f; exact J. }
     { apply idpath. }
     intros [ i | ]. 
@@ -911,7 +868,7 @@ Section Substitution_Class.
       ( d_J : derivation T H J)
     : derivation T H J'.
   Proof.
-    simple refine (Closure.deduce'_via_map derivable_substitution_rules _ _ _).
+    simple refine (Closure.deduce'_via_map (use_derivable _) _ _ _).
     { apply inl. exists Γ, Γ', f; exact J. }
     { apply (ap (Build_judgement _)), inverse, e. }
     intros [ i | ]. 
@@ -919,49 +876,17 @@ Section Substitution_Class.
     - apply d_J.
   Defined.
      
-End Substitution_Class.
+End Substitution_Interface.
 
-Section Equality_Class.
-  (** Interface to the substitution structural rules *)
-
-  Context `{H_Funext : Funext}
-        {σ : shape_system} {Σ : signature σ}.
-
-  Class has_derivable_equality_rules (C : Closure.system (judgement Σ))
-    := { derivable_equality_rules : Closure.map (equality_instance Σ) C }.
-
-  Global Instance trivial_derivable_equality_rules
-    : has_derivable_equality_rules (equality_instance Σ).
-  Proof.
-    constructor. apply Closure.idmap.
-  Defined.
-
-  Global Instance sum_left_has_derivable_equality_rules
-      {C D : Closure.system (judgement Σ)}
-      `{ H_C : has_derivable_equality_rules C }
-    : has_derivable_equality_rules (C + D).
-  Proof.
-    constructor.
-    eapply Closure.compose.
-    - apply derivable_equality_rules.
-    - apply Closure.inl.
-  Defined.
-
-  Global Instance sum_right_has_derivable_equality_rules
-      {C D : Closure.system (judgement Σ)}
-      `{ H_D : has_derivable_equality_rules D }
-    : has_derivable_equality_rules (C + D).
-  Proof.
-    constructor.
-    eapply Closure.compose.
-    - apply derivable_equality_rules.
-    - apply Closure.inr.
-  Defined.
+Section Equality_Interface.
+  (** Interface to the equality structural rules *)
 
   Context
+    `{H_Funext : Funext}
+    {σ : shape_system} {Σ : signature σ}
     {T : Closure.system (judgement Σ)}
-    `{H_ren : has_derivable_renaming _ _ T}
-    `{H_eq : has_derivable_equality_rules T}
+    `{H_ren : has_derivable _ _ (rename_instance Σ) T}
+    `{H_eq : has_derivable _ _ (equality_instance Σ) T}
     {H : family (judgement Σ) }.
 
   Definition derive_tyeq_refl
@@ -970,7 +895,8 @@ Section Equality_Class.
     : derivation T H [! Γ |- A ≡ A !].
   Proof.
     apply derive_from_reindexing_to_empty_sum.
-    simple refine (Closure.deduce'_via_map derivable_equality_rules _ _ _).
+    simple refine (Closure.deduce'_via_map
+                            (use_derivable (equality_instance _)) _ _ _).
     { exists (Some (Some (Some (Some (Some (Some (Some tt))))))), Γ.
       intros i; recursive_destruct i. cbn.
       refine (Expression.rename _ A). 
@@ -995,7 +921,8 @@ Section Equality_Class.
     : derivation T H [! Γ |- B ≡ A !].
   Proof.
     apply derive_from_reindexing_to_empty_sum.
-    simple refine (Closure.deduce'_via_map derivable_equality_rules _ _ _).
+    simple refine (Closure.deduce'_via_map
+                             (use_derivable (equality_instance _)) _ _ _).
     { exists (Some (Some (Some (Some (Some (Some None)))))), Γ.
       intros i; recursive_destruct i;
         refine (Expression.rename (shape_sum_empty_inl _) _);
@@ -1024,7 +951,8 @@ Section Equality_Class.
     : derivation T H [! Γ |- a ≡ a ; A !].
   Proof.
     apply derive_from_reindexing_to_empty_sum.
-    simple refine (Closure.deduce'_via_map derivable_equality_rules _ _ _).
+    simple refine (Closure.deduce'_via_map
+                             (use_derivable (equality_instance _)) _ _ _).
     { exists (Some (Some (Some (Some None)))), Γ.
       intros i; recursive_destruct i;
         refine (Expression.rename (shape_sum_empty_inl _) _);
@@ -1068,7 +996,8 @@ Section Equality_Class.
     : derivation T H [! Γ |- u ; B !].
   Proof.
     apply derive_from_reindexing_to_empty_sum.
-    simple refine (Closure.deduce'_via_map derivable_equality_rules _ _ _).
+    simple refine (Closure.deduce'_via_map
+                             (use_derivable (equality_instance _)) _ _ _).
     { exists (Some None), Γ.
       intros i; recursive_destruct i;
         refine (Expression.rename (shape_sum_empty_inl _) _).
@@ -1104,7 +1033,8 @@ Section Equality_Class.
     : derivation T H [! Γ |- u ≡ v ; B !].
   Proof.
     apply derive_from_reindexing_to_empty_sum.
-    simple refine (Closure.deduce'_via_map derivable_equality_rules _ _ _).
+    simple refine (Closure.deduce'_via_map
+                             (use_derivable (equality_instance _)) _ _ _).
     { exists None, Γ.
       intros i; recursive_destruct i;
         refine (Expression.rename (shape_sum_empty_inl _) _).
@@ -1128,7 +1058,7 @@ Section Equality_Class.
          apply inverse, instantiate_binderless_metavariable]).
   Defined.
 
-End Equality_Class.
+End Equality_Interface.
 
 Section SignatureMaps.
 
