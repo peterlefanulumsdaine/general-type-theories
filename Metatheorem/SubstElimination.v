@@ -445,18 +445,16 @@ the cases of that induction. *)
       { cbn. apply ap.
         set (e := judgement_renaming_hypothetical_part _ _ f).
         eapply concat. 2: { apply e. }
-        apply (ap (Build_hypothetical_judgement _)). 
-        apply path_forall.
-        intros s; recursive_destruct s; try apply idpath.
+        apply eq_by_expressions_hypothetical_judgement; intros s.
+        recursive_destruct s; try apply idpath.
         apply typed_renaming_respects_types.        
       }
       intros p; set (p_keep := p); recursive_destruct p. cbn.
       apply (IH p_keep).
       set (f0 := typed_renaming_of_judgement_renaming _ _ f).
       cbn in f0. exists f0.
-      apply (ap (Build_hypothetical_judgement _)). 
-      apply path_forall.
-      intros s; recursive_destruct s.
+      apply eq_by_expressions_hypothetical_judgement; intros s.
+      recursive_destruct s.
       apply inverse, typed_renaming_respects_types.
   Defined.
 
@@ -516,13 +514,9 @@ well-formed. *)
         refine (rename_derivation _ _ d_gi).
         { assumption. }
         exists f.
-        apply (ap (Build_hypothetical_judgement _)).
-        (* TODO: abstract the above as [hypothetical_judgement_eq_by_expressions?
-           It’s used so often. *)
-        apply path_forall.
-        intros j; recursive_destruct j.
-        * apply rename_substitute.
-        * apply idpath.
+        apply eq_by_expressions_hypothetical_judgement; intros j.
+        recursive_destruct j; try apply idpath.
+        apply rename_substitute.
   Defined.
 
   Local Lemma compose_renaming_weakly_typed_context_map
@@ -583,17 +577,15 @@ well-formed. *)
         refine (rename_derivation _ _ d_fi).
         { assumption. }
         exists (typed_renaming_to_instantiate_context _ _ _).
-        apply (ap (Build_hypothetical_judgement _)).
-        apply path_forall; intros j; recursive_destruct j.
-        * eapply concat. { apply rename_substitute. }
-          eapply concat. 2: { apply inverse, substitute_rename. }
-          apply (ap_2back substitute), path_forall; intros j.
-          apply inverse. refine (coproduct_comp_inj1 _).
-        * apply idpath.
+        apply eq_by_expressions_hypothetical_judgement; intros j.
+        recursive_destruct j; try apply idpath.
+        eapply concat. { apply rename_substitute. }
+        eapply concat. 2: { apply inverse, substitute_rename. }
+        apply (ap_2back substitute), path_forall; intros j.
+        apply inverse. refine (coproduct_comp_inj1 _).
     - intros i. apply inl.
       exists (coproduct_inj2 shape_is_sum i); split.
-      + unfold Substitution.extend; cbn.
-        refine (coproduct_comp_inj2 _).
+      + refine (coproduct_comp_inj2 _).
       + cbn.
         repeat rewrite coproduct_comp_inj2.
         apply instantiate_substitute_instantiation.
@@ -797,9 +789,8 @@ Section Substitute_Derivations.
       apply (IH p_keep).
       set (f0 := f : weakly_typed_context_map _ _ _).
       cbn in f0. exists f0.
-      apply (ap (Build_hypothetical_judgement _)). 
-      apply path_forall.
-      intros s; recursive_destruct s.
+      apply eq_by_expressions_hypothetical_judgement; intros s.
+      recursive_destruct s.
       apply inverse, e2.
       + (* case: [f] tells us [ Γ' |- f i : f^* (Γ i) ] *)
         refine (transport _ _ d_fi).
@@ -973,9 +964,8 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
           [ set (d := d_fi) | set (d := d_gi) | set (d := d_fgi) ];
           refine (rename_derivation T_sub _ d);
           exists (typed_renaming_to_instantiate_context _ _ _);
-          apply (ap (Build_hypothetical_judgement _));
-          apply path_forall; intros j; recursive_destruct j;
-          try apply idpath;
+          apply eq_by_expressions_hypothetical_judgement; intros j;
+          recursive_destruct j; try apply idpath;
           refine (rename_substitute _ _ _ @ _);
           refine (_ @ (substitute_rename _ _ _)^);
           apply (ap_2back substitute), inverse, path_forall; intros j;
@@ -1026,9 +1016,8 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
           [ set (d := d_fi) | set (d := d_gi) | set (d := d_fgi) ];
           refine (rename_derivation T_sub _ d);
           exists (typed_renaming_to_instantiate_context _ _ _);
-          apply (ap (Build_hypothetical_judgement _));
-          apply path_forall; intros j; recursive_destruct j;
-          try apply idpath;
+          apply eq_by_expressions_hypothetical_judgement; intros j;
+          recursive_destruct j; try apply idpath;
           refine (rename_substitute _ _ _ @ _);
           refine (_ @ (substitute_rename _ _ _)^);
           apply (ap_2back substitute), inverse, path_forall; intros j;
@@ -1088,8 +1077,8 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
   Proof.
     exists (instantiate_context_over_weakly_equal_pair_left T_sub fg I _).
     apply inr; exists J_obj.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros [ s | | ];
+    apply eq_by_expressions_hypothetical_judgement.
+    intros [ s | | ];
       repeat refine (ap (transport _ _) _);
       apply instantiate_substitute_instantiation.
   Defined.
@@ -1148,9 +1137,9 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
         [ set (d := d_fi) | set (d := d_gi) | set (d := d_fgi) ];
         refine (rename_derivation T_sub _ d);
         exists r;
-        apply (ap (Build_hypothetical_judgement _)), path_forall;
-          intros s; recursive_destruct s; try apply idpath;
-            apply rename_substitute.
+        apply eq_by_expressions_hypothetical_judgement; intros s;
+        recursive_destruct s; try apply idpath;
+        apply rename_substitute.
   Defined.
 
   (* TODO: upstream within file *)
@@ -1360,6 +1349,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
                             (Build_hypothetical_judgement _ K)
                             _ _)
                   _ _).
+        (* TODO: refactor using [eq_combbine_hypothetical_judgement]. *)
         + cbn. apply path_forall; intros i.
           eapply concat. 2: { apply inverse, copair_instantiation_inl. }
           eapply concat.

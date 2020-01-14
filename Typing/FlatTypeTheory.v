@@ -265,8 +265,7 @@ Section Derivations.
         eapply concat. { refine (coproduct_comp_inj2 _). }
         apply unit_instantiate_expression.
     }
-    { apply (ap (Build_hypothetical_judgement _)).
-      apply path_forall; intros s.
+    { apply eq_by_expressions_hypothetical_judgement; intros s.
       apply unit_instantiate_expression.
     }
     exact (Closure.hypothesis _ _ p).

@@ -759,8 +759,7 @@ Section Renaming_Interface.
   Proof.
     simple refine (derive_rename' _ _ _ _).
     - apply Context.typed_renaming_from_rename_context.
-    - apply (ap (Build_hypothetical_judgement _)), inverse.
-      apply path_forall; intros s.
+    - apply inverse, eq_by_expressions_hypothetical_judgement; intros s.
       eapply concat. { apply rename_rename. }
       eapply concat. 2: { apply rename_idmap. }
       apply (ap_2back Expression.rename), path_forall, (eisretr e).
@@ -1202,7 +1201,7 @@ Section Instantiation.
     simple refine (derive_rename' _ _ _ _ _).
     4: refine (Closure.hypothesis _ _ _); apply p.
     { apply Context.instantiate_instantiate_rtol. }
-    apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
+    apply eq_by_expressions_hypothetical_judgement; intros i.
     apply instantiate_instantiate_expression.
   Defined.
 
@@ -1218,7 +1217,7 @@ Section Instantiation.
           (instantiate_raw_context_map I f)
           (instantiate_hypothetical_judgement I J).
   Proof.
-    apply (ap (Build_hypothetical_judgement _)), path_forall; intros i.
+    apply eq_by_expressions_hypothetical_judgement; intros i.
     apply instantiate_substitute.
   Defined.
 
@@ -1240,8 +1239,8 @@ Section Instantiation.
       simple refine (derive_rename' _ _ _ _ _).
       4: { refine (Closure.hypothesis _ _ _). exact tt. }
       { apply instantiate_typed_renaming, α. }
-      apply (ap (Build_hypothetical_judgement _)), path_forall.
-      intro; apply instantiate_rename.
+      apply eq_by_expressions_hypothetical_judgement; intro.
+      apply instantiate_rename.
     - (* subst_apply *)
       intros [Δ [Δ' [f J]]].
       simple refine (derive_subst_apply' _ _ _ _ _ _).
@@ -1255,15 +1254,14 @@ Section Instantiation.
           repeat rewrite coproduct_comp_inj1.
           simple refine (derive_variable' _ _ _ _).
           -- apply (coproduct_inj1 shape_is_sum), i.
-          -- apply (ap (Build_hypothetical_judgement _)), path_forall;
-               intros j; recursive_destruct j.
-             ++ simpl.
-                rewrite coproduct_comp_inj1.
-                eapply concat. { apply substitute_rename. }
-                eapply concat. 2: { apply substitute_raw_variable. }
-                apply (ap_2back substitute), path_forall.
-                intros j. refine (coproduct_comp_inj1 _).
-             ++ apply idpath.
+          -- apply eq_by_expressions_hypothetical_judgement; intros j.
+             recursive_destruct j; try apply idpath.
+             simpl.
+             rewrite coproduct_comp_inj1.
+             eapply concat. { apply substitute_rename. }
+             eapply concat. 2: { apply substitute_raw_variable. }
+             apply (ap_2back substitute), path_forall.
+             intros j. refine (coproduct_comp_inj1 _).
           -- simpl.
              rewrite coproduct_comp_inj1.
              admit.
@@ -1285,8 +1283,8 @@ Section Instantiation.
       intros [Δ i]; simpl.
       simple refine (derive_variable' _ _ _ _).
       + exact (coproduct_inj2 shape_is_sum i).
-      + apply (ap (Build_hypothetical_judgement _)), path_forall.
-        intros j; recursive_destruct j; try apply idpath.
+      + apply eq_by_expressions_hypothetical_judgement; intros j.
+        recursive_destruct j; try apply idpath.
         apply inverse; refine (coproduct_comp_inj2 _).
       + simple refine (Closure.hypothesis' _ _).
         * exact tt.
@@ -1331,6 +1329,6 @@ Section Instantiation.
         apply Family.sum_unique.
         * apply Family.empty_rect_unique.
         * apply idpath.
-  Admitted. (* [StructuralRule.instantiate]: a little work remaining here; but also, serious upstream fix required (this doesn’t hold with current definitions) *)
+  Admitted. (* [StructuralRule.instantiate]: a little work remaining here; but also, serious upstream fix required (this is unprovable with current definitions) *)
 
 End Instantiation.

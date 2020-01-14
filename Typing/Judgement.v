@@ -403,8 +403,7 @@ In lieu of that, we give explicit lemmas for judgement equality:
 
   Context {σ : shape_system} {Σ : signature σ} `{Funext}.
 
-  (* TODO: factor the action of this on hypothetical judgements, or maybe even hyp judg exp’ns? *)
-  Local Definition eta_expand_hypothetical_judgement {γ}
+  Definition eta_expand_hypothetical_judgement {γ}
       (J : hypothetical_judgement Σ γ)
     : hypothetical_judgement Σ γ.
   Proof.
@@ -454,6 +453,15 @@ In lieu of that, we give explicit lemmas for judgement equality:
   Defined.
 
   (** To give something for a judgement (e.g. to derive it), one can always eta-expand the judgement first. *)
+
+  Definition canonicalise_hypothetical_judgement {γ}
+      (P : hypothetical_judgement Σ γ -> Type)
+      (j : hypothetical_judgement Σ γ)
+    : P (eta_expand_hypothetical_judgement j) -> P j.
+  Proof.
+    apply transport, eta_hypothetical_judgement.
+  Defined.
+
   Local Definition canonicalise
       (P : judgement Σ -> Type)
       (j : judgement Σ)
@@ -495,6 +503,16 @@ In lieu of that, we give explicit lemmas for judgement equality:
 
   For cases where the specific form of the judgement is involved in the 
   difference, [eq_by_eta] may be cleaner. *)
+  Definition eq_by_expressions_hypothetical_judgement
+      {γ : σ} {jf : form}
+      {J J' : hypothetical_judgement_expressions Σ jf γ}
+      (e_J : forall i, J i = J' i)
+    : Build_hypothetical_judgement jf J
+    = Build_hypothetical_judgement jf J'.
+  Proof.
+    apply ap, path_forall; assumption.
+  Defined.
+
   Local Definition eq_by_expressions
       {γ : σ} {Γ Γ' : γ -> raw_type Σ γ}
       {jf : form} {J J' : _}
@@ -511,15 +529,6 @@ In lieu of that, we give explicit lemmas for judgement equality:
     apply path_forall; auto.
   Defined.
 
-  (** When two judgements have the same form and are over the same shape, 
-  then they are equal if all expressions involved (in both the context and
-  the hypothetical part) are equal.
-
-  Often useful in cases where the equality of expressions is for a uniform
-  reason, such as functoriality/naturality lemmas. 
-
-  For cases where the specific form of the judgement is involved in the 
-  difference, [eq_by_eta] may be cleaner. *)
   Local Definition boundary_eq_by_expressions
       {γ : σ} {Γ Γ' : γ -> raw_type Σ γ}
       {jf : form} {B B' : _}
@@ -614,8 +623,7 @@ Section JudgementFmap.
       {Σ} {γ} (J : hypothetical_judgement Σ γ)
     : fmap_hypothetical_judgement  (Signature.idmap Σ) J = J.
   Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros i.
+    apply eq_by_expressions_hypothetical_judgement; intros i.
     apply Expression.fmap_idmap.
   Defined.
 
@@ -623,12 +631,8 @@ Section JudgementFmap.
       {Σ} (J : judgement Σ)
     : fmap (Signature.idmap Σ) J = J.
   Proof.
-    eapply concat.
-      2: { eapply (ap (Build_judgement _)), fmap_hypothetical_judgement_idmap. }
-    refine (ap (fun Γ => Build_judgement (Build_raw_context _ Γ) _) _).
-    apply path_forall; intros i.
-    apply Expression.fmap_idmap.
-    (* TODO: easier if we generalise [eq_by_expressions]? *)
+    rapply @eq_by_expressions; intros;
+      apply Expression.fmap_idmap.
   Defined.
 
   Definition fmap_fmap_hypothetical_boundary_expressions
@@ -658,8 +662,7 @@ Section JudgementFmap.
     : fmap_hypothetical_judgement f' (fmap_hypothetical_judgement f B)
       = fmap_hypothetical_judgement (Signature.compose f' f) B.
   Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros i.
+    apply eq_by_expressions_hypothetical_judgement; intros i.
     apply Expression.fmap_fmap.
   Defined.
 
@@ -668,13 +671,8 @@ Section JudgementFmap.
       (J : judgement Σ)
     : fmap f' (fmap f J) = fmap (Signature.compose f' f) J.
   Proof.
-    eapply concat.
-      { eapply (ap (Build_judgement _)), fmap_fmap_hypothetical_judgement. }
-    unfold fmap; simpl.
-    refine (ap (fun Γ => Build_judgement (Build_raw_context _ Γ) _) _).
-    apply path_forall; intros i.
-    apply Expression.fmap_fmap.
-    (* TODO: easier if we generalise [eq_by_expressions]? *)
+    rapply @eq_by_expressions; intros;
+      apply Expression.fmap_fmap.
   Defined.
 
   Definition fmap_hypothetical_boundary_expressions_compose
@@ -834,8 +832,8 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
     : rename_hypothetical_judgement idmap J
     = J.
   Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros i; apply Expression.rename_idmap.
+    apply eq_by_expressions_hypothetical_judgement; intros i.
+    apply Expression.rename_idmap.
   Defined.
 
   Definition rename_rename_hypothetical_judgement
@@ -845,8 +843,8 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
         (rename_hypothetical_judgement f J)
     = rename_hypothetical_judgement (g o f) J.
   Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros i; apply Expression.rename_rename.
+    apply eq_by_expressions_hypothetical_judgement; intros i.
+    apply Expression.rename_rename.
   Defined.
 
 End Renaming.
@@ -893,8 +891,8 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
         (rename_hypothetical_judgement f J)
     = substitute_hypothetical_judgement (g o f) J.
   Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros i; apply substitute_rename.
+    apply eq_by_expressions_hypothetical_judgement; intros.
+    apply substitute_rename.
   Defined.
 
   Definition rename_substitute_hypothetical_judgement
@@ -904,8 +902,8 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
         (substitute_hypothetical_judgement f J)
     = substitute_hypothetical_judgement (Expression.rename g o f) J.
   Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros i; apply rename_substitute.
+    apply eq_by_expressions_hypothetical_judgement; intros i.
+    apply rename_substitute.
   Defined.
 
 End Substitution.
@@ -968,8 +966,7 @@ Section Instantiation.
         (fmap_hypothetical_judgement (Metavariable.fmap2 _ f) J)
     = instantiate_hypothetical_judgement (instantiation_fmap2 f I) J.
   Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros i.
+    apply eq_by_expressions_hypothetical_judgement; intros i.
     apply instantiate_fmap2.
   Defined.
 
@@ -1081,7 +1078,7 @@ Section Instantiation.
            (instantiate_instantiation Ia Ib)
            J).
   Proof.
-    apply (ap (Build_hypothetical_judgement _)), path_forall. intros i.
+    apply eq_by_expressions_hypothetical_judgement; intros i.
     cbn; apply inverse.
     eapply concat. { apply ap, instantiate_instantiate_expression. }
     eapply concat. { apply Expression.rename_rename. }
@@ -1118,8 +1115,7 @@ Section Instantiation.
         (Coproduct.fmap shape_is_sum shape_is_sum f idmap)
         (instantiate_hypothetical_judgement I J).
   Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros i.
+    apply eq_by_expressions_hypothetical_judgement; intros i.
     apply instantiate_rename_instantiation.
   Defined.
 
@@ -1132,8 +1128,7 @@ Section Instantiation.
         (Substitution.extend γ γ' δ f)
         (instantiate_hypothetical_judgement I J).
   Proof.
-    apply (ap (Build_hypothetical_judgement _)).
-    apply path_forall; intros i.
+    apply eq_by_expressions_hypothetical_judgement; intros i.
     apply instantiate_substitute_instantiation.
   Defined.
 

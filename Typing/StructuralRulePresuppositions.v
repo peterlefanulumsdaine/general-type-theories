@@ -48,7 +48,7 @@ Section TypedStructuralRule.
     simple refine (derive_rename' _ _ _ _ _).
     { exact (presupposition J_orig p_orig). }
     { exact f. }
-    { apply (ap (Build_hypothetical_judgement _)), path_forall; intros i.
+    { apply eq_by_expressions_hypothetical_judgement; intros i.
       destruct J as [jf j]. 
       recursive_destruct jf; recursive_destruct p; recursive_destruct i;
         apply idpath.
