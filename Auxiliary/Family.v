@@ -431,7 +431,7 @@ Defined.
 
 Local Lemma fmap_singleton `{Funext}
     {X Y} (f:X->Y) (x:X)
-  : Family.fmap f (singleton x) = singleton (f x).
+  : fmap f (singleton x) = singleton (f x).
 Proof.
   apply eq with idpath.
   intros []; apply idpath.
@@ -528,15 +528,13 @@ Proof.
   apply (map_over_commutes (ff _)).
 Defined.
 
-(* TODO: make an iso? *)
 Local Lemma fmap_bind
     {B B'} (f : B -> B')
     {A} (K : family A) (L : A -> family B)
-  : map
-      (fmap f (bind K L))
-      (bind K (fun a => fmap f (L a))).
+  : fmap f (bind K L)
+  = bind K (fun a => fmap f (L a)).
 Proof.
-  apply idmap.
+  apply idpath.
 Defined.
 
 (** Reindexing of a family along a map into the index type *)

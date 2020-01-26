@@ -1605,24 +1605,28 @@ Section Subst_Elimination.
       simpl in d_prems |- *.
       simple refine (substitute_derivation _ _ (d_prems None)); try assumption.
       simple refine (Build_weakly_typed_judgement_map _ _ _ _ _);
-        [ simple refine (Build_weakly_typed_context_map _ _ _ f _) | ].
-      + intros i.
-        destruct (some_or_is_none (f_triv i)) as [[j [e_fi e_Γ'j]]| fi_nontriv].
-        * apply inl. exists j; split; assumption.
-        * apply inr. exact (d_prems (Some (i;fi_nontriv))).          
-      + apply idpath.
-    - destruct r_substeq as [Γ [Γ' [f [g [cl J]]]]].
+        [ simple refine (Build_weakly_typed_context_map _ _ _ f _) | apply idpath].
+      intros i.
+      destruct (some_or_is_none (f_triv i)) as [[j [e_fi e_Γ'j]]| fi_nontriv].
+      * apply inl. exists j; split; assumption.
+      * apply inr. exact (d_prems (Some (i;fi_nontriv))).          
+    - destruct r_substeq as [Γ [Γ' [[f g] [fg_triv [cl J]]]]].
       simpl in d_prems.
       simple refine (substitute_equal_derivation _ _ _ (d_prems None));
         try assumption.
       simple refine (Build_weakly_equal_judgement_map _ _ _ _ _);
         [ simple refine (Build_weakly_equal_pair _ _ _ f g _) | ].
-        * intros i. apply inr; repeat split.
-          -- exact (d_prems (Some (inl (inl i)))).
-          -- exact (d_prems (Some (inl (inr i)))).
-          -- exact (d_prems (Some (inr i))).
-        * apply inr.
-          exists tt; apply idpath.
+      2: { apply inr; exists tt; apply idpath. }
+      intros i.
+      destruct (some_or_is_none (fg_triv i))
+        as [[j [[e_fi e_gi] e_Γ'j]] | fi_nontriv].
+      * apply inl. exists j; repeat split; assumption.
+      * set (d_prems_i := fun j => d_prems (Some ((i;fi_nontriv);j)));
+          cbn in d_prems_i.
+        apply inr; repeat split.
+        -- exact (d_prems_i (Some (Some tt))).
+        -- exact (d_prems_i (Some None)).
+        -- exact (d_prems_i None).
     - simple refine (Closure.deduce' _ _ _).
       + exact (inr (r_from_t)).
       + apply idpath.

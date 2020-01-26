@@ -94,7 +94,9 @@ Section StructuralRulePresups.
         (r : subst_equal_instance Σ)
     : is_presuppositive (subst_equal_instance _ r).
   Proof.
-    destruct r as [Γ [ Γ' [ f [ g [cl J]]]]].
+    destruct r as [Γ [ Γ' [ [f g] [ fg_triv [cl J]]]]].
+    admit.
+    (*
     intros p.
     transparent assert (J_orig : (judgement Σ)).
     { exists Γ, (form_object cl). exact J. }
@@ -245,7 +247,8 @@ Section StructuralRulePresups.
               simple refine (Closure.hypothesis' _ _).
               ** exact (inl None).
               ** apply idpath.
-Defined.
+              *)
+  Admitted. (* [subst_equal_is_presuppositive]: needs updating since rule generalised to allow weakly equal pairs. *)
 
   (** Variable rules are presuppositive *)
   Local Definition variable_is_presuppositive (r : variable_instance Σ)

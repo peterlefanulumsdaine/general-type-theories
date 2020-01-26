@@ -227,7 +227,6 @@ Section Presuppositive_Flat_Rules.
         refine (transport (fun K => Family.map K _) _ _).
         { apply inverse, Family.fmap_sum. }
         apply (Family.sum_fmap (Family.idmap _)).
-        refine (Family.compose _ (Family.fmap_bind _ _ _)).
         refine (Family.compose (Family.bind_fmap_mid _ _ _) _).
         apply Family.bind_fmap2. intros a.
         apply fmap_presupposition_family.
