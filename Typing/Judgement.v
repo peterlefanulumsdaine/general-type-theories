@@ -933,6 +933,22 @@ Section Instantiation.
     apply (instantiate_hypothetical_judgement I (hypothetical_part j)).
   Defined.
 
+  Lemma instantiate_substitute_hypothetical_judgement
+      {a : arity σ} {Σ : signature σ} {γ : σ}
+      {I : Metavariable.instantiation a Σ γ}
+      {δ δ'}
+      (f : raw_context_map (Metavariable.extend Σ a) δ' δ)
+      (J : hypothetical_judgement (Metavariable.extend Σ a) δ)
+    : instantiate_hypothetical_judgement I
+        (substitute_hypothetical_judgement f J)
+      = substitute_hypothetical_judgement
+          (instantiate_raw_context_map I f)
+          (instantiate_hypothetical_judgement I J).
+  Proof.
+    apply eq_by_expressions_hypothetical_judgement; intros i.
+    apply instantiate_substitute.
+  Defined.
+
   (* TODO: factor out [fmap_instantiate_hypothetical_judgement] *)
   Local Lemma fmap_instantiate
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')

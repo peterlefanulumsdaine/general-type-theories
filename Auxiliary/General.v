@@ -77,3 +77,44 @@ Proof.
   - eapply inv_V.
   - apply H.
 Defined.
+
+Lemma some_ne_none {A} {a:A} : Some a <> None.
+Proof.
+  intros e.
+  apply true_ne_false.
+  exact (ap (fun x : option A => if x then true else false) e).
+Defined.
+
+Definition sigma_type_eq `{Funext}
+    {A} {B B'} (e : forall x, B x = B' x)
+  : { x:A & B x } = {x:A & B' x}.
+Proof.
+  apply path_forall in e.
+  apply ap, e.
+Defined.
+
+Definition equiv_path_sigma_type_eq `{Funext}
+   {A} {B B'} (e : forall x, B x = B' x)
+   (xy : { x:A & B x })
+  : equiv_path _ _ (sigma_type_eq e) xy
+    = (xy.1; equiv_path _ _ (e xy.1) xy.2).
+Proof.
+  unfold sigma_type_eq.
+  set (e' := path_forall _ _ e).
+  simple refine (_ @ _).
+  exact (xy.1; equiv_path _ _ (ap10 e' xy.1) xy.2).
+  - destruct e'; apply idpath.
+  - apply ap, ap10, ap, ap.
+    apply ap10_path_forall.
+Defined.
+
+(** Some useful infrastructure for the [option] type. *)
+Section Option.
+
+  Definition fmap_option {A B} (f : A -> B) : option A -> option B
+  := fun a => match a with
+    | Some a => Some (f a)
+    | None => None
+  end.
+
+End Option.

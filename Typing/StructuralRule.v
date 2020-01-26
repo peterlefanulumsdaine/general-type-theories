@@ -42,13 +42,6 @@ Require Import Typing.FlatRule.
   and [select_variable_rule] or similar for the access function.)
 *)
 
-  (* TODO: upstream *)
-  Definition fmap_option {A B} (f : A -> B) : option A -> option B
-  := fun a => match a with
-    | Some a => Some (f a)
-    | None => None
-  end.
-
 
 Section StructuralRules.
 
@@ -853,14 +846,6 @@ Section Substitution_Interface.
     `{H_T : has_derivable _ _ (substitution_instance Σ) T}
     {H : family (judgement Σ) }.
 
-  (* TODO: upstream to [Auxiliary] *)
-  Lemma some_ne_none {A} {a:A} : Some a <> None.
-  Proof.
-    intros e.
-    apply true_ne_false.
-    exact (ap (fun x : option A => if x then true else false) e).
-  Defined.
-
   Definition derive_subst_apply'
       ( J J' : judgement Σ )
       ( Γ := context_of_judgement J )
@@ -1162,29 +1147,6 @@ Section SignatureMaps.
   Context `{H : Funext}.
   Context {σ : shape_system}.
 
-  (* TODO: upstream *)
-  Definition sigma_type_eq {A} {B B'} (e : forall x, B x = B' x)
-    : { x:A & B x } = {x:A & B' x}.
-  Proof.
-    apply path_forall in e.
-    apply ap, e.
-  Defined.
-
-  (* TODO: upstream *)
-  Definition equiv_path_sigma_type_eq {A} {B B'} (e : forall x, B x = B' x)
-      (xy : { x:A & B x })
-    : equiv_path _ _ (sigma_type_eq e) xy
-    = (xy.1; equiv_path _ _ (e xy.1) xy.2).
-  Proof.
-    unfold sigma_type_eq.
-    set (e' := path_forall _ _ e).
-    simple refine (_ @ _).
-    exact (xy.1; equiv_path _ _ (ap10 e' xy.1) xy.2).
-    - destruct e'; apply idpath.
-    - apply ap, ap10, ap, ap.
-      apply ap10_path_forall.
-  Defined.
-
   (** For a given signature map [f] from [Σ] to [Σ'],
      the translations of structural rules of [Σ] are structural rules of [Σ']. *)
   Local Definition fmap
@@ -1334,22 +1296,6 @@ Section Instantiation.
     { apply Context.instantiate_instantiate_rtol. }
     apply eq_by_expressions_hypothetical_judgement; intros i.
     apply instantiate_instantiate_expression.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma instantiate_substitute_hypothetical_judgement
-      {γ} {a} {I : Metavariable.instantiation a Σ γ}
-      {δ δ'}
-      (f : raw_context_map (Metavariable.extend Σ a) δ' δ)
-      (J : hypothetical_judgement (Metavariable.extend Σ a) δ)
-    : instantiate_hypothetical_judgement I
-        (substitute_hypothetical_judgement f J)
-      = substitute_hypothetical_judgement
-          (instantiate_raw_context_map I f)
-          (instantiate_hypothetical_judgement I J).
-  Proof.
-    apply eq_by_expressions_hypothetical_judgement; intros i.
-    apply instantiate_substitute.
   Defined.
 
 (** Structural rules in a metavariable extension,
