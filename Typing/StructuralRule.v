@@ -1373,9 +1373,7 @@ Section Instantiation.
       apply eq_by_expressions_hypothetical_judgement; intro.
       apply instantiate_rename.
     - (* subst_apply *)
-      intros [Δ [Δ' [J f]]].
-      admit.
-      (*
+      intros [Δ [Δ' [J [f f_triv]]]].
       simple refine (derive_subst_apply' _ _ _ _ _ _).
       + apply (Judgement.instantiate Γ I).
         exists Δ. exact J.
@@ -1385,30 +1383,40 @@ Section Instantiation.
         * intros i; simpl.
           unfold instantiate_raw_context_map.
           repeat rewrite coproduct_comp_inj1.
-          simple refine (derive_variable' _ _ _ _ _ _); try apply idpath.
-          { simpl.
-            rewrite coproduct_comp_inj1.
-            eapply concat. { apply substitute_rename. }
-            eapply concat. 2: { apply substitute_raw_variable. }
-            apply (ap_2back substitute), path_forall.
-            intros j. refine (coproduct_comp_inj1 _). }
-          simpl.
-          rewrite coproduct_comp_inj1.
-          admit.
-(* Interesting: this is genuinely not available, we have a mismatch in the setup! TODO: need to either restrict this theorem to instantiations over (flatly) well-typed contexts; or else generalise the subst-apply rule to something like the “weakly well-typed context maps” as currently used in [Metatheorems.SubstElimination], and [subst_eq] similarly *)
-        * intros i. simple refine (Closure.hypothesis' _ _).
-          { apply Some, i. }
-          apply Judgement.eq_by_expressions.
-          { intros; apply idpath. }
-          intros j; recursive_destruct j; simpl.
-          -- repeat rewrite coproduct_comp_inj2.
-             apply instantiate_substitute.
-          -- unfold instantiate_raw_context_map.
-             apply inverse; refine (coproduct_comp_inj2 _).
+          apply inl.
+          exists (coproduct_inj1 shape_is_sum i).
+          split; try apply idpath.
+          eapply concat. { rapply coproduct_comp_inj1. }
+          eapply concat. { apply inverse, substitute_raw_variable. }
+          eapply concat. 2: { apply inverse, substitute_rename. }
+          apply (ap_2back substitute), path_forall.
+          intros j; apply inverse. rapply coproduct_comp_inj1.
+        * intros i.
+          set (fti := f_triv i). assert (efti := idpath : fti = f_triv i).
+          destruct (f_triv i) as [ [j [e_fi e_Γ'j]]| ] in efti |- *;
+          subst fti.
+          -- apply inl.
+            exists (coproduct_inj2 shape_is_sum j); split;
+              refine (coproduct_comp_inj2 _ @ _).
+            ++ eapply concat. { apply ap, e_fi. }
+              apply idpath.
+            ++ eapply concat. { apply ap, e_Γ'j. }
+              eapply concat. { apply instantiate_substitute. }
+              apply ap, inverse. rapply coproduct_comp_inj2.
+          -- apply inr.
+            simple refine (Closure.hypothesis' _ _).
+            { apply Some. exists i. 
+              rewrite efti; auto. }
+            apply Judgement.eq_by_expressions.
+            { intros; apply idpath. }
+            intros j; recursive_destruct j; simpl.
+            ++ repeat rewrite coproduct_comp_inj2.
+              apply instantiate_substitute.
+            ++ unfold instantiate_raw_context_map.
+              apply inverse; rapply coproduct_comp_inj2.
       + simple refine (Closure.hypothesis' _ _).
         { apply None. }
         apply idpath.
-       *)
     - (* subst_equal *)
       simpl. intros [Δ [Δ' [f [g [cl J]]]]].
       simple refine (derive_subst_equal' _ _ _ _ _ _ _ _ _ _).
