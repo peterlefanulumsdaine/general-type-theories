@@ -1601,13 +1601,20 @@ Section Subst_Elimination.
       + exact (inl r_substfree).
       + apply idpath.
       + apply d_prems.
-    - destruct r_subst as [Γ [Γ' [f J]]].
+    - destruct r_subst as [Γ [Γ' [J [f f_triv]]]].
       simpl in d_prems |- *.
       simple refine (substitute_derivation _ _ (d_prems None)); try assumption.
       simple refine (Build_weakly_typed_judgement_map _ _ _ _ _);
         [ simple refine (Build_weakly_typed_context_map _ _ _ f _) | ].
-      + intros i. apply inr.
-        exact (d_prems (Some i)).          
+      + intros i.
+        set (fti := f_triv i). assert (efti := idpath : fti = f_triv i).
+        destruct (f_triv i) as [ [j [e_fi e_Γ'j]]| ] in efti |- *;
+        subst fti.
+        * apply inl. exists j; split; assumption.
+        * assert (if f_triv i then Empty else Unit) as fi_triv.
+          { rewrite efti; auto. }
+          apply inr.
+          exact (d_prems (Some (i;fi_triv))).          
       + apply idpath.
     - destruct r_substeq as [Γ [Γ' [f [g [cl J]]]]].
       simpl in d_prems.

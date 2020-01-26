@@ -18,7 +18,7 @@ Require Import Typing.Presuppositions.
    their presuppositions.
  *)
 
-Section TypedStructuralRule.
+Section StructuralRulePresups.
 
   Context `{Funext} {σ : shape_system} {Σ : signature σ}.
 
@@ -64,7 +64,7 @@ Section TypedStructuralRule.
         (r : subst_apply_instance Σ)
     : is_presuppositive (subst_apply_instance _ r).
   Proof.
-    destruct r as [Γ [ Γ' [ f J]]].
+    destruct r as [Γ [ Γ' [J [f f_triv]]]].
     set (J_orig := Build_judgement Γ J); destruct J as [jf J].
     intros p.
     transparent assert (p' : (presupposition J_orig)). { exact p. }
@@ -75,10 +75,15 @@ Section TypedStructuralRule.
     - recursive_destruct jf; recursive_destruct p;
         apply Judgement.eq_by_eta_hypothetical_judgement, idpath.
     - (* premises: show the substitution OK. *)
-      intros q.
-      simple refine (Closure.hypothesis' _ _).
-      + exact (inl (Some q)).
-      + apply idpath.
+      intros i.
+      set (fti := f_triv i). assert (efti := idpath : fti = f_triv i).
+      destruct (f_triv i) as [ [j [e_fi e_Γ'j]]| ] in efti |- *;
+      subst fti.
+      + apply inl. exists j. split; assumption.
+      + apply inr.
+        simple refine (Closure.hypothesis' _ _).
+        * apply inl, Some; exists i. rewrite efti; apply tt.
+        * apply idpath.
     - (* premises: new presupposition *)
       simple refine (Closure.hypothesis' _ _).
       + exact (inr (None; p')).
@@ -103,10 +108,10 @@ Section TypedStructuralRule.
          In each case, we get them by the [substitution_apply] rule. *)
     - simple refine (Closure.deduce' _ _ _).
       + apply inl, subst_apply.
-        exists Γ, Γ'. simple refine (_;_). 2: { exact J_orig. }
+        exists Γ, Γ'. split. { exact J_orig. }
         destruct p as [ [] | | ].
-        * exact f.
-        * exact g.
+        * exists f. intros; apply None.
+        * exists g. intros; apply None.
       + recursive_destruct p;
           apply Judgement.eq_by_eta; apply idpath.
       + intros h; cbn in h.
@@ -136,7 +141,8 @@ Section TypedStructuralRule.
         simple refine (Closure.deduce' _ _ _).
         * apply inl, subst_apply.
            (* subst-apply rule: substitute f into Γ |- A *)
-           exists Γ, Γ', f, (form_object class_type).
+           exists Γ, Γ'. split. 2: { exists f; intro; apply None. }
+           exists (form_object class_type).
            intros [[] | ]. exact A.
         * apply Judgement.eq_by_eta; apply idpath.
         * intros [ x | ].
@@ -152,7 +158,8 @@ Section TypedStructuralRule.
         simple refine (Closure.deduce' _ _ _).
         * apply inl, subst_apply.
            (* subst-apply rule: substitute f into Γ |- a : A *)
-           exists Γ, Γ', f, (form_object class_term).
+           exists Γ, Γ'. split. 2: { exists f; intro; apply None. }
+           exists (form_object class_term).
            exact J.
         * apply Judgement.eq_by_eta; apply idpath.
         * intros [ x | ].
@@ -170,7 +177,8 @@ Section TypedStructuralRule.
         * (* [ Γ' |- g^*A type ] *)
           simple refine (Closure.deduce' _ _ _).
           { apply inl, subst_apply.
-            exists Γ, Γ', g, (form_object class_type).
+            exists Γ, Γ'. split. 2: { exists g; intro; apply None. }
+            exists (form_object class_type).
             intros [ [] | ]. exact A.
           }
           { apply Judgement.eq_by_eta, idpath. }
@@ -188,7 +196,8 @@ Section TypedStructuralRule.
         * (* [ Γ' |- f^*A type ] *)
           simple refine (Closure.deduce' _ _ _).
           { apply inl, subst_apply.
-            exists Γ, Γ', f, (form_object class_type).
+            exists Γ, Γ'. split. 2: { exists f; intro; apply None. }
+            exists (form_object class_type).
             intros [ [] | ]. exact A.
           }
           { apply Judgement.eq_by_eta, idpath. }
@@ -225,7 +234,8 @@ Section TypedStructuralRule.
         * (* Γ' |- g^*a : g^*A *)   
           simple refine (Closure.deduce' _ _ _).
           -- apply inl, subst_apply. (* substitute g into Γ |- a : A *)
-             exists Γ, Γ', g, (form_object class_term). exact J.
+             exists Γ, Γ'. split. 2: { exists g; intro; apply None. }
+             exists (form_object class_term). exact J.
           -- apply Judgement.eq_by_eta, idpath.
           -- intros [ x | ].
             ++ (* premise: [g] is a context map *)
@@ -427,4 +437,4 @@ Defined.
     - apply equality_is_presuppositive.
   Defined.
 
-End TypedStructuralRule.
+End StructuralRulePresups.

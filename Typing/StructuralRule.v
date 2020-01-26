@@ -42,6 +42,14 @@ Require Import Typing.FlatRule.
   and [select_variable_rule] or similar for the access function.)
 *)
 
+  (* TODO: upstream *)
+  Definition fmap_option {A B} (f : A -> B) : option A -> option B
+  := fun a => match a with
+    | Some a => Some (f a)
+    | None => None
+  end.
+
+
 Section StructuralRules.
 
 Context {σ : shape_system}.
@@ -91,31 +99,37 @@ Section SubstitutionRules.
 
 (** General substitution along context maps:
 
-  Γ' |- f(x) : A   [for each x in Γ, A := type of x in Γ]
+ [for each i in Γ, either (f i) is x_i and Γ' i = f^* Γ i, _or_ have a derivation premise: ]
+  Γ' |- f i : f^* (Γ i) 
   Γ |- J   [for J any hypothetical judgement]
   --------------------
   Γ' |- f^*J
 *)
+
+(* TODO: fix to allow general “weakly typed context maps”. *)
 Definition subst_apply_instance : Closure.system (judgement Σ).
 Proof.
   exists { Γ : raw_context Σ
     & { Γ' : raw_context Σ
-    & { f : raw_context_map Σ Γ' Γ
-    & hypothetical_judgement Σ Γ}}}.
-  intros [Γ [Γ' [f hj]]].
+    & hypothetical_judgement Σ Γ
+    * { f : raw_context_map Σ Γ' Γ 
+    & forall i : Γ, option
+             { j : Γ' & (f i = raw_variable j) * (Γ' j = substitute f (Γ i)) }
+    }}}.
+  intros [Γ [Γ' [J [f f_triv]]]].
   split.
   (* premises: *)
   - refine (Family.adjoin _ _).
     (* all components of [f] are suitably typed: *)
-    + exists Γ.
-      intros i. refine [! Γ' |- _ ; _ !].
+    + exists {i : Γ & if f_triv i then Empty else Unit}.
+      intros [i _]. refine [! Γ' |- _ ; _ !].
       * exact (f i).
       * exact (substitute f (Γ i)).
     (* the target judgement holds over Γ *)
-    + exists Γ; exact hj.
+    + exists Γ; exact J.
   (* conclusion: *)
   - exists Γ'.
-    exact (substitute_hypothetical_judgement f hj).
+    exact (substitute_hypothetical_judgement f J).
 Defined.
 
 (** Substitution respects *equality* of context morphisms:
@@ -125,7 +139,7 @@ Defined.
   --------------------
   Γ' |- f^*J = g^*J  [ over f* of boundary of J ]
  *)
-(* TODO: perhaps refactor to use [substitute_equal_hypothetical_judgement]? *)
+(* TODO: fix to allow general “weakly equal pairs”. *)
 Definition subst_equal_instance : Closure.system (judgement Σ).
 Proof.
   exists {   Γ : raw_context Σ
@@ -839,22 +853,12 @@ Section Substitution_Interface.
     `{H_T : has_derivable _ _ (substitution_instance Σ) T}
     {H : family (judgement Σ) }.
 
-  Definition derive_subst_apply
-      ( Γ Γ' : raw_context Σ )
-      ( f : raw_context_map Σ Γ' Γ )
-      ( J : hypothetical_judgement Σ Γ )
-      ( d_f : forall i, derivation T H
-                                   [! Γ' |- f i ; substitute f (Γ i) !] )
-      ( d_J : derivation T H (Build_judgement Γ J))
-    : derivation T H
-             (Build_judgement Γ' (substitute_hypothetical_judgement f J)).
+  (* TODO: upstream to [Auxiliary] *)
+  Lemma some_ne_none {A} {a:A} : Some a <> None.
   Proof.
-    simple refine (Closure.deduce'_via_map (use_derivable _) _ _ _).
-    { apply inl. exists Γ, Γ', f; exact J. }
-    { apply idpath. }
-    intros [ i | ]. 
-    - apply d_f. 
-    - apply d_J.
+    intros e.
+    apply true_ne_false.
+    exact (ap (fun x : option A => if x then true else false) e).
   Defined.
 
   Definition derive_subst_apply'
@@ -863,17 +867,43 @@ Section Substitution_Interface.
       ( Γ' := context_of_judgement J' )
       ( f : raw_context_map Σ Γ' Γ )
       ( e : hypothetical_part J' = substitute_hypothetical_judgement f J)
-      ( d_f : forall i, derivation T H
-                                   [! Γ' |- f i ; substitute f (Γ i) !] )
+      ( d_f : forall i,
+        { j : Γ' & (f i = raw_variable j) * (Γ' j = substitute f (Γ i)) }
+        + derivation T H [! Γ' |- f i ; substitute f (Γ i) !])
       ( d_J : derivation T H J)
     : derivation T H J'.
   Proof.
     simple refine (Closure.deduce'_via_map (use_derivable _) _ _ _).
-    { apply inl. exists Γ, Γ', f; exact J. }
+    { apply inl.
+      exists Γ, Γ'. split. { exact J. } exists f.
+      intros i.
+      destruct (d_f i) as [ fi_triv | _ ].
+      + exact (Some fi_triv).
+      + exact None.
+    }
     { apply (ap (Build_judgement _)), inverse, e. }
-    intros [ i | ]. 
-    - apply d_f. 
+    simpl. intros [ [ i fi_nontriv ] | ].
+    - destruct (d_f i) as [ _ | d_fi ].
+      + destruct fi_nontriv.
+      + apply d_fi. 
     - apply d_J.
+  Defined.
+
+  Definition derive_subst_apply
+      ( Γ Δ : raw_context Σ )
+      ( f : raw_context_map Σ Δ Γ )
+      ( J : hypothetical_judgement Σ Γ )
+      ( d_f : forall i,
+        { j : Δ & (f i = raw_variable j) * (Δ j = substitute f (Γ i)) }
+        + derivation T H [! Δ |- f i ; substitute f (Γ i) !])
+      ( d_J : derivation T H (Build_judgement Γ J))
+    : derivation T H
+             (Build_judgement Δ (substitute_hypothetical_judgement f J)).
+  Proof.
+    srapply derive_subst_apply'.
+    1: exists Γ.
+    3: apply idpath.
+    1, 2: assumption.
   Defined.
 
   Definition derive_subst_equal
@@ -1132,6 +1162,29 @@ Section SignatureMaps.
   Context `{H : Funext}.
   Context {σ : shape_system}.
 
+  (* TODO: upstream *)
+  Definition sigma_type_eq {A} {B B'} (e : forall x, B x = B' x)
+    : { x:A & B x } = {x:A & B' x}.
+  Proof.
+    apply path_forall in e.
+    apply ap, e.
+  Defined.
+
+  (* TODO: upstream *)
+  Definition equiv_path_sigma_type_eq {A} {B B'} (e : forall x, B x = B' x)
+      (xy : { x:A & B x })
+    : equiv_path _ _ (sigma_type_eq e) xy
+    = (xy.1; equiv_path _ _ (e xy.1) xy.2).
+  Proof.
+    unfold sigma_type_eq.
+    set (e' := path_forall _ _ e).
+    simple refine (_ @ _).
+    exact (xy.1; equiv_path _ _ (ap10 e' xy.1) xy.2).
+    - destruct e'; apply idpath.
+    - apply ap, ap10, ap, ap.
+      apply ap10_path_forall.
+  Defined.
+
   (** For a given signature map [f] from [Σ] to [Σ'],
      the translations of structural rules of [Σ] are structural rules of [Σ']. *)
   Local Definition fmap
@@ -1179,18 +1232,28 @@ Section SignatureMaps.
                   (FlatRule.closure_system_fmap' f _) _).
     - (* subst_apply *)
       apply Family.Build_map'.
-      intros [ Γ [Γ' [g hj]]].
+      intros [ Γ [Δ [J [g g_triv]]]].
       simple refine (_;_).
       + exists (Context.fmap f Γ).
-        exists (Context.fmap f Γ').
+        exists (Context.fmap f Δ).
+        split. { exact (Judgement.fmap_hypothetical_judgement f J). }
         exists (raw_context_map_fmap f g).
-        exact (Judgement.fmap_hypothetical_judgement f hj).
+        intros i. refine (fmap_option _ (g_triv i)).
+        intros [j [e_gi e_Δi]].
+        exists j; split.
+        * refine (ap (Expression.fmap f) e_gi).
+        * eapply concat. { simpl. apply ap, e_Δi. }
+          apply fmap_substitute.
       + apply Closure.rule_eq; cbn.
         * apply inverse.
           eapply concat. { apply Family.fmap_adjoin. }
           apply ap2; try apply idpath.
           unfold Family.fmap.
-          apply ap, path_forall; intros i.
+          simple refine (Family.eq _ _).
+          { apply sigma_type_eq; intros i.
+            destruct (g_triv i); apply idpath. }
+          intros i; simpl in i; rewrite equiv_path_sigma_type_eq.
+          simpl.
           refine (Judgement.eq_by_expressions _ _);
             intros j; try apply idpath; recursive_destruct j;
             try apply idpath; apply fmap_substitute.
@@ -1310,7 +1373,9 @@ Section Instantiation.
       apply eq_by_expressions_hypothetical_judgement; intro.
       apply instantiate_rename.
     - (* subst_apply *)
-      intros [Δ [Δ' [f J]]].
+      intros [Δ [Δ' [J f]]].
+      admit.
+      (*
       simple refine (derive_subst_apply' _ _ _ _ _ _).
       + apply (Judgement.instantiate Γ I).
         exists Δ. exact J.
@@ -1343,6 +1408,7 @@ Section Instantiation.
       + simple refine (Closure.hypothesis' _ _).
         { apply None. }
         apply idpath.
+       *)
     - (* subst_equal *)
       simpl. intros [Δ [Δ' [f [g [cl J]]]]].
       simple refine (derive_subst_equal' _ _ _ _ _ _ _ _ _ _).
