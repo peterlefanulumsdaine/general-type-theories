@@ -117,4 +117,36 @@ Section Option.
     | None => None
   end.
 
+  (* NOTE: there are several other ways to define an equivalent type,
+     e.g. as an inductive family, or as [a = None].
+  This definition has the advantage of satisfying [is_none_fmap] below,
+  i.e. it commutes up to equality with [fmap_option], without needing to
+  assume propositional univalence. *)
+  Definition is_none {A} (a : option A) : Type
+  := if a then Empty else Unit.
+
+  Definition is_none_fmap {A B} (f : A -> B) (a : option A)
+    : is_none (fmap_option f a) = is_none a.
+  Proof.
+    destruct a; apply idpath.
+  Defined.
+
+  Definition some_or_is_none {A} (a : option A)
+    : A + (is_none a).
+  Proof.
+    destruct a.
+    - apply inl; assumption.
+    - apply inr; constructor.
+  Defined.
+
+  (** Variant of [option_rect] that remembers a bit more information in the cases, analogous to tactics [destruct … eqn:H ] from standard library (not available in HoTT).  *)
+  Definition option_rect_with_eq {A} (P : option A -> Type)
+      (t : option A)
+      (H_Some : forall a:A, (t = Some a) -> P (Some a))
+      (H_None : t = None -> P None)
+    : P t.
+  Proof.
+    destruct t; auto.
+  Defined.
+
 End Option.

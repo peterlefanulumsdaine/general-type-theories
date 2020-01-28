@@ -1607,14 +1607,9 @@ Section Subst_Elimination.
       simple refine (Build_weakly_typed_judgement_map _ _ _ _ _);
         [ simple refine (Build_weakly_typed_context_map _ _ _ f _) | ].
       + intros i.
-        set (fti := f_triv i). assert (efti := idpath : fti = f_triv i).
-        destruct (f_triv i) as [ [j [e_fi e_Γ'j]]| ] in efti |- *;
-        subst fti.
+        destruct (some_or_is_none (f_triv i)) as [[j [e_fi e_Γ'j]]| fi_nontriv].
         * apply inl. exists j; split; assumption.
-        * assert (if f_triv i then Empty else Unit) as fi_triv.
-          { rewrite efti; auto. }
-          apply inr.
-          exact (d_prems (Some (i;fi_triv))).          
+        * apply inr. exact (d_prems (Some (i;fi_nontriv))).          
       + apply idpath.
     - destruct r_substeq as [Γ [Γ' [f [g [cl J]]]]].
       simpl in d_prems.

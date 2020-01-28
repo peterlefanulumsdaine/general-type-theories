@@ -114,7 +114,7 @@ Proof.
   (* premises: *)
   - refine (Family.adjoin _ _).
     (* all components of [f] are suitably typed: *)
-    + exists {i : Γ & if f_triv i then Empty else Unit}.
+    + exists {i : Γ & is_none (f_triv i)}.
       intros [i _]. refine [! Γ' |- _ ; _ !].
       * exact (f i).
       * exact (substitute f (Γ i)).
@@ -868,7 +868,7 @@ Section Substitution_Interface.
     }
     { apply (ap (Build_judgement _)), inverse, e. }
     simpl. intros [ [ i fi_nontriv ] | ].
-    - destruct (d_f i) as [ _ | d_fi ].
+    - destruct (d_f i) as [ ? | d_fi ].
       + destruct fi_nontriv.
       + apply d_fi. 
     - apply d_J.
@@ -1213,7 +1213,7 @@ Section SignatureMaps.
           unfold Family.fmap.
           simple refine (Family.eq _ _).
           { apply sigma_type_eq; intros i.
-            destruct (g_triv i); apply idpath. }
+            apply inverse, is_none_fmap. }
           intros i; simpl in i; rewrite equiv_path_sigma_type_eq.
           simpl.
           refine (Judgement.eq_by_expressions _ _);
@@ -1338,9 +1338,8 @@ Section Instantiation.
           apply (ap_2back substitute), path_forall.
           intros j; apply inverse. rapply coproduct_comp_inj1.
         * intros i.
-          set (fti := f_triv i). assert (efti := idpath : fti = f_triv i).
-          destruct (f_triv i) as [ [j [e_fi e_Γ'j]]| ] in efti |- *;
-          subst fti.
+          destruct (some_or_is_none (f_triv i))
+                     as [ [j [e_fi e_Γ'j]]| fi_nontriv ].
           -- apply inl.
             exists (coproduct_inj2 shape_is_sum j); split;
               refine (coproduct_comp_inj2 _ @ _).
@@ -1351,8 +1350,7 @@ Section Instantiation.
               apply ap, inverse. rapply coproduct_comp_inj2.
           -- apply inr.
             simple refine (Closure.hypothesis' _ _).
-            { apply Some. exists i. 
-              rewrite efti; auto. }
+            { apply Some. exists i. apply fi_nontriv. }
             apply Judgement.eq_by_expressions.
             { intros; apply idpath. }
             intros j; recursive_destruct j; simpl.

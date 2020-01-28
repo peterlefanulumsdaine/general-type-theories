@@ -1,4 +1,5 @@
 Require Import HoTT.
+Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
 Require Import Syntax.ShapeSystem.
@@ -76,13 +77,11 @@ Section StructuralRulePresups.
         apply Judgement.eq_by_eta_hypothetical_judgement, idpath.
     - (* premises: show the substitution OK. *)
       intros i.
-      set (fti := f_triv i). assert (efti := idpath : fti = f_triv i).
-      destruct (f_triv i) as [ [j [e_fi e_Γ'j]]| ] in efti |- *;
-      subst fti.
+      destruct (some_or_is_none (f_triv i)) as [[j [e_fi e_Γ'j]]| fi_nontriv].
       + apply inl. exists j. split; assumption.
       + apply inr.
         simple refine (Closure.hypothesis' _ _).
-        * apply inl, Some; exists i. rewrite efti; apply tt.
+        * apply inl, Some; exists i. apply fi_nontriv.
         * apply idpath.
     - (* premises: new presupposition *)
       simple refine (Closure.hypothesis' _ _).
