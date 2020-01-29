@@ -135,17 +135,16 @@ Defined.
   --------------------
   Γ' |- f^*J = g^*J  [ over f* of boundary of J ]
  *)
-(* TODO: fix to allow general “weakly equal pairs”. *)
 Definition subst_equal_instance : Closure.system (judgement Σ).
 Proof.
   exists {   Γ : raw_context Σ
     & { Γ' : raw_context Σ
     & { fg : raw_context_map Σ Γ' Γ * raw_context_map Σ Γ' Γ
     & (forall i:Γ, option
-           { j : Γ' & (fst fg i = raw_variable j)
-                      * (snd fg i = raw_variable j)
-                      * ( (Γ' j = substitute (fst fg) (Γ i))
-                        + (Γ' j = substitute (snd fg) (Γ i)))})
+           { j : Γ' & ((fst fg i = raw_variable j)
+                      * (snd fg i = raw_variable j))
+                      * ((Γ' j = substitute (fst fg) (Γ i))
+                      * (Γ' j = substitute (snd fg) (Γ i)))})
     * { cl : syntactic_class
         & hypothetical_judgement_expressions Σ (form_object cl) Γ}}}}.
   intros [Γ [Γ' [[f g] [fg_triv [cl J]]]]].
@@ -898,10 +897,10 @@ Section Substitution_Interface.
       ( e : hypothetical_part J'
             = substitute_equal_hypothetical_judgement f g J J_obj)
       ( d_fg : forall i,
-        { j : Γ' & (f i = raw_variable j) 
-                 * (g i = raw_variable j)
+        { j : Γ' & ((f i = raw_variable j) 
+                 * (g i = raw_variable j))
                  * ((Γ' j = substitute f (Γ i))
-                   + (Γ' j = substitute g (Γ i))) }
+                 * (Γ' j = substitute g (Γ i))) }
         + (derivation T H [! Γ' |- f i ; substitute f (Γ i) !]
           * derivation T H [! Γ' |- g i ; substitute g (Γ i) !] 
           * derivation T H [! Γ' |- f i ≡ g i ; substitute f (Γ i) !]))
@@ -930,10 +929,10 @@ Section Substitution_Interface.
       ( J : hypothetical_judgement Σ Γ )
       ( J_obj : Judgement.is_object (form_of_judgement J) )
       ( d_fg : forall i,
-        { j : Γ' & (f i = raw_variable j) 
-                 * (g i = raw_variable j)
+        { j : Γ' & ((f i = raw_variable j)
+                 * (g i = raw_variable j))
                  * ((Γ' j = substitute f (Γ i))
-                   + (Γ' j = substitute g (Γ i))) }
+                 * (Γ' j = substitute g (Γ i))) }
         + (derivation T H [! Γ' |- f i ; substitute f (Γ i) !]
           * derivation T H [! Γ' |- g i ; substitute g (Γ i) !] 
           * derivation T H [! Γ' |- f i ≡ g i ; substitute f (Γ i) !]))
@@ -1234,13 +1233,12 @@ Section SignatureMaps.
         split.
         2: { exists jf. intro; apply (Expression.fmap f), hj. }
         intros i. refine (fmap_option _ (gh_triv i)).
-        simpl; intros [ j [[e_g e_h] e_gh] ].
+        simpl; intros [ j [[e_g e_h] [e_gΓ e_hΓ]]].
         exists j; split.
         * split; [ set (e := e_g) | set (e := e_h) ];
             exact (ap (Expression.fmap _) e).
-        * destruct e_gh as [e_Γ | e_Γ];
-          [ apply inl | apply inr ];
-          refine (ap _ e_Γ @ _);
+        * split; [ set (e := e_gΓ) | set (e := e_hΓ) ];
+          refine (ap _ e @ _);
           apply fmap_substitute.
       + apply Closure.rule_eq; cbn.
         * apply inverse.

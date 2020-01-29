@@ -94,161 +94,113 @@ Section StructuralRulePresups.
         (r : subst_equal_instance Σ)
     : is_presuppositive (subst_equal_instance _ r).
   Proof.
-    destruct r as [Γ [ Γ' [ [f g] [ fg_triv [cl J]]]]].
-    admit.
-    (*
+    destruct r as [Γ [ Γ' [ [f g] [ fg_triv [cl J_expr]]]]].
     intros p.
-    transparent assert (J_orig : (judgement Σ)).
-    { exists Γ, (form_object cl). exact J. }
-    (* [p] a hypothetical presupposition *)
-    (* What we do here genuinely depends on [cl]. *)
-    destruct cl as [ | ].
-    (* Case 1: substitutions are into a type judgement.
-         Then the presups of [ Γ |- f^*A = g^*A ] are just
-         [ Γ |- f^*A type ] and [ Γ |- g^*A type ].
-         In each case, we get them by the [substitution_apply] rule. *)
-    - simple refine (Closure.deduce' _ _ _).
-      + apply inl, subst_apply.
-        exists Γ, Γ'. split. { exact J_orig. }
-        destruct p as [ [] | | ].
-        * exists f. intros; apply None.
-        * exists g. intros; apply None.
-      + recursive_destruct p;
-          apply Judgement.eq_by_eta; apply idpath.
-      + intros h; cbn in h.
-        destruct h as [ x | ].
-        * (* premise: [f] / [g] is a context map *)
-          destruct p as [ [] | | ].
-          -- simple refine (Closure.hypothesis' _ _).
-             ** apply inl, Some, inl, inl, x.
-             ** apply idpath.
-          -- simple refine (Closure.hypothesis' _ _).
-             ** apply inl, Some, inl, inr, x.
-             ** apply idpath.
-        * (* premise: [Γ |- J]  *)
-          simple refine (Closure.hypothesis' _ _).
-          -- exact (inl None).
-          -- apply idpath.
-    (* Case 2: substitutions are into a term judgement [ Γ |- a : A].
-         Then the presups of [ Γ |- f^*a = g^*a : f^* A] are
-         [ Γ |- f^*A type ], [ Γ |- f^*a : f^*A ], and [ Γ |- g^*A : f^*A ].
-         The first two, we get by the [substitution_apply] rule; the third 
-         additionally requires the [term_convert] and [substitution_equal]
-         rules. *)
-    - set (A := J (the_object_boundary_slot class_term the_type_slot)).
+    (* Several subderivations are used multiple times, so we predefine those
+    in advance before case-splitting*)
+    transparent assert (J : (judgement Σ)).
+    { exists Γ, (form_object cl). exact J_expr. }
+    match goal with
+      [|- Closure.derivation ?TT ?HH _ ]
+      => set (T := (TT)); set (Hs := (HH))
+    end.
+    assert (d_f : forall i : Γ,
+      {j : Γ'.(raw_context_carrier)
+        & (f i = raw_variable j) * (Γ' j = substitute f (Γ i))}
+      + Closure.derivation T Hs [!Γ' |- f i; substitute f (Γ i) !]).
+    { intros i.
+      destruct (some_or_is_none (fg_triv i)) as [ fgi_triv | fgi_nontriv].
+      - apply inl. destruct fgi_triv as [ j [[? _] [? _]]].
+        exists j; split; assumption.
+      - apply inr. simple refine (Closure.hypothesis' _ _).
+        { apply inl, Some. exists (i;fgi_nontriv). apply Some, Some, tt. }
+        apply idpath.
+    }
+    assert (d_g : forall i : Γ,
+      {j : Γ'.(raw_context_carrier)
+        & (g i = raw_variable j) * (Γ' j = substitute g (Γ i))}
+      + Closure.derivation T Hs [!Γ' |- g i; substitute g (Γ i) !]).
+    { intros i.
+      destruct (some_or_is_none (fg_triv i)) as [ fgi_triv | fgi_nontriv].
+      - apply inl. destruct fgi_triv as [ j [[_ ?] [_ ?]]].
+        exists j; split; assumption.
+      - apply inr. simple refine (Closure.hypothesis' _ _).
+        { apply inl, Some. exists (i;fgi_nontriv). apply Some, None. }
+        apply idpath.
+    }
+    set (p_keep := p). simpl Closure.conclusion in p_keep.
+    (* The main case-split: which presupposition are we doing? *)
+    destruct p as [ p_bdry | | ].
+    - (* Presup: part of boundary of conclusion. *)
+      destruct cl; recursive_destruct p_bdry.
+      (* Only one case: original conclusion was [! Γ' |- f^*a = g^*a : f^*A !],
+       presup is [! Γ' |- f^* A !]. *)
+      apply Judgement.canonicalise; simpl.
+      refine (derive_subst_apply' [! Γ |- _ !] [! _ |- _ !] _ _ d_f _).
+      { apply eq_by_eta_hypothetical_judgement, idpath. }
+      simple refine (Closure.hypothesis' _ _).
+      + apply inr. exists None. exact the_type_slot.
+      + apply Judgement.eq_by_eta, idpath.
+    - (* Presup: LHS of original equality conclusion. *)
+      refine (derive_subst_apply' J _ _ _ _ _).
+      2: { apply d_f. }
+      { destruct cl; apply eq_by_eta_hypothetical_judgement; apply idpath. }
+      simple refine (Closure.hypothesis' _ _). { apply inl, None. }
+      apply idpath.
+    - (* Presup: RHS of original equality conclusion.
+      This case looks different depending on the form of the conclusion,
+      due to non-triviality of the boundary for term judgements. *)
+(* NOTE: could unify these cases by generalising the [_convert] rule, to give
+conversion over equal boundaries for any judgement. *)
+      set (gJ := Build_judgement Γ' (substitute_hypothetical_judgement g J)).
+      assert (Closure.derivation T Hs gJ) as d_gJ.
+      { simple refine (derive_subst_apply' J gJ _ (idpath _) d_g _).
+        simple refine (Closure.hypothesis' _ _). { apply inl, None. }
+        apply idpath.
+      }
+      destruct cl as [ | ].
+      { (* type judgement: [g^* J] is [! Γ' |- g^*A !] exactly as required  *)
+        refine (transport _ _ d_gJ).
+        apply Judgement.eq_by_eta; apply idpath.
+      }
+      (* term judgement: presupposition is [! Γ' |- g^* A : f^* A !],
+         while [g^*J] is [! Γ' |- g^* A : g^* A !],
+         so need to apply [term_convert] rule. *)
+      set (A := J (the_object_boundary_slot class_term the_type_slot)).
       set (a := J (the_head_slot class_term)).
-      recursive_destruct p.
-      + (* presup [ Γ |- f^*A type ] *)
-        simple refine (Closure.deduce' _ _ _).
-        * apply inl, subst_apply.
-           (* subst-apply rule: substitute f into Γ |- A *)
-           exists Γ, Γ'. split. 2: { exists f; intro; apply None. }
-           exists (form_object class_type).
-           intros [[] | ]. exact A.
-        * apply Judgement.eq_by_eta; apply idpath.
-        * intros [ x | ].
-           -- (* premise: [f] is a context map *)
-             simple refine (Closure.hypothesis' _ _).
-             ** apply inl, Some, inl, inl, x.
-             ** apply idpath.
-           -- (* premise: [Γ |- A type ]  *)
-             simple refine (Closure.hypothesis' _ _).
-             ** apply inr. exists None. exact (the_type_slot).
-             ** apply Judgement.eq_by_eta; apply idpath.
-      + (* presup [ Γ' |- f^*a : f^*A ] *)
-        simple refine (Closure.deduce' _ _ _).
-        * apply inl, subst_apply.
-           (* subst-apply rule: substitute f into Γ |- a : A *)
-           exists Γ, Γ'. split. 2: { exists f; intro; apply None. }
-           exists (form_object class_term).
-           exact J.
-        * apply Judgement.eq_by_eta; apply idpath.
-        * intros [ x | ].
-           -- (* premise: [f] is a context map *)
-             simple refine (Closure.hypothesis' _ _).
-             ** apply inl, Some, inl, inl, x.
-             ** apply idpath.
-           -- (* premise: [Γ |- a : A type ]  *)
-             simple refine (Closure.hypothesis' _ _).
-             ** exact (inl None).
-             ** apply idpath.
-      + (* presup [ Γ' |- g^*a : f^*A ] *)
-        apply Judgement.canonicalise.
-        apply (derive_term_convert _ (substitute g A)).
-        * (* [ Γ' |- g^*A type ] *)
-          simple refine (Closure.deduce' _ _ _).
-          { apply inl, subst_apply.
-            exists Γ, Γ'. split. 2: { exists g; intro; apply None. }
-            exists (form_object class_type).
-            intros [ [] | ]. exact A.
-          }
-          { apply Judgement.eq_by_eta, idpath. }
-          intros [ x | ].
-          -- (* premise: [g] is a context map *)
-            simple refine (Closure.hypothesis' _ _).
-            ++ cbn. apply inl, Some, inl, inr, x.
-            ++ apply idpath.
-          -- (* premise: [Γ |- A type ]  *)
-            simple refine (Closure.hypothesis' _ _).
-            ++ apply inr. (* use a presupposition… *)
-               exists None. (* …of the original target judgement… *)
-               apply the_type_slot.
-            ++ apply Judgement.eq_by_eta, idpath.
-        * (* [ Γ' |- f^*A type ] *)
-          simple refine (Closure.deduce' _ _ _).
-          { apply inl, subst_apply.
-            exists Γ, Γ'. split. 2: { exists f; intro; apply None. }
-            exists (form_object class_type).
-            intros [ [] | ]. exact A.
-          }
-          { apply Judgement.eq_by_eta, idpath. }
-          intros [ x | ].
-          -- (* premise: [f] is a context map *)
-            simple refine (Closure.hypothesis' _ _).
-            ++ cbn. apply inl, Some, inl, inl, x.
-            ++ apply idpath.
-          -- (* premise: [Γ |- A type ]  *)
-            simple refine (Closure.hypothesis' _ _).
-            ++ apply inr. (* use a presupposition… *)
-               exists None. (* …of the original target judgement… *)
-               apply the_type_slot.
-            ++ apply Judgement.eq_by_eta, idpath.
-        * (* [ Γ' |- g^*A = f^*A ] *)
-          apply derive_tyeq_sym.
-          simple refine (Closure.deduce' _ _ _).
-          -- apply inl, subst_equal.
-             exists Γ, Γ', f, g, class_type.
-             intros i; recursive_destruct i. exact A.
-          -- apply Judgement.eq_by_eta, idpath.
-          -- intros [ h | ].
-            ++ (* for premises about f, g:
-                  use corresponding premise of original rule *)
-              simple refine (Closure.hypothesis' _ _).
-              ** apply inl, Some, h.
-              ** apply idpath.
-            ++ (* premise [ Γ |- A type ]*)
-              simple refine (Closure.hypothesis' _ _).
-              ** apply inr. (* use a presupposition… *)
-               exists None. (* …of the original target judgement… *)
-               apply the_type_slot.
-              ** apply Judgement.eq_by_eta, idpath.
-        * (* Γ' |- g^*a : g^*A *)   
-          simple refine (Closure.deduce' _ _ _).
-          -- apply inl, subst_apply. (* substitute g into Γ |- a : A *)
-             exists Γ, Γ'. split. 2: { exists g; intro; apply None. }
-             exists (form_object class_term). exact J.
-          -- apply Judgement.eq_by_eta, idpath.
-          -- intros [ x | ].
-            ++ (* premise: [g] is a context map *)
-              simple refine (Closure.hypothesis' _ _).
-              ** cbn. apply inl, Some, inl, inr, x.
-              ** apply idpath.
-            ++ (* premise: [Γ |- a : A type ]  *)
-              simple refine (Closure.hypothesis' _ _).
-              ** exact (inl None).
-              ** apply idpath.
-              *)
-  Admitted. (* [subst_equal_is_presuppositive]: needs updating since rule generalised to allow weakly equal pairs. *)
+      assert (Closure.derivation T Hs [! Γ |- A !]) as d_A.
+      { simple refine (Closure.hypothesis' _ _).
+        - apply inr. exists None. exact the_type_slot.
+        - apply Judgement.eq_by_eta, idpath. }
+      apply Judgement.canonicalise; simpl.
+      simple refine (derive_term_convert _ _ _ _ _ _ _ _).
+        (* TODO: improve the equality rule interfaces to work off the bat for arbitrary judgements of correct type, without canonicalising? *)
+      { exact (substitute g A). } 
+      + (* [! Γ' |- g^* A !] *)
+        refine (derive_subst_apply' [! Γ |- A !] [! _ |- _ !] g _ d_g d_A).
+        apply eq_by_eta_hypothetical_judgement, idpath.
+      + (* [! Γ' |- f^* A !] *)
+        refine (derive_subst_apply' [! Γ |- A !] [! _ |- _ !] f _ d_f d_A).
+        apply eq_by_eta_hypothetical_judgement, idpath.
+      + (* [! Γ' |- g^* A = f^* A !] *)
+        apply derive_tyeq_sym.
+        simple refine
+          (derive_subst_equal' [! _ |- _ !] [! _ |- _ ≡ _ !] f g _ _ _ d_A).
+        * constructor.
+        * apply eq_by_eta_hypothetical_judgement, idpath.
+        * intros i.
+          destruct (some_or_is_none (fg_triv i)) as [ fgi_triv | fgi_nontriv].
+          { apply inl. exact fgi_triv. }
+          apply inr.
+          repeat split;
+            simple refine (Closure.hypothesis' _ _);
+            try apply inl, Some;
+            try exists (i;fgi_nontriv);
+            [ apply Some, Some, tt | | apply Some, None | | apply None | ];
+            apply idpath.
+      + refine (transport _ _ d_gJ).
+        apply Judgement.eq_by_eta; apply idpath.
+  Defined.
 
   (** Variable rules are presuppositive *)
   Local Definition variable_is_presuppositive (r : variable_instance Σ)

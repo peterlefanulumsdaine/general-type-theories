@@ -1619,8 +1619,8 @@ Section Subst_Elimination.
       2: { apply inr; exists tt; apply idpath. }
       intros i.
       destruct (some_or_is_none (fg_triv i))
-        as [[j [[e_fi e_gi] e_Γ'j]] | fi_nontriv].
-      * apply inl. exists j; repeat split; assumption.
+        as [[j [[? ?] [? ?]]] | fi_nontriv].
+      * apply inl. exists j; repeat split; try apply inl; assumption.
       * set (d_prems_i := fun j => d_prems (Some ((i;fi_nontriv);j)));
           cbn in d_prems_i.
         apply inr; repeat split.
