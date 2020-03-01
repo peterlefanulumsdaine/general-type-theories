@@ -1,24 +1,27 @@
 Require Import HoTT.
 
-Definition is_well_founded {X : Type} (R : relation X)
+Open Scope type_scope.
+(* NOTE: The reason for this “Open Scope” is that when the HoTT library is imported, [mc_scope] overrides use of notations such as [A + B] for types, or at least, make them require explicit scope annotations.  If there’s a better way to make such notations easily usable (besides this or closing [mc_scope]), we should ue that here instead. *)
+
+Definition is_well_founded {X : Type} (R : Relation X)
   := forall P : X -> Type,
      (forall x : X, (forall y : X, R y x -> P y) -> P x)
      -> (forall x : X, P x).
 
 Record well_founded_order {X : Type}
-:= { well_founded_order_lt :> relation X
+:= { well_founded_order_lt :> Relation X
    ; well_founded : is_well_founded well_founded_order_lt
    ; transitive : Transitive well_founded_order_lt (* TODO: rename this *)
  }.
 
 Arguments well_founded_order : clear implicits.
 
-Identity Coercion id_relation : relation >-> Funclass.
+Identity Coercion id_relation : Relation >-> Funclass.
 (* Required in order to apply [well_founded_order] (or other things coercing to [relation]) to arguments *)
 
 (* An order is well-founded if it embeds into a known well-founded order. *)
 Definition well_founded_if_embeds {X Y} (f : X -> Y)
-    {RX : relation X} {RY : relation Y} (RY_wf : is_well_founded RY)
+    {RX : Relation X} {RY : Relation Y} (RY_wf : is_well_founded RY)
     (H_f : forall x x', RX x x' -> RY (f x) (f x'))
   : is_well_founded RX.
 Proof.
@@ -85,7 +88,7 @@ Defined.
    order then a predicate of the form [P o f] is hereditary. *)
 Lemma push_along_embedding
     {X} (lt_X : well_founded_order X)
-    {Y} (lt_Y : relation Y) (f : X -> Y)
+    {Y} (lt_Y : Relation Y) (f : X -> Y)
     (P : Y -> Type)
   : (forall x x', lt_Y (f x) (f x') -> lt_X x x')
   -> (forall x : X, (forall x', lt_Y (f x') (f x) -> P (f x')) -> P (f x))
@@ -116,12 +119,12 @@ Proof.
     + apply (push_along_embedding lt_X lt inl P) ; auto.
       intros ? H.
       apply f.
-      intros [? ? | _ []].
+      intros [? | ?]; [intros ? | intros []].
       now apply H.
     + apply (push_along_embedding lt_Y lt inr P) ; auto.
       intros ? H.
       apply f.
-      intros [_ [] | ? ?].
+      intros [? | ?]; [intros [] | intros ?].
       now apply H.
   - intros [x1|y1] [x2|y2] [x3|y3] H1 H2;
       try (now destruct H1 || now destruct H2).
@@ -151,14 +154,14 @@ Proof.
     + apply (well_founded lt_X (fun z => P (Some z))).
       intros ? H.
       apply f.
-      intros [?  ? | []].
+      intros [? | ]; [ intros ? | intros []].
       now apply H.
     + apply f.
-      intros [y _|[]].
+      intros [? | ]; [ intros ? | intros []].
       apply (well_founded lt_X (fun z => P (Some z))).
       intros ? H.
       apply f.
-      intros [?  ? | []].
+      intros [? | ]; [ intros ? | intros []].
       now apply H.
   - intros [x|] [y|] [z|] lt_x_y lt_y_z ; try now destruct lt_x_y.
     + now apply (transitive lt_X _ y).
@@ -180,7 +183,7 @@ Proof.
     + apply (well_founded lt_X (fun z => P (Some z))).
       intros ? H.
       apply f.
-      intros [?  ? | []].
+      intros [? | ]; [ intros ? | intros []].
       now apply H.
     + apply f.
       intros [y|] [].

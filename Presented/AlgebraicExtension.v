@@ -123,7 +123,7 @@ Local Definition eq `{Funext} {Σ} {a}
       := fun i => equiv_path _ _ (ap _ (ap _ (Family.map_commutes _ i)^)))
     (e_raw_context : forall (i : ae_premise A) (j : _),
         Expression.fmap (fe_signature i) (ae_raw_context i j)
-        = Expression.rename (equiv_inverse (fe_shape i))
+        = rename (equiv_inverse (fe_shape i))
                  (ae_raw_context _ (fe_shape i j)))
     (e_hypothetical_boundary
        : forall i : ae_premise A,
@@ -278,7 +278,7 @@ Section Simple_Maps.
 
   Context {σ : shape_system}.
   
-  Local Record simple_map_aux
+  Record simple_map_aux
       {Σ : signature σ} {a a'}
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
     : Type
@@ -360,7 +360,7 @@ Section Simple_Maps.
   (* Perhaps we will need [simple_map_over] involving signature maps, at some
   point. For now we just give [simple_map].
    (Or we could break out the dependency over arity maps?  But that seems unlikely to be needed.) *)
-  Local Record simple_map
+  Record simple_map
       {Σ : signature σ} {a a'}
       (A : algebraic_extension Σ a) (A' : algebraic_extension Σ a')
     : Type
@@ -370,7 +370,7 @@ Section Simple_Maps.
     : forall (p : A) (i : _),
       ae_raw_context_type
        (simple_map_aux_part p) (simple_map_premise_shape _ i)
-      = Expression.rename (simple_map_premise_shape _)
+      = rename (simple_map_premise_shape _)
        (Expression.fmap (simple_map_signature_of_premise _)
          (ae_raw_context_type p i))
   ; simple_map_hypothetical_boundary_commutes
@@ -892,7 +892,7 @@ Section Initial_Segment.
         (fmap f (initial_segment A p)).
   Proof.
     simple refine (Build_simple_map _ _ _ _ _ _ _ _).
-    simple refine (Build_simple_map_aux _ _ _ _ _ _ _ _).
+    1: simple refine (Build_simple_map_aux _ _ _ _ _ _ _ _).
     - (* object premises *) apply Family.idmap.
     - (* equality premises *) apply Family.idmap.
     - (* well-ordering *) intros i j.
@@ -902,7 +902,7 @@ Section Initial_Segment.
       eapply concat. { apply Expression.fmap_fmap. }
       eapply concat. { apply inverse, rename_idmap. }
       destruct i as [ i_ob | i_eq ];
-      apply (ap2 (fun f e => Expression.rename f e)); try apply idpath.
+      apply (ap2 (fun f e => rename f e)); try apply idpath.
       + simpl. apply inverse. 
         eapply concat. { apply Expression.fmap_fmap. }
         eapply concat. { apply Expression.fmap_fmap. }

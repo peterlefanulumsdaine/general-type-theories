@@ -484,7 +484,7 @@ well-formed. *)
     + subst_free_derivation T (Family.empty _)
                             [! Δ |- f i ; substitute f (Γ i) !].
 
-  Local Record weakly_typed_context_map
+  Record weakly_typed_context_map
     (T : flat_type_theory Σ) (Δ Γ : raw_context Σ)
   := {
     raw_of_weakly_typed_context_map :> raw_context_map Σ Δ Γ
@@ -500,7 +500,7 @@ well-formed. *)
     : weakly_typed_context_map T Γ'' Γ.
   Proof.
     simple refine (Build_weakly_typed_context_map _ _ _ _ _).
-    - intros i. exact (Expression.rename f (g i)).
+    - intros i. exact (rename f (g i)).
     - intros i.
       destruct (weakly_typed_context_map_is_weakly_typed _ _ _ g i)
         as [[j [e1 e2]] | d_gi].
@@ -592,7 +592,7 @@ well-formed. *)
   Defined.
 
   (** Analogous to [judgement_renaming] *)
-  Local Record weakly_typed_judgement_map
+  Record weakly_typed_judgement_map
     (T : flat_type_theory Σ) (J' J : judgement Σ)
   := {
     weakly_typed_context_map_of_judgement_map
@@ -833,7 +833,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
       * subst_free_derivation T (Family.empty _)
           [! Δ |- f i ≡ g i ; substitute f (Γ i) !].
 
-  Local Record weakly_equal_pair
+  Record weakly_equal_pair
       (T : flat_type_theory Σ)
       (Δ Γ : raw_context Σ)
   := {
@@ -901,7 +901,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
    given a derivation of [ Γ |- J ] and a weakly equal judgement map
    [ [Γ'|-J'] -> [Γ|-J] ], get a derivation of [ Γ' |- J' ].
 *)
-  Local Record weakly_equal_judgement_map
+  Record weakly_equal_judgement_map
     (T : flat_type_theory Σ) (J' J : judgement Σ)
    := { 
      weakly_equal_pair_of_judgement_map

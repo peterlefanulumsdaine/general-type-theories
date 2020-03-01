@@ -51,16 +51,17 @@ Section RawContext.
   Proof.
     exists (shape_extend _ Γ).
     apply (plusone_rect _ _ (shape_is_extend _ _)).
-    - refine (Expression.rename _ A).
+    - refine (rename _ A).
       (* As we put the type into the context, we weaken it to live over the extended context. *)
     apply (plusone_inj _ _ (shape_is_extend _ _)).
     - intros i.
-      refine (Expression.rename _ (Γ i)).
+      refine (rename _ (Γ i)).
       apply (plusone_inj _ _ (shape_is_extend _ _)).
   Defined.
 
 End RawContext.
 
+Declare Scope context_scope.
 Notation " [: :] " := (empty) (format "[: :]") : context_scope.
 Notation " [: x ; .. ; z :] " :=
   (extend .. (extend (empty) x) .. z) : context_scope.
@@ -132,7 +133,7 @@ Section Typed_Renamings.
     eapply concat. 2: { apply inverse, ap, H_e. }
     eapply concat. 2: { apply inverse, rename_rename. }
     eapply concat. { apply inverse, rename_idmap. }
-    apply (ap_2back Expression.rename), inverse, path_forall, (eissect e).
+    apply (ap_2back rename), inverse, path_forall, (eissect e).
   Defined.
 
   Lemma typed_renaming_inverse
@@ -142,7 +143,7 @@ Section Typed_Renamings.
     : typed_renaming Δ Γ.
   Proof.
     exists (@equiv_inv _ _ _ e_f).
-    refine (respects_types_equiv_inverse _ _ (BuildEquiv _ _ _ _) _).
+    refine (respects_types_equiv_inverse _ _ (Build_Equiv _ _ _ _) _).
     apply typed_renaming_respects_types.
   Defined.
 
@@ -163,7 +164,7 @@ Section Rename_Variables.
     : raw_context Σ.
   Proof.
     exists γ'. 
-    exact (fun j => Expression.rename (equiv_inverse e) (Γ (e j))).
+    exact (fun j => rename (equiv_inverse e) (Γ (e j))).
   Defined.
 
   Definition typed_renaming_to_rename_context

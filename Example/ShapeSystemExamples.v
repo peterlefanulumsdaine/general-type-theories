@@ -105,9 +105,9 @@ Section DeBruijn.
   Defined.
 
   Definition DB_ext {n k : nat}
-             (P : DB_positions (n.+1) -> Type)
+             (P : DB_positions (S n) -> Type)
              (i : DB_positions k)
-    := forall (p : k = n.+1), P (transport DB_positions p i).
+    := forall (p : k = S n), P (transport DB_positions p i).
 
   Fixpoint DB_inl (n m : nat) (x : DB_positions n) : DB_positions (n + m).
   Proof.
@@ -138,13 +138,13 @@ Section DeBruijn.
   Defined.
 
   Lemma ap_S_S_injective_idpath (n: nat) :
-    ap_S_S_injective (idpath : n.+1 = n.+1) = idpath.
+    ap_S_S_injective (idpath : S n = S n) = idpath.
   Proof.
     apply path_ishprop.
   Defined.
 
   Lemma DB_is_plusone (n : nat)
-    : is_plusone (DB_positions (n.+1)) (DB_positions n).
+    : is_plusone (DB_positions (S n)) (DB_positions n).
   Proof.
     simple refine {|
              plusone_one := zero_db ;
@@ -169,7 +169,7 @@ Section DeBruijn.
           clearbody q ; clear p.
           destruct q.
           apply f. }
-      intro y. apply (H (n .+1) y idpath).
+      intro y. apply (H (S n) y idpath).
     - intros P x f. simpl.
       rewrite ap_S_S_injective_idpath. apply idpath.
     - intros P x f k. simpl.
@@ -198,14 +198,14 @@ Section DeBruijn.
         * apply (plusone_comp_one _ _ (DB_is_plusone _)).
         * intros i1. 
           refine (_ @ _).
-            apply (plusone_comp_inj _ _ (DB_is_plusone _)).
+          { apply (plusone_comp_inj _ _ (DB_is_plusone _)). }
           refine (IH _ _ _ i1).
     (* coproduct_comp2 *)
     - induction n as [ | n' IH]; intros P f1 f2.
       + intros i2; apply idpath.
       + intros i2.
         refine (_ @ _).
-          apply (plusone_comp_inj _ _ (DB_is_plusone _)).
+        { apply (plusone_comp_inj _ _ (DB_is_plusone _)). }
         refine (IH _ _ _ i2).
   Defined.
 
@@ -230,14 +230,14 @@ Section DeBruijn_Fixpoint.
 
   Fixpoint DBF_positions (n : nat) : Type :=
     match n with
-    | 0 => Empty
-    | n'.+1 => option (DBF_positions n')
+    | O => Empty
+    | S n' => option (DBF_positions n')
     end.
 
-  Definition zero_dbf {n} : DBF_positions (n.+1)
+  Definition zero_dbf {n} : DBF_positions (S n)
   := None.
 
-  Definition succ_dbf {n} (i : DBF_positions n) : DBF_positions (n.+1)
+  Definition succ_dbf {n} (i : DBF_positions n) : DBF_positions (S n)
   := Some i.
 
   Fixpoint DBF_inl (n m : nat) (i : DBF_positions n) {struct n}
@@ -285,11 +285,12 @@ Section DeBruijn_Fixpoint.
       + intros i2. exact (IH _ _ _ i2).
   Defined.
 
+
   Definition DeBruijn_Fixpoint : shape_system.
   Proof.
     refine {| shape_carrier := nat ;
               shape_position := DBF_positions ;
-              shape_empty := 0 ;
+              shape_empty := 0%nat ;
               shape_sum := (fun n m => (n + m)%nat) ;
               shape_extend := S
            |}.

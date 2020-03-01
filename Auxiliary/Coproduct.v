@@ -176,9 +176,9 @@ Local Definition empty_right {X Y XY}
   : XY -> X.
 Proof.
   eapply coproduct_rect.
-  exact H_XY.
-  exact (fun x => x).
-  apply H_Y.
+  - exact H_XY.
+  - exact (fun x => x).
+  - apply H_Y.
 Defined.
 
 Definition coproduct_empty_inj1_is_equiv

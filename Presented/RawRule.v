@@ -197,10 +197,10 @@ Module Span.
 (** Some auxiliary constructions for defining the ordering of the premises in
     the associated congruence rule of a constructor. *)
 
-  Local Inductive span : Type :=
+  Inductive span : Type :=
     left | right | top.
 
-  Local Definition lt_relation : relation span
+  Local Definition lt_relation : Relation span
   := fun x y => match x, y with
                 | left, top => True
                 | right, top => True

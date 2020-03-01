@@ -106,9 +106,9 @@ eq_new i   0        0        0        0        i < j
     (* TODO: refactor the following, to unify it with def of flat congruence
        rules (once given). *)
     simple refine (Build_rule _ _ _ _ _).
-    simple refine
+    1: simple refine
            {| ae_equality_premise :=
-                ((ae_equality_premise (rule_premise R)) +
+                 ((ae_equality_premise (rule_premise R)) +
                  (ae_equality_premise (rule_premise R))) + a ;
               |}.
     - (* ae_lt *)

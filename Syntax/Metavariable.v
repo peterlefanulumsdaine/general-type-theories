@@ -198,12 +198,15 @@ Local Definition extend_args {γ δ : σ}
 Proof.
   intros ts t.
   simple refine (plusone_rect _ _ (shape_is_extend _ δ) _ _ _); cbn.
-  - refine (Expression.rename _ t).
+  - refine (rename _ t).
     exact (coproduct_inj1 shape_is_sum).
   - exact ts.
 Defined.
 
 End MetavariableNotations.
+
+Declare Scope syntax_scope.
+Declare Scope raw_syntax_scope.
 
 Notation " '[M/' A /] "
   := (raw_symbol (include_metavariable A) (empty_args shape_is_empty)) : syntax_scope.
@@ -270,8 +273,7 @@ Section Instantiations.
 
   (** Given such an instantiation, one can translate syntax over the extended
      signature into syntax over the base signature. *)
-  (* TODO: make this not local (and other things about instantiation), for convenience + consistency *)
-  Local Fixpoint instantiate_expression
+  Fixpoint instantiate_expression
       {cl} {a : @arity σ} {Σ : signature σ} {γ : σ}
       (I : instantiation a Σ γ)
       {δ} (e : raw_expression (extend Σ a) cl δ)
@@ -281,7 +283,7 @@ Section Instantiations.
   - refine (raw_variable _).
     exact (coproduct_inj2 (shape_is_sum) i).
   - refine (raw_symbol S _). intros i.
-    refine (Expression.rename _
+    refine (rename _
              (instantiate_expression _ _ _ _ I _ (args i))).
     apply shape_assoc_rtol.
   - simpl in M. (* Substitute [args] into the expression [I M]. *)
@@ -289,12 +291,12 @@ Section Instantiations.
     refine (coproduct_rect shape_is_sum _ _ _).
     + intros i. apply raw_variable, (coproduct_inj1 shape_is_sum), i.
     + intros i.
-      refine (Expression.rename _
+      refine (rename _
              (instantiate_expression _ _ _ _ I _ (args i))).
       cbn.
       refine (Coproduct.fmap shape_is_sum shape_is_sum _ _).
-      exact (fun j => j).
-      exact (Coproduct.empty_right shape_is_sum shape_is_empty).
+      * exact (fun j => j).
+      * exact (Coproduct.empty_right shape_is_sum shape_is_empty).
   Defined.
 
   Arguments instantiate_expression {_ _ _ _} _ [_] _ : simpl nomatch.
@@ -340,8 +342,8 @@ Section Instantiations.
       (I : instantiation a Σ γ)
       {δ} (e : raw_expression (extend Σ a) cl δ)
       {δ' : σ} (f : δ -> δ')
-    : instantiate_expression I (Expression.rename f e)
-    = Expression.rename
+    : instantiate_expression I (rename f e)
+    = rename
         (Coproduct.fmap shape_is_sum shape_is_sum idmap f)
         (instantiate_expression I e).
   Proof.
@@ -626,7 +628,7 @@ Section Instantiations.
       clearbody e_S ΣS ΣfS.
       destruct e_S. simpl transport.
       apply path_forall; intros i.
-      eapply concat. { apply Expression.fmap_rename. }
+      eapply concat. { apply fmap_rename. }
       apply ap. apply IH_e_args.
     - simpl instantiate_expression.
       eapply concat. { apply Substitution.fmap_substitute. }
@@ -636,7 +638,7 @@ Section Instantiations.
       + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         cbn. apply inverse. refine (coproduct_comp_inj1 _).
       + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
-        eapply concat. { apply Expression.fmap_rename. }
+        eapply concat. { apply fmap_rename. }
         eapply concat. { apply ap, IH_e_args. }
         eapply inverse. { refine (coproduct_comp_inj2 _). }
   Defined.
@@ -713,7 +715,7 @@ Section Instantiation_Composition.
     : instantiation b Σ (shape_sum γ δ).
   Proof.
     intros i.
-    refine (Expression.rename _ (instantiate_expression I (J i))).
+    refine (rename _ (instantiate_expression I (J i))).
     apply shape_assoc.
   Defined.
 
@@ -721,7 +723,7 @@ Section Instantiation_Composition.
       {cl} {γ} (e : raw_expression (extend Σ a) cl γ)
     : instantiate_expression (unit_instantiation a)
         (Expression.fmap (fmap1 include_symbol _) e)
-      = Expression.rename (coproduct_inj2 shape_is_sum) e.
+      = rename (coproduct_inj2 shape_is_sum) e.
   Proof.
     induction e as [ γ i | γ [S | M] args IH ].
     - apply idpath.
@@ -761,7 +763,7 @@ Section Instantiation_Composition.
       {cl} {θ} (e : raw_expression (extend Σ b) cl θ)
     : instantiate_expression
         (instantiate_instantiation I J) e
-    = Expression.rename (shape_assoc _ _ _)
+    = rename (shape_assoc _ _ _)
         (instantiate_expression I
           (instantiate_expression J
             (Expression.fmap (fmap1 include_symbol _) e))).
@@ -774,7 +776,7 @@ Section Instantiation_Composition.
     - (* [e] is a symbol of [Σ] *)
       simpl Expression.fmap.
       simpl instantiate_expression.
-      simpl Expression.rename.
+      simpl rename.
       apply ap. apply path_forall; intros i.
       eapply concat. { apply ap, IH_e_args. }
       eapply concat. { apply rename_rename. }
@@ -790,7 +792,7 @@ Section Instantiation_Composition.
     - (* [e] is a metavariable of [b] *)
       simpl Expression.fmap.
       simpl instantiate_expression.
-      simpl Expression.rename.
+      simpl rename.
       eapply concat.
       { rapply @ap_2back. 
         apply ap, path_forall; intros i.
@@ -805,7 +807,7 @@ Section Instantiation_Composition.
       apply (ap_2back substitute), path_forall.
       repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
       + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
-        simpl Expression.rename. eapply concat. { refine (ap _ (coproduct_comp_inj1 _)). }
+        simpl rename. eapply concat. { refine (ap _ (coproduct_comp_inj1 _)). }
         apply inverse.
         eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         refine (coproduct_comp_inj1 _).

@@ -25,7 +25,7 @@ Section JudgementCombinatorics.
   and rules and derivations will be given purely in terms of these.
  
   Other judgement forms — e.g. well-formed contexts, context morphisms — are taken as _auxiliary_ judgements, defined afterwards from thes primitive ones. *)
-  Local Inductive form : Type :=
+  Inductive form : Type :=
   | form_object (cl : syntactic_class)
       (* a thing is a term, a thing is a type *)
   | form_equality (cl : syntactic_class).
@@ -209,7 +209,7 @@ Section Judgements.
   Identity Coercion id_hypothetical_boundary_expressions
     : hypothetical_boundary_expressions >-> Funclass.
 
-  Local Record hypothetical_boundary γ : Type
+  Record hypothetical_boundary γ : Type
   := { form_of_boundary : form
      ; boundary_expression
            :> hypothetical_boundary_expressions form_of_boundary γ }.
@@ -239,7 +239,7 @@ Section Judgements.
     - apply J.
   Defined.
 
-  Local Record boundary : Type
+  Record boundary : Type
   := { context_of_boundary : raw_context Σ
      ; hypothetical_part_of_boundary
                      :> hypothetical_boundary context_of_boundary }.
@@ -368,6 +368,7 @@ Section JudgementNotations.
 
 End JudgementNotations.
 
+Declare Scope judgement_scope.
 Bind Scope judgement_scope with judgement.
 Bind Scope judgement_scope with hypothetical_judgement.
 Open Scope judgement_scope.
@@ -1206,7 +1207,7 @@ Section Combine_Judgement.
       = combine_hypothetical_judgement J' K' e' J'_obj. 
   Proof.
     destruct p_J, p_K, p_e, p_obj; simpl.
-    erapply ap_1back.
+    rapply ap_1back.
     eapply concat. { apply concat_p1. }
     apply concat_1p.
   Defined.

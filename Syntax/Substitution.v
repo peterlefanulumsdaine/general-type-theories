@@ -37,7 +37,7 @@ Section RawSubstitution.
     intros f.
     simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn.
     - intros i.
-      refine (Expression.rename _ (f i)).
+      refine (rename _ (f i)).
       apply (coproduct_inj1 (shape_is_sum)).
     - intros i.
       apply raw_variable.
@@ -61,7 +61,7 @@ Section RawSubstitution.
   (** Interaction of substitution with transport *)
 
   (* TODO: consistentise naming of this and the following *)
-  Local Definition transport_substitute {γ γ' : σ} (g : _)
+  Definition transport_substitute {γ γ' : σ} (g : _)
       {cl cl' : syntactic_class} (p : cl = cl') (e : raw_expression Σ cl γ)
     : transport (fun cl => raw_expression Σ cl γ') p (substitute g e)
       = substitute g (transport (fun cl => raw_expression Σ cl γ) p e).
@@ -93,12 +93,12 @@ Section Raw_Context_Category_Structure.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  Local Definition id_raw_context (γ : σ) : raw_context_map Σ γ γ.
+  Definition id_raw_context (γ : σ) : raw_context_map Σ γ γ.
   Proof.
     exact (@raw_variable _ _ _).
   Defined.
 
-  Local Definition comp_raw_context {γ γ' γ'': σ}
+  Definition comp_raw_context {γ γ' γ'': σ}
       (f : raw_context_map Σ γ' γ)
       (f' : raw_context_map Σ γ'' γ')
     : raw_context_map Σ γ'' γ
@@ -124,7 +124,7 @@ Section Substitute_Laws.
   Context {σ : shape_system}.
   Context {Σ : signature σ}.
 
-  Local Definition id_left_substitute
+  Definition id_left_substitute
       {γ γ' : σ} (f : raw_context_map Σ γ' γ) (x : _)
     : substitute f (raw_variable x) = f x.
   Proof.
@@ -151,7 +151,7 @@ Section Substitute_Laws.
      naming conventions for recognising it when it arises in derivations;
      [id_right_substitute] fits the monad-law structure, for when it’s being
      used in those terms. *)
-  Local Fixpoint id_right_substitute
+  Fixpoint id_right_substitute
       {γ : σ} {cl : syntactic_class} (e : raw_expression Σ cl γ)
     : substitute (id_raw_context γ) e = e
   := substitute_idmap e.
@@ -173,11 +173,11 @@ Section Substitute_Laws.
       + repeat rewrite coproduct_comp_inj2; apply idpath.
   Defined.
 
-  Local Fixpoint rename_substitute {γ γ' γ'' : σ}
+  Fixpoint rename_substitute {γ γ' γ'' : σ}
       (f : raw_context_map Σ γ' γ) (g : γ' -> γ'')
       {cl} (e : raw_expression Σ cl γ)
-    : Expression.rename g (substitute f e)
-      = substitute ((Expression.rename g) o f) e.
+    : rename g (substitute f e)
+      = substitute ((rename g) o f) e.
   Proof.
     destruct e as [ γ i | γ S args ].
     { apply idpath. }
@@ -200,7 +200,7 @@ Section Substitute_Laws.
   Fixpoint substitute_rename
       {γ γ' γ'' : σ} (f : γ -> γ') (g : raw_context_map Σ γ'' γ')
       {cl} (e : raw_expression Σ cl γ)
-    : substitute g (Expression.rename f e)
+    : substitute g (rename f e)
     = substitute (g o f) e.
   Proof.
     destruct e as [ γ i | γ S args ].
@@ -217,7 +217,7 @@ Section Substitute_Laws.
       refine _^. refine (coproduct_comp_inj2 _).
   Defined.
 
-  Local Fixpoint assoc_substitute {γ γ' γ'': σ}
+  Fixpoint assoc_substitute {γ γ' γ'': σ}
       (f : raw_context_map Σ γ' γ)
       (f' : raw_context_map Σ γ'' γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
@@ -320,7 +320,7 @@ Section Naturality.
       apply inverse. refine (coproduct_comp_inj2 _).
   Defined.
   
-  Local Fixpoint fmap_substitute
+  Fixpoint fmap_substitute
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {γ γ'} (g : raw_context_map Σ γ' γ)
       {cl} (e : raw_expression Σ cl γ)

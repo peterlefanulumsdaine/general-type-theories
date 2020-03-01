@@ -37,5 +37,7 @@ Section Arity.
 
 End Arity.
 
+Bind Scope family_scope with arity.
+
 Arguments arity _ : clear implicits.
 

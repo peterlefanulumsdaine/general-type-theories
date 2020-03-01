@@ -2,6 +2,9 @@
 
 Require Import HoTT.
 
+Global Open Scope type_scope.
+(* NOTE: The reason for this “Open Scope” is that when the HoTT library is imported, [mc_scope] overrides use of notations such as [A + B] for types, or at least, make them require explicit scope annotations.  If there’s a better way to make such notations easily usable (besides this or closing [mc_scope]), we should ue that here instead. *)
+
 (** Flip arguments of a binary function, as in Haskell. *)
 Definition flip {X Y Z : Type}
   : (X -> Y -> Z) -> Y -> X -> Z
@@ -102,7 +105,7 @@ Proof.
   unfold sigma_type_eq.
   set (e' := path_forall _ _ e).
   simple refine (_ @ _).
-  exact (xy.1; equiv_path _ _ (ap10 e' xy.1) xy.2).
+  - exact (xy.1; equiv_path _ _ (ap10 e' xy.1) xy.2).
   - destruct e'; apply idpath.
   - apply ap, ap10, ap, ap.
     apply ap10_path_forall.

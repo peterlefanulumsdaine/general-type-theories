@@ -134,7 +134,7 @@ Section Flattening.
   Local Definition flatten (T : raw_type_theory σ)
     : flat_type_theory (signature T).
   Proof.
-    refine (_ + _).
+    refine (_ + _)%family.
     (* First: the explicitly-given logical rules *)
     - exists (tt_rule_data T).
       intros r.

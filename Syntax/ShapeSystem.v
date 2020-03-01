@@ -40,7 +40,7 @@ Record shape_system :=
   }.
 
 Global Arguments shape_sum {_} _ _.
-Global Arguments shape_is_sum {_} [_ _].
+Global Arguments shape_is_sum {_ _ _}.
 Global Arguments shape_is_empty {_}.
 
 Coercion shape_position : shape_carrier >-> Sortclass.
@@ -54,7 +54,7 @@ here from general lemmas about coproducts. *)
 
   Context {σ : shape_system}.
 
-  (* use this and [fmap1], [fmap2] where they’ve previously been given inline, e.g. in [Expression.rename], [instantiate_rename]. *)
+  (* use this and [fmap1], [fmap2] where they’ve previously been given inline, e.g. in [rename], [instantiate_rename]. *)
   Lemma fmap_shape_sum {γ γ' δ δ' : σ} (f : γ -> γ') (g : δ -> δ')
     : (shape_sum γ δ) -> (shape_sum γ' δ').
   Proof.
@@ -84,7 +84,7 @@ here from general lemmas about coproducts. *)
 
   Definition shape_sum_empty_inl (γ : σ)
     : γ <~> shape_sum γ (shape_empty _)
-  := BuildEquiv _ _ _ (shape_sum_empty_inl_is_equiv γ).
+  := Build_Equiv _ _ _ (shape_sum_empty_inl_is_equiv γ).
 
   Definition shape_sum_empty_inr_is_equiv (γ : σ)
     : IsEquiv (coproduct_inj2 shape_is_sum
@@ -95,7 +95,7 @@ here from general lemmas about coproducts. *)
 
   Definition shape_sum_empty_inr (γ : σ)
     : γ <~> shape_sum (shape_empty _) γ
-  := BuildEquiv _ _ _ (shape_sum_empty_inr_is_equiv γ).
+  := Build_Equiv _ _ _ (shape_sum_empty_inr_is_equiv γ).
 
   Definition shape_assoc_ltor {γ δ κ : shape_carrier σ}
     : shape_sum (shape_sum γ δ) κ -> shape_sum γ (shape_sum δ κ).

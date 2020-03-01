@@ -71,7 +71,7 @@ Section Renaming.
      will be used to move under binders in general substitution. 
 
      This can be seen as the functoriality of syntax in the shape argument. *)
-  Local Fixpoint rename {γ γ' : σ} (f : γ -> γ')
+  Fixpoint rename {γ γ' : σ} (f : γ -> γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
     : raw_expression Σ cl γ'.
   Proof.
@@ -85,7 +85,7 @@ Section Renaming.
   Defined.
 
   (* Interaction between renaming and transport *)
-  Local Definition transport_rename {γ γ' : σ} (g : γ -> γ')
+  Definition transport_rename {γ γ' : σ} (g : γ -> γ')
       {cl cl' : syntactic_class} (p : cl = cl') (e : raw_expression Σ cl γ)
     : transport (fun cl => raw_expression Σ cl γ') p (rename g e)
       = rename g (transport (fun cl => raw_expression Σ cl γ) p e).
@@ -225,7 +225,7 @@ Section Signature_Maps.
   Defined.
 
   (* Naturality of renaming variables w.r.t. functoriality in signature maps *)
-  Local Fixpoint fmap_rename
+  Fixpoint fmap_rename
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {γ γ' : σ} (g : γ -> γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)

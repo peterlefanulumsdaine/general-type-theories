@@ -23,7 +23,9 @@ Record family (X : Type) :=
 Global Arguments family_index [_] F : rename.
 Global Arguments family_element [_] F _ : rename.
 
+Declare Scope family_scope.
 Delimit Scope family_scope with family.
+Bind Scope family_scope with family.
 Open Scope family_scope.
 
 (** Lemma for equalities of families (assuming funext). *)
@@ -348,7 +350,7 @@ Local Lemma sum_unique `{Funext} {X Y} {f : X -> Y}
     (e_r : compose_over ff inr = compose_over gg inr)
   : ff = gg.
 Proof.
-  eapply concat. apply sum_eq_rect.
+  eapply concat. { apply sum_eq_rect. }
   eapply concat. 2: { apply inverse, sum_eq_rect. }
   eapply concat. { apply ap, e_r. } 
   apply ap10, ap, e_l.
@@ -560,5 +562,3 @@ Defined.
 (** The subfamily of a family determined by a predicate on the value type *)
 Local Definition filter {A} (K : family A) (P : A -> Type) : family A
   := subfamily K (P o K).
-
-
