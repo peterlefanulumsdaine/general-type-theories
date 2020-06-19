@@ -111,6 +111,23 @@ Proof.
     apply ap10_path_forall.
 Defined.
 
+Section EquivGroupoids.
+  (** Should be imported [HoTT.EquivGroupoids] again once that is resurrected; see <https://github.com/HoTT/HoTT/issues/1338>. *)
+  
+  Definition einv_V `{Funext} {A B} (e : A <~> B)
+    : ((e^-1)^-1)%equiv = e.
+  Proof.
+    apply path_equiv; reflexivity.
+  Defined.
+
+  Lemma ecompose_Ve `{Funext} {A B} (e : A <~> B) : (e^-1 oE e = 1)%equiv.
+  Proof.
+    apply path_equiv; apply path_forall; intro; apply eissect.
+  Defined.
+  
+End EquivGroupoids.
+
+
 (** Some useful infrastructure for the [option] type. *)
 Section Option.
 
