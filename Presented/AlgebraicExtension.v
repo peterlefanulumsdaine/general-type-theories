@@ -545,7 +545,9 @@ Section Judgement_of_Premise.
       in let Sr_gi := Sr' (transport _ (simple_map_form_commutes _ _) i_is_ob)
       in (Sr_gi.1 ; ( (fst Sr_gi.2) @ ap _ (simple_map_shape_commutes _ _)^
                     , (snd Sr_gi.2) @ ap _ (simple_map_form_commutes _ _)^))).
-    { apply path_forall; intros i_is_ob. cbn. 
+    { apply path_forall; intros i_is_ob.
+      admit.
+      (* previously this worked, but gets odd errors with recent Coq versions:
       specialize e_Sr with i_is_ob. 
       set (Sr_i := Sr i_is_ob) in *. clearbody Sr_i; clear Sr.
       destruct Sr_i as [S e_aS_cS]; cbn in e_Sr.
@@ -560,6 +562,7 @@ Section Judgement_of_Premise.
       - eapply concat. { apply e_e_cS. }
         eapply concat. { apply concat_pp_p. }
         apply concat_1p.
+        *)
     }
     (* why doesn’t [destruct e^] work here? *)
     apply inverse in e. clear e_Sr. revert Sr e.

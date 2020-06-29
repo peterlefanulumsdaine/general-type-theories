@@ -36,7 +36,7 @@ Section MartinLöfTypeTheory.
    - exact ([< U_formation_rule_index ; El_formation_rule_index >]).
    - admit.
    - intros.
-     destruct i as [U_form | El_form].
+     destruct i as [ [] |  ].
      + (* the universe formation rule *)
        simple refine (@Build_rule _ _ _ _ _ _).
        * { simple refine (@Build_algebraic_extension _ _ _ _ _ _ _).
@@ -57,7 +57,7 @@ Section MartinLöfTypeTheory.
          }
        * admit.
 
-     + admit.
+     + admit. (* the element formation rule *)
   Admitted. (* [MartinLofTypeTheory.theory] : much work to do *)
 
   Local Theorem is_well_typed : TypeTheory.is_well_typed theory.
