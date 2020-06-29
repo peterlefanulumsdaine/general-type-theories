@@ -1,4 +1,5 @@
 Require Import HoTT.
+Require Import HoTT.EquivGroupoids.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Coproduct.
 Require Import Syntax.ShapeSystem.
