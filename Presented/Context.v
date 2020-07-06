@@ -40,6 +40,15 @@ Section Inductive_Predicate.
                     [! Γ |- A !])
      : wf_context_derivation (Context.extend Γ A).
 
+  Local Definition length_of_wf_derivation
+    {Γ} (d_Γ : wf_context_derivation Γ)
+    : nat.
+  Proof.
+    induction d_Γ as [ | ? ? n].
+    - exact O.
+    - exact (S n).
+  Defined.
+
 End Inductive_Predicate.
 
 Section Inductive_By_Length.
@@ -59,16 +68,22 @@ Section Inductive_By_Length.
       exact (Context.extend (f (pr1 Γ_A_dA)) (pr1 (pr2 Γ_A_dA))).
   Defined.
 
-  Arguments wf_context_of_length_with_flattening : simpl nomatch.
-
   Definition wf_context_of_length (n : nat) : Type
   := pr1 (wf_context_of_length_with_flattening n).
 
-  Local Definition flatten (n : nat)
+  Local Definition flatten {n : nat}
     : wf_context_of_length n -> raw_context Σ
   := pr2 (wf_context_of_length_with_flattening n).
 
-  Arguments flatten : simpl nomatch.
+  Local Definition wf_context_of_length_empty
+    : wf_context_of_length 0
+  := tt.
+
+  Local Definition wf_context_of_length_extend
+      {n} (Γ : wf_context_of_length n)
+      {A} (d_A : FlatTypeTheory.derivation T [<>] [! flatten Γ |- A !])
+    : wf_context_of_length (S n)
+  := (Γ;(A;d_A)).
 
 End Inductive_By_Length.
 
@@ -92,11 +107,53 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
       + apply d_A.
   Defined.
 
+  Definition wf_context_of_length_from_wf_derivation
+      {Γ} (d_Γ : wf_context_derivation T Γ)
+    : { Γ_wf : wf_context_of_length T (length_of_wf_derivation _ d_Γ)
+      & flatten Γ_wf = Γ }.
+  Proof.
+    induction d_Γ as [ | Δ d_Δ [Δ_wf e_Δ] A d_A].
+    - exists (wf_context_of_length_empty _).
+      apply idpath.
+    - simple refine (_;_). 
+      + srapply wf_context_of_length_extend.
+        * exact Δ_wf.
+        * exact (transport
+            (fun (Θ : raw_context _) => raw_type Σ Θ) (e_Δ^) A).
+        * exact (transportD _
+            (fun Θ B => FlatTypeTheory.derivation _ _ [! Θ |- B !])
+            (e_Δ^) _ d_A).
+      + rapply (ap011D _ e_Δ). exact (transport_pV _ e_Δ _).
+  Defined.
 
   Local Theorem weq_inductive_by_length_by_inductive_predicate
     : { n : nat & wf_context_of_length T n}
     <~> { Γ : raw_context Σ & wf_context_derivation T Γ }.
   Proof.
+    srapply equiv_adjointify.
+    - intros [n Γ].
+      exists (flatten Γ).
+      apply wf_context_of_length_is_wf.
+    - intros [Γ d_Γ].
+      exists (length_of_wf_derivation _ d_Γ).
+      apply wf_context_of_length_from_wf_derivation.
+    - intros [Γ d_Γ].
+      induction d_Γ as [ | Δ d_Δ IH A d_A].
+      { apply idpath. }
+      simpl in IH.
+      srapply path_sigma.
+      + admit.
+      + admit.
+    - intros [n Γ].
+      induction n as [ | n IH].
+      { destruct Γ. apply idpath. }
+      destruct Γ as [Γ' [A d_A]].
+      specialize (IH Γ'). simpl in IH.
+      srapply path_sigma.
+      { apply (ap S), (ap pr1 IH). }
+      simpl.
+      (* TODO: lemma [transport_wf_context_of_length_extend] *)
+      admit.
   Admitted.
 
 End Inductive_By_Length_vs_Inductive_Predicate.
