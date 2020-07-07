@@ -142,19 +142,7 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
   but that IS automatic!  Peculiar…
 *)
 
-  Local Lemma wf_deriv_of_col_of_deriv
-      {Γ} (d_Γ : wf_context_derivation T Γ)
-    : wf_context_derivation T Γ.
-  Proof.
-    rapply transport.
-    2: { rapply wf_context_of_length_is_wf.
-         refine (pr1 (wf_context_of_length_from_wf_derivation _)).
-         eassumption.
-    }
-    refine (pr2 (wf_context_of_length_from_wf_derivation _)).
-  Defined.
-
-  Local Lemma transport_wf_derivation
+  Local Lemma transport_wf_context_extend
         {Γ} (d_Γ : wf_context_derivation T Γ)
         {Γ'} (e_Γ : Γ = Γ')
         {A} (d_A : FlatTypeTheory.derivation T [<>] [! Γ |- A !])
@@ -187,13 +175,16 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
 
   Local Lemma wf_deriv_of_col_of_deriv_eq
       {Γ} (d_Γ : wf_context_derivation T Γ)
-    : wf_deriv_of_col_of_deriv d_Γ = d_Γ.
+    : transport (wf_context_derivation T)
+        (wf_context_of_length_from_wf_derivation d_Γ).2
+        (wf_context_of_length_is_wf
+          (wf_context_of_length_from_wf_derivation d_Γ).1)
+      = d_Γ.
   Proof.
     induction d_Γ as [ | Δ d_Δ IH A d_A].
     - apply idpath.
-    - unfold wf_deriv_of_col_of_deriv.
-      simpl.
-      eapply concat. { apply transport_wf_derivation. }
+    - simpl.
+      eapply concat. { apply transport_wf_context_extend. }
       apply (ap2 (fun d_Θ d_B => wf_context_extend T d_Θ d_B)).
       { apply IH. }
       set (e := wf_context_of_length_from_wf_derivation d_Δ).
@@ -204,36 +195,102 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
      FlatTypeTheory.derivation T [<>] [!Δ |- B!])).
   Defined.
 
-  (* TODO:consider naming *)
-  Local Lemma nat_wf_eta_expand
-    (nΓ : { n : nat & wf_context_of_length T n})
-    :  { n : nat & wf_context_of_length T n}.
+  Local Fixpoint length_of_wf_deriv_of_col
+      {n} (Γ_wf : wf_context_of_length T n)
+      {struct n}
+    : length_of_wf_derivation T (wf_context_of_length_is_wf Γ_wf)
+    = n.
   Proof.
-    destruct nΓ as [[ | n'] Γ].
-    - exists O; exact tt.
-    - destruct Γ as [Γ' [A d_A]].
-      exists (S n'). 
-      exact (wf_context_of_length_extend _ Γ' d_A).
+    destruct n as [ | n IH].
+    { apply idpath. }
+    simpl. apply (ap S). apply length_of_wf_deriv_of_col.
   Defined.
 
-  (* TODO:consider naming *)
-  Local Lemma nat_wf_eta_eq
-    (nΓ : { n : nat & wf_context_of_length T n})
-    : nat_wf_eta_expand nΓ = nΓ.
+  Local Lemma flatten_transport
+      {n n'} (e_n : n = n')
+      (Γ : wf_context_of_length T n)
+    : flatten (transport _ e_n Γ) = flatten Γ.
   Proof.
-    destruct nΓ as [[ | n'] Γ]; destruct Γ; apply idpath.
+    destruct e_n; apply idpath.
   Defined.
 
-  (* TODO:consider naming *)
-  Local Lemma nat_wf_extend_eq
-      {n} (Γ : wf_context_of_length T n)
-      {A} (d_A : FlatTypeTheory.derivation T [<>] [! flatten Γ |- A !])
-      {n'} (Γ' : wf_context_of_length T n')
-      {A'} (d_A' : FlatTypeTheory.derivation T [<>] [! flatten Γ' |- A' !])
-      (e_n : (n;Γ) = (n';Γ'))
-    : (S n; wf_context_of_length_extend _ Γ d_A)
-    = (S n'; wf_context_of_length_extend _ Γ' d_A').
+  Local Lemma transport_wf_context_of_length_extend_aux
+      {n n'} (e_n : n = n')
+      {Γ : wf_context_of_length T n}
+      {Γ'} (e_Γ : transport _ e_n Γ = Γ')
+      {A : raw_type Σ (flatten Γ)}
+      (d_A : FlatTypeTheory.derivation T [<>] [!flatten Γ |- A!])
+      (e_aux := (ap011D Context.extend ((flatten_transport e_n Γ)^ @ ap flatten e_Γ)
+                        1%path)
+                 : flatten (wf_context_of_length_extend T Γ d_A)
+                = flatten (wf_context_of_length_extend T _ _))
+    : { e : transport (wf_context_of_length T) (ap S e_n)
+                (wf_context_of_length_extend _ Γ d_A)
+          = wf_context_of_length_extend _ Γ'
+              (transportD _ (fun Θ B => FlatTypeTheory.derivation T [<>] [! Θ |- B !])
+                          ((flatten_transport e_n Γ)^ @ ap flatten e_Γ) _ d_A)
+      & ap flatten e = flatten_transport _ _ @ e_aux }.
   Proof.
+    destruct e_n; destruct e_Γ; simpl in *.
+    exists 1%path. apply 1%path.
+  Qed.
+
+  Local Definition transport_wf_context_of_length_extend
+      {n n'} (e_n : n = n')
+      {Γ : wf_context_of_length T n}
+      {Γ'} (e_Γ : transport _ e_n Γ = Γ')
+      {A : raw_type Σ (flatten Γ)}
+      (d_A : FlatTypeTheory.derivation T [<>] [!flatten Γ |- A!])
+    : _ = _
+  := (transport_wf_context_of_length_extend_aux e_n e_Γ d_A).1.
+
+  Local Definition flatten_transport_wf_context_of_length_extend
+      {n n'} (e_n : n = n')
+      {Γ : wf_context_of_length T n}
+      {Γ'} (e_Γ : transport _ e_n Γ = Γ')
+      {A : raw_type Σ (flatten Γ)}
+      (d_A : FlatTypeTheory.derivation T [<>] [!flatten Γ |- A!])
+    : ap flatten (transport_wf_context_of_length_extend e_n e_Γ d_A) = _
+  := (transport_wf_context_of_length_extend_aux e_n e_Γ d_A).2.
+
+  Local Lemma col_of_deriv_of_col_eq
+      {n} (Γ_wf : wf_context_of_length T n)
+    : { e : transport (wf_context_of_length T)
+         (length_of_wf_deriv_of_col Γ_wf)
+         (wf_context_of_length_from_wf_derivation
+                      (wf_context_of_length_is_wf Γ_wf)).1
+            = Γ_wf
+      & ap flatten e
+        = (flatten_transport _ _)
+        @ (wf_context_of_length_from_wf_derivation _).2 }.
+  Proof.
+    induction n as [ | n IH].
+    { destruct Γ_wf. srapply exist; apply idpath. }
+    destruct Γ_wf as [Δ_wf [A d_A]].
+    specialize (IH Δ_wf). simpl length_of_wf_deriv_of_col in *.
+    set (e := length_of_wf_deriv_of_col Δ_wf) in *; clearbody e.
+    destruct IH as [e_Γ flatten_e_Γ].
+    srapply exist.
+    - simpl.
+      eapply concat.
+      { rapply transport_wf_context_of_length_extend. apply e_Γ. }
+      apply (ap (fun AdA => (Δ_wf ; AdA))).
+      eapply concat.
+      { refine (transport_sigma ((flatten_transport _ _)^ @ _) (_;_))^. }
+      eapply concat.
+      { refine (ap _ (transport_sigma 
+                   ((wf_context_of_length_from_wf_derivation _).2)^ (_;_))^). }
+      eapply concat. { apply inverse. rapply transport_pp. }
+      refine (@ap _ _ (fun p => transport _ p (A;d_A)) _ 1%path _).
+      eapply concat. { apply ap, ap, flatten_e_Γ. }
+      eapply concat. { apply ap, concat_V_pp. }
+      apply concat_Vp.
+    - eapply concat. { apply ap_pp. }
+      eapply concat.
+      { eapply (ap_1back concat),
+               flatten_transport_wf_context_of_length_extend.
+      }
+      admit.
   Admitted.
 
   Local Theorem weq_inductive_by_length_by_inductive_predicate
@@ -252,23 +309,10 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
       + refine ((wf_context_of_length_from_wf_derivation _).2).
       + apply wf_deriv_of_col_of_deriv_eq.
     - intros [n Γ].
-      induction n as [ | n IH].
-      { destruct Γ. apply idpath. }
-      destruct Γ as [Γ' [A d_A]].
-      specialize (IH Γ'). simpl in IH.
-      simpl.
-      srapply path_sigma.
-      { apply (ap S), (ap pr1 IH). }
-      simpl.
-      eapply concat. { apply inverse, transport_compose. }
-      simpl.
-      eapply concat.
-      { refine (@transport_sigma _ _
-           (fun n (Γ : wf_context_of_length T n) => _) _ _ _ _). }
-      
-      (* TODO: lemma [transport_wf_context_of_length_extend] *)
-      admit.
-  Admitted.
+      rapply path_sigma.
+      { apply col_of_deriv_of_col_eq.
+      }
+  Defined.
 
 End Inductive_By_Length_vs_Inductive_Predicate.
 
