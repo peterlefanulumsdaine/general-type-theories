@@ -21,6 +21,20 @@ Require Import Typing.Judgement.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
 
+Section Auxiliary.
+
+  Lemma transportD_pV
+     {A} {B} (C : forall a : A, B a -> Type)
+     {x1 x2 : A} (e_x : x1 = x2)
+     (y : B x2) (z  : C x2 y)
+   : transportD B C e_x _ (transportD B C (e_x^) y z)
+     = transport _ (transport_pV _ _ _)^ z.
+  Proof.
+    destruct e_x; apply idpath.
+  Defined.
+
+End Auxiliary.
+
 Section Fix_Shape_System.
 
 Context {σ : shape_system}.
@@ -75,11 +89,11 @@ Section Inductive_By_Length.
     : wf_context_of_length n -> raw_context Σ
   := pr2 (wf_context_of_length_with_flattening n).
 
-  Local Definition wf_context_of_length_empty
+  Definition wf_context_of_length_empty
     : wf_context_of_length 0
   := tt.
 
-  Local Definition wf_context_of_length_extend
+  Definition wf_context_of_length_extend
       {n} (Γ : wf_context_of_length n)
       {A} (d_A : FlatTypeTheory.derivation T [<>] [! flatten Γ |- A !])
     : wf_context_of_length (S n)
@@ -95,7 +109,7 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
 
   Context {Σ : signature σ} (T : flat_type_theory Σ).
 
-  Definition wf_context_of_length_is_wf {n : nat}
+  Local Definition wf_context_of_length_is_wf {n : nat}
       (Γ : wf_context_of_length T n)
     : wf_context_derivation T (flatten Γ).
   Proof.
@@ -107,7 +121,7 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
       + apply d_A.
   Defined.
 
-  Definition wf_context_of_length_from_wf_derivation
+  Local Definition wf_context_of_length_from_wf_derivation
       {Γ} (d_Γ : wf_context_derivation T Γ)
     : { Γ_wf : wf_context_of_length T (length_of_wf_derivation _ d_Γ)
       & flatten Γ_wf = Γ }.
@@ -125,22 +139,6 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
             (e_Δ^) _ d_A).
       + rapply (ap011D _ e_Δ). exact (transport_pV _ e_Δ _).
   Defined.
-
-(* for based on inductive scheme A:
-
-- look at both maps as maps of A-structures;
-- f(g(EXT_A(x)) = f(EXT_B(g(x)) = EXT_A(f(g(x))) = EXT_A(x);
-- so want lemmas about commutation of f, g with EXT_A, EXT_B
-- for each of f, g: one of the lemmas will be a computation rule, the other will need to be given
-- specifically:
-   for wf_context_of_length_from_wf_derivation,
-   lemma should say how it acts on a conrtext-of-length style extension;
-  OH!  But that one isn’t quite hte same induction-principle style.  Hmm!
-- well, other direction:
-   for wf_context_of_length_is_wf,
-   lemma should say how it acts on a wf_contet_of_length_extend?
-  but that IS automatic!  Peculiar…
-*)
 
   Local Lemma transport_wf_context_extend
         {Γ} (d_Γ : wf_context_derivation T Γ)
@@ -161,17 +159,6 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
   Proof.
     destruct e_Γ; destruct e_A; cbn. apply idpath.
   Qed.
-
-  (* TODO: upstream *)
-  Lemma transportD_pV
-     {A} {B} (C : forall a : A, B a -> Type)
-     {x1 x2 : A} (e_x : x1 = x2)
-     (y : B x2) (z  : C x2 y)
-   : transportD B C e_x _ (transportD B C (e_x^) y z)
-     = transport _ (transport_pV _ _ _)^ z.
-  Proof.
-    destruct e_x; apply idpath.
-  Defined.
 
   Local Lemma wf_deriv_of_col_of_deriv_eq
       {Γ} (d_Γ : wf_context_derivation T Γ)
@@ -201,7 +188,7 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
     : length_of_wf_derivation T (wf_context_of_length_is_wf Γ_wf)
     = n.
   Proof.
-    destruct n as [ | n IH].
+    destruct n as [ | n].
     { apply idpath. }
     simpl. apply (ap S). apply length_of_wf_deriv_of_col.
   Defined.
