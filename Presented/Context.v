@@ -71,52 +71,65 @@ Arguments wf_context_extend {Σ T Γ} d_Γ {A} d_A.
 Arguments length_of_wf_derivation {Σ T Γ} d_Γ.
 
 Section Induction_By_Length.
+(* code: "ibl" *)
 
   Context {Σ : signature σ} (T : flat_type_theory Σ).
 
-  Definition wf_context_of_length_with_flattening (n : nat)
+  Local Definition ibl_zero_step : { X : Type & X -> raw_context Σ }.
+  Proof.
+    exists Unit.
+    intros _; exact Context.empty.
+  Defined.
+
+  Local Definition ibl_succ_step (X_f : { X : Type & X -> raw_context Σ })
+    : { X : Type & X -> raw_context Σ }.
+  Proof.
+    set (X := pr1 X_f); set (f := pr2 X_f).
+    exists { Γ : X & {A : _
+        & FlatTypeTheory.derivation T [<>] [! f Γ |- A !] }}.
+    intros Γ_A_dA.
+    exact (Context.extend (f (pr1 Γ_A_dA)) (pr1 (pr2 Γ_A_dA))).
+  Defined.
+
+  Definition wf_context_ibl_with_flattening (n : nat)
     : { X : Type & X -> raw_context Σ }.
   Proof.
     induction n as [ | n' X_f].
-    - exists Unit.
-      intros _; exact Context.empty.
-    - set (X := pr1 X_f); set (f := pr2 X_f).
-      exists { Γ : X & {A : _
-        & FlatTypeTheory.derivation T [<>] [! f Γ |- A !] }}.
-      intros Γ_A_dA.
-      exact (Context.extend (f (pr1 Γ_A_dA)) (pr1 (pr2 Γ_A_dA))).
+    - exact ibl_zero_step.
+    - exact (ibl_succ_step X_f).
   Defined.
 
-  Definition wf_context_of_length (n : nat) : Type
-  := pr1 (wf_context_of_length_with_flattening n).
+  Definition wf_context_ibl (n : nat) : Type
+  := pr1 (wf_context_ibl_with_flattening n).
 
-  Local Definition flatten {n : nat}
-    : wf_context_of_length n -> raw_context Σ
-  := pr2 (wf_context_of_length_with_flattening n).
+  Local Definition ibl_flatten {n : nat}
+    : wf_context_ibl n -> raw_context Σ
+  := pr2 (wf_context_ibl_with_flattening n).
 
-  Definition wf_context_of_length_empty
-    : wf_context_of_length 0
+  Definition wf_context_ibl_empty
+    : wf_context_ibl 0
   := tt.
 
-  Definition wf_context_of_length_extend
-      {n} (Γ : wf_context_of_length n)
-      {A} (d_A : FlatTypeTheory.derivation T [<>] [! flatten Γ |- A !])
-    : wf_context_of_length (S n)
+  Definition ibl_extend
+      {n} (Γ : wf_context_ibl n)
+      {A} (d_A : FlatTypeTheory.derivation T [<>] [! ibl_flatten Γ |- A !])
+    : wf_context_ibl (S n)
   := (Γ;(A;d_A)).
 
 End Induction_By_Length.
 
-Arguments wf_context_of_length_with_flattening : simpl nomatch.
-Arguments wf_context_of_length : simpl nomatch.
-Arguments flatten {Σ T n} Γ : simpl nomatch.
+Arguments ibl_zero_step Σ : clear implicits.
+Arguments wf_context_ibl_with_flattening : simpl nomatch.
+Arguments wf_context_ibl : simpl nomatch.
+Arguments ibl_flatten {Σ T n} Γ : simpl nomatch.
 
 Section Induction_By_Length_vs_Inductive_Predicate.
 
   Context {Σ : signature σ} (T : flat_type_theory Σ).
 
-  Local Definition wf_context_of_length_is_wf {n : nat}
-      (Γ : wf_context_of_length T n)
-    : wf_context_derivation T (flatten Γ).
+  Local Definition wf_context_ibl_is_wf {n : nat}
+      (Γ : wf_context_ibl T n)
+    : wf_context_derivation T (ibl_flatten Γ).
   Proof.
     revert Γ. induction n as [ | n' IH].
     - intros ?; apply wf_context_empty.
@@ -126,16 +139,16 @@ Section Induction_By_Length_vs_Inductive_Predicate.
       + apply d_A.
   Defined.
 
-  Local Definition wf_context_of_length_from_wf_derivation
+  Local Definition wf_context_ibl_from_wf_derivation
       {Γ} (d_Γ : wf_context_derivation T Γ)
-    : { Γ_wf : wf_context_of_length T (length_of_wf_derivation d_Γ)
-      & flatten Γ_wf = Γ }.
+    : { Γ_wf : wf_context_ibl T (length_of_wf_derivation d_Γ)
+      & ibl_flatten Γ_wf = Γ }.
   Proof.
     induction d_Γ as [ | Δ d_Δ [Δ_wf e_Δ] A d_A].
-    - exists (wf_context_of_length_empty _).
+    - exists (wf_context_ibl_empty _).
       apply idpath.
     - simple refine (_;_). 
-      + srapply wf_context_of_length_extend.
+      + srapply ibl_extend.
         * exact Δ_wf.
         * exact (transport
             (fun (Θ : raw_context _) => raw_type Σ Θ) (e_Δ^) A).
@@ -168,9 +181,9 @@ Section Induction_By_Length_vs_Inductive_Predicate.
   Local Lemma wf_deriv_of_col_of_deriv_eq
       {Γ} (d_Γ : wf_context_derivation T Γ)
     : transport (wf_context_derivation T)
-        (wf_context_of_length_from_wf_derivation d_Γ).2
-        (wf_context_of_length_is_wf
-          (wf_context_of_length_from_wf_derivation d_Γ).1)
+        (wf_context_ibl_from_wf_derivation d_Γ).2
+        (wf_context_ibl_is_wf
+          (wf_context_ibl_from_wf_derivation d_Γ).1)
       = d_Γ.
   Proof.
     induction d_Γ as [ | Δ d_Δ IH A d_A].
@@ -179,7 +192,7 @@ Section Induction_By_Length_vs_Inductive_Predicate.
       eapply concat. { apply transport_wf_context_extend. }
       apply (ap2 (fun d_Θ d_B => wf_context_extend d_Θ d_B)).
       { apply IH. }
-      set (e := wf_context_of_length_from_wf_derivation d_Δ).
+      set (e := wf_context_ibl_from_wf_derivation d_Δ).
       clearbody e.
       destruct e as [Γ_wf e_ΓΔ].
       eapply concat. { apply ap. rapply transportD_pV. }
@@ -188,9 +201,9 @@ Section Induction_By_Length_vs_Inductive_Predicate.
   Defined.
 
   Local Fixpoint length_of_wf_deriv_of_col
-      {n} (Γ_wf : wf_context_of_length T n)
+      {n} (Γ_wf : wf_context_ibl T n)
       {struct n}
-    : length_of_wf_derivation (wf_context_of_length_is_wf Γ_wf)
+    : length_of_wf_derivation (wf_context_ibl_is_wf Γ_wf)
     = n.
   Proof.
     destruct n as [ | n].
@@ -198,63 +211,63 @@ Section Induction_By_Length_vs_Inductive_Predicate.
     simpl. apply (ap S). apply length_of_wf_deriv_of_col.
   Defined.
 
-  Local Lemma flatten_transport
+  Local Lemma ibl_flatten_transport
       {n n'} (e_n : n = n')
-      (Γ : wf_context_of_length T n)
-    : flatten (transport _ e_n Γ) = flatten Γ.
+      (Γ : wf_context_ibl T n)
+    : ibl_flatten (transport _ e_n Γ) = ibl_flatten Γ.
   Proof.
     destruct e_n; apply idpath.
   Defined.
 
-  Local Lemma transport_wf_context_of_length_extend_aux
+  Local Lemma transport_ibl_extend_aux
       {n n'} (e_n : n = n')
-      {Γ : wf_context_of_length T n}
+      {Γ : wf_context_ibl T n}
       {Γ'} (e_Γ : transport _ e_n Γ = Γ')
-      {A : raw_type Σ (flatten Γ)}
-      (d_A : FlatTypeTheory.derivation T [<>] [!flatten Γ |- A!])
-      (e_aux := (ap011D Context.extend ((flatten_transport e_n Γ)^ @ ap flatten e_Γ)
+      {A : raw_type Σ (ibl_flatten Γ)}
+      (d_A : FlatTypeTheory.derivation T [<>] [!ibl_flatten Γ |- A!])
+      (e_aux := (ap011D Context.extend ((ibl_flatten_transport e_n Γ)^ @ ap ibl_flatten e_Γ)
                         1%path)
-                 : flatten (wf_context_of_length_extend T Γ d_A)
-                = flatten (wf_context_of_length_extend T _ _))
-    : { e : transport (wf_context_of_length T) (ap S e_n)
-                (wf_context_of_length_extend _ Γ d_A)
-          = wf_context_of_length_extend _ Γ'
+                 : ibl_flatten (ibl_extend T Γ d_A)
+                = ibl_flatten (ibl_extend T _ _))
+    : { e : transport (wf_context_ibl T) (ap S e_n)
+                (ibl_extend _ Γ d_A)
+          = ibl_extend _ Γ'
               (transportD _ (fun Θ B => FlatTypeTheory.derivation T [<>] [! Θ |- B !])
-                          ((flatten_transport e_n Γ)^ @ ap flatten e_Γ) _ d_A)
-      & ap flatten e = flatten_transport _ _ @ e_aux }.
+                          ((ibl_flatten_transport e_n Γ)^ @ ap ibl_flatten e_Γ) _ d_A)
+      & ap ibl_flatten e = ibl_flatten_transport _ _ @ e_aux }.
   Proof.
     destruct e_n; destruct e_Γ; simpl in *.
     exists 1%path. apply 1%path.
   Qed.
 
-  Local Definition transport_wf_context_of_length_extend
+  Local Definition transport_ibl_extend
       {n n'} (e_n : n = n')
-      {Γ : wf_context_of_length T n}
+      {Γ : wf_context_ibl T n}
       {Γ'} (e_Γ : transport _ e_n Γ = Γ')
-      {A : raw_type Σ (flatten Γ)}
-      (d_A : FlatTypeTheory.derivation T [<>] [!flatten Γ |- A!])
+      {A : raw_type Σ (ibl_flatten Γ)}
+      (d_A : FlatTypeTheory.derivation T [<>] [!ibl_flatten Γ |- A!])
     : _ = _
-  := (transport_wf_context_of_length_extend_aux e_n e_Γ d_A).1.
+  := (transport_ibl_extend_aux e_n e_Γ d_A).1.
 
-  Local Definition flatten_transport_wf_context_of_length_extend
+  Local Definition flatten_transport_ibl_extend
       {n n'} (e_n : n = n')
-      {Γ : wf_context_of_length T n}
+      {Γ : wf_context_ibl T n}
       {Γ'} (e_Γ : transport _ e_n Γ = Γ')
-      {A : raw_type Σ (flatten Γ)}
-      (d_A : FlatTypeTheory.derivation T [<>] [!flatten Γ |- A!])
-    : ap flatten (transport_wf_context_of_length_extend e_n e_Γ d_A) = _
-  := (transport_wf_context_of_length_extend_aux e_n e_Γ d_A).2.
+      {A : raw_type Σ (ibl_flatten Γ)}
+      (d_A : FlatTypeTheory.derivation T [<>] [!ibl_flatten Γ |- A!])
+    : ap ibl_flatten (transport_ibl_extend e_n e_Γ d_A) = _
+  := (transport_ibl_extend_aux e_n e_Γ d_A).2.
 
   Local Lemma col_of_deriv_of_col_eq
-      {n} (Γ_wf : wf_context_of_length T n)
-    : { e : transport (wf_context_of_length T)
+      {n} (Γ_wf : wf_context_ibl T n)
+    : { e : transport (wf_context_ibl T)
          (length_of_wf_deriv_of_col Γ_wf)
-         (wf_context_of_length_from_wf_derivation
-                      (wf_context_of_length_is_wf Γ_wf)).1
+         (wf_context_ibl_from_wf_derivation
+                      (wf_context_ibl_is_wf Γ_wf)).1
             = Γ_wf
-      & ap flatten e
-        = (flatten_transport _ _)
-        @ (wf_context_of_length_from_wf_derivation _).2 }.
+      & ap ibl_flatten e
+        = (ibl_flatten_transport _ _)
+        @ (wf_context_ibl_from_wf_derivation _).2 }.
   Proof.
     induction n as [ | n IH].
     { destruct Γ_wf. srapply exist; apply idpath. }
@@ -265,13 +278,13 @@ Section Induction_By_Length_vs_Inductive_Predicate.
     srapply exist.
     - simpl.
       eapply concat.
-      { rapply transport_wf_context_of_length_extend. apply e_Γ. }
+      { rapply transport_ibl_extend. apply e_Γ. }
       apply (ap (fun AdA => (Δ_wf ; AdA))).
       eapply concat.
-      { refine (transport_sigma ((flatten_transport _ _)^ @ _) (_;_))^. }
+      { refine (transport_sigma ((ibl_flatten_transport _ _)^ @ _) (_;_))^. }
       eapply concat.
       { refine (ap _ (transport_sigma 
-                   ((wf_context_of_length_from_wf_derivation _).2)^ (_;_))^). }
+                   ((wf_context_ibl_from_wf_derivation _).2)^ (_;_))^). }
       eapply concat. { apply inverse. rapply transport_pp. }
       refine (@ap _ _ (fun p => transport _ p (A;d_A)) _ 1%path _).
       eapply concat. { apply ap, ap, flatten_e_Γ. }
@@ -280,25 +293,25 @@ Section Induction_By_Length_vs_Inductive_Predicate.
     - eapply concat. { apply ap_pp. }
       eapply concat.
       { eapply (ap_1back concat),
-               flatten_transport_wf_context_of_length_extend.
+               flatten_transport_ibl_extend.
       }
       admit.
   Admitted.
 
   Local Theorem weq_induction_by_length_vs_by_inductive_predicate
-    : { n : nat & wf_context_of_length T n}
+    : { n : nat & wf_context_ibl T n}
     <~> { Γ : raw_context Σ & wf_context_derivation T Γ }.
   Proof.
     srapply equiv_adjointify.
     - intros [n Γ].
-      exists (flatten Γ).
-      apply wf_context_of_length_is_wf.
+      exists (ibl_flatten Γ).
+      apply wf_context_ibl_is_wf.
     - intros [Γ d_Γ].
       exists (length_of_wf_derivation d_Γ).
-      apply wf_context_of_length_from_wf_derivation.
+      apply wf_context_ibl_from_wf_derivation.
     - intros [Γ d_Γ].
       srapply path_sigma.
-      + refine ((wf_context_of_length_from_wf_derivation _).2).
+      + refine ((wf_context_ibl_from_wf_derivation _).2).
       + apply wf_deriv_of_col_of_deriv_eq.
     - intros [n Γ].
       rapply path_sigma.
@@ -351,6 +364,7 @@ Section Inductive_Family_By_Length.
 
 End Inductive_Family_By_Length.
 
+Arguments wf_context_ifbl_zero_step Σ : clear implicits.
 
 Section Inductive_Predicate_vs_Inductive_Family_By_Length.
 (* "indpred" vs "ifbl" *)
@@ -431,5 +445,28 @@ Section Inductive_Predicate_vs_Inductive_Family_By_Length.
       eapply path_sigma.
       apply ifbl_from_indpred_from_ifbl.
   Defined.
+
+End Inductive_Predicate_vs_Inductive_Family_By_Length.
+
+Section Induction_By_Length_vs_Inductive_Family_By_Length.
+(* "ibl" vs "ifbl" *)
+
+  Context {Σ : signature σ} (T : flat_type_theory Σ).
+
+  Definition weq_ibl_ifbl_zero
+    : (ibl_zero_step Σ).1 <~> { Γ : _ & wf_context_ifbl_zero_step Σ Γ }.
+  Proof.
+    srapply equiv_adjointify.
+    - intros _.
+      exists Context.empty.
+      constructor.
+    - intros [Γ Γ_wf]; destruct Γ_wf.
+      apply (wf_context_ibl_empty T).
+    - intros [Γ Γ_wf]; destruct Γ_wf.
+      apply idpath.
+    - intros []; apply idpath.
+  Defined.
+  
+End Induction_By_Length_vs_Inductive_Family_By_Length.
 
 End Fix_Shape_System.
