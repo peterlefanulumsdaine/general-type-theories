@@ -91,6 +91,12 @@ Section Induction_By_Length.
     exact (Context.extend (f (pr1 Γ_A_dA)) (pr1 (pr2 Γ_A_dA))).
   Defined.
 
+  Definition ibl_extend_internal (X_f : { X : Type & X -> raw_context Σ })
+      (Γ : X_f.1)
+      {A} (d_A : FlatTypeTheory.derivation T [<>] [! X_f.2 Γ |- A !])
+    : (ibl_succ_step X_f).1
+  := (Γ;(A;d_A)).
+
   Definition wf_context_ibl_with_flattening (n : nat)
     : { X : Type & X -> raw_context Σ }.
   Proof.
@@ -114,7 +120,7 @@ Section Induction_By_Length.
       {n} (Γ : wf_context_ibl n)
       {A} (d_A : FlatTypeTheory.derivation T [<>] [! ibl_flatten Γ |- A !])
     : wf_context_ibl (S n)
-  := (Γ;(A;d_A)).
+  := ibl_extend_internal _ Γ d_A.
 
 End Induction_By_Length.
 
@@ -467,6 +473,80 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     - intros []; apply idpath.
   Defined.
   
+  Section Ibl_Ifbl_Succ_Step.
+  (*
+   In this section, we give the successor step of the equivalence
+   between [ibl] and [ifbl]:
+
+   we assume that we have types/familes [X], [fl] and [Y] over [raw_context Σ],
+   to be thought of as [ibl T n], [ibl_flatten], and [ifbl T n],
+   and an equivalence between them (given in elementary, deconstructed form)
+   we then construct a similar equivalence between [ibl_succ_step X fl] and
+   [ifbl_succ_step Y].
+   *)
+  Context { X : Type } (fl : X -> raw_context Σ )
+          ( Y : raw_context Σ -> Type)
+          ( f : forall x:X, Y (fl x))
+          ( g : forall Γ, Y Γ -> X)
+          ( fl_g : forall Γ y, fl (g Γ y) = Γ)
+          ( e_fg : forall Γ y, transport _ (fl_g _ _) (f (g Γ y)) = y)
+          ( e_gf : forall x, g _ (f x) = x)
+          ( fl_gf : forall x, ap fl (e_gf x) = fl_g _ _).
+
+  Context ( X' := (ibl_succ_step T (X;fl)).1)
+          ( fl' := (ibl_succ_step T (X;fl)).2 : X' -> _)
+          ( Y' := wf_context_ifbl_succ_step T Y ).
+
+  (* TODO: consistentise this with other naming of such functions:
+   name with “to” or “from”? *)
+  Definition ibl_to_ifbl_succ (ΓA_wf : X') : Y' (fl' ΓA_wf).
+  Proof.
+    destruct ΓA_wf as [Γ_wf [A d_A]].
+    apply wf_context_ifbl_extend_internal.
+    - apply f.
+    - exact d_A.
+  Defined.
+
+  Definition ifbl_to_ibl_succ {ΓA} (ΓA_wf : Y' ΓA) : X'.
+  Proof.
+    destruct ΓA_wf as [Γ Γ_wf A d_A].
+    srapply ibl_extend_internal.
+    - exact (g _ Γ_wf).
+    - exact (transport
+            (fun (Θ : raw_context _) => raw_type Σ Θ) (fl_g _ _)^ A).
+    - exact (transportD _
+            (fun Θ B => FlatTypeTheory.derivation _ _ [! Θ |- B !])
+            _ _ d_A).
+  Defined.
+
+  Definition flatten_ifbl_to_ibl_succ {ΓA} (ΓA_wf : Y' ΓA)
+    : fl' (ifbl_to_ibl_succ ΓA_wf) = ΓA.
+  Proof.
+    destruct ΓA_wf as [Γ Γ_wf A d_A].
+    cbn.
+    eapply (ap011D _ (fl_g _ _)). exact (transport_pV _ (fl_g _ _) A).
+  Defined.
+
+  Definition ifbl_to_ibl_to_ifbl_succ
+      {ΓA} (ΓA_wf : Y' ΓA)
+    : transport _ (flatten_ifbl_to_ibl_succ ΓA_wf)
+                (ibl_to_ifbl_succ (ifbl_to_ibl_succ ΓA_wf))
+      = ΓA_wf.
+  Admitted.
+
+  Definition ibl_to_ifbl_to_ibl_succ (ΓA_wf : X')
+    : ifbl_to_ibl_succ (ibl_to_ifbl_succ ΓA_wf) = ΓA_wf.
+  Admitted.
+
+  Definition flatten_ibl_to_ifbl_to_ibl_succ (ΓA_wf : X')
+    : ap fl' (ibl_to_ifbl_to_ibl_succ ΓA_wf) = flatten_ifbl_to_ibl_succ _.
+  Admitted.
+
+  End Ibl_Ifbl_Succ_Step.
+
+  (* TODO: the above lemmas should suffice to give the inductive step
+  of an equivalence between [ibl] and [ifbl]. *)
+
 End Induction_By_Length_vs_Inductive_Family_By_Length.
 
 End Fix_Shape_System.
