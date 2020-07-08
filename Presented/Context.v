@@ -333,14 +333,15 @@ Section Inductive_Family_By_Length.
  
   Context {Σ : signature σ} (T : flat_type_theory Σ).
 
+
+  Inductive wf_context_ifbl_zero_step : raw_context Σ -> Type
+  := wf_context_ifbl_empty : wf_context_ifbl_zero_step Context.empty.
+
   Inductive wf_context_ifbl_succ_step (X : raw_context Σ -> Type)
     : raw_context Σ -> Type
   := | wf_context_ifbl_extend_internal {Γ} (Γ_wf : X Γ)
        {A} (d_A : FlatTypeTheory.derivation T [<>] [! Γ |- A !])
      : wf_context_ifbl_succ_step X (Context.extend Γ A).
-
-  Inductive wf_context_ifbl_zero_step : raw_context Σ -> Type
-  := wf_context_ifbl_empty : wf_context_ifbl_zero_step Context.empty.
 
   Fixpoint wf_context_ifbl (n : nat) : raw_context Σ -> Type.
   Proof.
@@ -522,9 +523,26 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
   Definition flatten_ifbl_to_ibl_succ {ΓA} (ΓA_wf : Y' ΓA)
     : fl' (ifbl_to_ibl_succ ΓA_wf) = ΓA.
   Proof.
-    destruct ΓA_wf as [Γ Γ_wf A d_A].
-    cbn.
+    destruct ΓA_wf as [Γ Γ_wf A d_A]. cbn.
     eapply (ap011D _ (fl_g _ _)). exact (transport_pV _ (fl_g _ _) A).
+  Defined.
+
+  Lemma transport_ifbl_context_extend
+      {Γ} (Γ_wf : Y Γ)
+      {Γ'} (e_Γ : Γ = Γ')
+      {A} (d_A : FlatTypeTheory.derivation T [<>] [! Γ |- A !])
+      {A'} (e_A : transport (fun (Θ : raw_context _) => raw_type _ Θ) e_Γ A = A') 
+    : transport Y' (ap011D Context.extend e_Γ e_A)
+                (wf_context_ifbl_extend_internal T Y Γ_wf d_A)
+      = wf_context_ifbl_extend_internal T _
+          (transport Y e_Γ Γ_wf)
+          (transport _ e_A
+            (transportD (fun Θ : raw_context Σ => raw_type Σ Θ)
+                        (fun (Θ : raw_context Σ) (B : raw_type Σ Θ) =>
+                           FlatTypeTheory.derivation T [<>] [!Θ |- B!])
+                        e_Γ _ d_A)).
+  Proof.
+    destruct e_Γ, e_A. apply idpath.
   Defined.
 
   Definition ifbl_to_ibl_to_ifbl_succ
@@ -532,7 +550,16 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     : transport _ (flatten_ifbl_to_ibl_succ ΓA_wf)
                 (ibl_to_ifbl_succ (ifbl_to_ibl_succ ΓA_wf))
       = ΓA_wf.
-  Admitted.
+  Proof.
+    destruct ΓA_wf as [Γ Γ_wf A d_A].
+    unfold ibl_to_ifbl_succ; cbn.
+    eapply concat. { apply transport_ifbl_context_extend. }
+    apply (ap2 (fun d_Θ d_B => wf_context_ifbl_extend_internal _ _ d_Θ d_B)).
+    { apply e_fg. }
+    eapply concat. { apply ap. rapply transportD_pV. }
+    apply (transport_pV (fun B : raw_type Σ Γ =>
+     FlatTypeTheory.derivation T [<>] [!Γ |- B!])).
+  Defined.
 
   Definition ibl_to_ifbl_to_ibl_succ (ΓA_wf : X')
     : ifbl_to_ibl_succ (ibl_to_ifbl_succ ΓA_wf) = ΓA_wf.
