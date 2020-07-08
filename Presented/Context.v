@@ -41,6 +41,8 @@ Context {σ : shape_system}.
 
 Section Inductive_Predicate.
 (** One approach: sequential well-formed contexts are defined directly, by a proof-relevant inductive predicate on flat raw contexts, looking like the standard well-formed context judgement *)
+(* Code: [indpred].
+TODO: systematically use this code in definitions to disambiguate from other approaches *)
 
   Context {Σ : signature σ} (T : flat_type_theory Σ).
 
@@ -65,7 +67,10 @@ Section Inductive_Predicate.
 
 End Inductive_Predicate.
 
-Section Inductive_By_Length.
+Arguments wf_context_extend {Σ T Γ} d_Γ {A} d_A.
+Arguments length_of_wf_derivation {Σ T Γ} d_Γ.
+
+Section Induction_By_Length.
 
   Context {Σ : signature σ} (T : flat_type_theory Σ).
 
@@ -99,13 +104,13 @@ Section Inductive_By_Length.
     : wf_context_of_length (S n)
   := (Γ;(A;d_A)).
 
-End Inductive_By_Length.
+End Induction_By_Length.
 
 Arguments wf_context_of_length_with_flattening : simpl nomatch.
 Arguments wf_context_of_length : simpl nomatch.
 Arguments flatten {Σ T n} Γ : simpl nomatch.
 
-Section Inductive_By_Length_vs_Inductive_Predicate.
+Section Induction_By_Length_vs_Inductive_Predicate.
 
   Context {Σ : signature σ} (T : flat_type_theory Σ).
 
@@ -123,7 +128,7 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
 
   Local Definition wf_context_of_length_from_wf_derivation
       {Γ} (d_Γ : wf_context_derivation T Γ)
-    : { Γ_wf : wf_context_of_length T (length_of_wf_derivation _ d_Γ)
+    : { Γ_wf : wf_context_of_length T (length_of_wf_derivation d_Γ)
       & flatten Γ_wf = Γ }.
   Proof.
     induction d_Γ as [ | Δ d_Δ [Δ_wf e_Δ] A d_A].
@@ -148,8 +153,8 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
     : 
     transport (wf_context_derivation T)
         (ap011D Context.extend e_Γ e_A)
-        (wf_context_extend T d_Γ d_A)
-    = wf_context_extend T
+        (wf_context_extend d_Γ d_A)
+    = wf_context_extend
         (transport (wf_context_derivation T) e_Γ d_Γ)
         (transport _ e_A
           (transportD (fun Θ : raw_context Σ => raw_type Σ Θ)
@@ -172,7 +177,7 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
     - apply idpath.
     - simpl.
       eapply concat. { apply transport_wf_context_extend. }
-      apply (ap2 (fun d_Θ d_B => wf_context_extend T d_Θ d_B)).
+      apply (ap2 (fun d_Θ d_B => wf_context_extend d_Θ d_B)).
       { apply IH. }
       set (e := wf_context_of_length_from_wf_derivation d_Δ).
       clearbody e.
@@ -185,7 +190,7 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
   Local Fixpoint length_of_wf_deriv_of_col
       {n} (Γ_wf : wf_context_of_length T n)
       {struct n}
-    : length_of_wf_derivation T (wf_context_of_length_is_wf Γ_wf)
+    : length_of_wf_derivation (wf_context_of_length_is_wf Γ_wf)
     = n.
   Proof.
     destruct n as [ | n].
@@ -280,7 +285,7 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
       admit.
   Admitted.
 
-  Local Theorem weq_inductive_by_length_by_inductive_predicate
+  Local Theorem weq_induction_by_length_vs_by_inductive_predicate
     : { n : nat & wf_context_of_length T n}
     <~> { Γ : raw_context Σ & wf_context_derivation T Γ }.
   Proof.
@@ -289,7 +294,7 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
       exists (flatten Γ).
       apply wf_context_of_length_is_wf.
     - intros [Γ d_Γ].
-      exists (length_of_wf_derivation _ d_Γ).
+      exists (length_of_wf_derivation d_Γ).
       apply wf_context_of_length_from_wf_derivation.
     - intros [Γ d_Γ].
       srapply path_sigma.
@@ -301,6 +306,130 @@ Section Inductive_By_Length_vs_Inductive_Predicate.
       }
   Defined.
 
-End Inductive_By_Length_vs_Inductive_Predicate.
+End Induction_By_Length_vs_Inductive_Predicate.
+
+Section Inductive_Family_By_Length.
+(** A slightly unnatural definition, introduced in hope it may facilitate the equivalence between the by-induction-on-length definition and the definitions as inductive types/families. *)
+(* Code: “ifbl”, to be used consistently in definitions/comparisons. *)
+ 
+  Context {Σ : signature σ} (T : flat_type_theory Σ).
+
+  Inductive wf_context_ifbl_succ_step (X : raw_context Σ -> Type)
+    : raw_context Σ -> Type
+  := | wf_context_ifbl_extend_internal {Γ} (Γ_wf : X Γ)
+       {A} (d_A : FlatTypeTheory.derivation T [<>] [! Γ |- A !])
+     : wf_context_ifbl_succ_step X (Context.extend Γ A).
+
+  Inductive wf_context_ifbl_zero_step : raw_context Σ -> Type
+  := wf_context_ifbl_empty : wf_context_ifbl_zero_step Context.empty.
+
+  Fixpoint wf_context_ifbl (n : nat) : raw_context Σ -> Type.
+  Proof.
+    destruct n as [ | n'].
+    - exact wf_context_ifbl_zero_step.
+    - exact (wf_context_ifbl_succ_step (wf_context_ifbl n')).
+  Defined.
+
+  Local Definition ifbl_extend {n} {Γ}
+      (Γ_wf : wf_context_ifbl n Γ)
+      {A} (d_A : FlatTypeTheory.derivation T [<>] [!Γ |- A!])
+    : wf_context_ifbl (S n) (Context.extend Γ A)
+  := wf_context_ifbl_extend_internal _ Γ_wf d_A.
+
+  Arguments ifbl_extend : simpl never.
+
+  Local Definition transport_ifbl_extend
+      {n n'} (e_n : n = n')
+      {Γ} (Γ_wf : wf_context_ifbl n Γ)
+      {A} (d_A : FlatTypeTheory.derivation T [<>] [!Γ |- A!])
+    : transport (fun n => wf_context_ifbl n _)
+                (ap S e_n) (ifbl_extend Γ_wf d_A)
+      = ifbl_extend (transport (fun n => wf_context_ifbl n _) e_n Γ_wf) d_A.
+  Proof.
+    destruct e_n; apply idpath.
+  Defined.
+
+End Inductive_Family_By_Length.
+
+
+Section Inductive_Predicate_vs_Inductive_Family_By_Length.
+(* "indpred" vs "ifbl" *)
+  Context {Σ : signature σ} (T : flat_type_theory Σ).
+
+  Local Definition indpred_from_ifbl {n} {Γ}
+      (Γ_wf : wf_context_ifbl T n Γ)
+    : wf_context_derivation T Γ.
+  Proof.
+    revert Γ Γ_wf. induction n as [ | n' IH].
+    - intros Γ Γ_wf; destruct Γ_wf.
+      apply wf_context_empty.
+    - intros Γ Γ_wf; destruct Γ_wf as [Γ' Γ'_wf A d_A].
+      apply wf_context_extend; auto.
+  Defined.
+
+  Local Definition ifbl_from_indpred
+      {Γ} (d_Γ : wf_context_derivation T Γ)
+    : wf_context_ifbl T (length_of_wf_derivation d_Γ) Γ.
+  Proof.
+    induction d_Γ as [ | Δ d_Δ Δ_wf A d_A].
+    - apply wf_context_ifbl_empty.
+    - srapply ifbl_extend; assumption.
+  Defined.
+
+  Local Lemma indpred_from_ifbl_from_indpred
+      {Γ} (d_Γ : wf_context_derivation T Γ)
+    : indpred_from_ifbl (ifbl_from_indpred d_Γ)
+      = d_Γ.
+  Proof.
+    induction d_Γ as [ | Δ d_Δ IH A d_A].
+    - apply idpath.
+    - simpl.
+      apply (ap (fun d_Θ => wf_context_extend d_Θ _)).
+      apply IH.
+  Defined.
+
+  Local Lemma length_indpred_from_ifbl {n} {Γ}
+      (Γ_wf : wf_context_ifbl T n Γ)
+    : length_of_wf_derivation (indpred_from_ifbl Γ_wf) = n.
+  Proof.
+    revert Γ Γ_wf. induction n as [ | n' IH].
+    - intros Γ Γ_wf; destruct Γ_wf.
+      apply idpath.
+    - intros Γ Γ_wf; destruct Γ_wf as [Γ' Γ'_wf A d_A].
+      simpl. apply ap, IH.
+  Defined.
+
+  Local Lemma ifbl_from_indpred_from_ifbl {n} {Γ}
+      (Γ_wf : wf_context_ifbl T n Γ)
+    : transport (fun n => wf_context_ifbl _ n _) 
+                (length_indpred_from_ifbl Γ_wf)
+                (ifbl_from_indpred (indpred_from_ifbl Γ_wf))
+      = Γ_wf.
+  Proof.
+    revert Γ Γ_wf. induction n as [ | n' IH].
+    - intros Γ Γ_wf; destruct Γ_wf.
+      apply idpath.
+    - intros Γ Γ_wf; destruct Γ_wf as [Γ' Γ'_wf A d_A]. simpl.
+      eapply concat. { apply transport_ifbl_extend. }
+      apply (ap (fun Θ_wf => ifbl_extend _ Θ_wf _)).
+      apply IH.
+  Defined.
+
+  Local Theorem weq_ifbl_indpred { Γ }
+    : { n : nat & wf_context_ifbl T n Γ }
+    <~> wf_context_derivation T Γ.
+  Proof.
+    srapply equiv_adjointify.
+    - intros [n Γ_wf].
+      eapply indpred_from_ifbl; eassumption.
+    - intros d_Γ.
+      exists (length_of_wf_derivation d_Γ).
+      apply ifbl_from_indpred.
+    - intros d_Γ.
+      apply indpred_from_ifbl_from_indpred.
+    - intros [n Γ_wf].
+      eapply path_sigma.
+      apply ifbl_from_indpred_from_ifbl.
+  Defined.
 
 End Fix_Shape_System.
