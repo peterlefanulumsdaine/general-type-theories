@@ -21,6 +21,7 @@ Require Import Typing.Judgement.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
 
+(* TODO: upstream within development *)
 Section Auxiliary.
 
   Lemma transportD_pV
@@ -31,6 +32,95 @@ Section Auxiliary.
      = transport _ (transport_pV _ _ _)^ z.
   Proof.
     destruct e_x; apply idpath.
+  Defined.
+
+  (* Several things seem to be instances of this lemma,
+     as found by [Search (transport _ _ (?f ?a) = ?g (transport _ _ ?a)).]
+   [transport_rename]
+   [transport_substitute]
+   [transport_class_instantiate]
+   [transport_shape_instantiate]
+   TODO: unify them in terms of this lemma, and/or [ap_transport] directly.
+   *)
+  Lemma transport_fx
+    {A} {P P' : A-> Type} (f : forall x, P x -> P' x)
+    {x x'} (e : x = x') (y :P x)
+    : transport P' e (f _ y) = f _ (transport P e y).
+  Proof.
+    apply inverse, ap_transport.
+  Defined.
+
+  Lemma transport_fx_ap
+    {A} {P P' : A-> Type} (f : forall x, P x -> P' x)
+    {x x'} (e_x : x = x') {y y' :P x} (e_y : y = y')
+    : transport_fx f e_x y @ ap _ (ap _ e_y)
+   = ap _ (ap _ e_y) @ transport_fx f e_x y'.
+  Proof.
+    destruct e_x, e_y. apply idpath.
+  Defined.
+
+  Lemma transport_fx_ap_path
+    {A} {P P' : A-> Type} (f : forall x, P x -> P' x)
+    {x x'} {e e' : x = x'} (α : e = e') (y :P x)
+    : transport_fx f e y @ ap _ (ap (fun p => transport P p y) α)
+    = ap (fun p => transport P' p _) α @ transport_fx f e' y.
+  Proof.
+    destruct α, e; apply idpath.
+  Defined.
+
+  Lemma ap_transport_ap_path
+    {A} {P P' : A-> Type} (f : forall x, P x -> P' x)
+    {x x'} {e e' : x = x'} (α : e = e') (y :P x)
+    : ap_transport e f y @ ap (fun p => transport P' p _) α
+      = ap _ (ap (fun p => transport P p y) α) @ ap_transport e' f y.
+  Proof.
+    destruct α, e; apply idpath.
+  Defined.
+
+  Lemma ap_transport_pV
+         {A} {P P'} (f : forall x, P x -> P' x)
+         {x y : A} (p : x = y) (z : P y)
+    : ap (f _) (transport_pV _ p z)
+    = ap_transport _ _ _
+      @ (ap (transport P' p) (ap_transport _ _ _))
+      @ transport_pV _ p (f _ z).
+  Proof.
+    destruct p; apply idpath.
+  Defined.
+
+  Lemma concat_transport_compose_ap
+      {A A'} (f : A' -> A) (B : A -> Type)
+      {x1 x2} (p : x1 = x2)
+      {y y' : B (f x1)} (e : y = y')
+    : transport_compose B f p y @ ap _ e
+      = ap _ e @ transport_compose B f p y'.
+  Proof.
+    destruct p, e; apply idpath.
+  Defined.
+
+  Lemma ap_pr1_transport_sigma
+        {A} {B} (C : forall a : A, B a -> Type)
+        {x1 x2 : A} (p : x1 = x2)
+        (yz : {y : B x1 & C x1 y})
+    : ap pr1 (transport_sigma p yz) = ap_transport _ (fun x yz => yz.1) _.
+  Proof.
+    destruct p; apply idpath.
+  Defined.
+
+  (* Handy for showing path nodes and figuring out big path-computations:
+   use [Local Open Scope verbose_path_scope] to turn it “on”. *)
+  Declare Scope verbose_path_scope.
+  Notation "p @[ x ] q" := (@concat _ _ x _ p q) (at level 25)
+    : verbose_path_scope.
+  (* TODO: see if the library already provides a version of this *)
+
+  (* consider naming *)
+  Lemma concat_ap1_ap2 {X Y Z} (f : X -> Y -> Z)
+      {x0 x1} (e_x : x0 = x1) {y0 y1} (e_y : y0 = y1)
+    : ap _ e_y @ ap (fun x => f x _) e_x
+    = ap (fun x => f x _) e_x @ ap _ e_y.
+  Proof.
+    destruct e_x, e_y; apply idpath.
   Defined.
 
 End Auxiliary.
@@ -153,7 +243,7 @@ Section Induction_By_Length_vs_Inductive_Predicate.
     induction d_Γ as [ | Δ d_Δ [Δ_wf e_Δ] A d_A].
     - exists (wf_context_ibl_empty _).
       apply idpath.
-    - simple refine (_;_). 
+    - simple refine (_;_).
       + srapply ibl_extend.
         * exact Δ_wf.
         * exact (transport
@@ -168,8 +258,8 @@ Section Induction_By_Length_vs_Inductive_Predicate.
         {Γ} (d_Γ : wf_context_derivation T Γ)
         {Γ'} (e_Γ : Γ = Γ')
         {A} (d_A : FlatTypeTheory.derivation T [<>] [! Γ |- A !])
-        {A'} (e_A : transport (fun (Θ : raw_context _) => raw_type _ Θ) e_Γ A = A') 
-    : 
+        {A'} (e_A : transport (fun (Θ : raw_context _) => raw_type _ Θ) e_Γ A = A')
+    :
     transport (wf_context_derivation T)
         (ap011D Context.extend e_Γ e_A)
         (wf_context_extend d_Γ d_A)
@@ -289,7 +379,7 @@ Section Induction_By_Length_vs_Inductive_Predicate.
       eapply concat.
       { refine (transport_sigma ((ibl_flatten_transport _ _)^ @ _) (_;_))^. }
       eapply concat.
-      { refine (ap _ (transport_sigma 
+      { refine (ap _ (transport_sigma
                    ((wf_context_ibl_from_wf_derivation _).2)^ (_;_))^). }
       eapply concat. { apply inverse. rapply transport_pp. }
       refine (@ap _ _ (fun p => transport _ p (A;d_A)) _ 1%path _).
@@ -330,7 +420,7 @@ End Induction_By_Length_vs_Inductive_Predicate.
 Section Inductive_Family_By_Length.
 (** A slightly unnatural definition, introduced in hope it may facilitate the equivalence between the by-induction-on-length definition and the definitions as inductive types/families. *)
 (* Code: “ifbl”, to be used consistently in definitions/comparisons. *)
- 
+
   Context {Σ : signature σ} (T : flat_type_theory Σ).
 
 
@@ -422,7 +512,7 @@ Section Inductive_Predicate_vs_Inductive_Family_By_Length.
 
   Local Lemma ifbl_from_indpred_from_ifbl {n} {Γ}
       (Γ_wf : wf_context_ifbl T n Γ)
-    : transport (fun n => wf_context_ifbl _ n _) 
+    : transport (fun n => wf_context_ifbl _ n _)
                 (length_indpred_from_ifbl Γ_wf)
                 (ifbl_from_indpred (indpred_from_ifbl Γ_wf))
       = Γ_wf.
@@ -473,7 +563,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
       apply idpath.
     - intros []; apply idpath.
   Defined.
-  
+
   Section Ibl_Ifbl_Succ_Step.
   (*
    In this section, we give the successor step of the equivalence
@@ -530,7 +620,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
       {Γ} (Γ_wf : Y Γ)
       {Γ'} (e_Γ : Γ = Γ')
       {A} (d_A : FlatTypeTheory.derivation T [<>] [! Γ |- A !])
-      {A'} (e_A : transport (fun (Θ : raw_context _) => raw_type _ Θ) e_Γ A = A') 
+      {A'} (e_A : transport (fun (Θ : raw_context _) => raw_type _ Θ) e_Γ A = A')
     : transport Y' (ap011D Context.extend e_Γ e_A)
                 (wf_context_ifbl_extend_internal T Y Γ_wf d_A)
       = wf_context_ifbl_extend_internal T _
@@ -564,7 +654,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
   Local Definition ibl_extend'
       (ΓA : { Γ : X & A : raw_type Σ (fl Γ)}) (d_A : _)
     : X'
-  := 
+  :=
 *)
   Local Definition ifbl_from_ibl_from_ifbl_succ (ΓA_wf : X')
     : ibl_from_ifbl_succ (ifbl_from_ibl_succ ΓA_wf) = ΓA_wf.
@@ -579,54 +669,6 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     rapply transport_pV.
   Defined.
 
-  (* Several things seem to be instances of this lemma,
-     as found by [Search (transport _ _ (?f ?a) = ?g (transport _ _ ?a)).]
-   [transport_rename] 
-   [transport_substitute]
-   [transport_class_instantiate]
-   [transport_shape_instantiate] 
-   TODO: unify them in terms of this lemma, or [ap_transport] directly.
-   *)
-  (* TODO: upstream, and change F to f *)
-  Lemma transport_Fx
-    {A} {P P' : A-> Type} (F : forall x, P x -> P' x)
-    {x x'} (e : x = x') (y :P x)
-    : transport P' e (F _ y) = F _ (transport P e y).
-  Proof.
-    apply inverse, ap_transport.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma transport_Fx_ap
-    {A} {P P' : A-> Type} (F : forall x, P x -> P' x)
-    {x x'} (e_x : x = x') {y y' :P x} (e_y : y = y')
-    : transport_Fx F e_x y @ ap _ (ap _ e_y)
-   = ap _ (ap _ e_y) @ transport_Fx F e_x y'.
-  Proof.
-    destruct e_x, e_y. apply idpath.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma transport_Fx_ap_path
-    {A} {P P' : A-> Type} (F : forall x, P x -> P' x)
-    {x x'} {e e' : x = x'} (α : e = e') (y :P x)
-    : transport_Fx F e y @ ap _ (ap (fun p => transport P p y) α)
- = ap (fun p => transport P' p _) α @ transport_Fx F e' y.
-  Proof.
-    destruct α, e; apply idpath.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma ap_transport_ap_path
-    {A} {P P' : A-> Type} (F : forall x, P x -> P' x)
-    {x x'} {e e' : x = x'} (α : e = e') (y :P x)
-    : ap_transport e F y @ ap (fun p => transport P' p _) α
-      = ap _ (ap (fun p => transport P p y) α) @ ap_transport e' F y.
-  Proof.
-    destruct α, e; apply idpath.
-  Defined.
-
-
 
 
   (* TODO: name! *)
@@ -634,7 +676,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
       {Γ_wf Γ'_wf : X} (e_Γ : Γ_wf = Γ'_wf)
       {AdA} {AdA'} (e_A : transport _ e_Γ AdA = AdA')
       (e_aux : transport _ (ap fl e_Γ) AdA.1 = AdA'.1
-        := (transport_Fx
+        := (transport_fx
              (fun Θ (BdB : {A : _ & FlatTypeTheory.derivation _ _ [! Θ |- A!]})
                 => BdB.1)
            _ AdA
@@ -647,68 +689,6 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
   Proof.
     destruct e_Γ, e_A. cbn.
     apply idpath.
-  Defined.
-
-  Lemma ap_transport_pV
-         {A} {P P'} (F : forall x, P x -> P' x)
-         {x y : A} (p : x = y) (z : P y)
-    : ap (F _) (transport_pV _ p z)
-    = ap_transport _ _ _
-      @ (ap (transport P' p) (ap_transport _ _ _))
-      @ transport_pV _ p (F _ z).
-  Proof.
-    destruct p; apply idpath.
-  Defined.
-
-(*
-  (* TODO: upstream; fix F to f *)
-  Lemma transport_compose_sigma
-      {A A'} (F : A' -> A)
-      {B} (C : forall a : A, B a -> Type)
-      {x1 x2} (p : x1 = x2) 
-      (yz : {y : B (F x1) & C (F x1) y})
-    : transport (fun x : A => {y : B x & C x y}) (ap F p) yz 
-      = (transport (B o F) p yz.1; transportD (B o F) (C o F) p yz.1 yz.2).
-  Proof.
-    eapply concat. { apply transport_sigma. }
-    apply inverse. rapply transport_compose.
-    eapply concat. 2: { srapply transport_sigma. }
-    simpl. apply inverse. rapply transport_compose.
-*)
-
-  Lemma concat_transport_compose_ap
-      {A A'} (F : A' -> A) (B : A -> Type)
-      {x1 x2} (p : x1 = x2) 
-      {y y' : B (F x1)} (e : y = y')
-    : transport_compose B F p y @ ap _ e
-      = ap _ e @ transport_compose B F p y'. 
-  Proof.
-    destruct p, e; apply idpath.
-  Defined.
-
-  (* TODO: upstream *)
-  Lemma ap_pr1_transport_sigma
-        {A} {B} (C : forall a : A, B a -> Type) 
-        {x1 x2 : A} (p : x1 = x2)
-        (yz : {y : B x1 & C x1 y})
-    : ap pr1 (transport_sigma p yz) = ap_transport _ (fun x yz => yz.1) _.
-  Proof.
-    destruct p; apply idpath.
-  Defined.
-
-  (* Handy for showing path nodes and figuring out the big computation. *)
-  (* TODO: see if the library already provides a version of this *)
-  Declare Scope verbose_path_scope.
-  Notation "p @[ x ] q" := (@concat _ _ x _ p q) (at level 25)
-    : verbose_path_scope.
-
-  (* TODO: upstream; fix var names; consider naming *)
-  Lemma concat_ap1_ap2 {XX YY Z} (ff : XX -> YY -> Z)
-      {x0 x1} (e_x : x0 = x1) {y0 y1} (e_y : y0 = y1)
-    : ap _ e_y @ ap (fun x => ff x _) e_x
-    = ap (fun x => ff x _) e_x @ ap _ e_y. 
-  Proof.
-    destruct e_x, e_y; apply idpath.
   Defined.
 
   Definition flatten_ifbl_from_ibl_from_ifbl_succ (ΓA_wf : X')
@@ -725,7 +705,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     { refine (transport_compose (fun q => q = AdA.1) _ (fl_gf Γ) _). }
     eapply concat. { apply transport_paths_l. }
     eapply concat.
-    { eapply ap, concat. { apply concat_pp_p. } 
+    { eapply ap, concat. { apply concat_pp_p. }
       eapply ap, concat. { apply inverse, ap_pp. }
       eapply ap, concat.
       { eapply ap, concat. { apply concat_p_pp. }
@@ -751,7 +731,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
       eapply concat. { eapply ap, concat_pp_p. }
       eapply concat. { apply concat_p_pp. }
       eapply (ap_1back concat).
-      refine (transport_Fx_ap _ (ap fl (e_gf Γ)) _).
+      refine (transport_fx_ap _ (ap fl (e_gf Γ)) _).
     }
     simpl.
     eapply concat.
@@ -765,7 +745,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
       eapply concat. { apply concat_p_pp. }
       eapply (ap_1back concat).
       eapply concat. { apply concat_p_pp. }
-      eapply (ap_1back concat), inverse. 
+      eapply (ap_1back concat), inverse.
       refine (ap_transport_ap_path (fun Θ : raw_context Σ => pr1) _ _).
     }
     eapply concat.
