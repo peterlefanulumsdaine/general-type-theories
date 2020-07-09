@@ -433,6 +433,24 @@ Section Inductive_Family_By_Length.
        {A} (d_A : FlatTypeTheory.derivation T [<>] [! Γ |- A !])
      : wf_context_ifbl_succ_step X (Context.extend Γ A).
 
+  Local Lemma transport_ifbl_extend_internal (X : raw_context Σ -> Type)
+      {Γ} (Γ_wf : X Γ)
+      {Γ'} (e_Γ : Γ = Γ')
+      {A} (d_A : FlatTypeTheory.derivation T [<>] [! Γ |- A !])
+      {A'} (e_A : transport (fun (Θ : raw_context _) => raw_type _ Θ) e_Γ A = A')
+    : transport _ (ap011D Context.extend e_Γ e_A)
+                (wf_context_ifbl_extend_internal X Γ_wf d_A)
+      = wf_context_ifbl_extend_internal _
+          (transport X e_Γ Γ_wf)
+          (transport _ e_A
+            (transportD (fun Θ : raw_context Σ => raw_type Σ Θ)
+                        (fun (Θ : raw_context Σ) (B : raw_type Σ Θ) =>
+                           FlatTypeTheory.derivation T [<>] [!Θ |- B!])
+                        e_Γ _ d_A)).
+  Proof.
+    destruct e_Γ, e_A. apply idpath.
+  Defined.
+
   Fixpoint wf_context_ifbl (n : nat) : raw_context Σ -> Type.
   Proof.
     destruct n as [ | n'].
@@ -448,6 +466,7 @@ Section Inductive_Family_By_Length.
 
   Arguments ifbl_extend : simpl never.
 
+  (* TODO: consider naming; cf. [transport_ifbl_extend_internal]. *)
   Local Definition transport_ifbl_extend
       {n n'} (e_n : n = n')
       {Γ} (Γ_wf : wf_context_ifbl n Γ)
@@ -460,6 +479,7 @@ Section Inductive_Family_By_Length.
   Defined.
 
 End Inductive_Family_By_Length.
+
 
 Arguments wf_context_ifbl_zero_step Σ : clear implicits.
 
@@ -615,25 +635,6 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     eapply (ap011D _ (fl_g _ _)). exact (transport_pV _ (fl_g _ _) A).
   Defined.
 
-  (* TODO: upstream in file *)
-  Local Lemma transport_ifbl_context_extend
-      {Γ} (Γ_wf : Y Γ)
-      {Γ'} (e_Γ : Γ = Γ')
-      {A} (d_A : FlatTypeTheory.derivation T [<>] [! Γ |- A !])
-      {A'} (e_A : transport (fun (Θ : raw_context _) => raw_type _ Θ) e_Γ A = A')
-    : transport Y' (ap011D Context.extend e_Γ e_A)
-                (wf_context_ifbl_extend_internal T Y Γ_wf d_A)
-      = wf_context_ifbl_extend_internal T _
-          (transport Y e_Γ Γ_wf)
-          (transport _ e_A
-            (transportD (fun Θ : raw_context Σ => raw_type Σ Θ)
-                        (fun (Θ : raw_context Σ) (B : raw_type Σ Θ) =>
-                           FlatTypeTheory.derivation T [<>] [!Θ |- B!])
-                        e_Γ _ d_A)).
-  Proof.
-    destruct e_Γ, e_A. apply idpath.
-  Defined.
-
   Local Definition ibl_from_ifbl_from_ibl_succ
       {ΓA} (ΓA_wf : Y' ΓA)
     : transport _ (flatten_ibl_from_ifbl_succ ΓA_wf)
@@ -642,7 +643,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
   Proof.
     destruct ΓA_wf as [Γ Γ_wf A d_A].
     unfold ifbl_from_ibl_succ; cbn.
-    eapply concat. { apply transport_ifbl_context_extend. }
+    eapply concat. { apply transport_ifbl_extend_internal. }
     apply (ap2 (fun d_Θ d_B => wf_context_ifbl_extend_internal _ _ d_Θ d_B)).
     { apply e_fg. }
     eapply concat. { apply ap. rapply transportD_pV. }
@@ -650,12 +651,6 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
       FlatTypeTheory.derivation T [<>] [!Γ |- B!])).
   Defined.
 
-(*
-  Local Definition ibl_extend'
-      (ΓA : { Γ : X & A : raw_type Σ (fl Γ)}) (d_A : _)
-    : X'
-  :=
-*)
   Local Definition ifbl_from_ibl_from_ifbl_succ (ΓA_wf : X')
     : ibl_from_ifbl_succ (ifbl_from_ibl_succ ΓA_wf) = ΓA_wf.
   Proof.
@@ -668,8 +663,6 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     eapply concat. { refine (ap (fun p => transport _ p _) (fl_gf _)). }
     rapply transport_pV.
   Defined.
-
-
 
   (* TODO: name! *)
   Local Lemma ap_flatten_path_sigma
@@ -779,8 +772,72 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
 
   End Ibl_Ifbl_Succ_Step.
 
-  (* TODO: the above lemmas should suffice to give the inductive step
-  of an equivalence between [ibl] and [ifbl]. *)
+  Record slice_to_family_equiv { B : Type }
+         { X : Type } {f : X -> B}
+         { Y : B -> Type}
+  := { slice_to_family : forall x:X, Y (f x)
+      ; family_to_slice : forall b, Y b -> X
+      ; proj_family_to_slice
+        : forall b y, f (family_to_slice b y) = b
+      ; slice_to_family_to_slice
+        : forall b y, transport _ (proj_family_to_slice _ _)
+                     (slice_to_family (family_to_slice b y))
+           = y
+      ; family_to_slice_to_family
+        : forall x, family_to_slice _ (slice_to_family x) = x
+      ; proj_family_to_slice_to_family
+        : forall x, ap f (family_to_slice_to_family x)
+                    = proj_family_to_slice _ _
+     }.
+  Arguments slice_to_family_equiv {_} _ _ _.
+
+  Definition weq_ibl_ifbl_zero'
+    : (ibl_zero_step Σ).1 <~> { Γ : _ & wf_context_ifbl_zero_step Σ Γ }.
+  Proof.
+    srapply equiv_adjointify.
+    - intros _.
+      exists Context.empty.
+      constructor.
+    - intros [Γ Γ_wf]; destruct Γ_wf.
+      apply (wf_context_ibl_empty T).
+    - intros [Γ Γ_wf]; destruct Γ_wf.
+      apply idpath.
+    - intros []; apply idpath.
+  Defined.
+
+  Definition slice_to_family_equiv_ibl_ifbl (n:nat)
+    : slice_to_family_equiv
+        (wf_context_ibl T n) (ibl_flatten) (wf_context_ifbl T n).
+  Proof.
+    induction n as [ | n' IH].
+    - srapply Build_slice_to_family_equiv.
+      + intros ?. constructor.
+      + intros ? ?. apply (wf_context_ibl_empty T).
+      + intros Γ Γ_wf; destruct Γ_wf. apply idpath.
+      + intros Γ Γ_wf; destruct Γ_wf. apply idpath.
+      + intros []. apply idpath.
+      + intros []. apply idpath.
+   - destruct IH as [f g fl_g e_fg e_gf fl_e_gf].
+     srapply Build_slice_to_family_equiv.
+     + apply ifbl_from_ibl_succ; assumption.
+     + eapply ibl_from_ifbl_succ; eassumption.
+     + apply flatten_ibl_from_ifbl_succ. 
+     + apply ibl_from_ifbl_from_ibl_succ; assumption.
+     + eapply ifbl_from_ibl_from_ifbl_succ; eassumption.
+     + apply flatten_ifbl_from_ibl_from_ifbl_succ.
+  Defined.
+
+  Definition weq_ibl_ifbl {n:nat}
+    : (wf_context_ibl T n) <~> {Γ : _ & wf_context_ifbl T n Γ }.
+  Proof.
+    set (stfe := slice_to_family_equiv_ibl_ifbl n). 
+    srapply equiv_adjointify.
+    - intros Γ_wf.
+      exists (ibl_flatten Γ_wf). apply stfe.
+    - intros [Γ d_Γ]. eapply stfe; eassumption.
+    - intros [Γ d_Γ]. srapply path_sigma; apply stfe.
+    - intro; apply stfe.
+  Defined.
 
 End Induction_By_Length_vs_Inductive_Family_By_Length.
 
