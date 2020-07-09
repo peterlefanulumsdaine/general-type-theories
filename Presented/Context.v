@@ -596,6 +596,16 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     apply inverse, ap_transport.
   Defined.
 
+  (* TODO: upstream *)
+  Lemma transport_Fx_ap
+    {A} {P P' : A-> Type} (F : forall x, P x -> P' x)
+    {x x'} (e_x : x = x') {y y' :P x} (e_y : y = y')
+    : transport_Fx F e_x y @ ap _ (ap _ e_y)
+   = ap _ (ap _ e_y) @ transport_Fx F e_x y'.
+  Proof.
+    destruct e_x, e_y. apply idpath.
+  Defined.
+
   (* TODO: name! *)
   Local Lemma ap_flatten_path_sigma
       {Γ_wf Γ'_wf : X} (e_Γ : Γ_wf = Γ'_wf)
@@ -627,6 +637,46 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     destruct p; apply idpath.
   Defined.
 
+(*
+  (* TODO: upstream; fix F to f *)
+  Lemma transport_compose_sigma
+      {A A'} (F : A' -> A)
+      {B} (C : forall a : A, B a -> Type)
+      {x1 x2} (p : x1 = x2) 
+      (yz : {y : B (F x1) & C (F x1) y})
+    : transport (fun x : A => {y : B x & C x y}) (ap F p) yz 
+      = (transport (B o F) p yz.1; transportD (B o F) (C o F) p yz.1 yz.2).
+  Proof.
+    eapply concat. { apply transport_sigma. }
+    apply inverse. rapply transport_compose.
+    eapply concat. 2: { srapply transport_sigma. }
+    simpl. apply inverse. rapply transport_compose.
+*)
+
+  Lemma concat_transport_compose_ap
+      {A A'} (F : A' -> A) (B : A -> Type)
+      {x1 x2} (p : x1 = x2) 
+      {y y' : B (F x1)} (e : y = y')
+    : transport_compose B F p y @ ap _ e
+      = ap _ e @ transport_compose B F p y'. 
+  Proof.
+    destruct p, e; apply idpath.
+  Defined.
+
+  (* TODO: upstream *)
+  Lemma ap_pr1_transport_sigma
+        {A} {B} (C : forall a : A, B a -> Type) 
+        {x1 x2 : A} (p : x1 = x2)
+        (yz : {y : B x1 & C x1 y})
+    : ap pr1 (transport_sigma p yz) = ap_transport _ (fun x yz => yz.1) _.
+  Proof.
+    destruct p; apply idpath.
+  Defined.
+
+  (* Handy for showing path nodes and figuring out the big computation. *)
+  (* TODO: see if the library already provides a version of this *)
+  Local Notation "p @[ x ] q" := (@concat _ _ x _ p q) (at level 25).
+
   Definition flatten_ifbl_from_ibl_from_ifbl_succ (ΓA_wf : X')
     : ap fl' (ifbl_from_ibl_from_ifbl_succ ΓA_wf) = flatten_ibl_from_ifbl_succ _.
   Proof.
@@ -640,17 +690,100 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     { refine (transport_compose (fun q => q = AdA.1) _ (fl_gf Γ) _). }
     eapply concat. { apply transport_paths_l. }
     eapply concat.
+    { eapply ap, concat. { apply concat_pp_p. } 
+      eapply ap, concat. { apply inverse, ap_pp. }
+      eapply ap, concat.
+      { eapply ap, concat. { apply concat_p_pp. }
+        eapply (ap_1back concat), inverse.
+        rapply concat_transport_compose_ap. (* commutation *)
+      }
+      eapply concat. { apply ap, concat_pp_p. }
+      apply concat_V_pp. (* cancellation! *)
+    }
+    eapply concat.
     { apply ap, ap.
-      eapply concat. { rapply ap_pp. } 
-      eapply ap, concat. { rapply ap_pp. }
-      eapply ap, concat. { rapply ap_pp. }
-      eapply ap.
-      refine (ap_transport_pV
+      eapply concat. { apply ap, concat_p_pp. }
+      eapply concat. { apply ap_pp. }
+      apply ap. refine (ap_transport_pV
         (fun Θ (BdB : {A : _ & FlatTypeTheory.derivation _ _ [! Θ |- A!]})
              => BdB.1)
-        (fl_g (fl Γ) (f Γ)) AdA).
+        _ AdA).
     }
-    (* note: last component of LHS is now exactly RHS *)
+    (* last component of LHS is now exactly RHS *)
+    cbn.
+    eapply concat.
+    { eapply ap, concat. { eapply ap, (ap_1back concat). rapply ap_pp. }
+      eapply concat. { eapply ap, concat_pp_p. }
+      eapply concat. { apply concat_p_pp. }
+      eapply (ap_1back concat).
+      refine (transport_Fx_ap _ (ap fl (e_gf Γ)) _).
+    }
+    simpl.
+    eapply concat.
+    { eapply ap, concat. { apply concat_pp_p. }
+      eapply concat.
+      { eapply (ap_1back concat), ap.
+        eapply concat. { refine (ap_V _ (transport_sigma _ _)). }
+        eapply ap. refine (ap_pr1_transport_sigma _ (fl_g _ _)^ _).
+      }
+      
+    
+(*
+Essential components:
+ap_fl_fg: 0 <– 1 ; 5 –> 6.
+ap_transport/transport_Fx : 1 <- 2 <- 5, 6 -> 7 -> 8
+
+
+01 (12 (23 (34 (45 (56 (67 78))))))
+
+0. 
+  transport (fun Γ0 : raw_context Σ => raw_type Σ Γ0)
+    (fl_g (fl Γ) (f Γ))
+    (transport (fun Θ : raw_context Σ => raw_type Σ Θ)
+       (fl_g (fl Γ) (f Γ))^ AdA.1)
+1.
+  transport (fun Γ0 : raw_context Σ => raw_type Σ Γ0) 
+    (ap fl (e_gf Γ))
+    (transport (fun Θ : raw_context Σ => raw_type Σ Θ)
+       (fl_g (fl Γ) (f Γ))^ AdA.1)
+2. 
+  transport (fun Γ0 : raw_context Σ => raw_type Σ Γ0) 
+    (ap fl (e_gf Γ))
+    (pr1 (transport
+      (fun x : raw_context Σ =>
+          {y : raw_type Σ x & FlatTypeTheory.derivation T [<>] [!x |- y!]}) 
+         (fl_g (fl Γ) (f Γ))^ AdA))
+
+5.
+   pr1 (transport
+     (fun Γ => {y : _ & FlatTypeTheory.derivation T _ [! Γ |- y!]})
+     (ap fl (e_gf Γ))
+     (transport
+     (fun Γ => {y : _ & FlatTypeTheory.derivation T _ [! Γ |- y!]})
+       (fl_g (fl Γ) (f Γ))^ AdA))
+6. (l.208)
+  pr1 (transport
+     (fun Γ => {y : _ & FlatTypeTheory.derivation T _ [! Γ |- y!]})
+     (fl_g (fl Γ) (f Γ))
+     (transport
+       (fun Γ => {y : _ & FlatTypeTheory.derivation T _ [! Γ |- y!]})
+       (fl_g (fl Γ) (f Γ))^ AdA))
+7 (l.242)
+  (transport
+     (fun Γ => raw_type Σ Γ)
+     (fl_g (fl Γ) (f Γ))
+     (pr1 (transport
+       (fun Γ => {y : _ & FlatTypeTheory.derivation T _ [! Γ |- y!]})
+       (fl_g (fl Γ) (f Γ))^ AdA)))
+8.
+  (transport
+     (fun Γ => raw_type Σ Γ)
+     (fl_g (fl Γ) (f Γ))
+     (transport
+     (fun Γ => raw_type Σ Γ)
+       (fl_g (fl Γ) (f Γ))^ 
+       (pr1 AdA))))
+*)
     admit.
   Admitted.
 
