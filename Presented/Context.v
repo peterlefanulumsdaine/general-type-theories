@@ -606,6 +606,29 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     destruct e_x, e_y. apply idpath.
   Defined.
 
+  (* TODO: upstream *)
+  Lemma transport_Fx_ap_path
+    {A} {P P' : A-> Type} (F : forall x, P x -> P' x)
+    {x x'} {e e' : x = x'} (α : e = e') (y :P x)
+    : transport_Fx F e y @ ap _ (ap (fun p => transport P p y) α)
+ = ap (fun p => transport P' p _) α @ transport_Fx F e' y.
+  Proof.
+    destruct α, e; apply idpath.
+  Defined.
+
+  (* TODO: upstream *)
+  Lemma ap_transport_ap_path
+    {A} {P P' : A-> Type} (F : forall x, P x -> P' x)
+    {x x'} {e e' : x = x'} (α : e = e') (y :P x)
+    : ap_transport e F y @ ap (fun p => transport P' p _) α
+      = ap _ (ap (fun p => transport P p y) α) @ ap_transport e' F y.
+  Proof.
+    destruct α, e; apply idpath.
+  Defined.
+
+
+
+
   (* TODO: name! *)
   Local Lemma ap_flatten_path_sigma
       {Γ_wf Γ'_wf : X} (e_Γ : Γ_wf = Γ'_wf)
@@ -675,7 +698,18 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
 
   (* Handy for showing path nodes and figuring out the big computation. *)
   (* TODO: see if the library already provides a version of this *)
-  Local Notation "p @[ x ] q" := (@concat _ _ x _ p q) (at level 25).
+  Declare Scope verbose_path_scope.
+  Notation "p @[ x ] q" := (@concat _ _ x _ p q) (at level 25)
+    : verbose_path_scope.
+
+  (* TODO: upstream; fix var names; consider naming *)
+  Lemma concat_ap1_ap2 {XX YY Z} (ff : XX -> YY -> Z)
+      {x0 x1} (e_x : x0 = x1) {y0 y1} (e_y : y0 = y1)
+    : ap _ e_y @ ap (fun x => ff x _) e_x
+    = ap (fun x => ff x _) e_x @ ap _ e_y. 
+  Proof.
+    destruct e_x, e_y; apply idpath.
+  Defined.
 
   Definition flatten_ifbl_from_ibl_from_ifbl_succ (ΓA_wf : X')
     : ap fl' (ifbl_from_ibl_from_ifbl_succ ΓA_wf) = flatten_ibl_from_ifbl_succ _.
@@ -685,6 +719,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     eapply concat. { apply ap_flatten_path_sigma. }
     srapply (ap011D (fun p q => ap011D Context.extend p q)).
     { apply fl_gf. }
+    (* If we assumed that the signature (and hence syntax in a given scope) was a set, we would be done here by the set-property. *)
     cbn.
     eapply concat.
     { refine (transport_compose (fun q => q = AdA.1) _ (fl_gf Γ) _). }
@@ -721,71 +756,46 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     simpl.
     eapply concat.
     { eapply ap, concat. { apply concat_pp_p. }
+      eapply (ap_1back concat), ap.
+      eapply concat. { refine (ap_V _ (transport_sigma _ _)). }
+      eapply ap. refine (ap_pr1_transport_sigma _ (fl_g _ _)^ _).
+    }
+    eapply concat.
+    { apply ap, ap, ap.
+      eapply concat. { apply concat_p_pp. }
+      eapply (ap_1back concat).
+      eapply concat. { apply concat_p_pp. }
+      eapply (ap_1back concat), inverse. 
+      refine (ap_transport_ap_path (fun Θ : raw_context Σ => pr1) _ _).
+    }
+    eapply concat.
+    { apply ap, ap.
+      eapply concat. { apply ap, concat_pp_p. }
+      eapply concat. { apply ap, concat_pp_p. }
+      refine (concat_V_pp (ap_transport _
+        (fun Θ (BdB : {A : _ & FlatTypeTheory.derivation _ _ [! Θ |- A!]})
+             => BdB.1)
+        _) _).
+    }
+    eapply concat. { eapply concat_p_pp. }
+    eapply concat.
+    { eapply ap, concat. { apply concat_p_pp. }
+      eapply (ap_1back concat), inverse, concat_ap1_ap2.
+    }
+    eapply concat. { apply concat_p_pp. }
+    eapply concat. 2: { apply concat_1p. }
+    apply (ap_1back concat).
+    eapply concat. { apply concat_pp_p. }
+    eapply concat.
+    { eapply ap, concat. { apply concat_p_pp. }
       eapply concat.
-      { eapply (ap_1back concat), ap.
-        eapply concat. { refine (ap_V _ (transport_sigma _ _)). }
-        eapply ap. refine (ap_pr1_transport_sigma _ (fl_g _ _)^ _).
+      { eapply (ap_1back concat), concat. { apply inverse, ap_pp. }
+        apply ap, concat_Vp.
       }
-      
-    
-(*
-Essential components:
-ap_fl_fg: 0 <– 1 ; 5 –> 6.
-ap_transport/transport_Fx : 1 <- 2 <- 5, 6 -> 7 -> 8
-
-
-01 (12 (23 (34 (45 (56 (67 78))))))
-
-0. 
-  transport (fun Γ0 : raw_context Σ => raw_type Σ Γ0)
-    (fl_g (fl Γ) (f Γ))
-    (transport (fun Θ : raw_context Σ => raw_type Σ Θ)
-       (fl_g (fl Γ) (f Γ))^ AdA.1)
-1.
-  transport (fun Γ0 : raw_context Σ => raw_type Σ Γ0) 
-    (ap fl (e_gf Γ))
-    (transport (fun Θ : raw_context Σ => raw_type Σ Θ)
-       (fl_g (fl Γ) (f Γ))^ AdA.1)
-2. 
-  transport (fun Γ0 : raw_context Σ => raw_type Σ Γ0) 
-    (ap fl (e_gf Γ))
-    (pr1 (transport
-      (fun x : raw_context Σ =>
-          {y : raw_type Σ x & FlatTypeTheory.derivation T [<>] [!x |- y!]}) 
-         (fl_g (fl Γ) (f Γ))^ AdA))
-
-5.
-   pr1 (transport
-     (fun Γ => {y : _ & FlatTypeTheory.derivation T _ [! Γ |- y!]})
-     (ap fl (e_gf Γ))
-     (transport
-     (fun Γ => {y : _ & FlatTypeTheory.derivation T _ [! Γ |- y!]})
-       (fl_g (fl Γ) (f Γ))^ AdA))
-6. (l.208)
-  pr1 (transport
-     (fun Γ => {y : _ & FlatTypeTheory.derivation T _ [! Γ |- y!]})
-     (fl_g (fl Γ) (f Γ))
-     (transport
-       (fun Γ => {y : _ & FlatTypeTheory.derivation T _ [! Γ |- y!]})
-       (fl_g (fl Γ) (f Γ))^ AdA))
-7 (l.242)
-  (transport
-     (fun Γ => raw_type Σ Γ)
-     (fl_g (fl Γ) (f Γ))
-     (pr1 (transport
-       (fun Γ => {y : _ & FlatTypeTheory.derivation T _ [! Γ |- y!]})
-       (fl_g (fl Γ) (f Γ))^ AdA)))
-8.
-  (transport
-     (fun Γ => raw_type Σ Γ)
-     (fl_g (fl Γ) (f Γ))
-     (transport
-     (fun Γ => raw_type Σ Γ)
-       (fl_g (fl Γ) (f Γ))^ 
-       (pr1 AdA))))
-*)
-    admit.
-  Admitted.
+      apply concat_1p.
+    }
+    apply concat_Vp.
+  Time Qed.
 
   End Ibl_Ifbl_Succ_Step.
 
