@@ -29,7 +29,7 @@ MODULES := \
 	Typing/StructuralRule \
 	Typing/FlatTypeTheory \
 	Typing/StructuralRulePresuppositions \
-	Presented/Context \
+	Presented/ContextVariants \
 	Presented/AlgebraicExtension \
 	Presented/RawRule \
 	Presented/CongruenceRule \

@@ -1,13 +1,12 @@
-(** The aim of this module: 
+(** The aim of this module is to compare various alternate definitions of sequential contexts
 
-- develop and export a definition of _sequential context_;
-- compare it with some alternate definitions
+The treatment roughly follows that given in the (draft) appendix to the paper, considering a subset of the definitions considered there.
 
-The treatment of alternative definitions roughly follows that given in the (draft) appendix to the paper, considering a subset of the definitions considered there.
+This file is for intrinsic interest: it is _not_ intended to be the main version of sequential contexts used in further development.
+
+As such, and since the content of the file necessitates many parallel definitions, we break with our normal naming conventions and use abbreviations.  Each definition of sequential contexts is assigned a short identifying code, which should be consistently used in its associated constructions and lemmas.  [TODO: this convention is not quite consistently implemented yet.]
 
 *)
-
-(* NOTE: probably the two goals — developing one definition for use in the main development, and comparing alternative definitions — should eventually be separated into different files. *)
 
 Require Import HoTT.
 Require Import Auxiliary.General.
@@ -112,7 +111,7 @@ Section Auxiliary.
   Declare Scope verbose_path_scope.
   Notation "p @[ x ] q" := (@concat _ _ x _ p q) (at level 25)
     : verbose_path_scope.
-  (* TODO: see if the library already provides a version of this *)
+  (* TODO: search more carefully for if the library already provides a version of this *)
 
   (* consider naming *)
   Lemma concat_ap1_ap2 {X Y Z} (f : X -> Y -> Z)
