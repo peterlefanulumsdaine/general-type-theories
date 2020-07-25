@@ -3,14 +3,14 @@ Require Import Auxiliary.General.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
 
 Section Algebraic_Extensions.
 
-Context {σ : shape_system}.
+Context {σ : scope_system}.
 
 Record algebraic_extension
   {Σ : signature σ} (* ambient signature of the extension *)
@@ -30,7 +30,7 @@ Record algebraic_extension
   ; ae_form : ae_premise -> Judgement.form
     := fun i => fst (ae_premise i)
   (* - the proto-context of each premise *)
-  ; ae_shape : ae_premise -> σ
+  ; ae_scope : ae_premise -> σ
     := fun i => snd (ae_premise i)
   (* the ordering relation on the premises *)
   ; ae_lt : well_founded_order ae_premise
@@ -44,10 +44,10 @@ Record algebraic_extension
   (* syntactic part of context of premise *)
   (* NOTE: should never be used directly, always through [ae_raw_context] *)
   ; ae_raw_context_type
-    : forall (i : ae_premise) (v : ae_shape i),
+    : forall (i : ae_premise) (v : ae_scope i),
         raw_type
           (ae_signature_of_premise i)
-          (ae_shape i)
+          (ae_scope i)
   (* raw context of each premise *)
   ; ae_raw_context
     : forall i : ae_premise,
@@ -59,14 +59,14 @@ Record algebraic_extension
         Judgement.hypothetical_boundary_expressions
           (ae_signature_of_premise i)
           (ae_form i)
-          (ae_shape i)
+          (ae_scope i)
   }.
 
 Global Arguments algebraic_extension _ _ : clear implicits.
 
 Global Arguments ae_signature_of_premise {_ _ _} _.
 Global Arguments ae_form {_ _ _} _.
-Global Arguments ae_shape {_ _ _} _.
+Global Arguments ae_scope {_ _ _} _.
 Global Arguments ae_lt {_ _ _}.
 Global Arguments ae_metavariables_of_premise {_ _ _} _.
 Global Arguments ae_raw_context_type {_ _ _} _.
@@ -92,7 +92,7 @@ Proof.
 Defined.
 
 Local Definition eq_metas {a : arity _}
-    {A_eqp A'_eqp : arity σ} (e_eqp : A_eqp = A'_eqp) 
+    {A_eqp A'_eqp : arity σ} (e_eqp : A_eqp = A'_eqp)
     {A_lt : well_founded_order (a + A_eqp)}
     {A'_lt : well_founded_order (a + A'_eqp)}
     (e_lt : transport (fun K => well_founded_order (Family.sum _ K))
@@ -100,7 +100,7 @@ Local Definition eq_metas {a : arity _}
   : forall i : (a + A_eqp),
     Family.map (Family.subfamily a (fun j => A_lt (inl j) i))
       (Family.subfamily a (fun j => A'_lt (inl j)
-        (eq_premise e_eqp i))).                  
+        (eq_premise e_eqp i))).
 Proof.
   destruct e_eqp, e_lt. intros; apply Family.idmap.
 Defined.
@@ -118,16 +118,16 @@ Local Definition eq `{Funext} {Σ} {a}
       Signature.map (ae_signature_of_premise i)
                     (ae_signature_of_premise (equiv_premise i))
       := fun i => Metavariable.fmap2 _ (eq_metas e_premises e_lt i))
-    (fe_shape : forall i : ae_premise A,
-        (ae_shape i <~> ae_shape (equiv_premise i))
+    (fe_scope : forall i : ae_premise A,
+        (ae_scope i <~> ae_scope (equiv_premise i))
       := fun i => equiv_path _ _ (ap _ (ap _ (Family.map_commutes _ i)^)))
     (e_raw_context : forall (i : ae_premise A) (j : _),
         Expression.fmap (fe_signature i) (ae_raw_context i j)
-        = rename (equiv_inverse (fe_shape i))
-                 (ae_raw_context _ (fe_shape i j)))
+        = rename (equiv_inverse (fe_scope i))
+                 (ae_raw_context _ (fe_scope i j)))
     (e_hypothetical_boundary
        : forall i : ae_premise A,
-        rename_hypothetical_boundary_expressions (fe_shape i)
+        rename_hypothetical_boundary_expressions (fe_scope i)
         (fmap_hypothetical_boundary_expressions (fe_signature i)
         (transport (fun jf => Judgement.hypothetical_boundary_expressions _ jf _)
                    (ap fst (Family.map_commutes (eq_premise e_premises) i)^)
@@ -153,7 +153,7 @@ Proof.
     apply fmap_hypothetical_boundary_expressions_idmap.
   - clear e_hypothetical_boundary.
     apply path_forall; intros i.
-    apply path_forall; intros j.  
+    apply path_forall; intros j.
     refine (_ @ e_raw_context i j @ _).
     + unfold fe_signature.
     eapply inverse, concat.
@@ -276,8 +276,8 @@ End Algebraic_Extensions.
 - _(general) maps_, i.e. more general Kleisli-like maps (not given yet), which will be like maps of type theories between their flattenings, and so may interpret each symbol/premise of the source by a suitable _derivable expression_ of the target.  *)
 Section Simple_Maps.
 
-  Context {σ : shape_system}.
-  
+  Context {σ : scope_system}.
+
   Record simple_map_aux
       {Σ : signature σ} {a a'}
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
@@ -308,25 +308,25 @@ Section Simple_Maps.
     apply (ap fst), inverse, Family.map_commutes.
   Defined.
 
-  Local Definition simple_map_shape_commutes
+  Local Definition simple_map_scope_commutes
       {Σ : signature σ} {a a'}
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
       (f : simple_map_aux A A')
       (p : A)
-    : ae_shape p = ae_shape (f p).
+    : ae_scope p = ae_scope (f p).
   Proof.
     apply (ap snd), inverse, Family.map_commutes.
   Defined.
 
-  Local Definition simple_map_premise_shape
+  Local Definition simple_map_premise_scope
       {Σ : signature σ} {a a'}
       {A : algebraic_extension Σ a} {A' : algebraic_extension Σ a'}
       (f : simple_map_aux A A')
       {p : A}
-    : ae_shape p <~> ae_shape (f p).
+    : ae_scope p <~> ae_scope (f p).
   Proof.
     refine (equiv_transport _ _ _ _).
-    apply simple_map_shape_commutes.
+    apply simple_map_scope_commutes.
   Defined.
 
   Local Definition simple_map_metavariables_of_premise
@@ -369,16 +369,16 @@ Section Simple_Maps.
   ; simple_map_context_commutes
     : forall (p : A) (i : _),
       ae_raw_context_type
-       (simple_map_aux_part p) (simple_map_premise_shape _ i)
-      = rename (simple_map_premise_shape _)
+       (simple_map_aux_part p) (simple_map_premise_scope _ i)
+      = rename (simple_map_premise_scope _)
        (Expression.fmap (simple_map_signature_of_premise _)
          (ae_raw_context_type p i))
   ; simple_map_hypothetical_boundary_commutes
     : forall (p : A),
-      ae_hypothetical_boundary_expressions A' (simple_map_aux_part p) 
+      ae_hypothetical_boundary_expressions A' (simple_map_aux_part p)
       = transport (fun jf => Judgement.hypothetical_boundary_expressions _ jf _)
                   (simple_map_form_commutes _ _)
-       (rename_hypothetical_boundary_expressions (simple_map_premise_shape _)
+       (rename_hypothetical_boundary_expressions (simple_map_premise_scope _)
        (fmap_hypothetical_boundary_expressions
            (simple_map_signature_of_premise _)
          (ae_hypothetical_boundary_expressions A p)))
@@ -391,7 +391,7 @@ Section Judgement_of_Premise.
 
    We need to do this into several different signatures, so in this construction, we isolate exactly what is required: a map from the signature of this premise, plus (in case the premise is an object premise) a symbol to use as the head of the judgement, i.e. the metavariable introduced by the premise. *)
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   (* TODO: consider whether the flattening of the conclusion of rules can also be unified with this. *)
   Local Definition judgement_of_premise {Σ : signature σ}
@@ -399,7 +399,7 @@ Section Judgement_of_Premise.
       {Σ'} (f : Signature.map (ae_signature_of_premise i) Σ')
       (Sr : Judgement.is_object (ae_form i)
            -> { S : Σ'
-             & (symbol_arity S = Arity.simple (ae_shape i))
+             & (symbol_arity S = Arity.simple (ae_scope i))
              * (symbol_class S = Judgement.class_of (ae_form i))})
    : judgement Σ'.
   Proof.
@@ -416,7 +416,7 @@ Section Judgement_of_Premise.
         * refine (snd (Sr _).2).
         * set (e := (fst (Sr tt).2)^). destruct e.
            intro v. apply raw_variable.
-           exact (coproduct_inj1 shape_is_sum v).
+           exact (coproduct_inj1 scope_is_sum v).
       + (* case: i an equality rule *)
         destruct H_obj. (* ruled out by assumption *)
   Defined.
@@ -428,14 +428,14 @@ Section Judgement_of_Premise.
       {a} {A : algebraic_extension Σ a} {i : A}
       {Σ''} {f' : Signature.map (ae_signature_of_premise i) Σ''}
       {f'' : Signature.map (@ae_signature_of_premise _ _ _ (fmap f A) i) Σ''}
-      (e_f : f' = Signature.compose f'' (Metavariable.fmap1 f _)) 
+      (e_f : f' = Signature.compose f'' (Metavariable.fmap1 f _))
       {Sr : Judgement.is_object (ae_form i)
            -> { S : Σ''
-             & (symbol_arity S = Arity.simple (ae_shape i))
+             & (symbol_arity S = Arity.simple (ae_scope i))
              * (symbol_class S = Judgement.class_of (ae_form i))}}
       {Sr' : Judgement.is_object (@ae_form _ _ _ (fmap f A) i)
            -> { S : Σ''
-             & (symbol_arity S = Arity.simple (@ae_shape _ _ _ (fmap f A) i))
+             & (symbol_arity S = Arity.simple (@ae_scope _ _ _ (fmap f A) i))
              * (symbol_class S
                  = Judgement.class_of (@ae_form _ _ _ (fmap f A) i))}}
       (e_Sr : Sr = Sr')
@@ -462,15 +462,15 @@ Section Judgement_of_Premise.
       (f : Signature.map (ae_signature_of_premise i) Σ')
       (Sr : Judgement.is_object (ae_form i)
            -> { S : Σ'
-             & (symbol_arity S = Arity.simple (ae_shape i))
+             & (symbol_arity S = Arity.simple (ae_scope i))
              * (symbol_class S = Judgement.class_of (ae_form i))})
       (Sr' := (fun i_ob =>
-           (f' (Sr i_ob).1; 
+           (f' (Sr i_ob).1;
               (ap snd (Family.map_commutes _ _) @ fst (Sr i_ob).2
               , ap fst (Family.map_commutes _ _) @ snd (Sr i_ob).2)))
          : Judgement.is_object (ae_form i)
            -> { S : Σ''
-             & (symbol_arity S = Arity.simple (ae_shape i))
+             & (symbol_arity S = Arity.simple (ae_scope i))
              * (symbol_class S = Judgement.class_of (ae_form i))})
    : Judgement.fmap f' (judgement_of_premise i f Sr)
      = @judgement_of_premise _ _ A i _ (Signature.compose f' f) Sr'.
@@ -503,12 +503,12 @@ Section Judgement_of_Premise.
         clearbody e_S ΣfS ΣS; destruct e_S.
         destruct ΣfS as [cS aS] in *; cbn in *.
         revert e_cS; apply inverse_sufficient;
-          intro e; destruct e.          
+          intro e; destruct e.
         revert e_aS; apply inverse_sufficient;
           intro e; destruct e.
         apply idpath.
   Defined.
-  
+
   (* TODO: rename [simple_map_signature_of_premise]
    to [fmap_signature_of_premise_simple_map], etc. *)
   Definition fmap_judgement_of_premise_simple_map `{Funext}
@@ -519,36 +519,36 @@ Section Judgement_of_Premise.
       {f : Signature.map (ae_signature_of_premise i) Σ'}
       {f' : Signature.map (ae_signature_of_premise (g i)) Σ'}
       (e_f : f = Signature.compose f'
-                    (simple_map_signature_of_premise g)) 
+                    (simple_map_signature_of_premise g))
       {Sr : Judgement.is_object (ae_form i)
            -> { S : Σ'
-             & (symbol_arity S = Arity.simple (ae_shape i))
+             & (symbol_arity S = Arity.simple (ae_scope i))
              * (symbol_class S = Judgement.class_of (ae_form i))}}
       {Sr' : Judgement.is_object (ae_form  (g i))
            -> { S : Σ'
-             & (symbol_arity S = Arity.simple (ae_shape (g i)))
+             & (symbol_arity S = Arity.simple (ae_scope (g i)))
              * (symbol_class S = Judgement.class_of (ae_form (g i)))}}
       (e_Sr : forall i_is_ob,
          let Sr_i := Sr i_is_ob
       in let Sr_gi := Sr' (transport _ (simple_map_form_commutes _ _) i_is_ob)
       in { e_S : Sr_i.1 = Sr_gi.1
          & (fst Sr_i.2 = (ap _ e_S) @ (fst Sr_gi.2)
-                                   @ ap _ (simple_map_shape_commutes _ _)^)
+                                   @ ap _ (simple_map_scope_commutes _ _)^)
          * (snd Sr_i.2 =  (ap _ e_S) @ (snd Sr_gi.2)
                                    @ ap _ (simple_map_form_commutes _ _)^)})
     : judgement_of_premise i f Sr
     = judgement_of_premise (g i) f' Sr'.
   Proof.
-    destruct e_f^. 
+    destruct e_f^.
     assert (e : Sr = fun i_is_ob =>
          let Sr_i := Sr i_is_ob
       in let Sr_gi := Sr' (transport _ (simple_map_form_commutes _ _) i_is_ob)
-      in (Sr_gi.1 ; ( (fst Sr_gi.2) @ ap _ (simple_map_shape_commutes _ _)^
+      in (Sr_gi.1 ; ( (fst Sr_gi.2) @ ap _ (simple_map_scope_commutes _ _)^
                     , (snd Sr_gi.2) @ ap _ (simple_map_form_commutes _ _)^))).
     { apply path_forall; intros i_is_ob.
       admit.
       (* previously this worked, but gets odd errors with recent Coq versions:
-      specialize e_Sr with i_is_ob. 
+      specialize e_Sr with i_is_ob.
       set (Sr_i := Sr i_is_ob) in *. clearbody Sr_i; clear Sr.
       destruct Sr_i as [S e_aS_cS]; cbn in e_Sr.
       destruct e_Sr as [e_S [e_e_aS e_e_cS]].
@@ -575,7 +575,7 @@ End Judgement_of_Premise.
 
 Section Flattening.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
 
   Local Definition flatten {Σ : signature σ} {a}
@@ -619,7 +619,7 @@ Section Flattening.
       eapply concat. { apply ap, Family.id_left. }
       eapply concat.
       { eapply (ap_3back Metavariable.fmap), Family.id_right. }
-      apply inverse.                     
+      apply inverse.
       eapply concat. { apply ap, Family.id_right. }
       eapply (ap_3back Metavariable.fmap), Family.id_left.
     - apply path_forall. intros i_is_ob.
@@ -645,7 +645,7 @@ Section Flattening.
       - eapply concat. { apply inverse, Metavariable.fmap_compose. }
         eapply concat. 2: { apply Metavariable.fmap_compose. }
         (* TODO: abstract the following as naturality lemma for
-           subfamily inclusion w.r.t. functoriality of subfamilies 
+           subfamily inclusion w.r.t. functoriality of subfamilies
         (and make [arity_map_of_simple_map] use that functoriality) *)
         apply ap, Family.map_eq'. intros [j lt_j_i].
         exists (idpath _). cbn.
@@ -655,9 +655,9 @@ Section Flattening.
         apply ap_idmap.
       - intros i_is_ob. destruct i as [ i | i ]; destruct i_is_ob.
         cbn.
-        unfold simple_map_form_commutes, simple_map_shape_commutes,
-          ae_form, ae_shape.        
-        set (e := Family.map_commutes f (inl i)). 
+        unfold simple_map_form_commutes, simple_map_scope_commutes,
+          ae_form, ae_scope.
+        set (e := Family.map_commutes f (inl i)).
         set (Ai := ae_premise A (inl i)) in *.
         set (Ai' := ae_premise A' (f (inl i))) in *.
         clearbody e Ai Ai'.
@@ -676,16 +676,16 @@ Section Initial_Segment.
 
   (If the ordering relation is multi-valued, then  *)
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   (** Next few definitions are auxiliary for [initial_segment] below *)
   Local Definition initial_segment_premise_aux
       {Σ : signature σ} {a} (A : algebraic_extension Σ a) (r : A)
-    : family (form * σ.(shape_carrier))
-  := Family.fmap (fun cl_γ : syntactic_class * σ.(shape_carrier) =>
+    : family (form * σ.(scope_carrier))
+  := Family.fmap (fun cl_γ : syntactic_class * σ.(scope_carrier) =>
                     (form_object cl_γ.(fst), cl_γ.(snd)))
                  (ae_metavariables_of_premise r)
-   + Family.fmap (fun cl_γ : syntactic_class * σ.(shape_carrier) =>
+   + Family.fmap (fun cl_γ : syntactic_class * σ.(scope_carrier) =>
                     (form_equality cl_γ.(fst), cl_γ.(snd)))
        (Family.subfamily (ae_equality_premise A)
                          (fun j => ae_lt (inr j) r)).
@@ -731,11 +731,11 @@ Section Initial_Segment.
     apply Family.Build_map'.
     intros [ j j_lt_i ].
     simple refine (((j;_);_);_).
-    - cbn. eapply WellFounded.transitive. 
+    - cbn. eapply WellFounded.transitive.
       + exact j_lt_i.
       + apply initial_segment_include_premise_lt_aux.
     - destruct i as [ ? | ? ]; exact j_lt_i.
-    - apply idpath. 
+    - apply idpath.
   Defined.
 
   (** Auxiliary definition for [initial_segment] below *)
@@ -800,14 +800,14 @@ Section Initial_Segment.
           eapply concat.
           { apply ap. unfold initial_segment_include_premise_aux; cbn.
             apply idpath. }
-          apply inverse. 
+          apply inverse.
           eapply concat. { apply Expression.fmap_fmap. }
           eapply concat.
           { apply ap. unfold initial_segment_include_premise_aux; cbn.
             apply idpath. }
           apply (ap_3back Expression.fmap).
           eapply concat.
-          2: { apply ap. unfold initial_segment_include_premise_aux; cbn. 
+          2: { apply ap. unfold initial_segment_include_premise_aux; cbn.
                apply idpath. }
           unfold initial_segment_compare_signature.
           eapply concat. { apply inverse, Metavariable.fmap_compose. }
@@ -823,14 +823,14 @@ Section Initial_Segment.
           eapply concat.
           { apply ap. unfold initial_segment_include_premise_aux; cbn.
             apply idpath. }
-          apply inverse. 
+          apply inverse.
           eapply concat. { apply Expression.fmap_fmap. }
           eapply concat.
           { apply ap. unfold initial_segment_include_premise_aux; cbn.
             apply idpath. }
           apply (ap_3back Expression.fmap).
           eapply concat.
-          2: { apply ap. unfold initial_segment_include_premise_aux; cbn. 
+          2: { apply ap. unfold initial_segment_include_premise_aux; cbn.
                apply idpath. }
           unfold initial_segment_compare_signature.
           eapply concat. { apply inverse, Metavariable.fmap_compose. }
@@ -851,11 +851,11 @@ Section Initial_Segment.
       destruct i as [ i_ob | i_eq ].
       + simpl. unfold fmap_hypothetical_boundary.
         eapply concat.
-        { eapply (ap_3back Expression.fmap). 
+        { eapply (ap_3back Expression.fmap).
           apply Metavariable.fmap_idmap. }
         eapply concat. { apply Expression.fmap_idmap. }
         eapply concat. { apply Expression.fmap_fmap. }
-        apply inverse. 
+        apply inverse.
         eapply concat. { apply Expression.fmap_fmap. }
         apply (ap_3back Expression.fmap).
         eapply concat. { apply inverse, Metavariable.fmap_compose. }
@@ -867,11 +867,11 @@ Section Initial_Segment.
         * apply idpath.
       + simpl. unfold fmap_hypothetical_boundary.
         eapply concat.
-        { eapply (ap_3back Expression.fmap). 
+        { eapply (ap_3back Expression.fmap).
           apply Metavariable.fmap_idmap. }
         eapply concat. { apply Expression.fmap_idmap. }
         eapply concat. { apply Expression.fmap_fmap. }
-        apply inverse. 
+        apply inverse.
         eapply concat. { apply Expression.fmap_fmap. }
         apply (ap_3back Expression.fmap).
         eapply concat. { apply inverse, Metavariable.fmap_compose. }
@@ -906,7 +906,7 @@ Section Initial_Segment.
       eapply concat. { apply inverse, rename_idmap. }
       destruct i as [ i_ob | i_eq ];
       apply (ap2 (fun f e => rename f e)); try apply idpath.
-      + simpl. apply inverse. 
+      + simpl. apply inverse.
         eapply concat. { apply Expression.fmap_fmap. }
         eapply concat. { apply Expression.fmap_fmap. }
         apply (ap_3back Expression.fmap).
@@ -919,7 +919,7 @@ Section Initial_Segment.
         * eapply concat. { apply Family.id_left. }
           apply inverse, Family.id_right.
         * apply idpath. (* I don’t know how but I won’t question this *)
-      + simpl. apply inverse. 
+      + simpl. apply inverse.
         eapply concat. { apply Expression.fmap_fmap. }
         eapply concat. { apply Expression.fmap_fmap. }
         apply (ap_3back Expression.fmap).
@@ -941,11 +941,11 @@ Section Initial_Segment.
         simpl ap. apply path_forall; intros x.
         simpl. unfold fmap_hypothetical_boundary.
         eapply concat.
-        { eapply (ap_3back Expression.fmap). 
+        { eapply (ap_3back Expression.fmap).
           apply Metavariable.fmap_idmap. }
         eapply concat. { apply Expression.fmap_idmap. }
         eapply concat. { apply Expression.fmap_fmap. }
-        apply inverse. 
+        apply inverse.
         eapply concat. { apply Expression.fmap_fmap. }
         apply (ap_3back Expression.fmap).
         eapply concat. { apply inverse, Metavariable.fmap_compose. }
@@ -961,11 +961,11 @@ Section Initial_Segment.
         simpl ap. apply path_forall; intros x.
         simpl. unfold fmap_hypothetical_boundary.
         eapply concat.
-        { eapply (ap_3back Expression.fmap). 
+        { eapply (ap_3back Expression.fmap).
           apply Metavariable.fmap_idmap. }
         eapply concat. { apply Expression.fmap_idmap. }
         eapply concat. { apply Expression.fmap_fmap. }
-        apply inverse. 
+        apply inverse.
         eapply concat. { apply Expression.fmap_fmap. }
         apply (ap_3back Expression.fmap).
         eapply concat. { apply inverse, Metavariable.fmap_compose. }
@@ -987,7 +987,7 @@ Section Initial_Segment.
     simple refine (Family.map_transport _ (flatten_fmap_simple _)).
     2: { refine (initial_segment_fmap f p). }
     eapply concat. { apply ap, Metavariable.fmap_idmap. }
-    apply path_forall; intros i. apply Judgement.fmap_idmap. 
+    apply path_forall; intros i. apply Judgement.fmap_idmap.
   Defined.
 
   Local Lemma flatten_initial_segment_fmap_applied `{Funext}

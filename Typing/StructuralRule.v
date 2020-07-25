@@ -1,5 +1,5 @@
 Require Import HoTT.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Closure.
 Require Import Auxiliary.Family.
@@ -45,13 +45,13 @@ Require Import Typing.FlatRule.
 
 Section StructuralRules.
 
-Context {σ : shape_system}.
+Context {σ : scope_system}.
 Context (Σ : signature σ).
 
 Section RenamingRules.
 (** Renaming of variables:
 
-given a variable-renaming f : Γ -> Δ respecting types up to literal sytnactic 
+given a variable-renaming f : Γ -> Δ respecting types up to literal sytnactic
 equality (e.g. a weakening), if J is derivable over Γ, then f_* J is derivable
 over Δ.
 
@@ -60,14 +60,14 @@ over Δ.
   Γ' |- f_* J
 
 This is not a traditional rule.  We need it since, in our setup, instantiations
-of flat rules will always have conclusion context shape of the form γ+δ, where
-δ is the conclusion context shape of the flat rule; this lets us go from such
+of flat rules will always have conclusion context scope of the form γ+δ, where
+δ is the conclusion context scope of the flat rule; this lets us go from such
 conclusions to arbitrary contexts.
 
 The specific instances we really use are isomorphisms of the form γ <~> γ+0 and
 (γ+δ)+χ <~> γ+(δ+χ), used for instance in the instantiation of derivations,
-Over some specific shape systems, e.g. de Bruijn shapes, these isomorphisms are
-identities, so this rule should never be required over such shape systems.
+Over some specific scope systems, e.g. de Bruijn scopes, these isomorphisms are
+identities, so this rule should never be required over such scope systems.
 *)
 
 (* TODO: naming of this rule not ideal.  Keep seeking better options? *)
@@ -95,7 +95,7 @@ Section SubstitutionRules.
  [for each i in Γ,
     either “f acts trivially at i”, i.e.[f i = x_j] and [Γ' j = f^* Γ i],
     _or_ have a premise: ]
-  Γ' |- f i : f^* (Γ i) 
+  Γ' |- f i : f^* (Γ i)
   Γ |- J   [for J any hypothetical judgement]
   --------------------
   Γ' |- f^*J
@@ -108,7 +108,7 @@ Proof.
   exists { Γ : raw_context Σ
     & { Γ' : raw_context Σ
     & hypothetical_judgement Σ Γ
-    * { f : raw_context_map Σ Γ' Γ 
+    * { f : raw_context_map Σ Γ' Γ
     & forall i : Γ, option
              { j : Γ' & (f i = raw_variable j) * (Γ' j = substitute f (Γ i)) }
     }}}.
@@ -203,7 +203,7 @@ Proof.
 Defined.
 
 Section Equality.
-(** The equality structural rules can all be specified as flat rules over the empty signature. 
+(** The equality structural rules can all be specified as flat rules over the empty signature.
 
 (One could specify them directly over arbitrary signatures, but then one would have to prove naturality for them afterwards.)*)
 
@@ -217,7 +217,7 @@ Definition tyeq_refl_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (class_type, shape_empty σ )    (* [ A ] *)
+      (class_type, scope_empty σ )    (* [ A ] *)
     >] : arity _).
   (* Name the symbols. *)
   pose (A := tt : Metas).
@@ -245,8 +245,8 @@ Definition tyeq_sym_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
-      (class_type, shape_empty σ )    (* [ A ] *)
-    ; (class_type, shape_empty σ )    (* [ B ] *)
+      (class_type, scope_empty σ )    (* [ A ] *)
+    ; (class_type, scope_empty σ )    (* [ B ] *)
     >] : arity _).
   (* Name the symbols. *)
   pose (B := None : Metas).
@@ -276,9 +276,9 @@ Definition tyeq_trans_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
-      (class_type, shape_empty σ )    (* [ A ] *)
-    ; (class_type, shape_empty σ )    (* [ B ] *)
-    ; (class_type, shape_empty σ )    (* [ C ] *)
+      (class_type, scope_empty σ )    (* [ A ] *)
+    ; (class_type, scope_empty σ )    (* [ B ] *)
+    ; (class_type, scope_empty σ )    (* [ C ] *)
     >] : arity _).
   (* Name the symbols. *)
   pose (C := None : Metas).
@@ -314,8 +314,8 @@ Definition tmeq_refl_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (class_type, shape_empty σ)    (* [ A ] *)
-    ; (class_term, shape_empty σ)    (* [ u ] *)
+      (class_type, scope_empty σ)    (* [ A ] *)
+    ; (class_term, scope_empty σ)    (* [ u ] *)
     >] : arity _).
   (* Name the symbols. *)
   pose (u := None : Metas).
@@ -346,9 +346,9 @@ Definition tmeq_sym_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (class_type, shape_empty σ)    (* [ A ] *)
-    ; (class_term, shape_empty σ)    (* [ u ] *)
-    ; (class_term, shape_empty σ)    (* [ v ] *)
+      (class_type, scope_empty σ)    (* [ A ] *)
+    ; (class_term, scope_empty σ)    (* [ u ] *)
+    ; (class_term, scope_empty σ)    (* [ v ] *)
     >] : arity _).
   (* Name the symbols. *)
   pose (v := None : Metas).
@@ -381,10 +381,10 @@ Definition tmeq_trans_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (class_type, shape_empty σ)    (* [ A ] *)
-    ; (class_term, shape_empty σ)    (* [ u ] *)
-    ; (class_term, shape_empty σ)    (* [ v ] *)
-    ; (class_term, shape_empty σ)    (* [ w ] *)
+      (class_type, scope_empty σ)    (* [ A ] *)
+    ; (class_term, scope_empty σ)    (* [ u ] *)
+    ; (class_term, scope_empty σ)    (* [ v ] *)
+    ; (class_term, scope_empty σ)    (* [ w ] *)
     >] : arity _).
   (* Name the symbols. *)
   pose (w := None : Metas).
@@ -427,9 +427,9 @@ Definition term_convert_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (class_type, shape_empty σ)    (* [ A ] *)
-    ; (class_type, shape_empty σ)    (* [ B ] *)
-    ; (class_term, shape_empty σ)    (* [ u ] *)
+      (class_type, scope_empty σ)    (* [ A ] *)
+    ; (class_type, scope_empty σ)    (* [ B ] *)
+    ; (class_term, scope_empty σ)    (* [ u ] *)
     >] : arity _).
   (* Name the symbols. *)
   pose (u := None : Metas).
@@ -477,10 +477,10 @@ Definition tmeq_convert_rule : flat_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
-      (class_type, shape_empty σ)    (* [ A ] *)
-    ; (class_type, shape_empty σ)    (* [ B ] *)
-    ; (class_term, shape_empty σ)    (* [ u ] *)
-    ; (class_term, shape_empty σ)    (* [ u' ] *)
+      (class_type, scope_empty σ)    (* [ A ] *)
+    ; (class_type, scope_empty σ)    (* [ B ] *)
+    ; (class_term, scope_empty σ)    (* [ u ] *)
+    ; (class_term, scope_empty σ)    (* [ u' ] *)
     >] : arity _).
   (* Name the symbols. *)
   pose (A := Some (Some (Some tt)) : Metas).
@@ -541,7 +541,7 @@ Section StructuralRuleAccessors.
    argument for them all, rather than needing to be all redeclared with
    [Arguments] afterwards. *)
 
-Context {σ : shape_system} {Σ : signature σ}.
+Context {σ : scope_system} {Σ : signature σ}.
 
 Local Definition rename : rename_instance Σ -> structural_rule Σ
   := fun i => inl (inl (inl i)).
@@ -596,7 +596,7 @@ End StructuralRuleAccessors.
 
 Section StructuralRuleInd.
 
-Context {σ : shape_system}.
+Context {σ : scope_system}.
 Context {Σ : signature σ}.
 
 Definition structural_rule_rect
@@ -660,7 +660,7 @@ To make those functions usable not just over the standard structural rules but a
 Section Structural_Rule_Classes.
 
   Context `{H_Funext : Funext}
-        {σ : shape_system} {Σ : signature σ}.
+        {σ : scope_system} {Σ : signature σ}.
 
   Class has_derivable (Rs C : Closure.system (judgement Σ))
     := { use_derivable : Closure.map Rs C }.
@@ -703,12 +703,12 @@ Section Renaming_Interface.
 
   Context
     `{H_Funext : Funext}
-    {σ : shape_system} {Σ : signature σ}
+    {σ : scope_system} {Σ : signature σ}
     {T : Closure.system (judgement Σ)}
     `{H_T : has_derivable _ _ (rename_instance Σ) T}
     {H : family (judgement Σ) }.
 
-  Lemma derive_rename 
+  Lemma derive_rename
       (Γ Γ' : raw_context Σ)
       (f : typed_renaming Γ Γ')
       (J : hypothetical_judgement Σ Γ)
@@ -741,7 +741,7 @@ Section Renaming_Interface.
 
   Lemma derive_renaming_along_equiv
       (J : judgement Σ)
-      {γ' : σ} (e : γ' <~> shape_of_judgement J)
+      {γ' : σ} (e : γ' <~> scope_of_judgement J)
     : Closure.derivation T H J
     -> Closure.derivation T H (Judgement.rename J e).
   Proof.
@@ -752,7 +752,7 @@ Section Renaming_Interface.
 
   Lemma derive_from_renaming_along_equiv
       (J : judgement Σ)
-      {γ' : σ} (e : γ' <~> shape_of_judgement J)
+      {γ' : σ} (e : γ' <~> scope_of_judgement J)
     : Closure.derivation T H (Judgement.rename J e)
       -> Closure.derivation T H J.
   Proof.
@@ -773,7 +773,7 @@ over a context [ Γ + 0 ], not just [ Γ ] as one would want. *)
       (J : judgement Σ)
     : Closure.derivation T H J
     -> Closure.derivation T H
-         (Judgement.rename J (equiv_inverse (shape_sum_empty_inl _))).
+         (Judgement.rename J (equiv_inverse (scope_sum_empty_inl _))).
   Proof.
     apply derive_renaming_along_equiv.
   Defined.
@@ -783,7 +783,7 @@ over a context [ Γ + 0 ], not just [ Γ ] as one would want. *)
       (J : hypothetical_judgement Σ Γ)
     : Closure.derivation T H
           (Judgement.rename
-             (Build_judgement Γ J) (equiv_inverse (shape_sum_empty_inl _)))
+             (Build_judgement Γ J) (equiv_inverse (scope_sum_empty_inl _)))
     -> Closure.derivation T H (Build_judgement Γ J).
   Proof.
     apply derive_from_renaming_along_equiv.
@@ -796,12 +796,12 @@ Section Variable_Interface.
 
   Context
     `{H_Funext : Funext}
-    {σ : shape_system} {Σ : signature σ}
+    {σ : scope_system} {Σ : signature σ}
     {T : Closure.system (judgement Σ)}
     `{H_T : has_derivable _ _ (variable_instance Σ) T}
     {H : family (judgement Σ) }.
 
-  Lemma derive_variable 
+  Lemma derive_variable
       (Γ : raw_context Σ) (i : Γ)
       (d_Γi : derivation T H [! Γ |- Γ i !])
     : derivation T H [! Γ |- raw_variable i ; Γ i !].
@@ -838,7 +838,7 @@ Section Substitution_Interface.
 
   Context
     `{H_Funext : Funext}
-    {σ : shape_system} {Σ : signature σ}
+    {σ : scope_system} {Σ : signature σ}
     {T : Closure.system (judgement Σ)}
     `{H_T : has_derivable _ _ (substitution_instance Σ) T}
     {H : family (judgement Σ) }.
@@ -867,7 +867,7 @@ Section Substitution_Interface.
     simpl. intros [ [ i fi_nontriv ] | ].
     - destruct (d_f i) as [ ? | d_fi ].
       + destruct fi_nontriv.
-      + apply d_fi. 
+      + apply d_fi.
     - apply d_J.
   Defined.
 
@@ -897,12 +897,12 @@ Section Substitution_Interface.
       ( e : hypothetical_part J'
             = substitute_equal_hypothetical_judgement f g J J_obj)
       ( d_fg : forall i,
-        { j : Γ' & ((f i = raw_variable j) 
+        { j : Γ' & ((f i = raw_variable j)
                  * (g i = raw_variable j))
                  * ((Γ' j = substitute f (Γ i))
                  * (Γ' j = substitute g (Γ i))) }
         + (derivation T H [! Γ' |- f i ; substitute f (Γ i) !]
-          * derivation T H [! Γ' |- g i ; substitute g (Γ i) !] 
+          * derivation T H [! Γ' |- g i ; substitute g (Γ i) !]
           * derivation T H [! Γ' |- f i ≡ g i ; substitute f (Γ i) !]))
       ( d_J : derivation T H (Build_judgement Γ J))
     : derivation T H J'.
@@ -934,7 +934,7 @@ Section Substitution_Interface.
                  * ((Γ' j = substitute f (Γ i))
                  * (Γ' j = substitute g (Γ i))) }
         + (derivation T H [! Γ' |- f i ; substitute f (Γ i) !]
-          * derivation T H [! Γ' |- g i ; substitute g (Γ i) !] 
+          * derivation T H [! Γ' |- g i ; substitute g (Γ i) !]
           * derivation T H [! Γ' |- f i ≡ g i ; substitute f (Γ i) !]))
       ( d_J : derivation T H (Build_judgement Γ J))
     : derivation T H (Build_judgement Γ'
@@ -952,7 +952,7 @@ Section Equality_Interface.
 
   Context
     `{H_Funext : Funext}
-    {σ : shape_system} {Σ : signature σ}
+    {σ : scope_system} {Σ : signature σ}
     {T : Closure.system (judgement Σ)}
     `{H_ren : has_derivable _ _ (rename_instance Σ) T}
     `{H_eq : has_derivable _ _ (equality_instance Σ) T}
@@ -968,8 +968,8 @@ Section Equality_Interface.
                             (use_derivable (equality_instance _)) _ _ _).
     { exists (Some (Some (Some (Some (Some (Some (Some tt))))))), Γ.
       intros i; recursive_destruct i. cbn.
-      refine (Expression.rename _ A). 
-      apply shape_sum_empty_inl. }
+      refine (Expression.rename _ A).
+      apply scope_sum_empty_inl. }
     { refine (Judgement.eq_by_expressions _ _).
       - intros i. apply @instantiate_empty_ptwise.
       - intros i; recursive_destruct i;
@@ -994,7 +994,7 @@ Section Equality_Interface.
                              (use_derivable (equality_instance _)) _ _ _).
     { exists (Some (Some (Some (Some (Some (Some None)))))), Γ.
       intros i; recursive_destruct i;
-        refine (Expression.rename (shape_sum_empty_inl _) _);
+        refine (Expression.rename (scope_sum_empty_inl _) _);
         [ exact A | exact B ].
     }
     { refine (Judgement.eq_by_expressions _ _).
@@ -1024,7 +1024,7 @@ Section Equality_Interface.
                              (use_derivable (equality_instance _)) _ _ _).
     { exists (Some (Some (Some (Some None)))), Γ.
       intros i; recursive_destruct i;
-        refine (Expression.rename (shape_sum_empty_inl _) _);
+        refine (Expression.rename (scope_sum_empty_inl _) _);
         assumption.
     }
     { refine (Judgement.eq_by_expressions _ _).
@@ -1043,7 +1043,7 @@ Section Equality_Interface.
 
   Definition derive_tmeq_refl'
       (Γ : raw_context Σ)
-      (Je : hypothetical_judgement_expressions Σ (form_equality class_term) Γ) 
+      (Je : hypothetical_judgement_expressions Σ (form_equality class_term) Γ)
       (A : raw_type Σ Γ) (a : raw_term Σ Γ)
       (e_A : Je (the_equality_boundary_slot class_term the_type_slot)
              = A)
@@ -1085,7 +1085,7 @@ Section Equality_Interface.
                              (use_derivable (equality_instance _)) _ _ _).
     { exists (Some None), Γ.
       intros i; recursive_destruct i;
-        refine (Expression.rename (shape_sum_empty_inl _) _).
+        refine (Expression.rename (scope_sum_empty_inl _) _).
       + exact A.
       + exact B.
       + exact u.
@@ -1122,7 +1122,7 @@ Section Equality_Interface.
                              (use_derivable (equality_instance _)) _ _ _).
     { exists None, Γ.
       intros i; recursive_destruct i;
-        refine (Expression.rename (shape_sum_empty_inl _) _).
+        refine (Expression.rename (scope_sum_empty_inl _) _).
       + exact A.
       + exact B.
       + exact u.
@@ -1148,7 +1148,7 @@ End Equality_Interface.
 Section SignatureMaps.
 
   Context `{H : Funext}.
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   (** For a given signature map [f] from [Σ] to [Σ'],
      the translations of structural rules of [Σ] are structural rules of [Σ']. *)
@@ -1191,7 +1191,7 @@ Section SignatureMaps.
       + exists r.
         simple refine (FlatRule.closure_system_fmap' f _ ΓI).
         refine (_ @ _). { apply inverse, FlatRule.fmap_compose. }
-        rapply @ap_1back. 
+        rapply @ap_1back.
         apply Signature.empty_rect_unique.
       + refine (Family.map_over_commutes
                   (FlatRule.closure_system_fmap' f _) _).
@@ -1265,20 +1265,20 @@ End SignatureMaps.
 
 Section Instantiation.
 
-  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
+  Context `{Funext} {σ : scope_system} {Σ : signature σ}.
 
   (** Given a flat rule [R] over a signature [Σ], an arity [a] specifying a
   metavariable extension, and an instantiation [I] of [a] in [Σ] over some
   context [Γ],
 
   any instance of [R] over the extended signature [extend Σ a] gets translated
-  under [I] into an instance of [R] over [Σ], modulo renaming. 
+  under [I] into an instance of [R] over [Σ], modulo renaming.
 
   Note: this can’t be in [Typing.FlatRule], since it uses the structural rules,
-  specifically the rule for renaming along shape isomorphisms.  Morally perhaps
+  specifically the rule for renaming along scope isomorphisms.  Morally perhaps
   that should be seen as more primitive than the other structural rules, and be
   baked into the notion of derivations earlier, as e.g. “closure systems on a
-  groupoid”.  (Indeed, if the shape system is univalent then this rule _will_
+  groupoid”.  (Indeed, if the scope system is univalent then this rule _will_
   come for free.)
   *)
   Definition instantiate_flat_rule_closure_system
@@ -1293,11 +1293,11 @@ Section Instantiation.
     (* The derivation essentially consists of the instance
      [(Context.instantiate _ I Δ
      ; instantiate_instantiation I J)]
-     of the same flat rule, wrapped in renamings along [shape_assoc].
+     of the same flat rule, wrapped in renamings along [scope_assoc].
      *)
     simple refine (derive_rename' _ _ _ _ _).
     4: simple refine (Closure.deduce' _ _ _);
-       [ apply inr; 
+       [ apply inr;
          exists (Context.instantiate _ I Δ);
          exact (instantiate_instantiation I J)
        | apply idpath | ].
@@ -1338,12 +1338,12 @@ Section Instantiation.
         exists Δ. exact J.
       + exact (instantiate_raw_context_map I f).
       + apply instantiate_substitute_hypothetical_judgement.
-      + simpl. refine (coproduct_rect shape_is_sum _ _ _). 
+      + simpl. refine (coproduct_rect scope_is_sum _ _ _).
         * intros i; simpl.
           unfold instantiate_raw_context_map.
           repeat rewrite coproduct_comp_inj1.
           apply inl.
-          exists (coproduct_inj1 shape_is_sum i).
+          exists (coproduct_inj1 scope_is_sum i).
           split; try apply idpath.
           eapply concat. { rapply coproduct_comp_inj1. }
           eapply concat. { apply inverse, substitute_raw_variable. }
@@ -1354,7 +1354,7 @@ Section Instantiation.
           destruct (some_or_is_none (f_triv i))
                      as [ [j [e_fi e_Γ'j]]| fi_nontriv ].
           -- apply inl.
-            exists (coproduct_inj2 shape_is_sum j); split;
+            exists (coproduct_inj2 scope_is_sum j); split;
               refine (coproduct_comp_inj2 _ @ _).
             ++ eapply concat. { apply ap, e_fi. }
               apply idpath.
@@ -1386,12 +1386,12 @@ Section Instantiation.
         intros i; destruct cl; recursive_destruct i;
         apply instantiate_substitute.
       (* TODO: abstract as [instantiate_substitute_equal_hypothetical_judgement]? *)
-      + simpl. refine (coproduct_rect shape_is_sum _ _ _). 
+      + simpl. refine (coproduct_rect scope_is_sum _ _ _).
         * intros i; simpl.
           unfold instantiate_raw_context_map.
           repeat rewrite coproduct_comp_inj1.
           apply inl.
-          exists (coproduct_inj1 shape_is_sum i).
+          exists (coproduct_inj1 scope_is_sum i).
           repeat split; try apply idpath;
             refine (coproduct_comp_inj1 _ @ _);
             refine ((substitute_raw_variable _ _)^ @ _);
@@ -1402,7 +1402,7 @@ Section Instantiation.
           destruct (some_or_is_none (fg_triv i)) as [ fgi_triv | fgi_nontriv ].
           -- apply inl.
             destruct fgi_triv as [j [[e_fi e_gi] [e_fΓi e_gΓi]]].
-            exists (coproduct_inj2 shape_is_sum j); split.
+            exists (coproduct_inj2 scope_is_sum j); split.
             ++ split; refine (coproduct_comp_inj2 _ @ _);
               (refine (ap _ _ @ _); [ try eassumption | ]); apply idpath.
             ++ split; refine (coproduct_comp_inj2 _ @ _);
@@ -1410,7 +1410,7 @@ Section Instantiation.
                  refine (_ @ instantiate_substitute _ _ _);
                  apply ap; assumption.
           -- apply inr.
-            repeat split; 
+            repeat split;
             (simple refine (Closure.hypothesis' _ _);
             [ apply Some; exists (i; fgi_nontriv) | ]);
             [ apply Some, Some, tt | | apply Some, None | | apply None | ];
@@ -1422,7 +1422,7 @@ Section Instantiation.
       + simple refine (Closure.hypothesis' _ _).
         { apply None. }
         apply idpath.
-    - (* variable_rule *) 
+    - (* variable_rule *)
       intros [Δ i]; simpl.
       simple refine (derive_variable' _ _ _ _ _ _); try apply idpath.
       { apply inverse; refine (coproduct_comp_inj2 _). }
@@ -1447,7 +1447,7 @@ Section Instantiation.
           exact i.
       }
       (* TODO: can we streamline the following somehow with e.g. [FlatRule.fmap_compose]? *)
-      refine (transport (fun c => derivation _ _ c) _ 
+      refine (transport (fun c => derivation _ _ c) _
              (transport (fun H => derivation _ H _) _ D)).
       + apply (ap (Judgement.instantiate _ _)).
         apply (ap (Judgement.instantiate _ _)).

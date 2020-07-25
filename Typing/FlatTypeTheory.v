@@ -1,7 +1,7 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
@@ -17,7 +17,7 @@ Flat type theories are a simple notion, sufficient to define derivations of judg
 
 Section FlatTypeTheory.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   (** A flat type theory is just a family of flat rules. *)
   Definition flat_type_theory (Σ : signature σ) : Type
@@ -53,8 +53,8 @@ Section FlatTypeTheory.
   Proof.
     simple refine (Family.map_transport _ _).
     - apply idmap.
-    - apply inverse, path_forall. 
-      intros i; apply FlatRule.fmap_idmap. 
+    - apply inverse, path_forall.
+      intros i; apply FlatRule.fmap_idmap.
     - exact f.
   Defined.
 
@@ -72,7 +72,7 @@ Section FlatTypeTheory.
       (ff' : simple_map_over f' T' T'') (ff : simple_map_over f T T')
     : simple_map_over (Signature.compose f' f) T T''.
   Proof.
-    refine (Family.map_transport _ _). 
+    refine (Family.map_transport _ _).
     2: { exact (Family.compose_over ff' ff). }
     apply path_forall; intros r; cbn.
     apply inverse, FlatRule.fmap_compose.
@@ -86,7 +86,7 @@ Section FlatTypeTheory.
       (ff' : simple_map_over f' T' T'') (ff : simple_map_over f T T')
     : simple_map_over f'' T T''.
   Proof.
-    refine (Family.map_transport _ (simple_compose_over ff' ff)). 
+    refine (Family.map_transport _ (simple_compose_over ff' ff)).
     apply ap, inverse, e.
   Defined.
 
@@ -129,7 +129,7 @@ End FlatTypeTheory.
 
 Section ClosureSystem.
 
-  Context {σ : shape_system} `{Funext}.
+  Context {σ : scope_system} `{Funext}.
 
   (** The closure system associated to a flat type theory [T]:
   consists of structural rules for the signature, plus all instantiations
@@ -153,9 +153,9 @@ Section ClosureSystem.
     unfold closure_system. apply Closure.sum_fmap.
     - apply Closure.map_from_family_map, StructuralRule.fmap.
     - (* TODO: abstract as lemma about [Family.bind]? *)
-      apply Closure.map_from_family_map. 
+      apply Closure.map_from_family_map.
       apply Family.Build_map'.
-      intros [r I]. 
+      intros [r I].
       assert (fr
         : Family.map_over (Closure.rule_fmap (Judgement.fmap f))
             (FlatRule.closure_system (T r))
@@ -179,7 +179,7 @@ Section ClosureSystem.
 End ClosureSystem.
 
 Section Derivations.
-  Context {σ : shape_system} `{H_Funext : Funext}.
+  Context {σ : scope_system} `{H_Funext : Funext}.
 
   (** A derivation of a total judgement in the given flat type theory [T] from
       hypotheses [H], with structural rules included. *)
@@ -227,13 +227,13 @@ Section Derivations.
   Defined.
 
   (** Type of derivations of the conclusion of a rule [R] from its premises,
-    in flat type theory [T], with given hypotheses. 
+    in flat type theory [T], with given hypotheses.
 
   I.e. type expressing the proposition that [R] is a derivable rule of [T]. *)
   Local Definition flat_rule_derivation {Σ : signature σ}
         (T : flat_type_theory Σ) (R : flat_rule Σ)
     : Type
-  := derivation 
+  := derivation
        (fmap include_symbol T)
        (flat_rule_premise R)
        (flat_rule_conclusion R).
@@ -245,12 +245,12 @@ Section Derivations.
   Proof.
     unfold flat_rule_derivation.
     simple refine (derive_from_renaming_along_equiv _ _ _).
-    2: { apply equiv_inverse, shape_sum_empty_inr. }
+    2: { apply equiv_inverse, scope_sum_empty_inr. }
     simple refine (Closure.deduce' _ _ _).
     { apply inr. exists r, [::]. apply unit_instantiation. }
     { refine (Judgement.eq_by_expressions _ _).
-      - apply (coproduct_rect shape_is_sum).
-        { apply empty_rect, shape_is_empty. }
+      - apply (coproduct_rect scope_is_sum).
+        { apply empty_rect, scope_is_empty. }
         intros.
         eapply concat. { refine (coproduct_comp_inj2 _). }
         eapply concat. { apply unit_instantiate_expression. }
@@ -260,7 +260,7 @@ Section Derivations.
     simpl. intros p.
     simple refine (derive_rename' _ (flat_rule_premise (T r) p) _ _ _).
     { simple refine (Build_typed_renaming _ _ _ _ _).
-      + apply shape_sum_empty_inr.
+      + apply scope_sum_empty_inr.
       + intros i.
         eapply concat. { refine (coproduct_comp_inj2 _). }
         apply unit_instantiate_expression.
@@ -269,17 +269,17 @@ Section Derivations.
       apply unit_instantiate_expression.
     }
     exact (Closure.hypothesis _ _ p).
-  Defined.    
+  Defined.
 
 End Derivations.
 
-(** Interaction between derivations and instantiation of metavariables *) 
+(** Interaction between derivations and instantiation of metavariables *)
 Section Instantiation.
 
   Context `{Funext}.
-  Context {σ : shape_system} {Σ : signature σ}.
+  Context {σ : scope_system} {Σ : signature σ}.
 
-  (** For any flat type theory [T], an an instantiation [I] from a metavariable 
+  (** For any flat type theory [T], an an instantiation [I] from a metavariable
   extension [Σ + a] of its signature, there is a closure system map from the
   interpretation of [T] over [Σ + a] to the interpretation of [Σ]: any
   rule of [T] instantiated under [Σ + a] translates back under [I] to an
@@ -289,7 +289,7 @@ Section Instantiation.
       (T : flat_type_theory Σ)
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
     : Closure.map_over (Judgement.instantiate Γ I)
-        (closure_system (fmap include_symbol T)) 
+        (closure_system (fmap include_symbol T))
         (closure_system T).
   Proof.
     apply Closure.sum_rect.
@@ -329,7 +329,7 @@ End Instantiation.
 Section Maps.
 
   Context `{H_funext : Funext}.
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   (** A flat type theory map [ff : T -> T'] over a map [f : Σ -> Σ'] of their signatures consists of derivations exhibiting the translation of each rule of [T] as a derivable rule of [T']. *)
   Local Definition map_over
@@ -375,7 +375,7 @@ Section Maps.
       {Σ} {T T' : flat_type_theory Σ} (e : T = T')
     : map T T'.
   Proof.
-    apply map_from_simple_map, simple_map_from_eq, e. 
+    apply map_from_simple_map, simple_map_from_eq, e.
   Defined.
 
   Local Lemma map_to_fmap
@@ -472,7 +472,7 @@ Section Maps.
     { apply inverse, Signature.id_left. }
     apply simple_map_from_eq.
     eapply concat. 2: { apply fmap_compose. }
-    eapply concat. { apply inverse, fmap_compose. } 
+    eapply concat. { apply inverse, fmap_compose. }
     apply ap10, ap, inverse, Metavariable.include_symbol_after_map.
   Defined.
 
@@ -485,7 +485,7 @@ Section Maps.
   Proof.
     intros R.
     refine (transport _ _ _). { apply inverse, FlatRule.fmap_idmap. }
-    apply flat_rule_derivation_fmap. 
+    apply flat_rule_derivation_fmap.
     refine (transport _ _ _). { apply FlatRule.fmap_idmap. }
     apply g.
   Defined.

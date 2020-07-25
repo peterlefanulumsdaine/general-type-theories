@@ -1,4 +1,4 @@
-(** The aim of this module: 
+(** The aim of this module:
 
 - develop and export a definition of _sequential context_;
 - compare it with some alternate definitions
@@ -14,7 +14,7 @@ Require Import Auxiliary.General.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
@@ -39,7 +39,7 @@ Section Auxiliary.
    [transport_rename]
    [transport_substitute]
    [transport_class_instantiate]
-   [transport_shape_instantiate]
+   [transport_scope_instantiate]
    TODO: unify them in terms of this lemma, and/or [ap_transport] directly.
    *)
   Lemma transport_fx
@@ -125,9 +125,9 @@ Section Auxiliary.
 
 End Auxiliary.
 
-Section Fix_Shape_System.
+Section Fix_Scope_System.
 
-Context {σ : shape_system}.
+Context {σ : scope_system}.
 
 Section Inductive_Predicate.
 (** One approach: sequential well-formed contexts are defined directly, by a proof-relevant inductive predicate on flat raw contexts, looking like the standard well-formed context judgement *)
@@ -623,7 +623,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
      srapply Build_slice_to_family_equiv.
      + apply ifbl_from_ibl_succ; assumption.
      + eapply ibl_from_ifbl_succ; eassumption.
-     + apply flatten_ibl_from_ifbl_succ. 
+     + apply flatten_ibl_from_ifbl_succ.
      + apply ibl_from_ifbl_from_ibl_succ; assumption.
      + eapply ifbl_from_ibl_from_ifbl_succ; eassumption.
      + apply flatten_ifbl_from_ibl_from_ifbl_succ.
@@ -632,7 +632,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
   Definition weq_ibl_ifbl {n:nat}
     : (wf_context_ibl T n) <~> {Γ : _ & wf_context_ifbl T n Γ }.
   Proof.
-    set (stfe := slice_to_family_equiv_ibl_ifbl n). 
+    set (stfe := slice_to_family_equiv_ibl_ifbl n).
     srapply equiv_adjointify.
     - intros Γ_wf.
       exists (ibl_flatten Γ_wf). apply stfe.
@@ -662,4 +662,4 @@ Section Induction_By_Length_vs_Inductive_Predicate.
 End Induction_By_Length_vs_Inductive_Predicate.
 
 
-End Fix_Shape_System.
+End Fix_Scope_System.

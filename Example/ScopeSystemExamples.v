@@ -1,9 +1,9 @@
 Require Import HoTT.
 Require Import Syntax.All.
 Require Import Auxiliary.Coproduct.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 
-Section Types_as_shapes.
+Section Types_as_scopes.
 
   Definition is_empty_Empty : is_empty Empty.
   Proof.
@@ -40,29 +40,29 @@ Section Types_as_shapes.
     - reflexivity.
   Defined.
 
-  Definition Type_Shape : shape_system.
+  Definition Type_Scope : scope_system.
   Proof.
     refine {|
-        shape_carrier := Type ;
-        shape_position := (fun A => A) ;
-        shape_empty := Empty ;
-        shape_sum := sum ;
-        shape_extend := option
+        scope_carrier := Type ;
+        scope_position := (fun A => A) ;
+        scope_empty := Empty ;
+        scope_sum := sum ;
+        scope_extend := option
       |}.
     - apply is_empty_Empty.
     - apply is_coproduct_sum.
     - apply is_plusone_option.
   Defined.
 
-End Types_as_shapes.
+End Types_as_scopes.
 
-Section Free_shapes.
+Section Free_scopes.
 
   Inductive f_context : Type :=
   | f_empty : f_context
   | f_coproduct : f_context -> f_context -> f_context
   | f_extend : f_context -> f_context.
-  
+
   Fixpoint f_positions (c : f_context) : Type :=
     match c with
     | f_empty => Empty
@@ -70,21 +70,21 @@ Section Free_shapes.
     | f_extend c => option (f_positions c)
     end.
 
-  Definition Free_Shape : shape_system.
+  Definition Free_Scope : scope_system.
   Proof.
     refine {|
-        shape_carrier := f_context ;
-        shape_position := f_positions ;
-        shape_empty := f_empty ;
-        shape_sum := f_coproduct ;
-        shape_extend := f_extend
+        scope_carrier := f_context ;
+        scope_position := f_positions ;
+        scope_empty := f_empty ;
+        scope_sum := f_coproduct ;
+        scope_extend := f_extend
       |}.
     - apply is_empty_Empty.
     - intros. apply is_coproduct_sum.
     - intros. apply is_plusone_option.
   Defined.
 
-End Free_shapes.
+End Free_scopes.
 
 Section DeBruijn.
 
@@ -155,15 +155,15 @@ Section DeBruijn.
         destruct i as [l|l].
         * intro p.
           pose (q := S_injective p).
-          refine (transport 
+          refine (transport
             (fun e => P (transport DB_positions e _))
             (ap_S_S_injective p : ap S q = p) _).
           clearbody q ; clear p.
           destruct q.
-          exact x.            
+          exact x.
         * intro p.
           pose (q := S_injective p).
-          refine (transport 
+          refine (transport
             (fun e => P (transport DB_positions e _))
             (ap_S_S_injective p : ap S q = p) _).
           clearbody q ; clear p.
@@ -196,7 +196,7 @@ Section DeBruijn.
       + apply (empty_rect _ DB_is_empty).
       + apply (plusone_rect _ _ (DB_is_plusone _)).
         * apply (plusone_comp_one _ _ (DB_is_plusone _)).
-        * intros i1. 
+        * intros i1.
           refine (_ @ _).
           { apply (plusone_comp_inj _ _ (DB_is_plusone _)). }
           refine (IH _ _ _ i1).
@@ -209,13 +209,13 @@ Section DeBruijn.
         refine (IH _ _ _ i2).
   Defined.
 
-  Definition DeBruijn : shape_system.
+  Definition DeBruijn : scope_system.
   Proof.
-    refine {| shape_carrier := nat ;
-              shape_position := DB_positions ;
-              shape_empty := 0 ;
-              shape_sum := (fun n m => (n + m)%nat) ;
-              shape_extend := S
+    refine {| scope_carrier := nat ;
+              scope_position := DB_positions ;
+              scope_empty := 0 ;
+              scope_sum := (fun n m => (n + m)%nat) ;
+              scope_extend := S
            |}.
     - apply DB_is_empty.
     - apply DB_is_coproduct.
@@ -224,8 +224,8 @@ Section DeBruijn.
 
 End DeBruijn.
 
-(* A second de Bruijn style shape system, defining the positions as a fixpoint instead of an inductive family. *)
- 
+(* A second de Bruijn style scope system, defining the positions as a fixpoint instead of an inductive family. *)
+
 Section DeBruijn_Fixpoint.
 
   Fixpoint DBF_positions (n : nat) : Type :=
@@ -278,7 +278,7 @@ Section DeBruijn_Fixpoint.
       + intros [].
       + apply (plusone_rect _ _ (is_plusone_option _)).
         * apply idpath.
-        * intros i1. exact (IH _ _ _ i1). 
+        * intros i1. exact (IH _ _ _ i1).
     (* coproduct_comp2 *)
     - induction n as [ | n' IH]; intros P f1 f2.
       + intros i2; apply idpath.
@@ -286,13 +286,13 @@ Section DeBruijn_Fixpoint.
   Defined.
 
 
-  Definition DeBruijn_Fixpoint : shape_system.
+  Definition DeBruijn_Fixpoint : scope_system.
   Proof.
-    refine {| shape_carrier := nat ;
-              shape_position := DBF_positions ;
-              shape_empty := 0%nat ;
-              shape_sum := (fun n m => (n + m)%nat) ;
-              shape_extend := S
+    refine {| scope_carrier := nat ;
+              scope_position := DBF_positions ;
+              scope_empty := 0%nat ;
+              scope_sum := (fun n m => (n + m)%nat) ;
+              scope_extend := S
            |}.
     - apply is_empty_Empty.
     - apply DBF_is_coproduct.

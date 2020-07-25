@@ -4,7 +4,7 @@ Require Import HoTT.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
@@ -13,7 +13,7 @@ Require Import Presented.RawRule.
 
 Section CongruenceRule.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
   Context {Σ : signature σ}.
 
   Local Definition original_premise {obs eqs : arity σ}
@@ -144,7 +144,7 @@ eq_new i   0        0        0        0        i < j
           cbn. apply inl, inr; split; constructor.
         * apply idpath.
         * intros i.
-          apply raw_variable, (coproduct_inj1 shape_is_sum), i.
+          apply raw_variable, (coproduct_inj1 scope_is_sum), i.
       + (* RHS of new equality premise *)
         cbn. simple refine (raw_symbol' _ _ _).
         * apply Metavariable.include_metavariable.
@@ -152,7 +152,7 @@ eq_new i   0        0        0        0        i < j
           cbn. apply inl, inr; split; constructor.
         * apply idpath.
         * intros i.
-          apply raw_variable, (coproduct_inj1 shape_is_sum), i.
+          apply raw_variable, (coproduct_inj1 scope_is_sum), i.
     - (* rule_conclusion_hypothetical_boundary *)
       intros [ i | | ]; simpl.
       + (* boundary of original conclusion *)
@@ -176,8 +176,8 @@ eq_new i   0        0        0        0        i < j
           -- apply idpath.
           -- cbn. intros i.
              apply raw_variable.
-             apply (coproduct_inj1 shape_is_sum).
-             apply (coproduct_inj2 shape_is_sum).
+             apply (coproduct_inj1 scope_is_sum).
+             apply (coproduct_inj2 scope_is_sum).
              exact i.
       + (* RHS of new conclusion *)
         cbn. simple refine (raw_symbol' _ _ _).
@@ -194,8 +194,8 @@ eq_new i   0        0        0        0        i < j
           -- apply idpath.
           -- cbn. intros i.
              apply raw_variable.
-             apply (coproduct_inj1 shape_is_sum).
-             apply (coproduct_inj2 shape_is_sum).
+             apply (coproduct_inj1 scope_is_sum).
+             apply (coproduct_inj2 scope_is_sum).
              exact i.
   Defined.
   (* TODO: the above is a bit unreadable.  An alternative approach that might be clearer and more robust:
@@ -205,4 +205,3 @@ eq_new i   0        0        0        0        i < j
 (* A good test proposition will be the following: whenever a rule is well-typed, then so is its associated congruence rule. *)
 
 End CongruenceRule.
-

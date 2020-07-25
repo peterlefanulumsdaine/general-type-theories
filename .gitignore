@@ -7,5 +7,6 @@
 *.aux
 Makefile.bak
 Makefile.coq
-/Makefile.coq.conf
+Makefile.coq.conf
 html
+.Makefile.coq.d
