@@ -15,7 +15,7 @@ A (formalised) general definition of type theories.
 * [`Typing`](./Typing) -- judgements, flat rules, flat type theories, typing derivations
 * [`Presented`](./Presented) -- well-presented rules, type theories
 * [`Metatheorem`](./Metatheorem) -- basic metatheorems about these type theories
-* [`Example`](./Example) -- examples of shape systems, type theories, etc.
+* [`Example`](./Example) -- examples of scope systems, type theories, etc.
 
 ## Mathematical overview
 
@@ -34,9 +34,9 @@ call these **raw** terms and types in order to emphasize that they are just synt
 entities which need not be well-formed.
 
 The theory is **dependent** (types depend on terms) and has **binding operators** (such as ∏, Σ,
-λ). Therefore, we need to describe **shapes** of contexts and binding operators. Two
-possibilities for shapes are *de Bruijn indices* and *named variables*, but these are not the
-only ones. Thus we define a general abstract notion of *shape systems*, which we then use to
+λ). Therefore, we need to describe **scopes** of contexts and binding operators. Two
+possibilities for scopes are *de Bruijn indices* and *named variables*, but these are not the
+only ones. Thus we define a general abstract notion of *scope systems*, which we then use to
 express the structure of contexts and binding operators.
 
 The raw syntax is generated from a **raw signature** (we use the qualifier "raw" to remind
@@ -103,7 +103,7 @@ instances are well-formed typed and terms.
 
 ### Derivations
 
-A **general type theory** `T` is given by a shape `σ`, a signature `Σ` over `σ`, and a
+A **general type theory** `T` is given by a scope `σ`, a signature `Σ` over `σ`, and a
 family of inference rules over `Σ`.
 
 A derivation of a judgment `J` from a family of rules `R` hypotheses `H` is an inductively
@@ -112,7 +112,7 @@ are rule instances from `R`.
 
 ### The interdependence of derivations and rules
 
-While a shape `σ` and a raw signature `Σ` may be given without many complications, there
+While a scope `σ` and a raw signature `Σ` may be given without many complications, there
 is considerable interdependence between inference rules because giving the evidence that a
 rule is well-formed requires one to provide derivations, but to know what a derivation is,
 we need to be given inference rules.
