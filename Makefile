@@ -14,7 +14,7 @@ MODULES := \
 	Auxiliary/Family \
 	Auxiliary/Coproduct \
 	Auxiliary/Closure \
-	Syntax/ShapeSystem \
+	Syntax/ScopeSystem \
 	Syntax/SyntacticClass \
 	Syntax/Arity \
 	Syntax/Signature \
@@ -39,7 +39,7 @@ MODULES := \
 	Metatheorem/Presuppositions \
 	Metatheorem/SubstElimination \
 	Metatheorem/UniqueTyping \
-	Example/ShapeSystemExamples \
+	Example/ScopeSystemExamples \
 	Example/MartinLofTypeTheory
 
 VS      := $(MODULES:%=%.v)

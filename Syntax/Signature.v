@@ -1,12 +1,12 @@
 Require Import HoTT.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Auxiliary.Family.
 Require Import Syntax.SyntacticClass.
 Require Import Syntax.Arity.
 
 Section Signature.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   Definition signature : Type
     := family (syntactic_class * arity σ).
@@ -23,8 +23,8 @@ Arguments signature _ : clear implicits.
 
 Section Map.
 
-  Context {σ : shape_system}.
- 
+  Context {σ : scope_system}.
+
   Local Definition map (Σ Σ' : signature σ) : Type
     := Family.map Σ Σ'.
 
@@ -33,11 +33,11 @@ Section Map.
   Local Definition idmap (Σ : signature σ)
     : map Σ Σ
   := Family.idmap Σ.
-  
+
   Local Definition compose {Σ Σ' Σ'' : signature σ}
     : map Σ' Σ'' -> map Σ Σ' -> map Σ Σ''
   := Family.compose.
-  
+
   Local Lemma id_right `{Funext}
       {Σ Σ' : signature σ} (f : map Σ Σ')
     : compose f (idmap _) = f.
@@ -56,7 +56,7 @@ End Map.
 
 Section Examples.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   Local Definition empty : signature σ
   := [<>].
@@ -69,7 +69,7 @@ Section Examples.
   Proof.
     apply Family.empty_rect_unique.
   Defined.
-  
+
 End Examples.
 
 Arguments empty _ : clear implicits.

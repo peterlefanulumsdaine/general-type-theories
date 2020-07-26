@@ -13,7 +13,7 @@ Require Import Auxiliary.General.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
@@ -38,7 +38,7 @@ Section Auxiliary.
    [transport_rename]
    [transport_substitute]
    [transport_class_instantiate]
-   [transport_shape_instantiate]
+   [transport_scope_instantiate]
    TODO: unify them in terms of this lemma, and/or [ap_transport] directly.
    *)
   Lemma transport_fx
@@ -124,9 +124,9 @@ Section Auxiliary.
 
 End Auxiliary.
 
-Section Fix_Shape_System.
+Section Fix_Scope_System.
 
-Context {σ : shape_system}.
+Context {σ : scope_system}.
 
 Section Inductive_Predicate.
 (** One approach: sequential well-formed contexts are defined directly, by a proof-relevant inductive predicate on flat raw contexts, looking like the standard well-formed context judgement *)
@@ -489,14 +489,13 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     : ap fl' (ifbl_from_ibl_from_ifbl_succ ΓA_wf) = flatten_ibl_from_ifbl_succ _.
   Proof.
     destruct ΓA_wf as [Γ AdA].
-    unfold ifbl_from_ibl_from_ifbl_succ.
     eapply concat. { apply ap_flatten_path_sigma. }
     srapply (ap011D (fun p q => ap011D Context.extend p q)).
     { apply fl_gf. }
     (* If we assumed that the signature (and hence syntax in a given scope) was a set, we would be done here by the set-property. *)
     cbn.
     eapply concat.
-    { refine (transport_compose (fun q => q = AdA.1) _ (fl_gf Γ) _). }
+    { refine (transport_compose (fun q => q = _) _ (fl_gf Γ) _). }
     eapply concat. { apply transport_paths_l. }
     eapply concat.
     { eapply ap, concat. { apply concat_pp_p. }
@@ -516,7 +515,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
       apply ap. refine (ap_transport_pV
         (fun Θ (BdB : {A : _ & FlatTypeTheory.derivation _ _ [! Θ |- A!]})
              => BdB.1)
-        _ AdA).
+        _ (_;_)).
     }
     (* last component of LHS is now exactly RHS *)
     cbn.
@@ -570,6 +569,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     }
     apply concat_Vp.
   Time Qed.
+  (* NOTE: if this slow compilation step later becomes too much annoyance slowing down the build, it could harmlessly be switched to [Admitted.] *)
 
   End Ibl_Ifbl_Succ_Step.
 
@@ -661,4 +661,4 @@ Section Induction_By_Length_vs_Inductive_Predicate.
 End Induction_By_Length_vs_Inductive_Predicate.
 
 
-End Fix_Shape_System.
+End Fix_Scope_System.

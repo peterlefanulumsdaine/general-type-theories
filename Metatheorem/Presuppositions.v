@@ -1,5 +1,5 @@
 Require Import HoTT.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
@@ -40,7 +40,7 @@ The low-level hard work is showing that the flat rules / closure conditions aris
 Section PresuppositivityFlat.
 (** In this section, we show how presuppositivity transfers between the flat world and the closure-system world. *)
 
-  Context {σ : shape_system} `{Funext}.
+  Context {σ : scope_system} `{Funext}.
 
   (** A flat type theory is presuppositive if all its rules are (weakly) presuppositive over it.
 
@@ -94,7 +94,7 @@ End PresuppositivityFlat.
 
 Section Presuppositivity.
 
-  Context {σ : shape_system} `{Funext}.
+  Context {σ : scope_system} `{Funext}.
 
   Lemma rule_of_well_typed_type_theory_is_well_typed
       {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
@@ -110,12 +110,12 @@ Section Presuppositivity.
           FlatTypeTheory.simple_map_from_family_map.
     eapply Family.compose.
     2: { apply Family.map_from_eq, inverse, FlatTypeTheory.fmap_compose. }
-    (* - simple map of raw TT’s 
+    (* - simple map of raw TT’s
        - induces a map (not nec fam map) of raw tt’s
        - simple map f : T —> T':
          for each r : T, some (f r) : T', and something implying flatten
          (T r) derivable from flatten (T r'), stably (i.e. regardless of
-         ambient theory) 
+         ambient theory)
        - so: simple map of _raw rules_: f : R' —> R: must implies R stably derivable from R'; so, is simple map (premises R —> premises R'), and then conclusion must agree. *)
     apply (Family.map_vs_map_over _ _ _)^-1.
     apply RawTypeTheory.flatten_initial_segment.

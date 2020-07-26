@@ -2,7 +2,7 @@ Require Import HoTT.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Syntax.SyntacticClass.
 Require Import Syntax.Arity.
 Require Import Syntax.Signature.
@@ -30,7 +30,7 @@ Section MetavariableExtension.
   allowing us to write judgements like x:A |– b(x) : B(x).
   *)
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   Local Definition extend (Σ : signature σ) (a : arity σ) : signature σ.
   Proof.
@@ -56,7 +56,7 @@ Section MetavariableExtension.
   Defined.
 
   (** Functoriality of metavariable extensions w.r.t. signature maps *)
-  
+
   Context `{Funext}.
 
   (* Metavariable extension is bifunctorial in both arguments (the signature and the arity).
@@ -107,7 +107,7 @@ Section MetavariableExtension.
   Defined.
 
   Local Definition fmap_compose
-    {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ') 
+    {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
     {a a' a''} (g' : Family.map a' a'') (g : Family.map a a')
     : fmap (Signature.compose f' f) (Family.compose g' g)
     = Signature.compose (fmap f' g') (fmap f g).
@@ -124,7 +124,7 @@ Section MetavariableExtension.
   Defined.
 
   Local Definition fmap1_compose
-    {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ') 
+    {Σ Σ' Σ''} (f' : Signature.map Σ' Σ'') (f : Signature.map Σ Σ')
     (a : _)
     : fmap1 (Signature.compose f' f) a
     = Signature.compose (fmap1 f' a) (fmap1 f a).
@@ -133,7 +133,7 @@ Section MetavariableExtension.
   Defined.
 
   Local Definition fmap2_compose
-    (Σ : _) 
+    (Σ : _)
     {a a' a''} (g' : Family.map a' a'') (g : Family.map a a')
     : fmap2 Σ (Family.compose g' g)
     = Signature.compose (fmap2 Σ g') (fmap2 Σ g).
@@ -155,7 +155,7 @@ Section MetavariableExtension.
     eapply concat. { apply ap_idmap. }
     apply inverse, concat_p1.
   Defined.
- 
+
 End MetavariableExtension.
 
 Section MetavariableNotations.
@@ -168,7 +168,7 @@ Section MetavariableNotations.
 
   2. Arities of metavariables, from [Metavariable.extend].
 
-    These will have only (Ty, shape_empty) arguments, and be indexed by the positions of some proto-context, which will itself probably be built up by [shape_extend].
+    These will have only (Ty, scope_empty) arguments, and be indexed by the positions of some proto-context, which will itself probably be built up by [scope_extend].
 
   So we give functions/notations for giving arguments for each of these forms.
 
@@ -183,10 +183,10 @@ Section MetavariableNotations.
   For now we provide the [M/ … /] version, but not yet the general [S/ … /] version.
 *)
 
-Context {σ : shape_system}.
+Context {σ : scope_system}.
 Context {Σ : signature σ}.
 
-(* Access functions for supplying arguments to arities specified as finite extensions of the empty shape. *)
+(* Access functions for supplying arguments to arities specified as finite extensions of the empty scope. *)
 Local Definition empty_args {ϵ : σ} (H_ϵ : is_empty ϵ) {γ}
   : arguments Σ (Arity.simple ϵ) γ
   := empty_rect _ H_ϵ _.
@@ -194,12 +194,12 @@ Local Definition empty_args {ϵ : σ} (H_ϵ : is_empty ϵ) {γ}
 Local Definition extend_args {γ δ : σ}
   : arguments Σ (Arity.simple δ) γ
     -> raw_term Σ γ
-    -> arguments Σ (Arity.simple (shape_extend _ δ)) γ.
+    -> arguments Σ (Arity.simple (scope_extend _ δ)) γ.
 Proof.
   intros ts t.
-  simple refine (plusone_rect _ _ (shape_is_extend _ δ) _ _ _); cbn.
+  simple refine (plusone_rect _ _ (scope_is_extend _ δ) _ _ _); cbn.
   - refine (rename _ t).
-    exact (coproduct_inj1 shape_is_sum).
+    exact (coproduct_inj1 scope_is_sum).
   - exact ts.
 Defined.
 
@@ -209,11 +209,11 @@ Declare Scope syntax_scope.
 Declare Scope raw_syntax_scope.
 
 Notation " '[M/' A /] "
-  := (raw_symbol (include_metavariable A) (empty_args shape_is_empty)) : syntax_scope.
+  := (raw_symbol (include_metavariable A) (empty_args scope_is_empty)) : syntax_scope.
 
 Notation " '[M/' A ; x , .. , z /] "
   := (raw_symbol (include_metavariable A)
-       (extend_args .. (extend_args (empty_args shape_is_empty) x) .. z))
+       (extend_args .. (extend_args (empty_args scope_is_empty) x) .. z))
     : raw_syntax_scope.
 
 Open Scope syntax_scope.
@@ -221,14 +221,14 @@ Open Scope syntax_scope.
 
 Section Instantiations.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   (* To use rules, one *instantiates* their metavariables, as raw syntax of the
      ambient signature, over some context. *)
   Local Definition instantiation (a : @arity σ) (Σ : signature σ) (γ : σ)
     : Type
   := forall i : a,
-         raw_expression Σ (argument_class i) (shape_sum γ (argument_shape i)).
+         raw_expression Σ (argument_class i) (scope_sum γ (argument_scope i)).
 
   (* TODO: check naming conventions *)
   Definition rename_instantiation {a} {Σ}
@@ -237,7 +237,7 @@ Section Instantiations.
     : instantiation a Σ γ'.
   Proof.
     intros i. refine (rename _ (I i)).
-    exact (Coproduct.fmap shape_is_sum shape_is_sum f idmap).
+    exact (Coproduct.fmap scope_is_sum scope_is_sum f idmap).
   Defined.
 
   (* TODO: check naming conventions *)
@@ -247,7 +247,7 @@ Section Instantiations.
     : instantiation a Σ γ'.
   Proof.
     intros i. refine (substitute _ (I i)).
-    exact (Substitution.extend _ _ (argument_shape i) f).
+    exact (Substitution.extend _ _ (argument_scope i) f).
   Defined.
 
   Definition instantiation_fmap
@@ -263,8 +263,8 @@ Section Instantiations.
     : instantiation a Σ γ.
   Proof.
     intros i.
-    unfold argument_class, argument_shape.
-    refine (transport _ _ _). 
+    unfold argument_class, argument_scope.
+    refine (transport _ _ _).
     { apply ap, ap, (Family.map_commutes f). }
     eapply (transport (fun cl => _ _ cl _)).
     { apply ap, (Family.map_commutes f). }
@@ -277,26 +277,26 @@ Section Instantiations.
       {cl} {a : @arity σ} {Σ : signature σ} {γ : σ}
       (I : instantiation a Σ γ)
       {δ} (e : raw_expression (extend Σ a) cl δ)
-    : raw_expression Σ cl (shape_sum γ δ).
+    : raw_expression Σ cl (scope_sum γ δ).
   Proof.
     destruct e as [ δ i | δ [S | M] args].
   - refine (raw_variable _).
-    exact (coproduct_inj2 (shape_is_sum) i).
+    exact (coproduct_inj2 (scope_is_sum) i).
   - refine (raw_symbol S _). intros i.
     refine (rename _
              (instantiate_expression _ _ _ _ I _ (args i))).
-    apply shape_assoc_rtol.
+    apply scope_assoc_rtol.
   - simpl in M. (* Substitute [args] into the expression [I M]. *)
     refine (substitute _ (I M)).
-    refine (coproduct_rect shape_is_sum _ _ _).
-    + intros i. apply raw_variable, (coproduct_inj1 shape_is_sum), i.
+    refine (coproduct_rect scope_is_sum _ _ _).
+    + intros i. apply raw_variable, (coproduct_inj1 scope_is_sum), i.
     + intros i.
       refine (rename _
              (instantiate_expression _ _ _ _ I _ (args i))).
       cbn.
-      refine (Coproduct.fmap shape_is_sum shape_is_sum _ _).
+      refine (Coproduct.fmap scope_is_sum scope_is_sum _ _).
       * exact (fun j => j).
-      * exact (Coproduct.empty_right shape_is_sum shape_is_empty).
+      * exact (Coproduct.empty_right scope_is_sum scope_is_empty).
   Defined.
 
   Arguments instantiate_expression {_ _ _ _} _ [_] _ : simpl nomatch.
@@ -304,9 +304,9 @@ Section Instantiations.
   Definition instantiate_raw_context_map {Σ : signature σ}
       {a : arity σ} {γ : σ} (I : instantiation a Σ γ)
       {δ δ' : σ} (f : raw_context_map (extend Σ a) δ' δ)
-    : raw_context_map Σ (shape_sum γ δ') (shape_sum γ δ)
-  := (coproduct_rect shape_is_sum _
-        (fun i => raw_variable (coproduct_inj1 shape_is_sum i))
+    : raw_context_map Σ (scope_sum γ δ') (scope_sum γ δ)
+  := (coproduct_rect scope_is_sum _
+        (fun i => raw_variable (coproduct_inj1 scope_is_sum i))
         (fun i => instantiate_expression I (f i))).
 
   (** Interaction of metavariable-instantiation with renaming, substitution, transport. *)
@@ -326,7 +326,7 @@ Section Instantiations.
     destruct e_cl; apply idpath.
   Defined.
 
-  Lemma transport_shape_instantiate
+  Lemma transport_scope_instantiate
       {Σ : signature σ} {a}
       {γ} (I : instantiation a Σ γ)
       {cl} {δ δ'} (e_δ : δ = δ')
@@ -344,28 +344,28 @@ Section Instantiations.
       {δ' : σ} (f : δ -> δ')
     : instantiate_expression I (rename f e)
     = rename
-        (Coproduct.fmap shape_is_sum shape_is_sum idmap f)
+        (Coproduct.fmap scope_is_sum scope_is_sum idmap f)
         (instantiate_expression I e).
   Proof.
     revert δ' f.
     induction e as [ θ i | θ [S | M] e_args IH_e_args ]; intros δ' f.
     - (* [e] is a variable *)
-      cbn. apply ap, inverse. refine (coproduct_comp_inj2 _). 
+      cbn. apply ap, inverse. refine (coproduct_comp_inj2 _).
     - (* [e] is a symbol of [Σ] *)
       simpl. apply ap. apply path_forall; intros i.
       eapply concat. { apply ap, IH_e_args. }
       eapply concat. { apply rename_rename. }
       eapply concat. 2: { apply inverse, rename_rename. }
       apply (ap_2back rename), path_forall.
-      repeat refine (coproduct_rect shape_is_sum _ _ _); intros j;
-        cbn; unfold Coproduct.fmap, shape_assoc_rtol, Coproduct.assoc_rtol;
+      repeat refine (coproduct_rect scope_is_sum _ _ _); intros j;
+        cbn; unfold Coproduct.fmap, scope_assoc_rtol, Coproduct.assoc_rtol;
         repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
         apply idpath.
     - (* [e] is a metavariable from [a] *)
       simpl.
       eapply concat. 2: { apply inverse, Substitution.rename_substitute. }
       apply (ap_2back substitute), path_forall.
-      refine (coproduct_rect shape_is_sum _ _ _); intros i.
+      refine (coproduct_rect scope_is_sum _ _ _); intros i.
       + eapply concat. { refine (coproduct_comp_inj1 _). }
         apply inverse.
         eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
@@ -377,7 +377,7 @@ Section Instantiations.
         eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
         eapply concat. { apply rename_rename. }
         apply (ap_2back rename), path_forall.
-        repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
+        repeat refine (coproduct_rect scope_is_sum _ _ _); intros j.
         * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
           eapply concat. { refine (coproduct_comp_inj1 _). }
           apply inverse.
@@ -390,8 +390,8 @@ Section Instantiations.
           eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
           eapply concat. { apply ap, ap. refine (coproduct_comp_inj1 _). }
           eapply concat. { refine (coproduct_comp_inj2 _). }
-          apply ap. refine (coproduct_comp_inj1 _). 
-        * revert j. apply empty_rect, shape_is_empty.
+          apply ap. refine (coproduct_comp_inj1 _).
+        * revert j. apply empty_rect, scope_is_empty.
   Defined.
 
   Lemma instantiate_substitute {Σ : signature σ}
@@ -407,7 +407,7 @@ Section Instantiations.
     revert δ' f.
     induction e as [ θ i | θ [S | M] e_args IH_e_args ]; intros δ' f.
     - (* [e] is a variable *)
-      simpl. apply inverse. refine (coproduct_comp_inj2 _). 
+      simpl. apply inverse. refine (coproduct_comp_inj2 _).
     - (* [e] is a symbol of [Σ] *)
       simpl. apply ap. apply path_forall; intros i.
       eapply concat. { apply ap, IH_e_args. }
@@ -415,7 +415,7 @@ Section Instantiations.
       apply inverse.
       eapply concat. { apply substitute_rename. }
       apply (ap_2back substitute), path_forall.
-      repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
+      repeat refine (coproduct_rect scope_is_sum _ _ _); intros j.
       + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         eapply concat. { refine (coproduct_comp_inj1 _). }
         eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
@@ -432,7 +432,7 @@ Section Instantiations.
         eapply concat. { apply ap, instantiate_rename. }
         eapply concat. { apply rename_rename. }
         apply (ap_2back rename), path_forall.
-        refine (coproduct_rect shape_is_sum _ _ _); intros k.
+        refine (coproduct_rect scope_is_sum _ _ _); intros k.
         * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
           refine (coproduct_comp_inj1 _).
         * eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
@@ -444,14 +444,14 @@ Section Instantiations.
         apply inverse.
         eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
         eapply concat. { apply ap, ap. refine (coproduct_comp_inj2 _). }
-        simpl. apply ap. 
+        simpl. apply ap.
         eapply concat. { refine (coproduct_comp_inj2 _). }
         refine (coproduct_comp_inj2 _).
     - (* [e] is a metavariable from [a] *)
       simpl.
       eapply concat. 2: { apply inverse, substitute_substitute. }
       apply (ap_2back substitute), path_forall.
-      refine (coproduct_rect shape_is_sum _ _ _); intros i.
+      refine (coproduct_rect scope_is_sum _ _ _); intros i.
       + eapply concat. { refine (coproduct_comp_inj1 _). }
         apply inverse.
         eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
@@ -463,7 +463,7 @@ Section Instantiations.
         eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
         eapply concat. { apply substitute_rename. }
         apply (ap_2back substitute), path_forall.
-        repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
+        repeat refine (coproduct_rect scope_is_sum _ _ _); intros j.
         * eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
           eapply concat. { refine (coproduct_comp_inj1 _). }
           apply inverse.
@@ -479,13 +479,13 @@ Section Instantiations.
           eapply concat. { apply rename_rename. }
           eapply concat. 2: { apply rename_idmap. }
           apply (ap_2back rename), path_forall.
-          refine (coproduct_rect shape_is_sum _ _ _); intros k.
+          refine (coproduct_rect scope_is_sum _ _ _); intros k.
           -- eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
            refine (coproduct_comp_inj1 _).
           -- eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
            eapply concat. { refine (coproduct_comp_inj2 _). }
            apply ap. refine (coproduct_comp_inj1 _).
-        * revert j. apply empty_rect, shape_is_empty.
+        * revert j. apply empty_rect, scope_is_empty.
   Defined.
 
   (* TODO: consider naming of this vs. preceding lemmas about commutation of instantiations with renaming/substitution in the expressions, currently [instantiate_rename] and [instantiate_substitute]. *)
@@ -496,28 +496,28 @@ Section Instantiations.
       {δ} (e : raw_expression (extend Σ a) cl δ)
     : instantiate_expression (rename_instantiation f I) e
     = rename
-        (Coproduct.fmap shape_is_sum shape_is_sum f idmap) 
+        (Coproduct.fmap scope_is_sum scope_is_sum f idmap)
         (instantiate_expression I e).
   Proof.
     induction e as [ θ i | θ [S | M] e_args IH_e_args ].
     - (* [e] is a variable *)
-      simpl. apply ap, inverse. refine (coproduct_comp_inj2 _). 
+      simpl. apply ap, inverse. refine (coproduct_comp_inj2 _).
     - (* [e] is a symbol of [Σ] *)
       simpl. apply ap. apply path_forall; intros i.
       eapply concat. { apply ap, IH_e_args. }
       eapply concat. { apply rename_rename. }
       eapply concat. 2: { apply inverse, rename_rename. }
       apply (ap_2back rename), path_forall.
-      repeat refine (coproduct_rect shape_is_sum _ _ _); intros j;
-        cbn; unfold Coproduct.fmap, shape_assoc_rtol, Coproduct.assoc_rtol;
+      repeat refine (coproduct_rect scope_is_sum _ _ _); intros j;
+        cbn; unfold Coproduct.fmap, scope_assoc_rtol, Coproduct.assoc_rtol;
         repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
         apply idpath.
     - (* [e] is a metavariable from [a] *)
       simpl. unfold rename_instantiation.
       eapply concat. { apply substitute_rename. }
-      eapply concat. 2: { apply inverse, rename_substitute. }      
+      eapply concat. 2: { apply inverse, rename_substitute. }
       apply (ap_2back substitute), path_forall.
-      refine (coproduct_rect shape_is_sum _ _ _); intros j;
+      refine (coproduct_rect scope_is_sum _ _ _); intros j;
         unfold Coproduct.fmap.
       { repeat rewrite coproduct_comp_inj1; cbn.
         apply ap, inverse. refine (coproduct_comp_inj1 _). }
@@ -526,7 +526,7 @@ Section Instantiations.
       eapply concat. { apply rename_rename. }
       eapply concat. 2: { apply inverse, rename_rename. }
       apply (ap_2back rename), path_forall.
-      repeat refine (coproduct_rect shape_is_sum _ _ _); intros k;
+      repeat refine (coproduct_rect scope_is_sum _ _ _); intros k;
         unfold Coproduct.fmap;
         repeat rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
         apply idpath.
@@ -545,7 +545,7 @@ Section Instantiations.
   Proof.
     induction e as [ θ i | θ [S | M] e_args IH_e_args ].
     - (* [e] is a variable *)
-      simpl. apply inverse. refine (coproduct_comp_inj2 _). 
+      simpl. apply inverse. refine (coproduct_comp_inj2 _).
     - (* [e] is a symbol of [Σ] *)
       simpl. apply ap. apply path_forall; intros i.
       eapply concat. { apply ap, IH_e_args. }
@@ -553,8 +553,8 @@ Section Instantiations.
       apply inverse.
       eapply concat. { apply substitute_rename. }
       apply (ap_2back substitute), path_forall.
-      repeat refine (coproduct_rect shape_is_sum _ _ _); intro;
-        cbn; unfold Substitution.extend, shape_assoc_rtol, Coproduct.assoc_rtol;
+      repeat refine (coproduct_rect scope_is_sum _ _ _); intro;
+        cbn; unfold Substitution.extend, scope_assoc_rtol, Coproduct.assoc_rtol;
         repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2.
       + eapply concat. { apply rename_rename. }
         eapply concat. 2: { apply inverse, rename_rename. }
@@ -567,9 +567,9 @@ Section Instantiations.
     - (* [e] is a metavariable from [a] *)
       simpl. unfold substitute_instantiation.
       eapply concat. { apply substitute_substitute. }
-      eapply concat. 2: { apply inverse, substitute_substitute. }      
+      eapply concat. 2: { apply inverse, substitute_substitute. }
       apply (ap_2back substitute), path_forall.
-      refine (coproduct_rect shape_is_sum _ _ _); intros j;
+      refine (coproduct_rect scope_is_sum _ _ _); intros j;
         unfold Substitution.extend.
       { repeat rewrite coproduct_comp_inj1; cbn;
         rewrite coproduct_comp_inj1; cbn.
@@ -582,7 +582,7 @@ Section Instantiations.
       eapply concat. { apply rename_substitute. }
       eapply concat. 2: { apply inverse, substitute_rename. }
       apply (ap_2back substitute), path_forall.
-      repeat refine (coproduct_rect shape_is_sum _ _ _); intros k;
+      repeat refine (coproduct_rect scope_is_sum _ _ _); intros k;
         unfold Substitution.extend, Coproduct.fmap;
         repeat rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2.
       + eapply concat. { apply rename_rename. }
@@ -634,7 +634,7 @@ Section Instantiations.
       eapply concat. { apply Substitution.fmap_substitute. }
       unfold raw_context_map_fmap, instantiation_fmap.
       apply (ap_2back substitute), path_forall.
-      refine (coproduct_rect shape_is_sum _ _ _); intros i.
+      refine (coproduct_rect scope_is_sum _ _ _); intros i.
       + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         cbn. apply inverse. refine (coproduct_comp_inj1 _).
       + eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
@@ -671,14 +671,14 @@ Section Instantiations.
       simpl.
       eapply concat. { apply Substitution.transport_substitute. }
       unfold instantiation_fmap2.
-      eapply concat. 2: { apply inverse, substitute_transport_shape. }
+      eapply concat. 2: { apply inverse, substitute_transport_scope. }
       refine (ap_2back substitute _ _ _ @ ap (substitute _) _).
       2: { refine (ap_1back _ _^ _).
            eapply concat. 2: { refine (ap_compose _ _ _). }
            apply idpath.
       }
       set (e_M := Family.map_commutes f M); clearbody e_M.
-      unfold argument_shape, argument_class, symbol_arity in *; simpl in e_args.
+      unfold argument_scope, argument_class, symbol_arity in *; simpl in e_args.
       set (a_M := a M) in *.
       set (a_fM := a' (f M)) in *.
       simpl; fold a_fM a_M; clearbody a_M a_fM.
@@ -694,17 +694,17 @@ Section Instantiation_Composition.
 
 (* TODO: contemplate this, and try to work out what monad-like structure on extensions/instantiations we are really giving in the following. *)
 
-  Context {σ : shape_system} {Σ : signature σ}.
+  Context {σ : scope_system} {Σ : signature σ}.
   Context `{Funext}.
 
   Definition unit_instantiation (a : arity σ)
-    : instantiation a (extend Σ a) (shape_empty σ).
+    : instantiation a (extend Σ a) (scope_empty σ).
   Proof.
     intros A.
     refine (raw_symbol (include_metavariable A) _).
     intros i. apply raw_variable.
-    refine (coproduct_inj1 shape_is_sum _).
-    refine (coproduct_inj2 shape_is_sum _).
+    refine (coproduct_inj1 scope_is_sum _).
+    refine (coproduct_inj2 scope_is_sum _).
     exact i.
   Defined.
 
@@ -712,27 +712,27 @@ Section Instantiation_Composition.
   Definition instantiate_instantiation
       {γ} {a} (I : instantiation a Σ γ)
       {δ} {b} (J : instantiation b (extend Σ a) δ)
-    : instantiation b Σ (shape_sum γ δ).
+    : instantiation b Σ (scope_sum γ δ).
   Proof.
     intros i.
     refine (rename _ (instantiate_expression I (J i))).
-    apply shape_assoc.
+    apply scope_assoc.
   Defined.
 
   Lemma unit_instantiate_expression {a}
       {cl} {γ} (e : raw_expression (extend Σ a) cl γ)
     : instantiate_expression (unit_instantiation a)
         (Expression.fmap (fmap1 include_symbol _) e)
-      = rename (coproduct_inj2 shape_is_sum) e.
+      = rename (coproduct_inj2 scope_is_sum) e.
   Proof.
     induction e as [ γ i | γ [S | M] args IH ].
     - apply idpath.
-    - simpl. 
+    - simpl.
       apply ap, path_forall; intros i.
       eapply concat. { apply ap, IH. }
       eapply concat. { apply rename_rename. }
       apply (ap_2back rename), path_forall.
-      refine (coproduct_rect shape_is_sum _ _ _).
+      refine (coproduct_rect scope_is_sum _ _ _).
       + intros x.
         eapply concat. { refine (coproduct_comp_inj2 _). }
         eapply concat. { refine (coproduct_comp_inj1 _). }
@@ -747,23 +747,23 @@ Section Instantiation_Composition.
       eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
       eapply concat. { apply ap, ap, IH. }
       eapply concat. { apply rename_rename. }
-      eapply concat. { apply rename_rename. } 
+      eapply concat. { apply rename_rename. }
       apply (ap_2back rename), path_forall.
-      refine (coproduct_rect shape_is_sum _ _ _).
+      refine (coproduct_rect scope_is_sum _ _ _).
       + intros x.
         unfold Coproduct.fmap, Coproduct.empty_right;
         repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2.
         apply idpath.
-      + apply (empty_rect _ shape_is_empty).
+      + apply (empty_rect _ scope_is_empty).
   Defined.
 
-  Lemma instantiate_instantiate_expression 
+  Lemma instantiate_instantiate_expression
       {γ} {a} (I : instantiation a Σ γ)
       {δ} {b} (J : instantiation b (extend Σ a) δ)
       {cl} {θ} (e : raw_expression (extend Σ b) cl θ)
     : instantiate_expression
         (instantiate_instantiation I J) e
-    = rename (shape_assoc _ _ _)
+    = rename (scope_assoc _ _ _)
         (instantiate_expression I
           (instantiate_expression J
             (Expression.fmap (fmap1 include_symbol _) e))).
@@ -785,8 +785,8 @@ Section Instantiation_Composition.
       eapply concat. { apply rename_rename. }
       eapply concat. { apply rename_rename. }
       apply (ap_2back rename), path_forall.
-      repeat refine (coproduct_rect shape_is_sum _ _ _); intros j;
-        cbn; unfold Coproduct.fmap, shape_assoc_rtol, Coproduct.assoc_rtol;
+      repeat refine (coproduct_rect scope_is_sum _ _ _); intros j;
+        cbn; unfold Coproduct.fmap, scope_assoc_rtol, Coproduct.assoc_rtol;
         repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
         apply idpath.
     - (* [e] is a metavariable of [b] *)
@@ -794,10 +794,10 @@ Section Instantiation_Composition.
       simpl instantiate_expression.
       simpl rename.
       eapply concat.
-      { rapply @ap_2back. 
+      { rapply @ap_2back.
         apply ap, path_forall; intros i.
         refine (ap (rename _) _).
-        apply IH_e_args.   
+        apply IH_e_args.
       } clear IH_e_args.
       unfold instantiate_instantiation.
       eapply concat. { apply substitute_rename. }
@@ -805,7 +805,7 @@ Section Instantiation_Composition.
       eapply concat. { apply ap, instantiate_substitute. }
       eapply concat. { apply Substitution.rename_substitute. }
       apply (ap_2back substitute), path_forall.
-      repeat refine (coproduct_rect shape_is_sum _ _ _); intros j.
+      repeat refine (coproduct_rect scope_is_sum _ _ _); intros j.
       + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         simpl rename. eapply concat. { refine (ap _ (coproduct_comp_inj1 _)). }
         apply inverse.
@@ -823,14 +823,14 @@ Section Instantiation_Composition.
         eapply concat. { apply ap, ap. refine (coproduct_comp_inj2 _). }
         eapply concat. { apply ap, instantiate_rename. }
         eapply concat. { apply rename_rename. }
-        apply inverse. 
+        apply inverse.
         eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
         eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
         eapply concat. { refine (coproduct_comp_inj2 _). }
         eapply concat. { apply rename_rename. }
         apply (ap_2back rename), path_forall; clear e_args.
-        repeat refine (coproduct_rect shape_is_sum _ _ _); intros k;
-          cbn; unfold shape_assoc_rtol, Coproduct.assoc_rtol, Coproduct.fmap;
+        repeat refine (coproduct_rect scope_is_sum _ _ _); intros k;
+          cbn; unfold scope_assoc_rtol, Coproduct.assoc_rtol, Coproduct.fmap;
           repeat progress rewrite ? coproduct_comp_inj1, ? coproduct_comp_inj2;
           apply idpath.
   Defined.
@@ -839,11 +839,11 @@ Section Instantiation_Composition.
       for instantiations of a metavariable with empty binder. *)
   Lemma instantiate_binderless_metavariable
       {γ : σ} {cl}
-      (E : raw_expression Σ cl (shape_sum γ (shape_empty _)))
+      (E : raw_expression Σ cl (scope_sum γ (scope_empty _)))
       {f}
     : substitute
-        (coproduct_rect shape_is_sum _
-                        (fun i => raw_variable (coproduct_inj1 shape_is_sum i))
+        (coproduct_rect scope_is_sum _
+                        (fun i => raw_variable (coproduct_inj1 scope_is_sum i))
                         f)
         E
       = E.
@@ -851,9 +851,9 @@ Section Instantiation_Composition.
     eapply concat. 2: { apply rename_idmap. }
     eapply concat. 2: { apply substitute_raw_variable. }
     apply (ap_2back substitute), path_forall.
-    refine (coproduct_rect shape_is_sum _ _ _).
+    refine (coproduct_rect scope_is_sum _ _ _).
     - intros i; refine (coproduct_comp_inj1 _).
-    - apply (empty_rect _ shape_is_empty).
+    - apply (empty_rect _ scope_is_empty).
   Defined.
 
 End Instantiation_Composition.
@@ -861,12 +861,12 @@ End Instantiation_Composition.
 (** When working with congruence rules, one often wants to combine two instantiations for some metavariables into a single instantiation for two copies of the metavariables. *)
 Section Copair_Instantiation.
 
-  Context {σ : shape_system} `{Funext}.
+  Context {σ : scope_system} `{Funext}.
 
   Definition copair_instantiation
       {Σ} {a b : arity σ} {γ}
-      (Ia : instantiation a Σ γ) 
-      (Ib : instantiation b Σ γ) 
+      (Ia : instantiation a Σ γ)
+      (Ib : instantiation b Σ γ)
     : instantiation (a+b) Σ γ.
   Proof.
     intros [i | j].
@@ -876,7 +876,7 @@ Section Copair_Instantiation.
 
   Definition copair_instantiation_inl
       {Σ} {a b : arity σ} {γ}
-      (Ia : instantiation a Σ γ) 
+      (Ia : instantiation a Σ γ)
       (Ib : instantiation b Σ γ)
       {cl} {δ} (e : raw_expression (extend Σ a) cl δ)
     : instantiate_expression
@@ -889,7 +889,7 @@ Section Copair_Instantiation.
 
   Definition copair_instantiation_inr
       {Σ} {a b : arity σ} {γ}
-      (Ia : instantiation a Σ γ) 
+      (Ia : instantiation a Σ γ)
       (Ib : instantiation b Σ γ)
       {cl} {δ} (e : raw_expression (extend Σ b) cl δ)
     : instantiate_expression

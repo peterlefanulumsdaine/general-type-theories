@@ -10,13 +10,13 @@ Require Import Presented.RawRule.
 Require Import Presented.TypeTheory.
 
 Section MartinLöfTypeTheory.
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   Definition Σ : signature σ.
   Proof.
     refine [< _; _ >].
     - exact (class_type, [< >]). (* U *)
-    - simple refine (class_type, [< (class_term, shape_empty σ) >]). (* El *)
+    - simple refine (class_type, [< (class_term, scope_empty σ) >]). (* El *)
   Defined.
 
   Local Definition U_formation_rule_index
@@ -26,7 +26,7 @@ Section MartinLöfTypeTheory.
 
   Local Definition El_formation_rule_index : (form * arity σ)
     := (form_object class_type
-       , [< (class_term, shape_empty σ) >]).
+       , [< (class_term, scope_empty σ) >]).
 
   (* Definition f : *)
 

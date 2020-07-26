@@ -1,7 +1,7 @@
 (** A convenience file that can be required in place of
     several files that describe the raw entities. *)
 
-Require Export Syntax.ShapeSystem.
+Require Export Syntax.ScopeSystem.
 Require Export Syntax.SyntacticClass.
 Require Export Syntax.Arity.
 Require Export Syntax.Signature.

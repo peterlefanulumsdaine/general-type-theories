@@ -2,7 +2,7 @@ Require Import HoTT.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
@@ -21,14 +21,14 @@ Require Import Typing.Presuppositions.
 
 Section StructuralRulePresups.
 
-  Context `{Funext} {σ : shape_system} {Σ : signature σ}.
+  Context `{Funext} {σ : scope_system} {Σ : signature σ}.
 
   (** In this section we show that all structural rules are presuppositive, in the
   sense that whenever their premises are derivable, all the presuppositions of their
   premises/conclusion are derivable. *)
 
   (** Is a given closure rule arising from a total judgement presuppositive in the sense
-      that its presuppositions are derivable, using just structural rules? 
+      that its presuppositions are derivable, using just structural rules?
 
   In fact, we ask for derivations not over just the structural rules but over the closure system associated to the empty flat type theory, so that infrastructure for derivations over general flat type theories can be used. *)
   Local Definition is_presuppositive : Closure.rule (judgement Σ) -> Type
@@ -50,7 +50,7 @@ Section StructuralRulePresups.
     { exact (presupposition J_orig p_orig). }
     { exact f. }
     { apply eq_by_expressions_hypothetical_judgement; intros i.
-      destruct J as [jf j]. 
+      destruct J as [jf j].
       recursive_destruct jf; recursive_destruct p; recursive_destruct i;
         apply idpath.
     }
@@ -175,7 +175,7 @@ conversion over equal boundaries for any judgement. *)
       apply Judgement.canonicalise; simpl.
       simple refine (derive_term_convert _ _ _ _ _ _ _ _).
         (* TODO: improve the equality rule interfaces to work off the bat for arbitrary judgements of correct type, without canonicalising? *)
-      { exact (substitute g A). } 
+      { exact (substitute g A). }
       + (* [! Γ' |- g^* A !] *)
         refine (derive_subst_apply' [! Γ |- A !] [! _ |- _ !] g _ d_g d_A).
         apply eq_by_eta_hypothetical_judgement, idpath.
@@ -222,9 +222,9 @@ conversion over equal boundaries for any judgement. *)
   the particularly long cases beforehand individually. *)
 
   Local Definition tmeq_convert_is_presuppositive
-    : weakly_presuppositive_flat_rule [<>] (@tmeq_convert_rule σ). 
+    : weakly_presuppositive_flat_rule [<>] (@tmeq_convert_rule σ).
   Proof.
-    (* tmeq_convert: 
+    (* tmeq_convert:
        ⊢ A, B type
        ⊢ A ≡ B type
        ⊢ u, u' : A
@@ -308,7 +308,7 @@ conversion over equal boundaries for any judgement. *)
         * apply Judgement.eq_by_eta, idpath.
     - (* tmeq_refl *)
       intros p; recursive_destruct p.
-      + (* type presup: Γ |- A type *)        
+      + (* type presup: Γ |- A type *)
         simple refine (Closure.hypothesis' _ _).
         * apply inr. exists tt. apply the_type_slot.
         * apply Judgement.eq_by_eta, idpath.
@@ -336,7 +336,7 @@ conversion over equal boundaries for any judgement. *)
         * apply Judgement.eq_by_eta, idpath.
     - (* tmeq_trans *)
       intros p; recursive_destruct p.
-      + (* type presup: Γ |- A type *)        
+      + (* type presup: Γ |- A type *)
         simple refine (Closure.hypothesis' _ _).
         * apply inr. exists None. apply the_equality_boundary_slot, the_type_slot.
         * apply Judgement.eq_by_eta, idpath.
@@ -350,7 +350,7 @@ conversion over equal boundaries for any judgement. *)
         * apply Judgement.eq_by_eta, idpath.
     - (* term_convert *)
       intros p; recursive_destruct p.
-      + (* type presup: Γ |- A type *)        
+      + (* type presup: Γ |- A type *)
         simple refine (Closure.hypothesis' _ _).
         * apply inl. apply Some, Some, None.
         * apply Judgement.eq_by_eta, idpath.
@@ -358,11 +358,11 @@ conversion over equal boundaries for any judgement. *)
       apply tmeq_convert_is_presuppositive.
   Defined.
   (* TODO: some thoughts from this proof:
-  - rename [the_equality_boundary_slot], to eg [the_equality_boundary]? 
-  - make presuppositions and hypothesis selection less option-blind (but how)? 
-  - maybe make structural rule accessors take value in closure systems of type theories, not in [structural_rules] itself?  (More convenient for giving derivations; but then recursion over structural rules is less clear.) 
+  - rename [the_equality_boundary_slot], to eg [the_equality_boundary]?
+  - make presuppositions and hypothesis selection less option-blind (but how)?
+  - maybe make structural rule accessors take value in closure systems of type theories, not in [structural_rules] itself?  (More convenient for giving derivations; but then recursion over structural rules is less clear.)
 *)
-  
+
   End Equality_Flat_Rules.
 
   (** Equality rules are presuppositive (as closure rules) *)

@@ -1,5 +1,5 @@
 Require Import HoTT.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
@@ -18,7 +18,7 @@ Require Import Typing.Presuppositions.
 
 Section WellTypedRule.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   (* TODO: upstream to new file [TypedAlgebraicExtension]. *)
   Definition is_well_typed_algebraic_extension
@@ -38,16 +38,16 @@ Section WellTypedRule.
   (1) take earlier premises just as judgements, and allow them as hypotheses in the derivation;
   (2) take earlier premise as judgements, then add no-premise flat rules to [T], giving these judgements as axioms;
   (3) give the extension of [T] by the preceding part of [A] as a type theory, i.e. turn premises of [A] into genuine flat rules, with the variables of their contexts turned into term premises, and conclusion just the head of the given premise of [A].
-  
+
   In any case we must first translate [T] up to the extended signature of [R].
-  
+
   (1) would nicely fit into the monadic view of derivations.
   (3) would nicely factorise into “take initial segment of an alg ext”, and “extend TT by an alg ext”; also avoids the need to frequently use “cut” when invoking the earlier premises in the derivations
-  
+
   We currently take option (1).
   *)
 
-  (* TODO: consider naming.  Currently a bit out of step with our general convention of using e.g. [derivation] not [is_derivable]; but [derivation] would be misleading here, since this is the type of derivations showing that the rule is well-formed, not “derivations of the rule” in the usual sense of derivations showing it’s a derivable rule. *) 
+  (* TODO: consider naming.  Currently a bit out of step with our general convention of using e.g. [derivation] not [is_derivable]; but [derivation] would be misleading here, since this is the type of derivations showing that the rule is well-formed, not “derivations of the rule” in the usual sense of derivations showing it’s a derivable rule. *)
   Local Definition is_well_typed
       {Σ : signature σ} (T : flat_type_theory Σ)
       {a} {jf_concl}
@@ -68,7 +68,7 @@ End WellTypedRule.
 
 Section Functoriality.
 
-  Context {σ : shape_system} `{Funext}.
+  Context {σ : scope_system} `{Funext}.
 
   Definition fmap_is_well_typed_algebraic_extension
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
@@ -82,7 +82,7 @@ Section Functoriality.
     change (AlgebraicExtension.premise_boundary p)
     with (Judgement.fmap_boundary
             (Metavariable.fmap1 f _)
-            (@AlgebraicExtension.premise_boundary _ _ _ A p)). 
+            (@AlgebraicExtension.premise_boundary _ _ _ A p)).
     intros i.
     set (Di := D p (presupposition_fmap_boundary _ _ i)).
     (* [Di] is essentially what we want, modulo some translation. *)
@@ -123,7 +123,7 @@ Section Functoriality.
     set (fR_concl := RawRule.conclusion_boundary (RawRule.fmap f R)).
     assert (e_concl : fR_concl = Judgement.fmap_boundary
                              (Metavariable.fmap1 f _)
-                             (RawRule.conclusion_boundary R)). 
+                             (RawRule.conclusion_boundary R)).
       { apply RawRule.conclusion_boundary_fmap. }
     clearbody fR_concl. destruct e_concl^.
     intros i.
@@ -183,7 +183,7 @@ End Functoriality.
 
 Section Flattening.
 
-  Context {σ : shape_system} `{Funext}.
+  Context {σ : scope_system} `{Funext}.
 
   Definition weakly_presuppositive_flatten
       {Σ : signature σ} {T : flat_type_theory Σ}
@@ -204,12 +204,12 @@ Section Flattening.
   Qed.
   (* NOTE: in fact, we should be able to extend this to showing
    that [flatten R] is _strongly_ presuppositive. *)
-  
+
 End Flattening.
 
 Section Congruence_Rules.
 
-  Context {σ : shape_system} `{Funext}.
+  Context {σ : scope_system} `{Funext}.
 
   Definition congruence_rule_is_well_typed
       {Σ : signature σ} {T : flat_type_theory Σ}
