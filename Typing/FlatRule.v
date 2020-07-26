@@ -3,7 +3,7 @@ Require Import Auxiliary.General.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Closure.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
@@ -24,7 +24,7 @@ are well-behaved.
 
 Section FlatRule.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   (* TODO: Is it right that we allow arbitrary judgements, or should we allow
      only _hypothetical_ judgements? *)
@@ -114,7 +114,7 @@ End FlatRule.
 
 Section ClosureSystem.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   Local Definition closure_system {Σ : signature σ} (R : flat_rule Σ)
     : Closure.system (judgement Σ).
@@ -133,7 +133,7 @@ Section ClosureSystem.
   Context `{Funext}.
 
   (** Note: unlike some similar lemmas, this really is a non-invertible map in general, i.e. a “lax naturality” not naturality. *)
-  Local Definition closure_system_fmap 
+  Local Definition closure_system_fmap
         {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
         (R : flat_rule Σ)
     : Family.map_over (Closure.rule_fmap (Judgement.fmap f))
@@ -152,7 +152,7 @@ Section ClosureSystem.
 
   Local Definition closure_system_fmap'
     {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-    {R} {R'} (e : fmap f R = R') 
+    {R} {R'} (e : fmap f R = R')
   : Family.map_over (Closure.rule_fmap (Judgement.fmap f))
       (closure_system R)
       (closure_system R').
@@ -168,7 +168,7 @@ End ClosureSystem.
 
 Section Congruence.
 
-  Context `{Funext} {σ : shape_system}.
+  Context `{Funext} {σ : scope_system}.
 
   Definition flat_congruence_rule
       {Σ : signature σ}

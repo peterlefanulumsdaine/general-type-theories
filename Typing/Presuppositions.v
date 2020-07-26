@@ -2,7 +2,7 @@ Require Import HoTT.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Syntax.Arity.
 Require Import Syntax.Signature.
 Require Import Syntax.SyntacticClass.
@@ -92,7 +92,7 @@ End PresuppositionsCombinatorics.
 Section Presuppositions.
 (** TODO: the naming in this section seems a bit ugly. *)
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   (** The presuppositions of a judgment boundary [jb] *)
   Definition presupposition_of_boundary
@@ -152,7 +152,7 @@ Section Presuppositions.
     destruct J as [Γ [jf J]].
       recursive_destruct jf; recursive_destruct p; try apply idpath;
         refine (Judgement.eq_by_expressions _ _);
-        intros j; recursive_destruct j; apply idpath.    
+        intros j; recursive_destruct j; apply idpath.
   Defined.
 
   (* TODO: this should be an iso!  And consistentise with [presupposition_fmap_boundary]. *)
@@ -187,11 +187,11 @@ End Presuppositions.
 
 Section Presuppositive_Flat_Rules.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   (** A flat rule [r] (in ambient signature [Σ], with metavariables [a])
       is presuppositive over a flat type theory [T] if all presuppositions of
-      the conclusion are derivable from the premises plus their presuppositions, 
+      the conclusion are derivable from the premises plus their presuppositions,
       over the translation of [T] to [Σ + a].
    *)
   Definition weakly_presuppositive_flat_rule {Σ : signature σ}
@@ -252,16 +252,16 @@ Section Presuppositive_Flat_Rules.
         (FlatRule.closure_system r (Γ;I)).
   Proof.
     (* Rough idea: derivations translate along the instantiation of syntax,
-    so the derivations provided by presuppositivity of [r] translate into 
+    so the derivations provided by presuppositivity of [r] translate into
     the derivations required for presuppositivity of its instantiations. *)
       unfold Closure.weakly_presuppositive_rule.
       intros p.
-      eapply transport. 
+      eapply transport.
       { apply instantiate_presupposition. }
       refine (Closure.graft _ _ _).
       + refine (FlatTypeTheory.instantiate_derivation _ _ _ _).
         apply D_r.
-      + intros [ i | [ i i_presup]]. 
+      + intros [ i | [ i i_presup]].
         * simple refine (Closure.hypothesis' _ _).
           -- exact (inl i).
           -- apply idpath.
@@ -271,4 +271,3 @@ Section Presuppositive_Flat_Rules.
   Defined.
 
 End Presuppositive_Flat_Rules.
-

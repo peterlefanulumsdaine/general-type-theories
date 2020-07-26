@@ -1,7 +1,7 @@
 Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Syntax.All.
@@ -15,7 +15,7 @@ Require Import Presented.CongruenceRule.
 
 Section TypeTheory.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   Record raw_type_theory
   := {
@@ -55,15 +55,15 @@ Section TypeTheory.
     - exact (Judgement.class_of (tt_rule_form _ r)).
     - exact (tt_rule_arity _ r).
   Defined.
-    (* NOTE: it is tempting to case-analyse here and say 
+    (* NOTE: it is tempting to case-analyse here and say
       “when r is an object rule, use [(Judgement.class_of …, tt_rule_arity …)];
-       in case r is an equality rule, use reductio ad absurdum with Hr.” 
+       in case r is an equality rule, use reductio ad absurdum with Hr.”
      But we get stronger reduction behaviour by just taking [(Judgement.class_of …, tt_rule_arity …)] without case-analysing first.  (And up to equality, we get the same result.)  *)
   (* TODO: consider making this a coercion? *)
 
   Local Definition include_rule_signature
       {T : raw_type_theory} (r : T)
-    : Signature.map (tt_rule_signature _ r) 
+    : Signature.map (tt_rule_signature _ r)
                     (signature T).
   Proof.
     simple refine (_;_).
@@ -129,7 +129,7 @@ Arguments tt_rule {_ _} _.
 
 Section Flattening.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   Local Definition flatten (T : raw_type_theory σ)
     : flat_type_theory (signature T).
@@ -180,7 +180,6 @@ Section Flattening.
 
 End Flattening.
 
-Local Definition derivation {σ : shape_system} (T : raw_type_theory σ) H
+Local Definition derivation {σ : scope_system} (T : raw_type_theory σ) H
     : judgement (signature T) -> Type
   := FlatTypeTheory.derivation (flatten T) H.
-

@@ -1,10 +1,10 @@
-(** * Well-shaped rules *)
+(** * Well-scoped rules *)
 
 Require Import HoTT.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Closure.
 Require Import Syntax.All.
@@ -13,17 +13,17 @@ Require Import Typing.Judgement.
 Require Import Presented.AlgebraicExtension.
 Require Import Typing.FlatRule.
 
-(** A well-shaped rule is given by the following data:
+(** A well-scoped rule is given by the following data:
 
    - [rule]: the data one gives to specify a logical rule (before any typechecking)
    - [associated_congruence_rule]
    - [flatten]
 *)
 
-(** Specification of well-shaped rules *)
-Section WellShapedRule.
+(** Specification of well-scoped rules *)
+Section WellScopedRule.
 
-Context {σ : shape_system}.
+Context {σ : scope_system}.
 
 (** An (ordered, raw) rule consists of premises and a conclusion. For various
     reasons, we abstract the form of the premises as an _algebraic extension_.
@@ -56,7 +56,7 @@ Record rule
       : Judgement.hypothetical_boundary_expressions
           (Metavariable.extend Σ a)
           jf_conclusion
-          (shape_empty σ)
+          (scope_empty σ)
   }.
 
 (* NOTE 1. One could generalise rules by allowing the context of the conclusion to be non-empty.
@@ -74,10 +74,10 @@ Record rule
   Local Definition conclusion_boundary_expressions
         {Σ} {a} {jf} (R : rule Σ a jf)
     : hypothetical_boundary_expressions
-        (Metavariable.extend Σ a) jf (shape_empty σ)
+        (Metavariable.extend Σ a) jf (scope_empty σ)
   := rule_conclusion_hypothetical_boundary_expressions R.
 
-  Local Lemma eq 
+  Local Lemma eq
       {Σ} {a} {jf_concl} (R R' : rule Σ a jf_concl)
       (e_prem : rule_premise R = rule_premise R')
       (e_concl : rule_conclusion_hypothetical_boundary_expressions R
@@ -113,7 +113,7 @@ Record rule
   Proof.
     apply eq.
     - apply AlgebraicExtension.fmap_idmap.
-    - cbn. 
+    - cbn.
       eapply concat.
       { eapply (ap_3back fmap_hypothetical_boundary_expressions).
         apply Metavariable.fmap1_idmap. }
@@ -127,7 +127,7 @@ Record rule
   Proof.
     apply eq.
     - apply AlgebraicExtension.fmap_compose.
-    - cbn. 
+    - cbn.
       eapply concat.
       { eapply (ap_3back fmap_hypothetical_boundary_expressions).
         apply Metavariable.fmap1_compose. }
@@ -156,7 +156,7 @@ Record rule
   Local Definition conclusion_hypothetical_boundary
         {Σ} {a} {jf} (R : rule Σ a jf)
     : hypothetical_boundary
-        (Metavariable.extend Σ a) (shape_empty σ)
+        (Metavariable.extend Σ a) (scope_empty σ)
   := Build_hypothetical_boundary _
         (rule_conclusion_hypothetical_boundary_expressions R).
 
@@ -185,10 +185,10 @@ Record rule
     apply (ap (fun Γ
                   => Build_boundary
                       (Build_raw_context _ Γ) _)).
-    apply path_forall; refine (empty_rect _ shape_is_empty _).
+    apply path_forall; refine (empty_rect _ scope_is_empty _).
   Defined.
 
-End WellShapedRule.
+End WellScopedRule.
 
 (* globalise argument declarations *)
 Arguments rule {_} _ _ _.
@@ -236,9 +236,9 @@ End Span.
 
 Section Flattening.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
   Context {Σ : signature σ}.
-  
+
   (* TODO: consider whether this can be unified with [judgement_of_premise] *)
   Local Definition judgement_of_conclusion
     {a} {jf_concl}
@@ -265,12 +265,12 @@ Section Flattening.
         refine (raw_symbol (inr p : Metavariable.extend _ _) _).
         intros i.
         apply raw_variable.
-        apply (coproduct_inj1 shape_is_sum).
-        exact (coproduct_inj2 shape_is_sum i).
+        apply (coproduct_inj1 scope_is_sum).
+        exact (coproduct_inj2 scope_is_sum i).
       + (* case: R an equality rule *)
         destruct H_obj. (* ruled out by assumption *)
   Defined.
-    
+
   (* Flattening a rule requires no extra information in the case of an
   equality-rule; in the case of an object-rule, it requires a symbol of
   appropriate arity to give the object introduced. *)

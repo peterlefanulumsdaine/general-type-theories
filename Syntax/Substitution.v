@@ -2,7 +2,7 @@ Require Import HoTT.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Syntax.SyntacticClass.
 Require Import Syntax.Arity.
 Require Import Syntax.Signature.
@@ -11,10 +11,10 @@ Require Import Syntax.Expression.
 
 Section RawSubstitution.
 
-  Context {σ : shape_system} {Σ : signature σ}.
+  Context {σ : scope_system} {Σ : signature σ}.
 
   (* A raw substitution is the input data for a simultaneous substitution:
-  for each variable of one shape, a raw term over another shape.
+  for each variable of one scope, a raw term over another scope.
 
   NOTE: naming-wise, it would be nicer if this was called [Context.map] or
   similar.  However, in terms of depedency requirements, it fits much more
@@ -32,16 +32,16 @@ Section RawSubstitution.
 
   This is needed for going under binders during substitution. *)
   Local Definition extend (γ γ' δ : σ)
-    : raw_context_map γ' γ -> raw_context_map (shape_sum γ' δ) (shape_sum γ δ).
+    : raw_context_map γ' γ -> raw_context_map (scope_sum γ' δ) (scope_sum γ δ).
   Proof.
     intros f.
-    simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn.
+    simple refine (coproduct_rect (scope_is_sum) _ _ _); cbn.
     - intros i.
       refine (rename _ (f i)).
-      apply (coproduct_inj1 (shape_is_sum)).
+      apply (coproduct_inj1 (scope_is_sum)).
     - intros i.
       apply raw_variable.
-      apply (coproduct_inj2 (shape_is_sum)), i.
+      apply (coproduct_inj2 (scope_is_sum)), i.
   Defined.
 
   (* Apply a raw substitution to a raw expression. *)
@@ -69,7 +69,7 @@ Section RawSubstitution.
     destruct p. apply idpath.
   Defined.
 
-  Lemma substitute_transport_shape
+  Lemma substitute_transport_scope
       {γ γ'} (e_γ : γ = γ') {δ}
       (f : raw_context_map δ γ')
       {cl} (e : raw_expression Σ cl γ)
@@ -90,7 +90,7 @@ Arguments raw_context_map [_] _ _ _.
 Section Raw_Context_Category_Structure.
 (* Identity and composition of raw context maps. *)
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
   Context {Σ : signature σ}.
 
   Definition id_raw_context (γ : σ) : raw_context_map Σ γ γ.
@@ -121,7 +121,7 @@ End Raw_Context_Category_Structure.
 Section Substitute_Laws.
 
   Context `{H_Funext : Funext}.
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
   Context {Σ : signature σ}.
 
   Definition id_left_substitute
@@ -141,7 +141,7 @@ Section Substitute_Laws.
       eapply concat.
       2: { apply IH_es. }
       apply (ap_2back substitute), path_forall.
-      refine (coproduct_rect shape_is_sum _ _ _).
+      refine (coproduct_rect scope_is_sum _ _ _).
       + intros j. refine (coproduct_comp_inj1 _).
       + intros j. refine (coproduct_comp_inj2 _).
   (* Note: original proof literally identical to that of [rename_idmap]! *)
@@ -168,7 +168,7 @@ Section Substitute_Laws.
       eapply concat.
       2: { apply IH_es. }
       apply (ap_2back substitute), path_forall.
-      refine (coproduct_rect shape_is_sum _ _ _); intro; unfold extend.
+      refine (coproduct_rect scope_is_sum _ _ _); intro; unfold extend.
       + repeat rewrite coproduct_comp_inj1; apply idpath.
       + repeat rewrite coproduct_comp_inj2; apply idpath.
   Defined.
@@ -184,7 +184,7 @@ Section Substitute_Laws.
     cbn. apply ap. apply path_forall; intros i.
     eapply concat. { apply rename_substitute. }
     apply (ap_2back substitute), path_forall.
-    simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
+    simple refine (coproduct_rect (scope_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       refine (_ @ _^). { apply rename_rename. }
       eapply concat. { refine (coproduct_comp_inj1 _). }
@@ -208,7 +208,7 @@ Section Substitute_Laws.
     cbn. apply ap. apply path_forall; intros i.
     eapply concat. { apply substitute_rename. }
     apply (ap_2back substitute), path_arrow.
-    simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
+    simple refine (coproduct_rect (scope_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       eapply concat. { refine (coproduct_comp_inj1 _). }
       refine _^. refine (coproduct_comp_inj1 _).
@@ -229,7 +229,7 @@ Section Substitute_Laws.
     cbn. apply ap. apply path_forall; intros i.
     eapply concat. { apply assoc_substitute. }
     apply (ap_2back substitute), path_arrow.
-    simple refine (coproduct_rect (shape_is_sum) _ _ _); cbn; intros x.
+    simple refine (coproduct_rect (scope_is_sum) _ _ _); cbn; intros x.
     - eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       refine (_ @ _^).
       2 : { refine (coproduct_comp_inj1 _). }
@@ -260,7 +260,7 @@ End Substitute_Laws.
 Section Raw_Context_Category.
 
   Context `{H_Funext : Funext}.
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
   Context {Σ : signature σ}.
 
   Lemma id_left_raw_context {γ} (f : raw_context_map Σ γ γ)
@@ -295,7 +295,7 @@ End Raw_Context_Category.
 Section Naturality.
 
   Context `{H_Funext : Funext}.
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   Definition raw_context_map_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
@@ -310,7 +310,7 @@ Section Naturality.
     = extend _ _ δ (raw_context_map_fmap f g).
   Proof.
     apply path_forall.
-    refine (coproduct_rect shape_is_sum _ _ _).
+    refine (coproduct_rect scope_is_sum _ _ _).
     - intros i. unfold raw_context_map_fmap.
       eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       eapply concat. { apply Expression.fmap_rename. }
@@ -319,7 +319,7 @@ Section Naturality.
       eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
       apply inverse. refine (coproduct_comp_inj2 _).
   Defined.
-  
+
   Fixpoint fmap_substitute
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {γ γ'} (g : raw_context_map Σ γ' γ)
@@ -344,4 +344,3 @@ Section Naturality.
   Defined.
 
 End Naturality.
-

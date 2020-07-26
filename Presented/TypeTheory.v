@@ -1,5 +1,5 @@
 Require Import HoTT.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.
@@ -14,7 +14,7 @@ Require Import Presented.TypedRule.
 
 Section WellTypedTypeTheory.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   Local Definition is_well_typed (T : raw_type_theory σ) : Type.
   Proof.
@@ -26,6 +26,6 @@ Section WellTypedTypeTheory.
 
 End WellTypedTypeTheory.
 
-Record type_theory (σ : shape_system) : Type
+Record type_theory (σ : scope_system) : Type
   := { tt_raw_type_theory :> raw_type_theory σ
      ; tt_well_typed : is_well_typed tt_raw_type_theory }.

@@ -1,12 +1,12 @@
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Auxiliary.Family.
 Require Import Syntax.SyntacticClass.
 
 Section Arity.
-  Context `{σ : shape_system}.
+  Context `{σ : scope_system}.
 
   Global Definition arity : Type
-    := family (syntactic_class * shape_carrier σ).
+    := family (syntactic_class * scope_carrier σ).
 
   (**
   Entries in the family represent arguments of a constructor; the [σ] component
@@ -26,13 +26,13 @@ Section Arity.
   (* Access functions for arity *)
   Global Definition argument_class {a : arity} (i : a) : syntactic_class
     := fst (a i).
-  Global Definition argument_shape {a : arity} (i : a) : σ := snd (a i).
+  Global Definition argument_scope {a : arity} (i : a) : σ := snd (a i).
 
-  (* Given a shape, return the arity of that shape in which all the
+  (* Given a scope, return the arity of that scope in which all the
      syntactic classes are terms. *)
   Local Definition simple (γ : σ) : arity
     := {| family_index := γ
-        ; family_element i := (class_term, shape_empty _)
+        ; family_element i := (class_term, scope_empty _)
        |}.
 
 End Arity.
@@ -40,4 +40,3 @@ End Arity.
 Bind Scope family_scope with arity.
 
 Arguments arity _ : clear implicits.
-

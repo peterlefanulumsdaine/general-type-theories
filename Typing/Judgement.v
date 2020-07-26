@@ -2,7 +2,7 @@ Require Import HoTT.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
-Require Import Syntax.ShapeSystem.
+Require Import Syntax.ScopeSystem.
 Require Import Syntax.Arity.
 Require Import Syntax.Signature.
 Require Import Syntax.SyntacticClass.
@@ -11,7 +11,7 @@ Require Import Syntax.Substitution.
 Require Import Syntax.Metavariable.
 Require Import Typing.Context.
 
-(** We first set up the combinatorics describing the “shapes” of the judgement forms — specifying how many expressions they will involve, and of what classes — before bringing in the actual syntax, and defining judgements themselves.
+(** We first set up the combinatorics describing the “scopes” of the judgement forms — specifying how many expressions they will involve, and of what classes — before bringing in the actual syntax, and defining judgements themselves.
 
 The motivation of this is so that definitions like “to translate a judgement under a signature map, translate each expression of the judgement” can be formalised literally as such (cf. [fmap_hypothetical_judgement] below), without having to case-split according to the form of the judgement and translate each expression component individually.
 *)
@@ -23,7 +23,7 @@ Section JudgementCombinatorics.
   [! Γ |- a ; A !],
   [! Γ |- a ≡ a' ; A !],
   and rules and derivations will be given purely in terms of these.
- 
+
   Other judgement forms — e.g. well-formed contexts, context morphisms — are taken as _auxiliary_ judgements, defined afterwards from thes primitive ones. *)
   Inductive form : Type :=
   | form_object (cl : syntactic_class)
@@ -201,7 +201,7 @@ Ltac recursive_destruct x :=
 
 Section Judgements.
 
-  Context {σ : shape_system}
+  Context {σ : scope_system}
           (Σ : signature σ).
 
   Definition hypothetical_boundary_expressions jf γ
@@ -248,7 +248,7 @@ Section Judgements.
   := { context_of_judgement : raw_context Σ
      ; hypothetical_part :> hypothetical_judgement context_of_judgement }.
 
-  Definition shape_of_judgement (J : judgement) : shape_carrier σ
+  Definition scope_of_judgement (J : judgement) : scope_carrier σ
   := context_of_judgement J.
 
   (* TODO: downstream this to a later section? *)
@@ -276,7 +276,7 @@ Section Judgements.
     intros i. destruct J as [[jf_ob | jf_eq] j];
       exact (j (the_boundary_slot i)).
   Defined.
-  
+
   (* TODO: downstream? *)
   Definition boundary_of_judgement
     : judgement -> boundary.
@@ -291,14 +291,14 @@ End Judgements.
 Arguments Build_hypothetical_boundary {_ _ _} _ _.
 Arguments form_of_boundary {_ _ _} _.
 Arguments Build_hypothetical_judgement {_ _ _} _ _.
-Arguments form_of_judgement {_ _ _} _. 
+Arguments form_of_judgement {_ _ _} _.
 Arguments head {_ _ _} _ / _.
-Arguments Build_boundary {_ _} _ _. 
-Arguments context_of_boundary {_ _} _. 
-Arguments Build_judgement {_ _} _ _. 
-Arguments context_of_judgement {_ _} _. 
-Arguments shape_of_judgement {_ _} _. 
-Arguments hypothetical_part {_ _} _. 
+Arguments Build_boundary {_ _} _ _.
+Arguments context_of_boundary {_ _} _.
+Arguments Build_judgement {_ _} _ _.
+Arguments context_of_judgement {_ _} _.
+Arguments scope_of_judgement {_ _} _.
+Arguments hypothetical_part {_ _} _.
 Arguments boundary_of_judgement {_ _} _.
 
 (** The preceding section defines many types/constructions in succession, for
@@ -317,13 +317,13 @@ lemma2_hypothetical_judgement
 lemma2_judgement
 etc.
 
-This makes it easier to keep lemma names consistent than the alternate convention (order by type first, then lemma) would be. 
+This makes it easier to keep lemma names consistent than the alternate convention (order by type first, then lemma) would be.
 *)
 (* TODO: periodically make sure this pattern has been followed!  Also, would the alterative pattern be better? *)
 
 Section JudgementNotations.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
   Context {Σ : signature σ}.
 
   Definition make_type_hypothetical_judgement
@@ -402,7 +402,7 @@ In lieu of that, we give explicit lemmas for judgement equality:
 - one [eq_by_eta] analogous to eta-expansion and the eta rule,
 - one [eq_by_expressions] analogous to general function extensionality. *)
 
-  Context {σ : shape_system} {Σ : signature σ} `{Funext}.
+  Context {σ : scope_system} {Σ : signature σ} `{Funext}.
 
   Definition eta_expand_hypothetical_judgement {γ}
       (J : hypothetical_judgement Σ γ)
@@ -474,7 +474,7 @@ In lieu of that, we give explicit lemmas for judgement equality:
 
   (** To check two judgements are equal, it’s enough to check their eta-expansions.
    Convenient for when modulo eta expansion, judgements are literally equal:
-   [apply Judgement.eq_by_eta, idpath.] 
+   [apply Judgement.eq_by_eta, idpath.]
 
    For other cases, [eq_by_expressions] is usually better. *)
   Definition eq_by_eta_hypothetical_judgement {γ}
@@ -495,14 +495,14 @@ In lieu of that, we give explicit lemmas for judgement equality:
     exact ((eta j)^ @ e @ eta j').
   Defined.
 
-  (** When two judgements have the same form and are over the same shape, 
+  (** When two judgements have the same form and are over the same scope,
   then they are equal if all expressions involved (in both the context and
   the hypothetical part) are equal.
 
   Often useful in cases where the equality of expressions is for a uniform
-  reason, such as functoriality/naturality lemmas. 
+  reason, such as functoriality/naturality lemmas.
 
-  For cases where the specific form of the judgement is involved in the 
+  For cases where the specific form of the judgement is involved in the
   difference, [eq_by_eta] may be cleaner. *)
   Definition eq_by_expressions_hypothetical_judgement
       {γ : σ} {jf : form}
@@ -551,10 +551,10 @@ End Equality_Lemmas.
 
 Section JudgementFmap.
 
-  Context {σ : shape_system}.
+  Context {σ : scope_system}.
 
   Definition fmap_hypothetical_boundary_expressions
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ') {jf} {γ} 
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ') {jf} {γ}
     : hypothetical_boundary_expressions Σ jf γ
       -> hypothetical_boundary_expressions Σ' jf γ.
   Proof.
@@ -579,7 +579,7 @@ Section JudgementFmap.
   Defined.
 
   Definition fmap_hypothetical_judgement_expressions
-      {Σ Σ' : signature σ} (f : Signature.map Σ Σ') {jf} {γ} 
+      {Σ Σ' : signature σ} (f : Signature.map Σ Σ') {jf} {γ}
     : hypothetical_judgement_expressions Σ jf γ
       -> hypothetical_judgement_expressions Σ' jf γ.
   Proof.
@@ -607,7 +607,7 @@ Section JudgementFmap.
   Definition fmap_hypothetical_boundary_expressions_idmap
       {Σ} {jf} {γ} (B : hypothetical_boundary_expressions Σ jf γ)
     : fmap_hypothetical_boundary_expressions (Signature.idmap Σ) B = B.
-  Proof. 
+  Proof.
     apply path_forall; intros i.
     apply Expression.fmap_idmap.
   Defined.
@@ -615,7 +615,7 @@ Section JudgementFmap.
   Definition fmap_hypothetical_boundary_idmap
       {Σ} {γ} (B : hypothetical_boundary Σ γ)
     : fmap_hypothetical_boundary (Signature.idmap Σ) B = B.
-  Proof. 
+  Proof.
     apply (ap (Build_hypothetical_boundary _)).
     apply fmap_hypothetical_boundary_expressions_idmap.
   Defined.
@@ -652,7 +652,7 @@ Section JudgementFmap.
       {γ} (B : hypothetical_boundary Σ γ)
     : fmap_hypothetical_boundary f' (fmap_hypothetical_boundary f B)
       = fmap_hypothetical_boundary (Signature.compose f' f) B.
-  Proof. 
+  Proof.
     apply (ap (Build_hypothetical_boundary _)).
     apply fmap_fmap_hypothetical_boundary_expressions.
   Defined.
@@ -730,11 +730,11 @@ Section JudgementFmap.
 End JudgementFmap.
 
 Section Renaming.
-(** _Hypothetical_ judgements admit renaming along aritrary maps of shapes, just like expressions.
+(** _Hypothetical_ judgements admit renaming along aritrary maps of scopes, just like expressions.
 
-_Complete_ judgements, involving contexts, admit renaming only along _isomorphisms_ of shapes.  (Cf. discussion at [Context.rename].) *)
+_Complete_ judgements, involving contexts, admit renaming only along _isomorphisms_ of scopes.  (Cf. discussion at [Context.rename].) *)
 
-  Context {σ : shape_system} {Σ : signature σ}.
+  Context {σ : scope_system} {Σ : signature σ}.
 
   Definition rename_hypothetical_boundary_expressions
       {jf} {γ γ' : σ} (f : γ -> γ')
@@ -765,7 +765,7 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
   (** Note: argument order from here on follows [Context.rename], not general [rename] for expressions. *)
   Local Definition rename
       (J : judgement Σ)
-      {γ' : shape_carrier σ} (f : γ' <~> shape_of_judgement J)
+      {γ' : scope_carrier σ} (f : γ' <~> scope_of_judgement J)
     : judgement Σ.
   Proof.
     exists (Context.rename (context_of_judgement J) f).
@@ -778,8 +778,8 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
 
   Local Definition rename_rename
       (J : judgement Σ)
-      {γ' : shape_carrier σ} (e : γ' <~> shape_of_judgement J)
-      {γ'' : shape_carrier σ} (e' : γ'' <~> γ')
+      {γ' : scope_carrier σ} (e : γ' <~> scope_of_judgement J)
+      {γ'' : scope_carrier σ} (e' : γ'' <~> γ')
     : rename (rename J e) e'
       = rename J (equiv_compose e e').
   Proof.
@@ -802,7 +802,7 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
 
   Local Definition rename_inverse
       (J : judgement Σ)
-      {γ' : shape_carrier σ} (e : shape_of_judgement J <~> γ')
+      {γ' : scope_carrier σ} (e : scope_of_judgement J <~> γ')
     : rename (rename J (e^-1)) e = J.
   Proof.
     eapply concat. { apply rename_rename. }
@@ -851,11 +851,11 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
 End Renaming.
 
 Section Substitution.
-(** _Hypothetical_ judgements admit renaming along aritrary maps of shapes, just like expressions.
+(** _Hypothetical_ judgements admit renaming along aritrary maps of scopes, just like expressions.
 
-_Complete_ judgements, involving contexts, admit renaming only along _isomorphisms_ of shapes.  (Cf. discussion at [Context.rename].) *)
+_Complete_ judgements, involving contexts, admit renaming only along _isomorphisms_ of scopes.  (Cf. discussion at [Context.rename].) *)
 
-  Context {σ : shape_system} {Σ : signature σ}.
+  Context {σ : scope_system} {Σ : signature σ}.
 
   Definition substitute_hypothetical_boundary_expressions
       {jf} {γ γ' : σ} (f : raw_context_map Σ γ' γ)
@@ -912,13 +912,13 @@ End Substitution.
 Section Instantiation.
 (** Interaction of judgements with metavariable instantiations *)
 
-  Context {σ : shape_system} `{Funext}.
+  Context {σ : scope_system} `{Funext}.
 
   Definition instantiate_hypothetical_judgement
       {a : arity σ} {Σ : signature σ} {γ : σ}
       (I : Metavariable.instantiation a Σ γ)
       {δ} (j : hypothetical_judgement (Metavariable.extend Σ a) δ)
-    : hypothetical_judgement Σ (shape_sum γ δ).
+    : hypothetical_judgement Σ (scope_sum γ δ).
   Proof.
     exists (form_of_judgement j).
     intro i; exact (instantiate_expression I (j i)).
@@ -958,13 +958,13 @@ Section Instantiation.
       (J : judgement (Metavariable.extend _ _))
     : fmap f (instantiate Γ I J)
     = instantiate
-        (Context.fmap f Γ) 
+        (Context.fmap f Γ)
         (instantiation_fmap f I)
         (fmap (Metavariable.fmap1 f a) J).
   Proof.
-    refine (eq_by_expressions _ _). 
+    refine (eq_by_expressions _ _).
     - (* context part *)
-      refine (coproduct_rect shape_is_sum _ _ _); intros i;
+      refine (coproduct_rect scope_is_sum _ _ _); intros i;
         unfold Context.instantiate.
       + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
         eapply concat. 2: {apply inverse. refine (coproduct_comp_inj1 _). }
@@ -995,7 +995,7 @@ Section Instantiation.
     = instantiate Γ (instantiation_fmap2 f I) J.
   Proof.
     apply eq_by_expressions.
-    - apply (coproduct_rect shape_is_sum).
+    - apply (coproduct_rect scope_is_sum).
       + intros.
         eapply concat. { rapply coproduct_comp_inj1. }
         apply inverse. rapply coproduct_comp_inj1.
@@ -1008,8 +1008,8 @@ Section Instantiation.
 
   Definition copair_instantiation_inl_hypothetical_judgement
       {Σ} {a b : arity σ} {γ}
-      (Ia : Metavariable.instantiation a Σ γ) 
-      (Ib : Metavariable.instantiation b Σ γ) 
+      (Ia : Metavariable.instantiation a Σ γ)
+      (Ib : Metavariable.instantiation b Σ γ)
       {δ} (J : hypothetical_judgement (Metavariable.extend Σ a) δ)
     : instantiate_hypothetical_judgement
         (copair_instantiation Ia Ib)
@@ -1022,8 +1022,8 @@ Section Instantiation.
   (* TODO: rename this to [Judgement.copair_instantiation_inl], etc. *)
   Definition copair_instantiation_inl_judgement
       {Σ} {a b : arity σ} (Γ : raw_context _)
-      (Ia : Metavariable.instantiation a Σ Γ) 
-      (Ib : Metavariable.instantiation b Σ Γ) 
+      (Ia : Metavariable.instantiation a Σ Γ)
+      (Ib : Metavariable.instantiation b Σ Γ)
       (J : judgement (Metavariable.extend Σ a))
     : instantiate Γ
         (copair_instantiation Ia Ib)
@@ -1035,8 +1035,8 @@ Section Instantiation.
 
   Definition copair_instantiation_inr_hypothetical_judgement
       {Σ} {a b : arity σ} {γ}
-      (Ia : Metavariable.instantiation a Σ γ) 
-      (Ib : Metavariable.instantiation b Σ γ) 
+      (Ia : Metavariable.instantiation a Σ γ)
+      (Ib : Metavariable.instantiation b Σ γ)
       {δ} (J : hypothetical_judgement (Metavariable.extend Σ b) δ)
     : instantiate_hypothetical_judgement
         (copair_instantiation Ia Ib)
@@ -1049,8 +1049,8 @@ Section Instantiation.
   (* TODO: rename this to [Judgement.copair_instantiation_inl], etc. *)
   Definition copair_instantiation_inr_judgement
       {Σ} {a b : arity σ} (Γ : raw_context _)
-      (Ia : Metavariable.instantiation a Σ Γ) 
-      (Ib : Metavariable.instantiation b Σ Γ) 
+      (Ia : Metavariable.instantiation a Σ Γ)
+      (Ib : Metavariable.instantiation b Σ Γ)
       (J : judgement (Metavariable.extend Σ b))
     : instantiate Γ
         (copair_instantiation Ia Ib)
@@ -1066,11 +1066,11 @@ Section Instantiation.
       {a} (J : judgement (Metavariable.extend Σ a))
     : instantiate [::] (unit_instantiation a)
         (fmap (Metavariable.fmap1 include_symbol _) J)
-      = rename J (shape_sum_empty_inr _)^-1.
+      = rename J (scope_sum_empty_inr _)^-1.
   Proof.
-    refine (eq_by_expressions _ _). 
-    - refine (coproduct_rect shape_is_sum _ _ _).
-      + apply (empty_rect _ shape_is_empty).
+    refine (eq_by_expressions _ _).
+    - refine (coproduct_rect scope_is_sum _ _ _).
+      + apply (empty_rect _ scope_is_empty).
       + intros x.
         eapply concat. { refine (coproduct_comp_inj2 _). }
         eapply concat. { apply unit_instantiate_expression. }
@@ -1090,7 +1090,7 @@ Section Instantiation.
             (Metavariable.fmap1 include_symbol _)
             J))
       =
-      rename_hypothetical_judgement shape_assoc_ltor
+      rename_hypothetical_judgement scope_assoc_ltor
         (instantiate_hypothetical_judgement
            (instantiate_instantiation Ia Ib)
            J).
@@ -1116,7 +1116,7 @@ Section Instantiation.
         (instantiate Γ I
           (instantiate Δ J
             (fmap (Metavariable.fmap1 include_symbol _) j)))
-         (shape_assoc _ _ _)^-1.
+         (scope_assoc _ _ _)^-1.
   Proof.
     refine (eq_by_expressions _ _).
       + apply @Context.instantiate_instantiate_pointwise; auto.
@@ -1124,12 +1124,12 @@ Section Instantiation.
   Defined.
 
   Lemma instantiate_hypothetical_judgement_rename_instantiation
-        (γ γ' : σ.(shape_carrier)) (f : γ -> γ')
+        (γ γ' : σ.(scope_carrier)) (f : γ -> γ')
         {a}  (I : Metavariable.instantiation a Σ γ)
         {δ} (J : hypothetical_judgement _ δ)
     : instantiate_hypothetical_judgement (rename_instantiation f I) J
     = rename_hypothetical_judgement
-        (Coproduct.fmap shape_is_sum shape_is_sum f idmap)
+        (Coproduct.fmap scope_is_sum scope_is_sum f idmap)
         (instantiate_hypothetical_judgement I J).
   Proof.
     apply eq_by_expressions_hypothetical_judgement; intros i.
@@ -1137,7 +1137,7 @@ Section Instantiation.
   Defined.
 
   Lemma instantiate_hypothetical_judgement_substitute_instantiation
-        (γ γ' : σ.(shape_carrier)) (f : raw_context_map Σ γ' γ)
+        (γ γ' : σ.(scope_carrier)) (f : raw_context_map Σ γ' γ)
         {a}  (I : Metavariable.instantiation a Σ γ)
         {δ} (J : hypothetical_judgement _ δ)
     : instantiate_hypothetical_judgement (substitute_instantiation f I) J
@@ -1160,7 +1160,7 @@ e.g. combining [Γ |- a1 : A1], [Γ |- a2 : A2] into [ Γ |- a1 = a2 : A2 ].
 We always combine “left-handedly”, as in the example, taking the boundary of the combination to be the boundary of the first judgement. *)
 Section Combine_Judgement.
 
-  Context {σ : shape_system} `{Funext}.
+  Context {σ : scope_system} `{Funext}.
 
   (** Given two object judgements [J] [K] of the same form,
    combine them into an equality judgement comparing their heads,
@@ -1203,8 +1203,8 @@ Section Combine_Judgement.
       (p_e : ap form_of_judgement p_J^ @ e' @ ap form_of_judgement p_K = e)
       (p_obj : transport (fun J => _ (form_of_judgement J)) p_J J'_obj
                                     = J_obj)
-    : combine_hypothetical_judgement J K e J_obj 
-      = combine_hypothetical_judgement J' K' e' J'_obj. 
+    : combine_hypothetical_judgement J K e J_obj
+      = combine_hypothetical_judgement J' K' e' J'_obj.
   Proof.
     destruct p_J, p_K, p_e, p_obj; simpl.
     rapply ap_1back.
