@@ -140,7 +140,9 @@ Section Presuppositivity.
   (** Working in a type theory [T], given a judgement [j] which is derivable
       from hypotheses [hyps], suppose every presupposition [q] of every
       hypothesis [h : hyps] is derivable from [hyps], then every presuppsition
-      [p] of [j] is derivable from [hyps]. *)
+      [p] of [j] is derivable from [hyps].
+   \cref{thm:presuppositions}
+   *)
   Theorem derive_presupposition
       {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
       {j : judgement (RawTypeTheory.signature T)}

@@ -384,6 +384,7 @@ the cases of that induction. *)
     intro r; recursive_destruct r; apply scope_is_empty.
   Defined.
 
+  (** \cref{thm:admissibility-renaming} *)
   Definition rename_derivation
       {T : flat_type_theory Σ} (T_sub : substitutive T)
       {J} {J'} (f : judgement_renaming J J')
@@ -711,6 +712,7 @@ Section Substitute_Derivations.
 
   End Flat_Rule_Substitute_Instantiation.
 
+  (** \cref{lem:substitution-admisibility} *)
   Definition substitute_derivation
       {T : flat_type_theory Σ} (T_sub : substitutive T)
       {J} {J'} (f : weakly_typed_judgement_map T J' J)
@@ -1238,7 +1240,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
   Defined.
 
   Section Flat_Rule_Substitute_Equal_Instantiation.
-    (** Analogously to section [Flat_Rule_Susbtitute_Instantiation],
+    (** Analogously to section [Flat_Rule_Substitute_Instantiation],
      the lemmas of this section build up what’s needed for substituting
      flat-rule steps in derivations along weakly equal pairs:
 
@@ -1588,6 +1590,7 @@ Section Subst_Elimination.
 
   Context `{Funext} {σ : scope_system} {Σ : signature σ}.
 
+  (** \cref{thm:elimination-substitution} *)
   Theorem subst_elimination
       {T : flat_type_theory Σ}
       (T_sub : substitutive T) (T_cong : congruous T)

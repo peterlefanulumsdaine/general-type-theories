@@ -17,7 +17,8 @@ Require Import Auxiliary.Coproduct.
     to infinitary settings, where genuinely different scope systems might occur.
 *)
 
-(** A record describing scopes that can be used for contexts and bindings. *)
+(** A record describing scopes that can be used for contexts and bindings.
+  \cref{def:scope-system} *)
 Record scope_system :=
   { scope_carrier :> Type
   ; scope_position : scope_carrier -> Type
