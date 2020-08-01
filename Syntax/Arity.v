@@ -5,6 +5,7 @@ Require Import Syntax.SyntacticClass.
 Section Arity.
   Context `{σ : scope_system}.
 
+  (** \cref{def:arity} *)
   Global Definition arity : Type
     := family (syntactic_class * scope_carrier σ).
 

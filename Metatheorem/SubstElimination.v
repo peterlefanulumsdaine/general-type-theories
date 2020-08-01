@@ -81,7 +81,7 @@ the associated congruence rule should be derivable (?admissible). *)
 
   This is not as general as would ideally be nice: ideally we would say something like “for each object rule, the associated congruence rule is _derivable_ over T”. Unfortunately, the obvious concise ways of saying that all seem to be wrong.
 
-  For isntance, our main sense of derivable says that the rule itself is derivable over the translation of T to the metavariable extension; this is bad for two reasons.  First, applying this notion relies on being able to instantiate derivations, which requires either the subst-apply rule or a subst-elimination principle, which will not yet be available at the point we need this.  Secondly, in examples, giving derivations with non-trivial hypotheses (as one does for a congruence rule with binders) may genuinely require use of the subst-apply and subst-eq structural rules.
+  For instance, our main sense of derivable says that the rule itself is derivable over the translation of T to the metavariable extension; this is bad for two reasons.  First, applying this notion relies on being able to instantiate derivations, which requires either the subst-apply rule or a subst-elimination principle, which will not yet be available at the point we need this.  Secondly, in examples, giving derivations with non-trivial hypotheses (as one does for a congruence rule with binders) may genuinely require use of the subst-apply and subst-eq structural rules.
 
   An alternative would be to just say that the congruence rule should be _admissible_ over T, or that each instance of it should be derivable.  These would work for the present theorems, but are a bit unnatural; e.g. they’re not preserved under translation or extension of theories.
 
