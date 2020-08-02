@@ -37,7 +37,7 @@ MODULES := \
 	Presented/TypedRule \
 	Presented/TypeTheory \
 	Metatheorem/Presuppositions \
-	Metatheorem/SubstElimination \
+	Metatheorem/Elimination \
 	Metatheorem/UniqueTyping \
 	Example/ScopeSystemExamples \
 	Example/MartinLofTypeTheory
