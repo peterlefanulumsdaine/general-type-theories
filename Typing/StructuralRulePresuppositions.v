@@ -6,8 +6,8 @@ Require Import Syntax.ScopeSystem.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Typing.FlatRule.
-Require Import Typing.FlatTypeTheory.
+Require Import Typing.RawRule.
+Require Import Typing.RawTypeTheory.
 Require Import Typing.StructuralRule.
 Require Import Typing.Presuppositions.
 (* TODO: rename file to “presuppositive…”; perhaps roll into [Typing.Presuppositions]? *)
@@ -30,10 +30,10 @@ Section StructuralRulePresups.
   (** Is a given closure rule arising from a total judgement presuppositive in the sense
       that its presuppositions are derivable, using just structural rules?
 
-  In fact, we ask for derivations not over just the structural rules but over the closure system associated to the empty flat type theory, so that infrastructure for derivations over general flat type theories can be used. *)
+  In fact, we ask for derivations not over just the structural rules but over the closure system associated to the empty raw type theory, so that infrastructure for derivations over general raw type theories can be used. *)
   Local Definition is_presuppositive : Closure.rule (judgement Σ) -> Type
     := Closure.weakly_presuppositive_rule
-         presupposition (FlatTypeTheory.closure_system [<>]).
+         presupposition (RawTypeTheory.closure_system [<>]).
 
   (** Rules for variable-renaming are presuppositive *)
   Local Definition rename_is_presuppositive
@@ -214,15 +214,15 @@ conversion over equal boundaries for any judgement. *)
     - apply Judgement.eq_by_eta; apply idpath.
   Defined.
 
-  Section Equality_Flat_Rules.
-  (** For the equality rules, we first show that they are presuppositive as _flat_
+  Section Equality_Raw_Rules.
+  (** For the equality rules, we first show that they are presuppositive as _raw_
   rules; it follows that their instantiations are as closure conditions.
 
-  We give most together in [equality_flat_rule_is_presuppositive], but break out
+  We give most together in [equality_raw_rule_is_presuppositive], but break out
   the particularly long cases beforehand individually. *)
 
   Local Definition tmeq_convert_is_presuppositive
-    : weakly_presuppositive_flat_rule [<>] (@tmeq_convert_rule σ).
+    : weakly_presuppositive_raw_rule [<>] (@tmeq_convert_rule σ).
   Proof.
     (* tmeq_convert:
        ⊢ A, B type
@@ -233,7 +233,7 @@ conversion over equal boundaries for any judgement. *)
        ⊢ u = u' : B
        *)
     pose (A := Some (Some (Some tt))
-               : flat_rule_metas (@tmeq_convert_rule σ)).
+               : raw_rule_metas (@tmeq_convert_rule σ)).
     intros [ [] | | ].
     - (* type presup :  |- B type *)
       simple refine (Closure.hypothesis' _ _).
@@ -271,9 +271,9 @@ conversion over equal boundaries for any judgement. *)
         * apply idpath.
   Defined.
 
-  Local Definition equality_flat_rule_is_presuppositive
-      (r : @equality_flat_rule σ)
-    : weakly_presuppositive_flat_rule [<>] (equality_flat_rule r).
+  Local Definition equality_raw_rule_is_presuppositive
+      (r : @equality_raw_rule σ)
+    : weakly_presuppositive_raw_rule [<>] (equality_raw_rule r).
   Proof.
     recursive_destruct r; cbn.
     - (* tyeq_refl: Γ |- A  // Γ |- A = A *)
@@ -363,18 +363,18 @@ conversion over equal boundaries for any judgement. *)
   - maybe make structural rule accessors take value in closure systems of type theories, not in [structural_rules] itself?  (More convenient for giving derivations; but then recursion over structural rules is less clear.)
 *)
 
-  End Equality_Flat_Rules.
+  End Equality_Raw_Rules.
 
   (** Equality rules are presuppositive (as closure rules) *)
   Local Definition equality_is_presuppositive (r : equality_instance Σ)
     : is_presuppositive (equality_instance _ r).
   Proof.
     destruct r as [r [Γ I]].
-    set (r_flat_rule := equality_flat_rule r).
+    set (r_raw_rule := equality_raw_rule r).
     intros c_presup.
-    refine (flat_rule_closure_system_weakly_presuppositive _ _ _ _ _).
-    eapply fmap_weakly_presuppositive_flat_rule.
-    2: apply equality_flat_rule_is_presuppositive.
+    refine (raw_rule_closure_system_weakly_presuppositive _ _ _ _ _).
+    eapply fmap_weakly_presuppositive_raw_rule.
+    2: apply equality_raw_rule_is_presuppositive.
     intros [].
   Defined.
 

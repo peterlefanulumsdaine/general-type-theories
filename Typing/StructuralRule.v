@@ -7,7 +7,7 @@ Require Import Auxiliary.Coproduct.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Typing.FlatRule.
+Require Import Typing.RawRule.
 
 (**
   This module defines the _standard structural rules_ — the rules which are not
@@ -60,8 +60,8 @@ over Δ.
   Γ' |- f_* J
 
 This is not a traditional rule.  We need it since, in our setup, instantiations
-of flat rules will always have conclusion context scope of the form γ+δ, where
-δ is the conclusion context scope of the flat rule; this lets us go from such
+of raw rules will always have conclusion context scope of the form γ+δ, where
+δ is the conclusion context scope of the raw rule; this lets us go from such
 conclusions to arbitrary contexts.
 
 The specific instances we really use are isomorphisms of the form γ <~> γ+0 and
@@ -203,7 +203,7 @@ Proof.
 Defined.
 
 Section Equality.
-(** The equality structural rules can all be specified as flat rules over the empty signature.
+(** The equality structural rules can all be specified as raw rules over the empty signature.
 
 (One could specify them directly over arbitrary signatures, but then one would have to prove naturality for them afterwards.)*)
 
@@ -213,7 +213,7 @@ Section Equality.
     ⊢ A ≡ A
 *)
 
-Definition tyeq_refl_rule : flat_rule (Signature.empty σ).
+Definition tyeq_refl_rule : raw_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -241,7 +241,7 @@ Defined.
    ⊢ B ≡ A
 *)
 
-Definition tyeq_sym_rule : flat_rule (Signature.empty σ).
+Definition tyeq_sym_rule : raw_rule (Signature.empty σ).
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
@@ -272,7 +272,7 @@ Defined.
        ⊢ A ≡ C
 *)
 
-Definition tyeq_trans_rule : flat_rule (Signature.empty σ).
+Definition tyeq_trans_rule : raw_rule (Signature.empty σ).
 Proof.
   (* arity / metavariables of rule *)
   pose (Metas := [<
@@ -310,7 +310,7 @@ Defined.
 ⊢ u ≡ u : A
 *)
 
-Definition tmeq_refl_rule : flat_rule (Signature.empty σ).
+Definition tmeq_refl_rule : raw_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -342,7 +342,7 @@ Defined.
    ⊢ v ≡ u : A
 *)
 
-Definition tmeq_sym_rule : flat_rule (Signature.empty σ).
+Definition tmeq_sym_rule : raw_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -377,7 +377,7 @@ Defined.
          ⊢ u ≡ w : A
 *)
 
-Definition tmeq_trans_rule : flat_rule (Signature.empty σ).
+Definition tmeq_trans_rule : raw_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -423,7 +423,7 @@ Defined.
  ⊢ u : B
 *)
 
-Definition term_convert_rule : flat_rule (Signature.empty σ).
+Definition term_convert_rule : raw_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -473,7 +473,7 @@ Defined.
  ⊢ u = u' : B
 *)
 
-Definition tmeq_convert_rule : flat_rule (Signature.empty σ).
+Definition tmeq_convert_rule : raw_rule (Signature.empty σ).
 Proof.
   (* arity/metavariables of rule *)
   pose (Metas := [<
@@ -506,7 +506,7 @@ Proof.
   - exact [! [::] |- [M/ u /] ≡ [M/ u' /] ; [M/ B /] !].
 Defined.
 
-Definition equality_flat_rule : family (flat_rule (Signature.empty σ))
+Definition equality_raw_rule : family (raw_rule (Signature.empty σ))
   := [< tyeq_refl_rule
     ; tyeq_sym_rule
     ; tyeq_trans_rule
@@ -519,8 +519,8 @@ Definition equality_flat_rule : family (flat_rule (Signature.empty σ))
 
 Definition equality_instance : family (rule (judgement Σ))
   := Family.bind
-       (Family.fmap (FlatRule.fmap (Signature.empty_rect _)) equality_flat_rule)
-       FlatRule.closure_system.
+       (Family.fmap (RawRule.fmap (Signature.empty_rect _)) equality_raw_rule)
+       RawRule.closure_system.
 
 End Equality.
 
@@ -553,42 +553,42 @@ Definition variable_rule : variable_instance Σ -> structural_rule Σ
   := fun i => inl (inl (inr i)).
 Definition equality_rule : equality_instance Σ -> structural_rule Σ
   := fun i => inl (inr i).
-Definition tyeq_refl : FlatRule.closure_system
-      (FlatRule.fmap (Signature.empty_rect _) tyeq_refl_rule)
+Definition tyeq_refl : RawRule.closure_system
+      (RawRule.fmap (Signature.empty_rect _) tyeq_refl_rule)
     -> structural_rule Σ
   := fun i => equality_rule (Some (Some (Some (Some (Some (Some (Some tt)))))) ; i).
-Definition tyeq_sym : FlatRule.closure_system
-      (FlatRule.fmap (Signature.empty_rect _) tyeq_sym_rule)
+Definition tyeq_sym : RawRule.closure_system
+      (RawRule.fmap (Signature.empty_rect _) tyeq_sym_rule)
     -> structural_rule Σ
   := fun i => equality_rule (Some (Some (Some (Some (Some (Some None))))) ; i).
-Definition tyeq_trans : FlatRule.closure_system
-      (FlatRule.fmap (Signature.empty_rect _) tyeq_trans_rule)
+Definition tyeq_trans : RawRule.closure_system
+      (RawRule.fmap (Signature.empty_rect _) tyeq_trans_rule)
     -> structural_rule Σ
   := fun i => equality_rule (Some (Some (Some (Some (Some None)))) ; i).
-Definition tmeq_refl : FlatRule.closure_system
-      (FlatRule.fmap (Signature.empty_rect _) tmeq_refl_rule)
+Definition tmeq_refl : RawRule.closure_system
+      (RawRule.fmap (Signature.empty_rect _) tmeq_refl_rule)
     -> structural_rule Σ
   := fun i => equality_rule (Some (Some (Some (Some None))) ; i).
-Definition tmeq_sym : FlatRule.closure_system
-      (FlatRule.fmap (Signature.empty_rect _) tmeq_sym_rule)
+Definition tmeq_sym : RawRule.closure_system
+      (RawRule.fmap (Signature.empty_rect _) tmeq_sym_rule)
     -> structural_rule Σ
   := fun i => equality_rule (Some (Some (Some None)) ; i).
-Definition tmeq_trans : FlatRule.closure_system
-      (FlatRule.fmap (Signature.empty_rect _) tmeq_trans_rule)
+Definition tmeq_trans : RawRule.closure_system
+      (RawRule.fmap (Signature.empty_rect _) tmeq_trans_rule)
     -> structural_rule Σ
   := fun i => equality_rule (Some (Some None) ; i).
-Definition term_convert : FlatRule.closure_system
-      (FlatRule.fmap (Signature.empty_rect _) term_convert_rule)
+Definition term_convert : RawRule.closure_system
+      (RawRule.fmap (Signature.empty_rect _) term_convert_rule)
     -> structural_rule Σ
   := fun i => equality_rule (Some None ; i).
-Definition tmeq_convert : FlatRule.closure_system
-      (FlatRule.fmap (Signature.empty_rect _) tmeq_convert_rule)
+Definition tmeq_convert : RawRule.closure_system
+      (RawRule.fmap (Signature.empty_rect _) tmeq_convert_rule)
     -> structural_rule Σ
   := fun i => equality_rule (None ; i).
 
 (* TODO: for testing! remove this, or replace the above with this *)
-Definition term_convert' : FlatRule.closure_system
-      (FlatRule.fmap (Signature.empty_rect _) term_convert_rule)
+Definition term_convert' : RawRule.closure_system
+      (RawRule.fmap (Signature.empty_rect _) term_convert_rule)
     -> equality_instance Σ
   := fun i => (Some None ; i).
 
@@ -619,29 +619,29 @@ Defined.
 
 Definition equality_instance_rect :
   forall (P : structural_rule Σ -> Type),
-       (forall i_tyeq_refl : FlatRule.closure_system
-           (FlatRule.fmap (Signature.empty_rect _) tyeq_refl_rule),
+       (forall i_tyeq_refl : RawRule.closure_system
+           (RawRule.fmap (Signature.empty_rect _) tyeq_refl_rule),
          P (tyeq_refl i_tyeq_refl))
-    -> (forall tyeq_sym_rule : FlatRule.closure_system
-           (FlatRule.fmap (Signature.empty_rect _) tyeq_sym_rule),
+    -> (forall tyeq_sym_rule : RawRule.closure_system
+           (RawRule.fmap (Signature.empty_rect _) tyeq_sym_rule),
          P (tyeq_sym tyeq_sym_rule))
-    -> (forall tyeq_trans_rule : FlatRule.closure_system
-           (FlatRule.fmap (Signature.empty_rect _) tyeq_trans_rule),
+    -> (forall tyeq_trans_rule : RawRule.closure_system
+           (RawRule.fmap (Signature.empty_rect _) tyeq_trans_rule),
          P (tyeq_trans tyeq_trans_rule))
-    -> (forall i_tmeq_refl : FlatRule.closure_system
-          (FlatRule.fmap (Signature.empty_rect _) tmeq_refl_rule),
+    -> (forall i_tmeq_refl : RawRule.closure_system
+          (RawRule.fmap (Signature.empty_rect _) tmeq_refl_rule),
          P (tmeq_refl i_tmeq_refl))
-    -> (forall i_tmeq_sym : FlatRule.closure_system
-           (FlatRule.fmap (Signature.empty_rect _) tmeq_sym_rule),
+    -> (forall i_tmeq_sym : RawRule.closure_system
+           (RawRule.fmap (Signature.empty_rect _) tmeq_sym_rule),
          P (tmeq_sym i_tmeq_sym))
-    -> (forall i_tmeq_trans : FlatRule.closure_system
-           (FlatRule.fmap (Signature.empty_rect _) tmeq_trans_rule),
+    -> (forall i_tmeq_trans : RawRule.closure_system
+           (RawRule.fmap (Signature.empty_rect _) tmeq_trans_rule),
          P (tmeq_trans i_tmeq_trans))
-    -> (forall i_term_convert : FlatRule.closure_system
-           (FlatRule.fmap (Signature.empty_rect _) term_convert_rule),
+    -> (forall i_term_convert : RawRule.closure_system
+           (RawRule.fmap (Signature.empty_rect _) term_convert_rule),
          P (term_convert i_term_convert))
-    -> (forall i_tmeq_convert : FlatRule.closure_system
-           (FlatRule.fmap (Signature.empty_rect _) tmeq_convert_rule),
+    -> (forall i_tmeq_convert : RawRule.closure_system
+           (RawRule.fmap (Signature.empty_rect _) tmeq_convert_rule),
          P (tmeq_convert i_tmeq_convert))
   -> forall e : equality_instance Σ, P (equality_rule e).
 Proof.
@@ -766,7 +766,7 @@ Section Renaming_Interface.
 
 (** A particularly common case: renaming along the equivalence [ Γ <~> Γ+0 ].
 
-This arises with instantiations of flat rules: their conclusion is typically
+This arises with instantiations of raw rules: their conclusion is typically
 over a context [ Γ + 0 ], not just [ Γ ] as one would want. *)
 
   Definition derive_reindexing_to_empty_sum
@@ -1189,12 +1189,12 @@ Section SignatureMaps.
       intros [r ΓI].
       simple refine (_;_).
       + exists r.
-        simple refine (FlatRule.closure_system_fmap' f _ ΓI).
-        refine (_ @ _). { apply inverse, FlatRule.fmap_compose. }
+        simple refine (RawRule.closure_system_fmap' f _ ΓI).
+        refine (_ @ _). { apply inverse, RawRule.fmap_compose. }
         rapply @ap_1back.
         apply Signature.empty_rect_unique.
       + refine (Family.map_over_commutes
-                  (FlatRule.closure_system_fmap' f _) _).
+                  (RawRule.closure_system_fmap' f _) _).
     - (* subst_apply *)
       apply Family.Build_map'.
       intros [ Γ [Δ [J [g g_triv]]]].
@@ -1267,33 +1267,33 @@ Section Instantiation.
 
   Context `{Funext} {σ : scope_system} {Σ : signature σ}.
 
-  (** Given a flat rule [R] over a signature [Σ], an arity [a] specifying a
+  (** Given a raw rule [R] over a signature [Σ], an arity [a] specifying a
   metavariable extension, and an instantiation [I] of [a] in [Σ] over some
   context [Γ],
 
   any instance of [R] over the extended signature [extend Σ a] gets translated
   under [I] into an instance of [R] over [Σ], modulo renaming.
 
-  Note: this can’t be in [Typing.FlatRule], since it uses the structural rules,
+  Note: this can’t be in [Typing.RawRule], since it uses the structural rules,
   specifically the rule for renaming along scope isomorphisms.  Morally perhaps
   that should be seen as more primitive than the other structural rules, and be
   baked into the notion of derivations earlier, as e.g. “closure systems on a
   groupoid”.  (Indeed, if the scope system is univalent then this rule _will_
   come for free.)
   *)
-  Definition instantiate_flat_rule_closure_system
+  Definition instantiate_raw_rule_closure_system
       {Γ : raw_context Σ} {a : arity σ} (I : Metavariable.instantiation a Σ Γ)
-      (r : flat_rule Σ)
+      (r : raw_rule Σ)
     : Closure.map_over
         (Judgement.instantiate Γ I)
-        (FlatRule.closure_system (FlatRule.fmap include_symbol r))
-        (structural_rule Σ + FlatRule.closure_system r).
+        (RawRule.closure_system (RawRule.fmap include_symbol r))
+        (structural_rule Σ + RawRule.closure_system r).
   Proof.
     intros [Δ J].
     (* The derivation essentially consists of the instance
      [(Context.instantiate _ I Δ
      ; instantiate_instantiation I J)]
-     of the same flat rule, wrapped in renamings along [scope_assoc].
+     of the same raw rule, wrapped in renamings along [scope_assoc].
      *)
     simple refine (derive_rename' _ _ _ _ _).
     4: simple refine (Closure.deduce' _ _ _);
@@ -1433,9 +1433,9 @@ Section Instantiation.
     - (* equality_rule *)
       intros i_eq.
       destruct i_eq as [i [Δ J]].
-      set (F := instantiate_flat_rule_closure_system I
-                  ((FlatRule.fmap (Signature.empty_rect _))
-                     (equality_flat_rule i))).
+      set (F := instantiate_raw_rule_closure_system I
+                  ((RawRule.fmap (Signature.empty_rect _))
+                     (equality_raw_rule i))).
       assert (D := F (Δ;J)); clear F.
       refine (Closure.derivation_fmap1 _ _).
       { refine (Closure.sum_rect _ _).
@@ -1446,7 +1446,7 @@ Section Instantiation.
           refine (Family.bind_include _ _ _).
           exact i.
       }
-      (* TODO: can we streamline the following somehow with e.g. [FlatRule.fmap_compose]? *)
+      (* TODO: can we streamline the following somehow with e.g. [RawRule.fmap_compose]? *)
       refine (transport (fun c => derivation _ _ c) _
              (transport (fun H => derivation _ H _) _ D)).
       + apply (ap (Judgement.instantiate _ _)).

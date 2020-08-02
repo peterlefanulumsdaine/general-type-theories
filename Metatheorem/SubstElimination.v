@@ -7,9 +7,9 @@ Require Import Auxiliary.Coproduct.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Typing.FlatRule.
+Require Import Typing.RawRule.
 Require Import Typing.StructuralRule.
-Require Import Typing.FlatTypeTheory.
+Require Import Typing.RawTypeTheory.
 
 (** The main goal of this file is the theorem [subst_elimination], showing
 that for suitable theories [T], any derivation over [T] using the full
@@ -35,24 +35,24 @@ Section Subst_Free_Derivations.
   Context {σ : scope_system}.
 
   Definition closure_system_without_subst
-      {Σ : signature σ} (T : flat_type_theory Σ)
-  := structural_rule_without_subst Σ + Family.bind T FlatRule.closure_system.
+      {Σ : signature σ} (T : raw_type_theory Σ)
+  := structural_rule_without_subst Σ + Family.bind T RawRule.closure_system.
 
   Definition subst_free_derivation
-      {Σ : signature σ} (T : flat_type_theory Σ)
+      {Σ : signature σ} (T : raw_type_theory Σ)
   := derivation (closure_system_without_subst T).
 
   Definition subst_free_rule_derivation {Σ : signature σ}
-    (T : flat_type_theory Σ) (R : flat_rule Σ)
+    (T : raw_type_theory Σ) (R : raw_rule Σ)
   := subst_free_derivation
-      (FlatTypeTheory.fmap Metavariable.include_symbol T)
-      (flat_rule_premise R)
-      (flat_rule_conclusion R).
+      (RawTypeTheory.fmap Metavariable.include_symbol T)
+      (raw_rule_premise R)
+      (raw_rule_conclusion R).
 
 End Subst_Free_Derivations.
 
-Section Flat_Conditions.
-(** Conditions on flat rules/type theories sufficient for admissibility of
+Section Raw_Conditions.
+(** Conditions on raw rules/type theories sufficient for admissibility of
 substitution to hold over them.
 
   The main such condition is: every rule should have empty conclusion context.
@@ -60,22 +60,22 @@ To use one established terminology, all rules should be in _universal form_,
 as opposed to _hypothetical form_.
 
   For substitution to (admissibly) respect equality, we additionally need to
-know that the theory is _congruous_, in that for each flat rule of object form,
+know that the theory is _congruous_, in that for each raw rule of object form,
 the associated congruence rule should be derivable (?admissible). *)
 
   Context {σ} {Σ : signature σ}.
 
-  Definition in_universal_form (R : flat_rule Σ)
-    := is_empty (scope_of_judgement (flat_rule_conclusion R)).
+  Definition in_universal_form (R : raw_rule Σ)
+    := is_empty (scope_of_judgement (raw_rule_conclusion R)).
 
-  Definition substitutive (T : flat_type_theory Σ)
+  Definition substitutive (T : raw_type_theory Σ)
     := forall r : T, in_universal_form (T r).
 
-  Local Definition congruous (T : flat_type_theory Σ)
+  Local Definition congruous (T : raw_type_theory Σ)
     : Type
   := Family.map
     (Family.bind T
-       (fun R => {| family_element R_obj := flat_congruence_rule R R_obj |}))
+       (fun R => {| family_element R_obj := raw_congruence_rule R R_obj |}))
     T.
   (** More readably: [T] is congruous if for each of its object rules, it also contains the associated congruence rule.
 
@@ -93,19 +93,19 @@ the associated congruence rule should be derivable (?admissible). *)
   However, it would take a lot of work to state this and set up the infrastructure to work with it.  So for now we stick with this simpler and cruder notion of congruousness: T should literally contain all its associated congruence rules. *)
 
   (* TODO: this could be improved in several ways, given a bit of upstream refactoring:
-  - factor the definition of [FlatTypeTheory.closure_system] and the [without subst] version to have the second summand defined together, then have this hold for any closure system with a map from that
-  - then can upstream this to [FlatTypeTheory] (along with following couple of rules)
+  - factor the definition of [RawTypeTheory.closure_system] and the [without subst] version to have the second summand defined together, then have this hold for any closure system with a map from that
+  - then can upstream this to [RawTypeTheory] (along with following couple of rules)
   - also can possibly add “contains” relation for families, then rewrite this to use that *)
   Local Definition derive_contained_rule
-      {T : flat_type_theory Σ}
+      {T : raw_type_theory Σ}
       {R} {r:T} (e : T r = R)
       {Γ : raw_context Σ}
-      (I : Metavariable.instantiation (flat_rule_metas R) Σ Γ)
-      {H} (d_prems : forall p : flat_rule_premise R,
+      (I : Metavariable.instantiation (raw_rule_metas R) Σ Γ)
+      {H} (d_prems : forall p : raw_rule_premise R,
              subst_free_derivation T H
-                        (Judgement.instantiate Γ I (flat_rule_premise R p)))
+                        (Judgement.instantiate Γ I (raw_rule_premise R p)))
     : subst_free_derivation T H
-        (Judgement.instantiate Γ I (flat_rule_conclusion R)).
+        (Judgement.instantiate Γ I (raw_rule_conclusion R)).
   Proof.
     destruct e.
     simple refine (Closure.deduce' _ _ _).
@@ -116,30 +116,30 @@ the associated congruence rule should be derivable (?admissible). *)
 
   (* TODO: as with [derive_contained_rule], upstream once refactored to allow that *)
   Local Definition derive_contained_rule'
-      {T : flat_type_theory Σ}
+      {T : raw_type_theory Σ}
       {R} {r:T} (e_R : T r = R)
       {Γ : raw_context Σ}
-      (I : Metavariable.instantiation (flat_rule_metas R) Σ Γ)
-      {J} (e_J : J = Judgement.instantiate Γ I (flat_rule_conclusion R))
-      {H} (d_prems : forall p : flat_rule_premise R,
+      (I : Metavariable.instantiation (raw_rule_metas R) Σ Γ)
+      {J} (e_J : J = Judgement.instantiate Γ I (raw_rule_conclusion R))
+      {H} (d_prems : forall p : raw_rule_premise R,
              subst_free_derivation T H
-                        (Judgement.instantiate Γ I (flat_rule_premise R p)))
+                        (Judgement.instantiate Γ I (raw_rule_premise R p)))
     : subst_free_derivation T H J.
   Proof.
     destruct e_J^; eapply derive_contained_rule; eassumption.
   Defined.
 
   Local Definition derive_congruence {T} (T_cong : congruous T) {H}
-    {r : T} (r_obj : Judgement.is_object (form_of_judgement (flat_rule_conclusion (T r))))
-    (r_cong := flat_congruence_rule (T r) r_obj)
+    {r : T} (r_obj : Judgement.is_object (form_of_judgement (raw_rule_conclusion (T r))))
+    (r_cong := raw_congruence_rule (T r) r_obj)
     {Γ : raw_context Σ}
-    (I0 I1 : Metavariable.instantiation (flat_rule_metas (T r)) Σ Γ)
+    (I0 I1 : Metavariable.instantiation (raw_rule_metas (T r)) Σ Γ)
     (I := copair_instantiation I0 I1)
-    (d_prems : forall p : flat_rule_premise r_cong,
+    (d_prems : forall p : raw_rule_premise r_cong,
         subst_free_derivation T H
-          (Judgement.instantiate Γ I (flat_rule_premise r_cong p)))
+          (Judgement.instantiate Γ I (raw_rule_premise r_cong p)))
     : subst_free_derivation T H
-        (Judgement.instantiate Γ I (flat_rule_conclusion r_cong)).
+        (Judgement.instantiate Γ I (raw_rule_conclusion r_cong)).
   Proof.
     simple refine (derive_contained_rule _ _ _).
     { apply T_cong. exists r. exact r_obj. }
@@ -147,18 +147,18 @@ the associated congruence rule should be derivable (?admissible). *)
     assumption.
   Defined.
 
-  Lemma equality_flat_rules_congruous `{Funext}
+  Lemma equality_raw_rules_congruous `{Funext}
       {C} (T := structural_rule_without_subst Σ + C)
-      {r : @equality_flat_rule σ}
+      {r : @equality_raw_rule σ}
       (r_obj : Judgement.is_object (form_of_judgement
-                               (flat_rule_conclusion (equality_flat_rule r))))
-      (r_cong := flat_congruence_rule
-         (FlatRule.fmap (Signature.empty_rect Σ) (equality_flat_rule r)) r_obj)
+                               (raw_rule_conclusion (equality_raw_rule r))))
+      (r_cong := raw_congruence_rule
+         (RawRule.fmap (Signature.empty_rect Σ) (equality_raw_rule r)) r_obj)
       {Γ : raw_context Σ}
-      (I : Metavariable.instantiation (flat_rule_metas r_cong) Σ Γ)
+      (I : Metavariable.instantiation (raw_rule_metas r_cong) Σ Γ)
     : derivation T
-        (Family.fmap (Judgement.instantiate Γ I) (flat_rule_premise r_cong))
-        (Judgement.instantiate Γ I (flat_rule_conclusion r_cong)).
+        (Family.fmap (Judgement.instantiate Γ I) (raw_rule_premise r_cong))
+        (Judgement.instantiate Γ I (raw_rule_conclusion r_cong)).
   Proof.
     recursive_destruct r; destruct r_obj.
     (* Only one equality rule is an object rule: [term_convert].  Its congruence rule is essentially:
@@ -226,7 +226,7 @@ The below proof follows that derivation directly, but giving it is a bit like pl
   Time Defined.
   (* TODO: trying to bring this timing down seems like a good test case for improving our derivation infrastructure. *)
 
-End Flat_Conditions.
+End Raw_Conditions.
 
 Section Judgement_Renamings.
 (** A lot of results can be concisely formulated in terms of maps/renamings of
@@ -297,51 +297,51 @@ the cases of that induction. *)
 
   Context `{Funext} {σ : scope_system} {Σ : signature σ}.
 
-  Section Flat_Rule_Instantiation_Renaming.
+  Section Raw_Rule_Instantiation_Renaming.
     (** The lemmas of this section build up what’s needed for renaming
-     flat-rule steps in derivations:
+     raw-rule steps in derivations:
 
-     given an instance of a flat rule in universal form,
+     given an instance of a raw rule in universal form,
      and a judgement-renaming into its conclusion,
      get a renamed instance, whose conclusion is renaming-equivalent to the
      renaming we want to derive, and each of whose premises has a
      judgement-renaming to some premise of the original rule.
 
-     The cases for non-flat structural rules are done by analogous
+     The cases for non-raw structural rules are done by analogous
      claim for their closure conditions.
     *)
 
     (* TODO: consider naming of the whole following lemma sequence *)
 
-    Context {R : flat_rule Σ} (R_univ : in_universal_form R)
+    Context {R : raw_rule Σ} (R_univ : in_universal_form R)
       {Γ : raw_context Σ}
-      (I : Metavariable.instantiation (flat_rule_metas R) Σ Γ)
+      (I : Metavariable.instantiation (raw_rule_metas R) Σ Γ)
       {J' : judgement Σ}
       (f : judgement_renaming
-             (Judgement.instantiate Γ I (flat_rule_conclusion R))
+             (Judgement.instantiate Γ I (raw_rule_conclusion R))
              J')
       (Γ' := context_of_judgement J').
 
-    Local Definition rename_flat_rule_instantiation_renaming
+    Local Definition rename_raw_rule_instantiation_renaming
       : typed_renaming Γ Γ'.
     Proof.
       refine (compose_typed_renaming f _).
       apply typed_renaming_to_instantiate_context.
     Defined.
 
-    Local Definition rename_flat_rule_instantiation_instantiation
-      : Metavariable.instantiation (flat_rule_metas R) Σ Γ'.
+    Local Definition rename_raw_rule_instantiation_instantiation
+      : Metavariable.instantiation (raw_rule_metas R) Σ Γ'.
     Proof.
       exact (rename_instantiation
-               rename_flat_rule_instantiation_renaming
+               rename_raw_rule_instantiation_renaming
                I).
     Defined.
 
-    Local Lemma rename_flat_rule_instantiation_conclusion
+    Local Lemma rename_raw_rule_instantiation_conclusion
       : judgement_renaming
           (Judgement.instantiate Γ'
-            (rename_flat_rule_instantiation_instantiation)
-            (flat_rule_conclusion R))
+            (rename_raw_rule_instantiation_instantiation)
+            (raw_rule_conclusion R))
           J'.
     (* NOTE: and moreover this judgement_renaming is an equivalence, which may
     be needed if we restrict the renaming structural rule to equivalences. *)
@@ -365,28 +365,28 @@ the cases of that induction. *)
        [instantiate_context_over_typed_renaming]. *)
     Defined.
 
-    Local Lemma rename_flat_rule_instantiation_premise
-          (p : flat_rule_premise R)
+    Local Lemma rename_raw_rule_instantiation_premise
+          (p : raw_rule_premise R)
       : judgement_renaming
-          (Judgement.instantiate Γ I (flat_rule_premise R p))
-          (Judgement.instantiate Γ' rename_flat_rule_instantiation_instantiation
-                                                       (flat_rule_premise R p)).
+          (Judgement.instantiate Γ I (raw_rule_premise R p))
+          (Judgement.instantiate Γ' rename_raw_rule_instantiation_instantiation
+                                                       (raw_rule_premise R p)).
     Proof.
       apply instantiate_judgement_over_typed_renaming.
     Defined.
 
-  End Flat_Rule_Instantiation_Renaming.
+  End Raw_Rule_Instantiation_Renaming.
 
-  Lemma equality_flat_rules_in_universal_form
-    : forall r : @equality_flat_rule σ,
-      in_universal_form (equality_flat_rule r).
+  Lemma equality_raw_rules_in_universal_form
+    : forall r : @equality_raw_rule σ,
+      in_universal_form (equality_raw_rule r).
   Proof.
     intro r; recursive_destruct r; apply scope_is_empty.
   Defined.
 
   (** \cref{thm:admissibility-renaming} *)
   Definition rename_derivation
-      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {T : raw_type_theory Σ} (T_sub : substitutive T)
       {J} {J'} (f : judgement_renaming J J')
       (d_J : subst_free_derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J'.
@@ -396,39 +396,39 @@ the cases of that induction. *)
     { destruct i. } (* hypothesis case impossible, as no hypotheses *)
     intros J' f.
     destruct r as [ r | r ].
-    2: { (* case: instantiation of a flat rule of [T] *)
+    2: { (* case: instantiation of a raw rule of [T] *)
       destruct r as [r I].
       simple refine (derive_rename' _ _
-        (rename_flat_rule_instantiation_conclusion _ _ f)
+        (rename_raw_rule_instantiation_conclusion _ _ f)
         _ _).
       { apply T_sub. }
       { apply inverse, judgement_renaming_hypothetical_part. }
       simple refine (Closure.deduce' _ _ _).
       { apply inr. exists r.
         exists (context_of_judgement J').
-        refine (rename_flat_rule_instantiation_instantiation _ f).
+        refine (rename_raw_rule_instantiation_instantiation _ f).
       }
       { apply idpath. }
       intros p. apply (IH p).
-      refine (rename_flat_rule_instantiation_premise _ f p).
+      refine (rename_raw_rule_instantiation_premise _ f p).
     }
     (* case: structural rules *)
     destruct r as [ [ r | r ] | r ].
-    3: { (* case: equality rule; so again, an instantiation of a flat rule *)
+    3: { (* case: equality rule; so again, an instantiation of a raw rule *)
       destruct r as [r I].
       simple refine (derive_rename' _ _
-        (rename_flat_rule_instantiation_conclusion _ _ f)
+        (rename_raw_rule_instantiation_conclusion _ _ f)
         _ _).
-      { apply equality_flat_rules_in_universal_form. }
+      { apply equality_raw_rules_in_universal_form. }
       { apply inverse, judgement_renaming_hypothetical_part. }
       simple refine (Closure.deduce' _ _ _).
       { apply inl, inr. exists r.
         exists (context_of_judgement J').
-        refine (rename_flat_rule_instantiation_instantiation _ f).
+        refine (rename_raw_rule_instantiation_instantiation _ f).
       }
       { apply idpath. }
       intros p. apply (IH p).
-      refine (rename_flat_rule_instantiation_premise _ f p).
+      refine (rename_raw_rule_instantiation_premise _ f p).
     }
     - (* case: renaming rule *)
       cbn in r.
@@ -469,7 +469,7 @@ substitution, or like a typed renaming.
 This slightly subtle definition is essentially motivated by the proof
 of [substitute_derivation], and in particular, the desire to keep that proof
 structurally recursive on the derivation (and also not dependent on any kind
-of well-typedness conditions on the flat rules).  The point is that when
+of well-typedness conditions on the raw rules).  The point is that when
 passing under binders in premises of rules, we want to extend the substitution
 by the type-expressions of the binders, without having to check that these are
 well-formed. *)
@@ -477,7 +477,7 @@ well-formed. *)
   Context `{Funext} {σ : scope_system} {Σ : signature σ}.
 
   Local Definition weakly_typed
-      (T : flat_type_theory Σ)
+      (T : raw_type_theory Σ)
       (Δ Γ : raw_context Σ) (f : raw_substitution Σ Δ Γ)
     : Type
   := forall i : Γ,
@@ -486,7 +486,7 @@ well-formed. *)
                             [! Δ |- f i ; substitute f (Γ i) !].
 
   Record weakly_typed_substitution
-    (T : flat_type_theory Σ) (Δ Γ : raw_context Σ)
+    (T : raw_type_theory Σ) (Δ Γ : raw_context Σ)
   := {
     raw_of_weakly_typed_substitution :> raw_substitution Σ Δ Γ
   ; weakly_typed_substitution_is_weakly_typed
@@ -494,7 +494,7 @@ well-formed. *)
   }.
 
   Local Lemma compose_weakly_typed_substitution_renaming
-        {T : flat_type_theory Σ} (T_sub : substitutive T)
+        {T : raw_type_theory Σ} (T_sub : substitutive T)
         {Γ Γ' Γ'' : raw_context Σ}
         (g : weakly_typed_substitution T Γ' Γ)
         (f : typed_renaming Γ' Γ'')
@@ -521,7 +521,7 @@ well-formed. *)
   Defined.
 
   Local Lemma compose_renaming_weakly_typed_substitution
-        {T : flat_type_theory Σ}
+        {T : raw_type_theory Σ}
         {Γ Γ' Γ'' : raw_context Σ}
         (g : typed_renaming Γ Γ')
         (f : weakly_typed_substitution T Γ'' Γ')
@@ -549,7 +549,7 @@ well-formed. *)
      [instantiate_context_substitute_instantiation],
      [extend_weakly_typed_substitution] *)
   Lemma instantiate_context_over_weakly_typed_substitution
-      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {T : raw_type_theory Σ} (T_sub : substitutive T)
       {Γ Γ' : raw_context Σ} (f : weakly_typed_substitution T Γ' Γ)
       {a : arity σ}
       (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
@@ -594,7 +594,7 @@ well-formed. *)
 
   (** Analogous to [judgement_renaming] *)
   Record weakly_typed_judgement_map
-    (T : flat_type_theory Σ) (J' J : judgement Σ)
+    (T : raw_type_theory Σ) (J' J : judgement Σ)
   := {
     weakly_typed_substitution_of_judgement_map
       :> weakly_typed_substitution T
@@ -607,7 +607,7 @@ well-formed. *)
   }.
 
   Local Lemma instantiate_judgement_over_weakly_typed_substitution
-      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {T : raw_type_theory Σ} (T_sub : substitutive T)
       {Γ Γ' : raw_context Σ} (f : weakly_typed_substitution T Γ' Γ)
       {a : arity σ}
       (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
@@ -626,18 +626,18 @@ Section Substitute_Derivations.
 
   Context `{Funext} {σ : scope_system} {Σ : signature σ}.
 
-  Section Flat_Rule_Substitute_Instantiation.
-    (** Analogously to section [Flat_Rule_Susbtitute_Renaming],
+  Section Raw_Rule_Substitute_Instantiation.
+    (** Analogously to section [Raw_Rule_Susbtitute_Renaming],
      the lemmas of this section build up what’s needed for substituting
-     flat-rule steps in derivations:
+     raw-rule steps in derivations:
 
-     given an instance of a flat rule in universal form,
+     given an instance of a raw rule in universal form,
      and a weakly-typed judgement map into its conclusion,
      get a sustituted instance, whose conclusion is renaming-equivalent to the
      renaming we want to derive, and each of whose premises has a
      weakly-typed judgement map to some premise of the original rule.
 
-     The cases for non-flat structural rules should be done by analogous
+     The cases for non-raw structural rules should be done by analogous
      claim for their closure conditions.
     *)
 
@@ -645,36 +645,36 @@ Section Substitute_Derivations.
      (but keep consistent with renaming versions above). *)
 
     Context
-      {T : flat_type_theory Σ} (T_sub : substitutive T)
-      {R : flat_rule Σ} (R_univ : in_universal_form R)
+      {T : raw_type_theory Σ} (T_sub : substitutive T)
+      {R : raw_rule Σ} (R_univ : in_universal_form R)
       {Γ : raw_context Σ}
-      (I : Metavariable.instantiation (flat_rule_metas R) Σ Γ)
+      (I : Metavariable.instantiation (raw_rule_metas R) Σ Γ)
       {J' : judgement Σ}
       (f : weakly_typed_judgement_map T
              J'
-             (Judgement.instantiate Γ I (flat_rule_conclusion R)))
+             (Judgement.instantiate Γ I (raw_rule_conclusion R)))
       (Γ' := context_of_judgement J').
 
-    Local Definition substitute_flat_rule_instantiation_map
+    Local Definition substitute_raw_rule_instantiation_map
       : weakly_typed_substitution T Γ' Γ.
     Proof.
       refine (compose_renaming_weakly_typed_substitution _ f).
       apply typed_renaming_to_instantiate_context.
     Defined.
 
-    Local Definition substitute_flat_rule_instantiation_instantiation
-      : Metavariable.instantiation (flat_rule_metas R) Σ Γ'.
+    Local Definition substitute_raw_rule_instantiation_instantiation
+      : Metavariable.instantiation (raw_rule_metas R) Σ Γ'.
     Proof.
       exact (substitute_instantiation
-               substitute_flat_rule_instantiation_map
+               substitute_raw_rule_instantiation_map
                I).
     Defined.
 
-    Local Lemma substitute_flat_rule_instantiation_conclusion
+    Local Lemma substitute_raw_rule_instantiation_conclusion
       : judgement_renaming
           (Judgement.instantiate Γ'
-            (substitute_flat_rule_instantiation_instantiation)
-            (flat_rule_conclusion R))
+            (substitute_raw_rule_instantiation_instantiation)
+            (raw_rule_conclusion R))
           J'.
     (* NOTE: and moreover this judgement_renaming is an equivalence, which may
     be needed if we restrict the renaming structural rule to equivalences. *)
@@ -698,23 +698,23 @@ Section Substitute_Derivations.
       apply idpath.
     Defined.
 
-    Local Lemma substitute_flat_rule_instantiation_premise
-          (p : flat_rule_premise R)
+    Local Lemma substitute_raw_rule_instantiation_premise
+          (p : raw_rule_premise R)
       : weakly_typed_judgement_map T
           (Judgement.instantiate Γ'
-                  substitute_flat_rule_instantiation_instantiation
-                  (flat_rule_premise R p))
-          (Judgement.instantiate Γ I (flat_rule_premise R p)).
+                  substitute_raw_rule_instantiation_instantiation
+                  (raw_rule_premise R p))
+          (Judgement.instantiate Γ I (raw_rule_premise R p)).
     Proof.
       apply instantiate_judgement_over_weakly_typed_substitution.
       assumption.
     Defined.
 
-  End Flat_Rule_Substitute_Instantiation.
+  End Raw_Rule_Substitute_Instantiation.
 
   (** \cref{lem:substitution-admisibility} *)
   Definition substitute_derivation
-      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {T : raw_type_theory Σ} (T_sub : substitutive T)
       {J} {J'} (f : weakly_typed_judgement_map T J' J)
       (d_J : subst_free_derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J'.
@@ -724,40 +724,40 @@ Section Substitute_Derivations.
     { destruct i. } (* hypothesis case impossible, as no hypotheses *)
     intros J' f.
     destruct r as [ r | r ].
-    2: { (* case: instantiation of a flat rule of [T] *)
+    2: { (* case: instantiation of a raw rule of [T] *)
       destruct r as [r I].
       simple refine (derive_rename' _ _
-        (substitute_flat_rule_instantiation_conclusion _ _ f)
+        (substitute_raw_rule_instantiation_conclusion _ _ f)
         _ _).
       { apply T_sub. }
       { apply inverse, judgement_renaming_hypothetical_part. }
       simple refine (Closure.deduce' _ _ _).
       { apply inr. exists r.
         exists (context_of_judgement J').
-        refine (substitute_flat_rule_instantiation_instantiation _ f).
+        refine (substitute_raw_rule_instantiation_instantiation _ f).
       }
       { apply idpath. }
       intros p. apply (IH p).
-      refine (substitute_flat_rule_instantiation_premise _ _ f p).
+      refine (substitute_raw_rule_instantiation_premise _ _ f p).
       assumption.
     }
     (* case: structural rules *)
     destruct r as [ [ r | r ] | r ].
-    3: { (* case: equality rule; so again, an instantiation of a flat rule *)
+    3: { (* case: equality rule; so again, an instantiation of a raw rule *)
       destruct r as [r I].
       simple refine (derive_rename' _ _
-        (substitute_flat_rule_instantiation_conclusion _ _ f)
+        (substitute_raw_rule_instantiation_conclusion _ _ f)
         _ _).
-      { apply equality_flat_rules_in_universal_form. }
+      { apply equality_raw_rules_in_universal_form. }
       { apply inverse, judgement_renaming_hypothetical_part. }
       simple refine (Closure.deduce' _ _ _).
       { apply inl, inr. exists r.
         exists (context_of_judgement J').
-        refine (substitute_flat_rule_instantiation_instantiation _ f).
+        refine (substitute_raw_rule_instantiation_instantiation _ f).
       }
       { apply idpath. }
       intros p. apply (IH p).
-      refine (substitute_flat_rule_instantiation_premise _ _ f p).
+      refine (substitute_raw_rule_instantiation_premise _ _ f p).
       assumption.
     }
     - (* case: renaming rule *)
@@ -819,7 +819,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
   Context {σ : scope_system} {Σ : signature σ} `{Funext}.
 
   Local Definition weakly_equal
-      (T : flat_type_theory Σ)
+      (T : raw_type_theory Σ)
       {Δ Γ : raw_context Σ}
       (f g : raw_substitution Σ Δ Γ)
     : Type
@@ -836,7 +836,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
           [! Δ |- f i ≡ g i ; substitute f (Γ i) !].
 
   Record weakly_equal_pair
-      (T : flat_type_theory Σ)
+      (T : raw_type_theory Σ)
       (Δ Γ : raw_context Σ)
   := {
     left : raw_substitution Σ Δ Γ
@@ -850,7 +850,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
   Arguments is_weakly_equal {_ _ _} _.
 
   Local Definition compose_renaming_weakly_equal_pair
-        {T : flat_type_theory Σ}
+        {T : raw_type_theory Σ}
         {Γ Γ' Γ'' : raw_context Σ}
         (r : typed_renaming Γ Γ')
         (fg : weakly_equal_pair T Γ'' Γ')
@@ -904,7 +904,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
    [ [Γ'|-J'] -> [Γ|-J] ], get a derivation of [ Γ' |- J' ].
 *)
   Record weakly_equal_judgement_map
-    (T : flat_type_theory Σ) (J' J : judgement Σ)
+    (T : raw_type_theory Σ) (J' J : judgement Σ)
    := {
      weakly_equal_pair_of_judgement_map
        :> weakly_equal_pair T (context_of_judgement J') (context_of_judgement J)
@@ -930,7 +930,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
   given a weakly equal pair [(f,g) : Γ' —> Γ], and a context extension [Δ] of [Γ],
   we can extend (f,g) to weakly equal pairs [Γ'.f^*Δ —> Γ.Δ] and [Γ'.g^*Δ —> Γ.Δ]. *)
   Lemma instantiate_context_over_weakly_equal_pair_left
-      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {T : raw_type_theory Σ} (T_sub : substitutive T)
       {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
       {a : arity σ}
       (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
@@ -982,7 +982,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
   Defined.
 
   Lemma instantiate_context_over_weakly_equal_pair_right
-      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {T : raw_type_theory Σ} (T_sub : substitutive T)
       {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
       {a : arity σ}
       (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
@@ -1034,7 +1034,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
   Defined.
 
   Local Lemma instantiate_judgement_over_weakly_equal_pair_left
-      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {T : raw_type_theory Σ} (T_sub : substitutive T)
       {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
       {a : arity σ}
       (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
@@ -1049,7 +1049,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
   Defined.
 
   Local Lemma instantiate_judgement_over_weakly_equal_pair_right
-      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {T : raw_type_theory Σ} (T_sub : substitutive T)
       {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
       {a : arity σ}
       (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
@@ -1065,7 +1065,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
 
   (* TODO: check if used in the end; if not, delete! *)
   Local Lemma instantiate_judgement_over_weakly_equal_pair_combined_0
-      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {T : raw_type_theory Σ} (T_sub : substitutive T)
       {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
       {a : arity σ}
       (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
@@ -1087,7 +1087,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
 
   (* TODO: upstream within file.  NOTE: keep even if turns out not used, this was a pain in the arse to write and might be useful in future. *)
   Local Definition compose_renaming_weakly_equal_judgement_map
-        {T : flat_type_theory Σ}
+        {T : raw_type_theory Σ}
         {J J' J'' : judgement Σ}
         (r : judgement_renaming J J')
         (fg : weakly_equal_judgement_map T J'' J')
@@ -1112,7 +1112,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
 
   (* TODO: upstream within file *)
   Local Definition compose_weakly_equal_pair_renaming
-        {T : flat_type_theory Σ} (T_sub : substitutive T)
+        {T : raw_type_theory Σ} (T_sub : substitutive T)
         {Γ Γ' Γ'' : raw_context Σ}
         (fg : weakly_equal_pair T Γ' Γ)
         (r : typed_renaming Γ' Γ'')
@@ -1146,7 +1146,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
 
   (* TODO: upstream within file *)
   Local Definition compose_weakly_equal_judgement_map_renaming
-        {T : flat_type_theory Σ} (T_sub : substitutive T)
+        {T : raw_type_theory Σ} (T_sub : substitutive T)
         {J J' J'' : judgement Σ}
         (fg : weakly_equal_judgement_map T J' J)
         (r : judgement_renaming J' J'')
@@ -1172,7 +1172,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
 
   (* TODO: upstream within file? *)
   Local Lemma instantiate_judgement_over_weakly_equal_pair_combined
-      {T : flat_type_theory Σ} (T_sub : substitutive T)
+      {T : raw_type_theory Σ} (T_sub : substitutive T)
       {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
       {a : arity σ}
       (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
@@ -1239,35 +1239,35 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
         rapply @transport_const.
   Defined.
 
-  Section Flat_Rule_Substitute_Equal_Instantiation.
-    (** Analogously to section [Flat_Rule_Substitute_Instantiation],
+  Section Raw_Rule_Substitute_Equal_Instantiation.
+    (** Analogously to section [Raw_Rule_Substitute_Instantiation],
      the lemmas of this section build up what’s needed for substituting
-     flat-rule steps in derivations along weakly equal pairs:
+     raw-rule steps in derivations along weakly equal pairs:
 
-    - given a weakly equal judgement map (f,g) from J' into the conclusion of a flat rule instance I_* R, we get two or three new instantiations: two pulled back instantiations f^*I, g^*I for R, and if R was an object rule, an instantiation (f,g)^*I of the congruence rule of R;
+    - given a weakly equal judgement map (f,g) from J' into the conclusion of a raw rule instance I_* R, we get two or three new instantiations: two pulled back instantiations f^*I, g^*I for R, and if R was an object rule, an instantiation (f,g)^*I of the congruence rule of R;
 
     - the three possible things that J can be are precisely, up to equiv-renaming, the conclusions of these three new rule instances;
 
     - all of the premises of these new rule instances have weakly equal judgement maps to the premises of the original instance of R.
 
-     The cases for non-flat structural rules amount to showing analogous things for their closure conditions. *)
+     The cases for non-raw structural rules amount to showing analogous things for their closure conditions. *)
 
     Context
-      {T : flat_type_theory Σ}
+      {T : raw_type_theory Σ}
       (T_sub : substitutive T) (T_cong : congruous T)
-      {R : flat_rule Σ} (R_univ : in_universal_form R)
+      {R : raw_rule Σ} (R_univ : in_universal_form R)
       {Γ : raw_context Σ}
-      (I : Metavariable.instantiation (flat_rule_metas R) Σ Γ)
-      (J := Judgement.instantiate Γ I (flat_rule_conclusion R))
+      (I : Metavariable.instantiation (raw_rule_metas R) Σ Γ)
+      (J := Judgement.instantiate Γ I (raw_rule_conclusion R))
       {J' : judgement Σ}
       (Γ' := context_of_judgement J')
       (is_obj_R
-        := Judgement.is_object (form_of_judgement (flat_rule_conclusion R))).
+        := Judgement.is_object (form_of_judgement (raw_rule_conclusion R))).
   (* We can’t include [fg : weakly_equal_judgement_map T J' J] as a section variable here, since the lemmas below need to be able to destruct it and act on the result. *)
 
   (* Since these lemmas are for internal use only, and their names are getting
   very long, we for once relax our prohibition on abbreviations *)
-    Local Definition substeq_flat_rule_pair
+    Local Definition substeq_raw_rule_pair
         (fg : weakly_equal_judgement_map T J' J)
       : weakly_equal_pair T Γ' Γ.
     Proof.
@@ -1275,22 +1275,22 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
       apply typed_renaming_to_instantiate_context.
     Defined.
 
-    Local Definition substeq_flat_rule_rule
+    Local Definition substeq_raw_rule_rule
         (fg : weakly_equal_judgement_map T J' J)
-      : flat_rule Σ.
+      : raw_rule Σ.
     Proof.
       destruct fg as [_ [ _ | [ R_obj _]]].
       - exact R.
-      - eapply flat_congruence_rule, R_obj.
+      - eapply raw_congruence_rule, R_obj.
     Defined.
 
-    Local Definition substeq_flat_rule_instantiation
+    Local Definition substeq_raw_rule_instantiation
         (fg : weakly_equal_judgement_map T J' J)
       : Metavariable.instantiation
-          (flat_rule_metas (substeq_flat_rule_rule fg)) Σ Γ'.
+          (raw_rule_metas (substeq_raw_rule_rule fg)) Σ Γ'.
     Proof.
-      set (f' := left (substeq_flat_rule_pair fg)).
-      set (g' := right (substeq_flat_rule_pair fg)).
+      set (f' := left (substeq_raw_rule_pair fg)).
+      set (g' := right (substeq_raw_rule_pair fg)).
       destruct fg as [fg [ [ e_J'_fJ | e_J'_gJ ] | [ R_obj ?]]].
       - exact (substitute_instantiation f' I).
       - exact (substitute_instantiation g' I).
@@ -1299,12 +1299,12 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
         + exact (substitute_instantiation g' I).
     Defined.
 
-    Local Lemma substeq_flat_rule_conclusion
+    Local Lemma substeq_raw_rule_conclusion
         (fg : weakly_equal_judgement_map T J' J)
       : judgement_renaming
           (Judgement.instantiate Γ'
-            (substeq_flat_rule_instantiation fg)
-            (flat_rule_conclusion (substeq_flat_rule_rule fg)))
+            (substeq_raw_rule_instantiation fg)
+            (raw_rule_conclusion (substeq_raw_rule_rule fg)))
           J'.
     (* NOTE: and the renaming is in each case an equivalence, though we don’t
        currently need that. *)
@@ -1340,8 +1340,8 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
         1: exists (typed_renaming_to_instantiate_context _ _ _).
         2: { apply coproduct_empty_inj1_is_equiv, R_univ. }
         eapply concat. { apply ap, e_J'_fgJ. }
-        simpl substeq_flat_rule_instantiation.
-        simpl substeq_flat_rule_rule.
+        simpl substeq_raw_rule_instantiation.
+        simpl substeq_raw_rule_rule.
         simpl hypothetical_part.
         rewrite instantiate_combine_hypothetical_judgement.
         rewrite rename_combine_hypothetical_judgement.
@@ -1376,10 +1376,10 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
           apply inverse. refine (coproduct_comp_inj1 _).
     Defined.
 
-    Local Lemma substeq_flat_rule_premise
+    Local Lemma substeq_raw_rule_premise
         (fg : weakly_equal_judgement_map T J' J)
-        (p : flat_rule_premise (substeq_flat_rule_rule fg))
-      : flat_rule_premise R.
+        (p : raw_rule_premise (substeq_raw_rule_rule fg))
+      : raw_rule_premise R.
     (* for each premise of the new rule used,
        select a premise of the original rule
        to which the new premise will admit a weakly-equal judgement map *)
@@ -1390,15 +1390,15 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
         exact p.
     Defined.
 
-    Local Lemma substeq_flat_rule_premise_map
+    Local Lemma substeq_raw_rule_premise_map
         (fg : weakly_equal_judgement_map T J' J)
-        (p : flat_rule_premise (substeq_flat_rule_rule fg))
+        (p : raw_rule_premise (substeq_raw_rule_rule fg))
       : weakly_equal_judgement_map T
           (Judgement.instantiate Γ'
-                  (substeq_flat_rule_instantiation fg)
-                  (flat_rule_premise _ p))
+                  (substeq_raw_rule_instantiation fg)
+                  (raw_rule_premise _ p))
           (Judgement.instantiate Γ I
-            (flat_rule_premise _ (substeq_flat_rule_premise _ p))).
+            (raw_rule_premise _ (substeq_raw_rule_premise _ p))).
     Proof.
       set (fg_orig := fg).
       destruct fg as [fg [ [ e_J'_fJ | e_J'_gJ ] | [ R_obj e_jf]]].
@@ -1411,22 +1411,22 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
         + (* left copy of an original premise *)
           rewrite copair_instantiation_inl_judgement.
           refine (instantiate_judgement_over_weakly_equal_pair_left
-                    _ (substeq_flat_rule_pair fg_orig) _ _).
+                    _ (substeq_raw_rule_pair fg_orig) _ _).
           apply T_sub.
         + (* right copy of an original premise *)
           rewrite copair_instantiation_inr_judgement.
           refine (instantiate_judgement_over_weakly_equal_pair_right
-                    _ (substeq_flat_rule_pair fg_orig) _ _).
+                    _ (substeq_raw_rule_pair fg_orig) _ _).
           apply T_sub.
         + (* equality corresponding to an original object premise *)
           refine (instantiate_judgement_over_weakly_equal_pair_combined
-                 T_sub (substeq_flat_rule_pair fg_orig) _ _ _).
+                 T_sub (substeq_raw_rule_pair fg_orig) _ _ _).
     Defined.
 
-  End Flat_Rule_Substitute_Equal_Instantiation.
+  End Raw_Rule_Substitute_Equal_Instantiation.
 
   Theorem substitute_equal_derivation
-      {T : flat_type_theory Σ}
+      {T : raw_type_theory Σ}
       (T_sub : substitutive T) (T_cong : congruous T)
       {J} {J'} (fg : weakly_equal_judgement_map T J' J)
       (d_J : subst_free_derivation T (Family.empty _) J)
@@ -1434,9 +1434,9 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
   Proof.
     (* Sketch proof: should be roughly analogous in organisation to proofs of [rename_derivation], [substitute_derivation] above.
 
-  The sequence of lemmas to handle the flat rule cases should show:
+  The sequence of lemmas to handle the raw rule cases should show:
 
-  - given a weakly equal judgement map (f,g) from J' into the conclusion of a flat rule instance I_* R, we get two or three new instantiations: two pulled back instantiations f^*I, g^*I for R, and if R was an object rule, an instantiation (f,g)^*I of the congruence rule of R;
+  - given a weakly equal judgement map (f,g) from J' into the conclusion of a raw rule instance I_* R, we get two or three new instantiations: two pulled back instantiations f^*I, g^*I for R, and if R was an object rule, an instantiation (f,g)^*I of the congruence rule of R;
 
   - the three possible things that J can be are precisely, up to equiv-renaming, the conclusions of these three new rule instances;
 
@@ -1447,10 +1447,10 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
     { destruct i. } (* hypothesis case impossible, as no hypotheses *)
     intros J' fg.
     destruct r as [ r | r ].
-    2: { (* case: instantiation of a flat rule of [T] *)
+    2: { (* case: instantiation of a raw rule of [T] *)
       destruct r as [r I].
       simple refine (derive_rename' _ _
-        (substeq_flat_rule_conclusion _ _ fg)
+        (substeq_raw_rule_conclusion _ _ fg)
         _ _).
       { apply T_sub. }
       { apply inverse, judgement_renaming_hypothetical_part. }
@@ -1463,35 +1463,35 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
         - apply idpath.
         - apply (Family.map_commutes T_cong).
       }
-      intros p. apply (IH (substeq_flat_rule_premise _ _ p)).
-      refine (substeq_flat_rule_premise_map _ _ _ p); try assumption.
+      intros p. apply (IH (substeq_raw_rule_premise _ _ p)).
+      refine (substeq_raw_rule_premise_map _ _ _ p); try assumption.
     }
     (* case: structural rules *)
     destruct r as [ [ r | r ] | r ].
-    3: { (* case: equality rule; so again, an instantiation of a flat rule *)
+    3: { (* case: equality rule; so again, an instantiation of a raw rule *)
       destruct r as [r I].
       simple refine (derive_rename' _ _
-        (substeq_flat_rule_conclusion _ _ fg)
+        (substeq_raw_rule_conclusion _ _ fg)
         _ _).
-      { apply equality_flat_rules_in_universal_form. }
+      { apply equality_raw_rules_in_universal_form. }
       { apply inverse, judgement_renaming_hypothetical_part. }
       rename fg into fg_temp; set (fg := fg_temp).
       destruct fg_temp as [fg_map [J'_fg | [r_obj J'_fg]]].
       - simple refine (Closure.deduce' _ _ _).
         { apply inl, inr. exists r.
           exists (context_of_judgement J').
-          refine (substeq_flat_rule_instantiation _ fg).
+          refine (substeq_raw_rule_instantiation _ fg).
         }
         { apply idpath. }
-        intros p. apply (IH (substeq_flat_rule_premise _ fg p)).
-        refine (substeq_flat_rule_premise_map _ _ fg p); try assumption.
+        intros p. apply (IH (substeq_raw_rule_premise _ fg p)).
+        refine (substeq_raw_rule_premise_map _ _ fg p); try assumption.
       - refine (Closure.graft' _ _ _).
-        { refine (equality_flat_rules_congruous r_obj _).
-          refine (substeq_flat_rule_instantiation _ fg).
+        { refine (equality_raw_rules_congruous r_obj _).
+          refine (substeq_raw_rule_instantiation _ fg).
         }
         { apply idpath. }
-        intros p. apply (IH (substeq_flat_rule_premise _ fg p)).
-        refine (substeq_flat_rule_premise_map _ _ fg p); try assumption.
+        intros p. apply (IH (substeq_raw_rule_premise _ fg p)).
+        refine (substeq_raw_rule_premise_map _ _ fg p); try assumption.
     }
     - (* case: renaming rule *)
       destruct r as [Γ [Γ' [r J]]].
@@ -1592,9 +1592,9 @@ Section Subst_Elimination.
 
   (** \cref{thm:elimination-substitution} *)
   Theorem subst_elimination
-      {T : flat_type_theory Σ}
+      {T : raw_type_theory Σ}
       (T_sub : substitutive T) (T_cong : congruous T)
-      {J} (d : FlatTypeTheory.derivation T (Family.empty _) J)
+      {J} (d : RawTypeTheory.derivation T (Family.empty _) J)
     : subst_free_derivation T (Family.empty _) J.
   Proof.
     induction d as [ [] | r _ d_prems ].

@@ -7,8 +7,8 @@ Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
 Require Import Presented.AlgebraicExtension.
-Require Import Typing.FlatRule.
-Require Import Typing.FlatTypeTheory.
+Require Import Typing.RawRule.
+Require Import Typing.RawTypeTheory.
 Require Import Presented.PresentedRawRule.
 Require Import Presented.PresentedRawTypeTheory.
 Require Import Presented.CongruenceRule.
@@ -22,22 +22,22 @@ Section WellTypedRule.
 
   (* TODO: upstream to new file [TypedAlgebraicExtension]. *)
   Definition is_well_typed_algebraic_extension
-      {Σ : signature σ} (T : flat_type_theory Σ)
+      {Σ : signature σ} (T : raw_type_theory Σ)
       {a} (A : algebraic_extension Σ a)
     : Type.
   Proof.
     refine (forall r : A, _).
     exact (forall
      (i : presupposition_of_boundary (AlgebraicExtension.premise_boundary r)),
-      FlatTypeTheory.derivation
-        (FlatTypeTheory.fmap include_symbol T)
+      RawTypeTheory.derivation
+        (RawTypeTheory.fmap include_symbol T)
         (AlgebraicExtension.flatten (AlgebraicExtension.initial_segment A r))
         (presupposition_of_boundary _ i)).
   Defined.
   (* NOTE: when checking we want to add the earlier premises of [A] to [T], and typecheck [r] over that.  There are (at least) three ways to do this:
   (1) take earlier premises just as judgements, and allow them as hypotheses in the derivation;
-  (2) take earlier premise as judgements, then add no-premise flat rules to [T], giving these judgements as axioms;
-  (3) give the extension of [T] by the preceding part of [A] as a type theory, i.e. turn premises of [A] into genuine flat rules, with the variables of their contexts turned into term premises, and conclusion just the head of the given premise of [A].
+  (2) take earlier premise as judgements, then add no-premise raw rules to [T], giving these judgements as axioms;
+  (3) give the extension of [T] by the preceding part of [A] as a type theory, i.e. turn premises of [A] into genuine raw rules, with the variables of their contexts turned into term premises, and conclusion just the head of the given premise of [A].
 
   In any case we must first translate [T] up to the extended signature of [R].
 
@@ -49,7 +49,7 @@ Section WellTypedRule.
 
   (* TODO: consider naming.  Currently a bit out of step with our general convention of using e.g. [derivation] not [is_derivable]; but [derivation] would be misleading here, since this is the type of derivations showing that the rule is well-formed, not “derivations of the rule” in the usual sense of derivations showing it’s a derivable rule. *)
   Local Definition is_well_typed
-      {Σ : signature σ} (T : flat_type_theory Σ)
+      {Σ : signature σ} (T : raw_type_theory Σ)
       {a} {jf_concl}
       (R : rule Σ a jf_concl)
     : Type.
@@ -58,8 +58,8 @@ Section WellTypedRule.
     (* well-typedness of conclusion *)
     exact
       (forall (i : presupposition_of_boundary (PresentedRawRule.conclusion_boundary R)),
-        FlatTypeTheory.derivation
-          (FlatTypeTheory.fmap include_symbol T)
+        RawTypeTheory.derivation
+          (RawTypeTheory.fmap include_symbol T)
           (AlgebraicExtension.flatten (rule_premise R))
           (presupposition_of_boundary _ i)).
   Defined.
@@ -75,7 +75,7 @@ Section Functoriality.
       {a} {A : algebraic_extension Σ a}
       {T} (D : is_well_typed_algebraic_extension T A)
     : is_well_typed_algebraic_extension
-        (FlatTypeTheory.fmap f T) (AlgebraicExtension.fmap f A).
+        (RawTypeTheory.fmap f T) (AlgebraicExtension.fmap f A).
   Proof.
     unfold is_well_typed_algebraic_extension.
     intros p.
@@ -89,18 +89,18 @@ Section Functoriality.
     refine (transport _
       (Family.map_commutes (presupposition_fmap_boundary _ _) i) _).
     match goal with
-    | [|- FlatTypeTheory.derivation _ _ ?JJ ] => set (J := (JJ)) in *
+    | [|- RawTypeTheory.derivation _ _ ?JJ ] => set (J := (JJ)) in *
     | _ => fail
     end.
     unfold Family.fmap, family_element in J.
     subst J.
-    refine (FlatTypeTheory.derivation_fmap_over_simple _ _ _ Di).
+    refine (RawTypeTheory.derivation_fmap_over_simple _ _ _ Di).
     - (* map in type theory *)
-      (* TODO: refactor to be higher-level, eg using [FlatTypeTheory.fmap_compose]? *)
+      (* TODO: refactor to be higher-level, eg using [RawTypeTheory.fmap_compose]? *)
       exists idmap.
       intros r; simpl.
-      eapply concat. { apply inverse, FlatRule.fmap_compose. }
-      eapply concat. 2: { apply FlatRule.fmap_compose. }
+      eapply concat. { apply inverse, RawRule.fmap_compose. }
+      eapply concat. 2: { apply RawRule.fmap_compose. }
       apply ap10, ap.
       apply Metavariable.include_symbol_after_map.
     - (* map in hypotheses *)
@@ -114,7 +114,7 @@ Section Functoriality.
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {jf_concl} {R : rule Σ a jf_concl}
       {T} (D : is_well_typed T R)
-    : is_well_typed (FlatTypeTheory.fmap f T) (PresentedRawRule.fmap f R).
+    : is_well_typed (RawTypeTheory.fmap f T) (PresentedRawRule.fmap f R).
   Proof.
     split.
     (* premises *)
@@ -132,18 +132,18 @@ Section Functoriality.
     refine (transport _
       (Family.map_commutes (presupposition_fmap_boundary _ _) i) _).
     match goal with
-    | [|- FlatTypeTheory.derivation _ _ ?JJ ] => set (J := (JJ)) in *
+    | [|- RawTypeTheory.derivation _ _ ?JJ ] => set (J := (JJ)) in *
     | _ => fail
     end.
     unfold Family.fmap, family_element in J.
     subst J.
-    refine (FlatTypeTheory.derivation_fmap_over_simple _ _ _ Di).
+    refine (RawTypeTheory.derivation_fmap_over_simple _ _ _ Di).
     - (* map in type theory *)
-      (* TODO: refactor using [FlatTypeTheory.fmap_compose]? *)
+      (* TODO: refactor using [RawTypeTheory.fmap_compose]? *)
       exists idmap.
       intros r; simpl.
-      eapply concat. { apply inverse, FlatRule.fmap_compose. }
-      eapply concat. 2: { apply FlatRule.fmap_compose. }
+      eapply concat. { apply inverse, RawRule.fmap_compose. }
+      eapply concat. 2: { apply RawRule.fmap_compose. }
       apply ap10, ap.
       apply Metavariable.include_symbol_after_map.
     - (* map in hypotheses *)
@@ -154,20 +154,20 @@ Section Functoriality.
   (** Well-typedness is _contravariantly_ functorial in the ambient theory. *)
   (* TODO: consider naming! *)
   Definition fmap_is_well_typed_algebraic_extension_in_theory {Σ : signature σ}
-      {T T' : flat_type_theory Σ} (f : FlatTypeTheory.map T T')
+      {T T' : raw_type_theory Σ} (f : RawTypeTheory.map T T')
       {a} {A : algebraic_extension Σ a}
     : is_well_typed_algebraic_extension T A
       -> is_well_typed_algebraic_extension T' A.
   Proof.
     intros A_WT r p.
-    refine (FlatTypeTheory.derivation_fmap1 _ (A_WT r p)).
-    apply FlatTypeTheory.map_fmap, f.
+    refine (RawTypeTheory.derivation_fmap1 _ (A_WT r p)).
+    apply RawTypeTheory.map_fmap, f.
   Defined.
 
   (** Well-typedness is _contravariantly_ functorial in the ambient theory. *)
   (* TODO: consider naming! *)
   Definition fmap_is_well_typed_in_theory {Σ : signature σ}
-      {T T' : flat_type_theory Σ} (f : FlatTypeTheory.map T T')
+      {T T' : raw_type_theory Σ} (f : RawTypeTheory.map T T')
       {a} {jf_concl} {R : rule Σ a jf_concl}
     : is_well_typed T R -> is_well_typed T' R.
   Proof.
@@ -175,8 +175,8 @@ Section Functoriality.
     split.
     { exact (fmap_is_well_typed_algebraic_extension_in_theory f (fst R_WT)). }
     intros p.
-    refine (FlatTypeTheory.derivation_fmap1 _ (snd R_WT p)).
-    apply FlatTypeTheory.map_fmap, f.
+    refine (RawTypeTheory.derivation_fmap1 _ (snd R_WT p)).
+    apply RawTypeTheory.map_fmap, f.
   Defined.
 
 End Functoriality.
@@ -186,14 +186,14 @@ Section Flattening.
   Context {σ : scope_system} `{Funext}.
 
   Definition weakly_presuppositive_flatten
-      {Σ : signature σ} {T : flat_type_theory Σ}
+      {Σ : signature σ} {T : raw_type_theory Σ}
       {a} {jf_concl}
       {R : rule Σ a jf_concl}
       (T_WT : is_well_typed T R)
       (Sr : Judgement.is_object jf_concl ->
         {S : Σ.(family_index) &
         (symbol_arity S = a) * (symbol_class S = Judgement.class_of jf_concl)})
-    : weakly_presuppositive_flat_rule T (PresentedRawRule.flatten R Sr).
+    : weakly_presuppositive_raw_rule T (PresentedRawRule.flatten R Sr).
   Proof.
     apply snd in T_WT.
     intros i.
@@ -212,7 +212,7 @@ Section Congruence_Rules.
   Context {σ : scope_system} `{Funext}.
 
   Definition congruence_rule_is_well_typed
-      {Σ : signature σ} {T : flat_type_theory Σ}
+      {Σ : signature σ} {T : raw_type_theory Σ}
       {a} {jf_concl} {R : rule Σ a jf_concl} (R_WT : is_well_typed T R)
       (R_is_ob : Judgement.is_object jf_concl)
       (S : Σ)

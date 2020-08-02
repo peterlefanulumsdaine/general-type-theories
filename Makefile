@@ -25,9 +25,9 @@ MODULES := \
 	Typing/Context \
 	Typing/Judgement \
 	Typing/Presuppositions \
-	Typing/FlatRule \
+	Typing/RawRule \
 	Typing/StructuralRule \
-	Typing/FlatTypeTheory \
+	Typing/RawTypeTheory \
 	Typing/StructuralRulePresuppositions \
 	Presented/ContextVariants \
 	Presented/AlgebraicExtension \

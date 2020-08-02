@@ -11,14 +11,14 @@ Require Import Presented.PresentedRawRule.
 Require Import Presented.PresentedRawTypeTheory.
 Require Import Typing.Presuppositions.
 Require Import Typing.StructuralRule.
-Require Import Typing.FlatRule.
-Require Import Typing.FlatTypeTheory.
+Require Import Typing.RawRule.
+Require Import Typing.RawTypeTheory.
 Require Import Presented.CongruenceRule.
 Require Import Typing.StructuralRulePresuppositions.
 Require Import Presented.TypedRule.
 Require Import Presented.TypeTheory.
 
-(* TODO: upstream the flat parts of this file to [Typing.Presuppositions]?? *)
+(* TODO: upstream the raw parts of this file to [Typing.Presuppositions]?? *)
 
 
 (** The main goal of this file is the “presuppositivity metatheorem”:
@@ -32,30 +32,30 @@ Theorem derive_presupposition {σ} {Σ : signature σ}
   : PresentedRawTypeTheory.derivation T [<>] (presupposition j p).
 Abort.
 
-(** In outline, the high level structure of the proof consists of giving notions of presuppositivity for flat rules/flat type theories and closure rules/closure systems, and doing the main inductive construction purely in terms of closure systems.
+(** In outline, the high level structure of the proof consists of giving notions of presuppositivity for raw rules/raw type theories and closure rules/closure systems, and doing the main inductive construction purely in terms of closure systems.
 
-The low-level hard work is showing that the flat rules / closure conditions arising from type theories really are presuppositive in the appropriate sense. *)
+The low-level hard work is showing that the raw rules / closure conditions arising from type theories really are presuppositive in the appropriate sense. *)
 
 
-Section PresuppositivityFlat.
-(** In this section, we show how presuppositivity transfers between the flat world and the closure-system world. *)
+Section PresuppositivityRaw.
+(** In this section, we show how presuppositivity transfers between the raw world and the closure-system world. *)
 
   Context {σ : scope_system} `{Funext}.
 
-  (** A flat type theory is presuppositive if all its rules are (weakly) presuppositive over it.
+  (** A raw type theory is presuppositive if all its rules are (weakly) presuppositive over it.
 
   (One might be tempted to call this “well-typed”, but we don’t, because it’s not really strong enough to imply much about the behaviour of the theory.) *)
-  Definition presuppositive_flat_type_theory
-      {Σ : signature σ} (T : flat_type_theory Σ)
+  Definition presuppositive_raw_type_theory
+      {Σ : signature σ} (T : raw_type_theory Σ)
     : Type
-  := forall r : T, weakly_presuppositive_flat_rule T (T r).
+  := forall r : T, weakly_presuppositive_raw_rule T (T r).
 
-  (** If a flat type theory T is presup-closed, then so is its associated closure system. *)
-  Theorem closure_system_of_presuppositive_flat_type_theory
-      {Σ : signature σ} {T : flat_type_theory Σ}
-      (T_presup_closed : presuppositive_flat_type_theory T)
+  (** If a raw type theory T is presup-closed, then so is its associated closure system. *)
+  Theorem closure_system_of_presuppositive_raw_type_theory
+      {Σ : signature σ} {T : raw_type_theory Σ}
+      (T_presup_closed : presuppositive_raw_type_theory T)
     : Closure.weakly_presuppositive_system presupposition
-        (FlatTypeTheory.closure_system T).
+        (RawTypeTheory.closure_system T).
   Proof.
     intros [r_str | r_log ].
     - intros p.
@@ -67,30 +67,30 @@ Section PresuppositivityFlat.
         * apply Family.Build_map'; intros [[]].
     - destruct r_log as [r r_inst]. cbn in r_inst.
       destruct r_inst as [Γ r_args].
-      apply flat_rule_closure_system_weakly_presuppositive.
+      apply raw_rule_closure_system_weakly_presuppositive.
       apply T_presup_closed.
   Defined.
 
   (** Putting the above together: all presuppositions of a derivable judgement
-      over a presuppositive flat tpye theory are again derivable,
+      over a presuppositive raw tpye theory are again derivable,
       assuming additionally all presuppositions of the original hypotheses. *)
-  Theorem derive_presupposition_from_flat
+  Theorem derive_presupposition_from_raw
       {Σ : signature σ}
-      {T : flat_type_theory Σ} (H_T : presuppositive_flat_type_theory T)
+      {T : raw_type_theory Σ} (H_T : presuppositive_raw_type_theory T)
       {j : judgement Σ} {hyps : family _}
-      (d_j : FlatTypeTheory.derivation T hyps j)
+      (d_j : RawTypeTheory.derivation T hyps j)
       {p : presupposition j }
-    : FlatTypeTheory.derivation T
+    : RawTypeTheory.derivation T
         (hyps + Family.bind hyps presupposition)
         (presupposition _ p).
   Proof.
     simple refine
       (Closure.presupposition_derivation presupposition _ d_j _).
-    apply closure_system_of_presuppositive_flat_type_theory.
+    apply closure_system_of_presuppositive_raw_type_theory.
     apply H_T.
   Defined.
 
-End PresuppositivityFlat.
+End PresuppositivityRaw.
 
 Section Presuppositivity.
 
@@ -106,10 +106,10 @@ Section Presuppositivity.
     assert (r'_WT := TypedRule.fmap_is_well_typed
                     (PresentedRawTypeTheory.include_rule_signature _) r_WT).
     refine (TypedRule.fmap_is_well_typed_in_theory _ r'_WT).
-    apply FlatTypeTheory.map_from_simple_map,
-          FlatTypeTheory.simple_map_from_family_map.
+    apply RawTypeTheory.map_from_simple_map,
+          RawTypeTheory.simple_map_from_family_map.
     eapply Family.compose.
-    2: { apply Family.map_from_eq, inverse, FlatTypeTheory.fmap_compose. }
+    2: { apply Family.map_from_eq, inverse, RawTypeTheory.fmap_compose. }
     (* - simple map of raw TT’s
        - induces a map (not nec fam map) of raw tt’s
        - simple map f : T —> T':
@@ -125,7 +125,7 @@ Section Presuppositivity.
       presupposition in the boundary of the conclusion of [r] can be derived. *)
   Lemma presuppositive_flatten
       {T : presented_raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
-    : presuppositive_flat_type_theory (PresentedRawTypeTheory.flatten T).
+    : presuppositive_raw_type_theory (PresentedRawTypeTheory.flatten T).
   Proof.
     (* The flattened [T] has logical and congruence rules, two cases to consider. *)
     (* Do these have to be treated separately, or can they be unified better? *)
@@ -153,7 +153,7 @@ Section Presuppositivity.
         (hyps + Family.bind hyps presupposition)
         (presupposition _ p).
   Proof.
-    apply derive_presupposition_from_flat; try assumption.
+    apply derive_presupposition_from_raw; try assumption.
     apply presuppositive_flatten, T_WT.
   Defined.
 

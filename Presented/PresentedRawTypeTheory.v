@@ -7,7 +7,7 @@ Require Import Auxiliary.Closure.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Typing.FlatTypeTheory.
+Require Import Typing.RawTypeTheory.
 Require Import Presented.PresentedRawRule.
 Require Import Presented.CongruenceRule.
 
@@ -132,7 +132,7 @@ Section Flattening.
   Context {σ : scope_system}.
 
   Local Definition flatten (T : presented_raw_type_theory σ)
-    : flat_type_theory (signature T).
+    : raw_type_theory (signature T).
   Proof.
     refine (_ + _)%family.
     (* First: the explicitly-given logical rules *)
@@ -166,7 +166,7 @@ Section Flattening.
   Local Lemma flatten_initial_segment
       (T : presented_raw_type_theory σ) (r : T)
     : Family.map_over
-        (FlatRule.fmap
+        (RawRule.fmap
            (include_initial_segment_signature T r))
         (flatten (initial_segment T r))
         (flatten T).
@@ -182,4 +182,4 @@ End Flattening.
 
 Local Definition derivation {σ : scope_system} (T : presented_raw_type_theory σ) H
     : judgement (signature T) -> Type
-  := FlatTypeTheory.derivation (flatten T) H.
+  := RawTypeTheory.derivation (flatten T) H.

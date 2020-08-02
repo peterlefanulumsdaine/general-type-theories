@@ -103,7 +103,7 @@ eq_new i   0        0        0        0        i < j
     : (rule Σ (Family.sum a a)
                  (form_equality (Judgement.class_of jf_concl))).
   Proof.
-    (* TODO: refactor the following, to unify it with def of flat congruence
+    (* TODO: refactor the following, to unify it with def of raw congruence
        rules (once given). *)
     simple refine (Build_rule _ _ _ _ _).
     1: simple refine

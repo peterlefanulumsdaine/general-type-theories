@@ -11,7 +11,7 @@ Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
 Require Import Presented.AlgebraicExtension.
-Require Import Typing.FlatRule.
+Require Import Typing.RawRule.
 
 (** A well-scoped rule is given by the following data:
 
@@ -42,7 +42,7 @@ Context {σ : scope_system}.
 (** The parameters of a rule, beyond its ambient signature, may be a little
     counter-intuitive. The point is that they are just what is required to
     determine the arity of the symbol introduced by the rule (if it’s an object
-    rule), and in any case the arity of its associated flat rule. *)
+    rule), and in any case the arity of its associated raw rule. *)
 Record rule
   {Σ : signature σ}
   {a : arity σ}
@@ -65,7 +65,7 @@ Record rule
 
   However, it could be nice (a) since rules are sometimes written this way in practice, and (b) to allow a precise theorem stating the claim above about it being equivalent to move variables into the premises.
 
-  On the other hand, so long as the _flattened_ rules [flat_rule] allow arbitrary conclusion judgements, one can still use those to give a lemma about the equivalence. *)
+  On the other hand, so long as the _flattened_ rules [raw_rule] allow arbitrary conclusion judgements, one can still use those to give a lemma about the equivalence. *)
 
   (* NOTE 2. Perhaps the parameters of the definition of [rule] could be profitably abstracted into a “proto-rule” (probably including also the arity [ae_equality_premise]), fitting the pattern of the stratificaiton of objects into proto ≤ raw ≤ typed. *)
 
@@ -231,7 +231,7 @@ Module Span.
 End Span.
 
 
-(* Each (ordered) rule induces one or two flat rules: the logical rule itself,
+(* Each (ordered) rule induces one or two raw rules: the logical rule itself,
    and (if it was an object rule) its associated congruence rule.*)
 
 Section Flattening.
@@ -280,7 +280,7 @@ Section Flattening.
     (SR : Judgement.is_object jf_concl
         -> { S : Σ & (symbol_arity S = a)
                      * (symbol_class S = Judgement.class_of jf_concl) })
-  : flat_rule Σ.
+  : raw_rule Σ.
   (* This construction involves essentially two aspects:
 
      - translate the syntax of each expression in the rule from its “local”

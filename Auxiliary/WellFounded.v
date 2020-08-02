@@ -169,7 +169,7 @@ Proof.
 Defined.
 
 (** Well-founded order on an option type where [None] is incomparable to [Some _]. *)
-Local Definition flat_option {X} {lt_X : well_founded_order X}
+Local Definition raw_option {X} {lt_X : well_founded_order X}
   : well_founded_order (option X).
 Proof.
   pose (lt := fun (x y : option X) =>
@@ -200,7 +200,7 @@ Ltac use_linear_order :=
   | _ => fail
   end.
 
-(** A tactic that genereates a flat well-order on a combination of +, option and Empty. *)
+(** A tactic that genereates a raw well-order on a combination of +, option and Empty. *)
 Ltac use_flat_order :=
   match goal with
   | |- well_founded_order Empty => exact empty
