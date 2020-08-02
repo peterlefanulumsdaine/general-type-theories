@@ -4,17 +4,17 @@ Require Import Syntax.ScopeSystem.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Presented.RawTypeTheory.
+Require Import Presented.PresentedRawTypeTheory.
 Require Import Presented.TypeTheory.
 
 (* Main goal of this file: theorem stating unique typing, for any (fully typed) type theory. *)
 
-Theorem unique_typing {σ : scope_system} (T : raw_type_theory σ)
-    (Σ := RawTypeTheory.signature T)
+Theorem unique_typing {σ : scope_system} (T : presented_raw_type_theory σ)
+    (Σ := PresentedRawTypeTheory.signature T)
     (Γ : raw_context Σ) (a : raw_term Σ Γ) (A A' : raw_type Σ Γ)
-    (d : RawTypeTheory.derivation T [<>] [! Γ |- a ; A !])
-    (d' : RawTypeTheory.derivation T [<>] [! Γ |- a ; A' !])
-  : RawTypeTheory.derivation T [<>] [! Γ |- A ≡ A' !].
+    (d : PresentedRawTypeTheory.derivation T [<>] [! Γ |- a ; A !])
+    (d' : PresentedRawTypeTheory.derivation T [<>] [! Γ |- a ; A' !])
+  : PresentedRawTypeTheory.derivation T [<>] [! Γ |- A ≡ A' !].
 Abort.
 
 (* Sketch proof: ????

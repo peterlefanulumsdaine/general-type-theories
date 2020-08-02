@@ -9,8 +9,8 @@ Require Import Typing.Judgement.
 Require Import Presented.AlgebraicExtension.
 Require Import Typing.FlatRule.
 Require Import Typing.FlatTypeTheory.
-Require Import Presented.RawRule.
-Require Import Presented.RawTypeTheory.
+Require Import Presented.PresentedRawRule.
+Require Import Presented.PresentedRawTypeTheory.
 Require Import Presented.CongruenceRule.
 Require Import Typing.Presuppositions.
 
@@ -57,7 +57,7 @@ Section WellTypedRule.
     refine (is_well_typed_algebraic_extension T (rule_premise R) * _).
     (* well-typedness of conclusion *)
     exact
-      (forall (i : presupposition_of_boundary (RawRule.conclusion_boundary R)),
+      (forall (i : presupposition_of_boundary (PresentedRawRule.conclusion_boundary R)),
         FlatTypeTheory.derivation
           (FlatTypeTheory.fmap include_symbol T)
           (AlgebraicExtension.flatten (rule_premise R))
@@ -114,17 +114,17 @@ Section Functoriality.
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
       {a} {jf_concl} {R : rule Σ a jf_concl}
       {T} (D : is_well_typed T R)
-    : is_well_typed (FlatTypeTheory.fmap f T) (RawRule.fmap f R).
+    : is_well_typed (FlatTypeTheory.fmap f T) (PresentedRawRule.fmap f R).
   Proof.
     split.
     (* premises *)
     { apply fmap_is_well_typed_algebraic_extension, (fst D). }
     (* conclusion *)
-    set (fR_concl := RawRule.conclusion_boundary (RawRule.fmap f R)).
+    set (fR_concl := PresentedRawRule.conclusion_boundary (PresentedRawRule.fmap f R)).
     assert (e_concl : fR_concl = Judgement.fmap_boundary
                              (Metavariable.fmap1 f _)
-                             (RawRule.conclusion_boundary R)).
-      { apply RawRule.conclusion_boundary_fmap. }
+                             (PresentedRawRule.conclusion_boundary R)).
+      { apply PresentedRawRule.conclusion_boundary_fmap. }
     clearbody fR_concl. destruct e_concl^.
     intros i.
     set (Di := (snd D) (presupposition_fmap_boundary _ _ i)).
@@ -193,7 +193,7 @@ Section Flattening.
       (Sr : Judgement.is_object jf_concl ->
         {S : Σ.(family_index) &
         (symbol_arity S = a) * (symbol_class S = Judgement.class_of jf_concl)})
-    : weakly_presuppositive_flat_rule T (RawRule.flatten R Sr).
+    : weakly_presuppositive_flat_rule T (PresentedRawRule.flatten R Sr).
   Proof.
     apply snd in T_WT.
     intros i.

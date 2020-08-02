@@ -5,8 +5,8 @@ Require Import Auxiliary.Coproduct.
 Require Import Syntax.All.
 Require Import Typing.Judgement.
 Require Import Presented.AlgebraicExtension.
-Require Import Presented.RawTypeTheory.
-Require Import Presented.RawRule.
+Require Import Presented.PresentedRawTypeTheory.
+Require Import Presented.PresentedRawRule.
 Require Import Presented.TypeTheory.
 
 Section MartinLöfTypeTheory.
@@ -32,7 +32,7 @@ Section MartinLöfTypeTheory.
 
   Local Definition theory : type_theory σ.
    simple refine (Build_type_theory _ _ _).
-   1: simple refine (Build_raw_type_theory _ _ _).
+   1: simple refine (Build_presented_raw_type_theory _ _ _).
    - exact ([< U_formation_rule_index ; El_formation_rule_index >]).
    - admit.
    - intros.

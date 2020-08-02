@@ -9,7 +9,7 @@ Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
 Require Import Presented.AlgebraicExtension.
-Require Import Presented.RawRule.
+Require Import Presented.PresentedRawRule.
 
 Section CongruenceRule.
 

@@ -8,16 +8,16 @@ Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
 Require Import Typing.FlatTypeTheory.
-Require Import Presented.RawRule.
+Require Import Presented.PresentedRawRule.
 Require Import Presented.CongruenceRule.
 
-(** Main definition in this file: [raw_type_theory], the data one gives to specify a type theory (but before typechecking it) *)
+(** Main definition in this file: [presented_raw_type_theory], the data one gives to specify a type theory (but before typechecking it) *)
 
 Section TypeTheory.
 
   Context {σ : scope_system}.
 
-  Record raw_type_theory
+  Record presented_raw_type_theory
   := {
   (* The family of _rules_, with their object-premise arities and conclusion forms specified *)
     tt_rule_data :> family (Judgement.form * arity σ)
@@ -45,7 +45,7 @@ Section TypeTheory.
           (tt_rule_form i)
   }.
 
-  Local Definition signature (T : raw_type_theory)
+  Local Definition signature (T : presented_raw_type_theory)
     : signature σ.
   Proof.
     (* symbols are given by the object-judgement rules of T *)
@@ -62,7 +62,7 @@ Section TypeTheory.
   (* TODO: consider making this a coercion? *)
 
   Local Definition include_rule_signature
-      {T : raw_type_theory} (r : T)
+      {T : presented_raw_type_theory} (r : T)
     : Signature.map (tt_rule_signature _ r)
                     (signature T).
   Proof.
@@ -74,16 +74,16 @@ Section TypeTheory.
   Defined.
 
   (* NOTE: could easily be generalised to give the sub-type-theory on any down-closed subset of the rules, if that’s ever needed. *)
-  Local Definition initial_segment (T : raw_type_theory) (i : T)
-    : raw_type_theory.
+  Local Definition initial_segment (T : presented_raw_type_theory) (i : T)
+    : presented_raw_type_theory.
   Proof.
-    simple refine (Build_raw_type_theory _ _ _ ).
+    simple refine (Build_presented_raw_type_theory _ _ _ ).
     - refine (Family.subfamily (tt_rule_data T) _).
       intros j. exact (tt_lt _ j i).
     - refine (WellFounded.pullback _ (tt_lt T)).
       exact (projT1).
     - cbn. intros [j lt_j_i].
-      refine (RawRule.fmap _ (tt_rule _ j)).
+      refine (PresentedRawRule.fmap _ (tt_rule _ j)).
       apply Family.map_fmap.
       simple refine (_;_).
       + intros [k [k_obj lt_k_j]].
@@ -95,7 +95,7 @@ Section TypeTheory.
 
   (* NOTE: in fact, this map should be an isomorphism *)
   Local Definition initial_segment_signature_to_rule_signature
-        (T : raw_type_theory) (i : T)
+        (T : presented_raw_type_theory) (i : T)
     : Signature.map
         (TypeTheory.signature (initial_segment T i))
         (tt_rule_signature _ i).
@@ -106,7 +106,7 @@ Section TypeTheory.
   Defined.
 
   Local Definition include_initial_segment_signature
-        (T : raw_type_theory) (i : T)
+        (T : presented_raw_type_theory) (i : T)
     : Signature.map
         (TypeTheory.signature (initial_segment T i))
         (TypeTheory.signature T).
@@ -118,7 +118,7 @@ Section TypeTheory.
 
 End TypeTheory.
 
-Arguments raw_type_theory _ : clear implicits.
+Arguments presented_raw_type_theory _ : clear implicits.
 Arguments tt_rule_data {_} _.
 Arguments tt_rule_form {_ _} _.
 Arguments tt_rule_arity {_ _} _.
@@ -131,16 +131,16 @@ Section Flattening.
 
   Context {σ : scope_system}.
 
-  Local Definition flatten (T : raw_type_theory σ)
+  Local Definition flatten (T : presented_raw_type_theory σ)
     : flat_type_theory (signature T).
   Proof.
     refine (_ + _)%family.
     (* First: the explicitly-given logical rules *)
     - exists (tt_rule_data T).
       intros r.
-      refine (RawRule.flatten _ _).
+      refine (PresentedRawRule.flatten _ _).
       + (* translate rules up to the full signature *)
-        refine (RawRule.fmap _ (tt_rule r)).
+        refine (PresentedRawRule.fmap _ (tt_rule r)).
         apply include_rule_signature.
       + (* pick their symbol in the full signature, if applicable *)
         intros r_obj.
@@ -149,9 +149,9 @@ Section Flattening.
     (* Second: associated congruence rules for the object-judgement logical rules. *)
     - exists { r : T & Judgement.is_object (tt_rule_form r) }.
       intros [r Hr].
-      refine (RawRule.flatten _ _).
+      refine (PresentedRawRule.flatten _ _).
       + simple refine
-        (congruence_rule (RawRule.fmap _ (tt_rule r)) _ _ _ _).
+        (congruence_rule (PresentedRawRule.fmap _ (tt_rule r)) _ _ _ _).
         * apply include_rule_signature.
         * exact Hr.
         * exact (r;Hr). (* head symbol of original rule *)
@@ -164,7 +164,7 @@ Section Flattening.
    in which [flatten] is functorial,
    based on simple maps of algebraic extensions. *)
   Local Lemma flatten_initial_segment
-      (T : raw_type_theory σ) (r : T)
+      (T : presented_raw_type_theory σ) (r : T)
     : Family.map_over
         (FlatRule.fmap
            (include_initial_segment_signature T r))
@@ -180,6 +180,6 @@ Section Flattening.
 
 End Flattening.
 
-Local Definition derivation {σ : scope_system} (T : raw_type_theory σ) H
+Local Definition derivation {σ : scope_system} (T : presented_raw_type_theory σ) H
     : judgement (signature T) -> Type
   := FlatTypeTheory.derivation (flatten T) H.

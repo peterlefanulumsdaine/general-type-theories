@@ -31,9 +31,9 @@ MODULES := \
 	Typing/StructuralRulePresuppositions \
 	Presented/ContextVariants \
 	Presented/AlgebraicExtension \
-	Presented/RawRule \
+	Presented/PresentedRawRule \
 	Presented/CongruenceRule \
-	Presented/RawTypeTheory \
+	Presented/PresentedRawTypeTheory \
 	Presented/TypedRule \
 	Presented/TypeTheory \
 	Metatheorem/Presuppositions \

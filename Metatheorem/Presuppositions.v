@@ -7,8 +7,8 @@ Require Import Auxiliary.Coproduct.
 Require Import Syntax.All.
 Require Import Typing.Context.
 Require Import Typing.Judgement.
-Require Import Presented.RawRule.
-Require Import Presented.RawTypeTheory.
+Require Import Presented.PresentedRawRule.
+Require Import Presented.PresentedRawTypeTheory.
 Require Import Typing.Presuppositions.
 Require Import Typing.StructuralRule.
 Require Import Typing.FlatRule.
@@ -25,11 +25,11 @@ Require Import Presented.TypeTheory.
     the presuppositions of a derivable judgement are also derivable,
     over any well-typed type theory: *)
 Theorem derive_presupposition {σ} {Σ : signature σ}
-    {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
-    {j : judgement (RawTypeTheory.signature T)}
-    (dj : RawTypeTheory.derivation T [<>] j)
+    {T : presented_raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
+    {j : judgement (PresentedRawTypeTheory.signature T)}
+    (dj : PresentedRawTypeTheory.derivation T [<>] j)
     {p : presupposition j }
-  : RawTypeTheory.derivation T [<>] (presupposition j p).
+  : PresentedRawTypeTheory.derivation T [<>] (presupposition j p).
 Abort.
 
 (** In outline, the high level structure of the proof consists of giving notions of presuppositivity for flat rules/flat type theories and closure rules/closure systems, and doing the main inductive construction purely in terms of closure systems.
@@ -97,14 +97,14 @@ Section Presuppositivity.
   Context {σ : scope_system} `{Funext}.
 
   Lemma rule_of_well_typed_type_theory_is_well_typed
-      {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
+      {T : presented_raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
       (r : T)
-    : TypedRule.is_well_typed (RawTypeTheory.flatten T)
-        (RawRule.fmap (RawTypeTheory.include_rule_signature r) (tt_rule r)).
+    : TypedRule.is_well_typed (PresentedRawTypeTheory.flatten T)
+        (PresentedRawRule.fmap (PresentedRawTypeTheory.include_rule_signature r) (tt_rule r)).
   Proof.
     assert (r_WT := T_WT r).
     assert (r'_WT := TypedRule.fmap_is_well_typed
-                    (RawTypeTheory.include_rule_signature _) r_WT).
+                    (PresentedRawTypeTheory.include_rule_signature _) r_WT).
     refine (TypedRule.fmap_is_well_typed_in_theory _ r'_WT).
     apply FlatTypeTheory.map_from_simple_map,
           FlatTypeTheory.simple_map_from_family_map.
@@ -118,14 +118,14 @@ Section Presuppositivity.
          ambient theory)
        - so: simple map of _raw rules_: f : R' —> R: must implies R stably derivable from R'; so, is simple map (premises R —> premises R'), and then conclusion must agree. *)
     apply (Family.map_vs_map_over _ _ _)^-1.
-    apply RawTypeTheory.flatten_initial_segment.
+    apply PresentedRawTypeTheory.flatten_initial_segment.
   Defined.
 
   (** For any raw type theory [T] and a rule [r] of the flattened [T], every
       presupposition in the boundary of the conclusion of [r] can be derived. *)
   Lemma presuppositive_flatten
-      {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
-    : presuppositive_flat_type_theory (RawTypeTheory.flatten T).
+      {T : presented_raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
+    : presuppositive_flat_type_theory (PresentedRawTypeTheory.flatten T).
   Proof.
     (* The flattened [T] has logical and congruence rules, two cases to consider. *)
     (* Do these have to be treated separately, or can they be unified better? *)
@@ -144,12 +144,12 @@ Section Presuppositivity.
    \cref{thm:presuppositions}
    *)
   Theorem derive_presupposition
-      {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
-      {j : judgement (RawTypeTheory.signature T)}
+      {T : presented_raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
+      {j : judgement (PresentedRawTypeTheory.signature T)}
       {hyps : family _}
-      (dj : RawTypeTheory.derivation T hyps j)
+      (dj : PresentedRawTypeTheory.derivation T hyps j)
       {p : presupposition j }
-    : RawTypeTheory.derivation T
+    : PresentedRawTypeTheory.derivation T
         (hyps + Family.bind hyps presupposition)
         (presupposition _ p).
   Proof.
@@ -161,11 +161,11 @@ Section Presuppositivity.
       if a judgment [j] is derivable without hypotheses,
       then every presupposition of [j] is also derivable. *)
   Corollary derive_presupposition_closed
-      {T : raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
-      {j : judgement (RawTypeTheory.signature T)}
-      (dj : RawTypeTheory.derivation T [<>] j)
+      {T : presented_raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)
+      {j : judgement (PresentedRawTypeTheory.signature T)}
+      (dj : PresentedRawTypeTheory.derivation T [<>] j)
       {p : presupposition j }
-    : RawTypeTheory.derivation T [<>] (presupposition j p).
+    : PresentedRawTypeTheory.derivation T [<>] (presupposition j p).
   Proof.
     refine (Closure.graft _ _ _).
     - refine (derive_presupposition T_WT dj).
