@@ -242,7 +242,7 @@ Section Instantiations.
 
   (* TODO: check naming conventions *)
   Definition substitute_instantiation {a} {Σ}
-    {γ γ' : σ} (f : raw_context_map Σ γ' γ)
+    {γ γ' : σ} (f : raw_substitution Σ γ' γ)
     (I : instantiation a Σ γ)
     : instantiation a Σ γ'.
   Proof.
@@ -301,10 +301,10 @@ Section Instantiations.
 
   Arguments instantiate_expression {_ _ _ _} _ [_] _ : simpl nomatch.
 
-  Definition instantiate_raw_context_map {Σ : signature σ}
+  Definition instantiate_raw_substitution {Σ : signature σ}
       {a : arity σ} {γ : σ} (I : instantiation a Σ γ)
-      {δ δ' : σ} (f : raw_context_map (extend Σ a) δ' δ)
-    : raw_context_map Σ (scope_sum γ δ') (scope_sum γ δ)
+      {δ δ' : σ} (f : raw_substitution (extend Σ a) δ' δ)
+    : raw_substitution Σ (scope_sum γ δ') (scope_sum γ δ)
   := (coproduct_rect scope_is_sum _
         (fun i => raw_variable (coproduct_inj1 scope_is_sum i))
         (fun i => instantiate_expression I (f i))).
@@ -398,10 +398,10 @@ Section Instantiations.
       {cl} {a : @arity σ} {γ : σ}
       (I : instantiation a Σ γ)
       {δ} (e : raw_expression (extend Σ a) cl δ)
-      {δ' : σ} (f : raw_context_map _ δ' δ)
+      {δ' : σ} (f : raw_substitution _ δ' δ)
     : instantiate_expression I (substitute f e)
     = substitute
-        (instantiate_raw_context_map I f)
+        (instantiate_raw_substitution I f)
         (instantiate_expression I e).
   Proof.
     revert δ' f.
@@ -535,7 +535,7 @@ Section Instantiations.
   (* TODO: consider naming of this vs. preceding lemmas about commutation of instantiations with renaming/substitution in the expressions, currently [instantiate_rename] and  instantiate_substitute]. *)
   Lemma instantiate_substitute_instantiation {Σ : signature σ}
       {cl} {a : @arity σ} {γ γ': σ}
-      (f : raw_context_map Σ γ' γ)
+      (f : raw_substitution Σ γ' γ)
       (I : instantiation a Σ γ)
       {δ} (e : raw_expression (extend Σ a) cl δ)
     : instantiate_expression (substitute_instantiation f I) e
@@ -632,7 +632,7 @@ Section Instantiations.
       apply ap. apply IH_e_args.
     - simpl instantiate_expression.
       eapply concat. { apply Substitution.fmap_substitute. }
-      unfold raw_context_map_fmap, instantiation_fmap.
+      unfold raw_substitution_fmap, instantiation_fmap.
       apply (ap_2back substitute), path_forall.
       refine (coproduct_rect scope_is_sum _ _ _); intros i.
       + eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
