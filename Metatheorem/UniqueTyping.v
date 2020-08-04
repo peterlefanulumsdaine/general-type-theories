@@ -80,7 +80,7 @@ Proof.
           = argument_class m).
   - exact ((context_of_judgement (flat_rule_premise R p.1) : σ)
           = argument_scope m).
-  - refine (transport _ (snd e)
+  - exact (transport _ (snd e)
            (transport (fun cl => raw_expression _ cl _) (fst e)
              (Judgement.head (flat_rule_premise R p.1) p.2))
             = meta_generic_application m).
@@ -95,11 +95,30 @@ Definition flat_type_theory_object_rule
   : Type
 := { R :T & Judgement.is_object (form_of_judgement (flat_rule_conclusion (T R))) }.
 
+(* TODO: unify this with the similar construction in [Presented.RawTypeTheory]. *)
+Definition symbol_generic_application {Σ : signature σ} (S : Σ)
+  : raw_expression (Metavariable.extend Σ (symbol_arity S))
+      (symbol_class S) (scope_empty _).
+Proof.
+  srapply raw_symbol'.
+  * apply inl, S.
+  * reflexivity.
+  * intro m.
+    refine (rename _ (meta_generic_application m)).
+    apply (coproduct_inj2 scope_is_sum).
+Defined.
+
 Definition rule_introduces_symbol {Σ : signature σ} {T : flat_type_theory Σ}
     (R : flat_type_theory_object_rule T) (S : Σ)
   : Type.
 Proof.
-  (* similar to [premise_introduces_meta] above. *)
+  simple refine { e : _ * _ * _ & _}.
+  - exact (flat_rule_metas (T R.1) = symbol_arity S).
+  - exact (Judgement.class_of (form_of_judgement (flat_rule_conclusion (T R.1)))
+          = symbol_class S).
+  - exact ((context_of_judgement (flat_rule_conclusion (T R.1)) : σ)
+          = scope_empty _).
+  - admit.
 Admitted.
 
 Definition is_tight_type_theory {Σ : signature σ} (T : flat_type_theory Σ)
