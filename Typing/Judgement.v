@@ -858,7 +858,7 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
   Context {σ : scope_system} {Σ : signature σ}.
 
   Definition substitute_hypothetical_boundary_expressions
-      {jf} {γ γ' : σ} (f : raw_context_map Σ γ' γ)
+      {jf} {γ γ' : σ} (f : raw_substitution Σ γ' γ)
       (B : hypothetical_boundary_expressions Σ jf γ)
     : hypothetical_boundary_expressions Σ jf γ'.
   Proof.
@@ -866,7 +866,7 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
   Defined.
 
   Definition substitute_hypothetical_boundary
-      {γ γ' : σ} (f : raw_context_map Σ γ' γ)
+      {γ γ' : σ} (f : raw_substitution Σ γ' γ)
       (B : hypothetical_boundary Σ γ)
     : hypothetical_boundary Σ γ'.
   Proof.
@@ -875,7 +875,7 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
   Defined.
 
   Definition substitute_hypothetical_judgement
-      {γ γ' : σ} (f : raw_context_map Σ γ' γ)
+      {γ γ' : σ} (f : raw_substitution Σ γ' γ)
       (J : hypothetical_judgement Σ γ)
     : hypothetical_judgement Σ γ'.
   Proof.
@@ -886,7 +886,7 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
   Context `{Funext}.
 
   Definition substitute_rename_hypothetical_judgement
-      {γ γ' γ'' : σ} (f : γ -> γ') (g : raw_context_map Σ γ'' γ')
+      {γ γ' γ'' : σ} (f : γ -> γ') (g : raw_substitution Σ γ'' γ')
       (J : hypothetical_judgement Σ γ)
     : substitute_hypothetical_judgement g
         (rename_hypothetical_judgement f J)
@@ -897,7 +897,7 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
   Defined.
 
   Definition rename_substitute_hypothetical_judgement
-      {γ γ' γ'' : σ} (f : raw_context_map Σ γ' γ) (g : γ' -> γ'')
+      {γ γ' γ'' : σ} (f : raw_substitution Σ γ' γ) (g : γ' -> γ'')
       (J : hypothetical_judgement Σ γ)
     : rename_hypothetical_judgement g
         (substitute_hypothetical_judgement f J)
@@ -938,12 +938,12 @@ Section Instantiation.
       {a : arity σ} {Σ : signature σ} {γ : σ}
       {I : Metavariable.instantiation a Σ γ}
       {δ δ'}
-      (f : raw_context_map (Metavariable.extend Σ a) δ' δ)
+      (f : raw_substitution (Metavariable.extend Σ a) δ' δ)
       (J : hypothetical_judgement (Metavariable.extend Σ a) δ)
     : instantiate_hypothetical_judgement I
         (substitute_hypothetical_judgement f J)
       = substitute_hypothetical_judgement
-          (instantiate_raw_context_map I f)
+          (instantiate_raw_substitution I f)
           (instantiate_hypothetical_judgement I J).
   Proof.
     apply eq_by_expressions_hypothetical_judgement; intros i.
@@ -1137,7 +1137,7 @@ Section Instantiation.
   Defined.
 
   Lemma instantiate_hypothetical_judgement_substitute_instantiation
-        (γ γ' : σ.(scope_carrier)) (f : raw_context_map Σ γ' γ)
+        (γ γ' : σ.(scope_carrier)) (f : raw_substitution Σ γ' γ)
         {a}  (I : Metavariable.instantiation a Σ γ)
         {δ} (J : hypothetical_judgement _ δ)
     : instantiate_hypothetical_judgement (substitute_instantiation f I) J
@@ -1246,13 +1246,13 @@ Section Combine_Judgement.
     apply eq_by_eta_hypothetical_judgement, idpath.
   Defined.
 
-(** If [f g] are two raw context maps [Δ -> Γ], and [J] an object judgement
+(** If [f g] are two raw substitutions [Δ -> Γ], and [J] an object judgement
 over [Γ], there is an equality judgement comparing the pullbacks of [J] along
 [f], [g].  E.g. [Γ |- A], this gives [Δ |- f^*A = g^*A]; for [Γ |- a:A], this
 is [Δ |- f^*a = g^*A : f^*A] *)
   Definition substitute_equal_hypothetical_judgement
       {Σ : signature σ}
-      {δ γ} (f g : raw_context_map Σ δ γ)
+      {δ γ} (f g : raw_substitution Σ δ γ)
       (J : hypothetical_judgement Σ γ)
       (J_obj : is_object (form_of_judgement J))
     : hypothetical_judgement Σ δ.
@@ -1265,7 +1265,7 @@ is [Δ |- f^*a = g^*A : f^*A] *)
   Defined.
 
   Definition rename_substitute_equal_hypothetical_judgement {Σ}
-      {δ γ} (f g : raw_context_map Σ δ γ) {δ' : σ} {r : δ -> δ'}
+      {δ γ} (f g : raw_substitution Σ δ γ) {δ' : σ} {r : δ -> δ'}
       (J : hypothetical_judgement Σ γ)
       (J_obj : is_object (form_of_judgement J))
     : rename_hypothetical_judgement r
@@ -1286,7 +1286,7 @@ is [Δ |- f^*a = g^*A : f^*A] *)
   Defined.
 
   Definition substitute_equal_rename_hypothetical_judgement {Σ}
-      {γ γ' δ : σ} (r : γ -> γ') (f g : raw_context_map Σ δ γ')
+      {γ γ' δ : σ} (r : γ -> γ') (f g : raw_substitution Σ δ γ')
       (J : hypothetical_judgement Σ γ)
       (J_obj : is_object (form_of_judgement J))
     : substitute_equal_hypothetical_judgement f g

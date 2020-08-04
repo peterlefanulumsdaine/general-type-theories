@@ -13,6 +13,7 @@ Section Syntax.
   Context {Σ : signature σ}.
 
   (* A raw syntactic expression of a syntactic class, relative to a scope *)
+  (** \cref{def:raw-syntax} *)
   Inductive raw_expression
     : syntactic_class -> σ -> Type
     :=
@@ -71,6 +72,7 @@ Section Renaming.
      will be used to move under binders in general substitution.
 
      This can be seen as the functoriality of syntax in the scope argument. *)
+  (** \cref{renaming-action} *)
   Fixpoint rename {γ γ' : σ} (f : γ -> γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
     : raw_expression Σ cl γ'.

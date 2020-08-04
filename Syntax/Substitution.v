@@ -20,19 +20,19 @@ Section RawSubstitution.
   similar.  However, in terms of depedency requirements, it fits much more
   naturally here: this and its lemmas do not depend on anything about raw
   contexts, whereas most constructions on them depend on this file. *)
-  Definition raw_context_map (γ δ : σ)
+  Definition raw_substitution (γ δ : σ)
     := δ -> raw_term Σ γ.
 
   (* Not required now, but required so that later things that coerce to
-  raw context maps can be used as functions. *)
-  Identity Coercion map_of_raw_context_map : raw_context_map >-> Funclass.
+     raw substitutions can be used as functions. *)
+  Identity Coercion map_of_raw_substitution : raw_substitution >-> Funclass.
 
   (* A substitution from [γ] to [γ'] may be extended to one from [γ + δ] to
   [γ' + δ], by variable-renaming.
 
   This is needed for going under binders during substitution. *)
   Local Definition extend (γ γ' δ : σ)
-    : raw_context_map γ' γ -> raw_context_map (scope_sum γ' δ) (scope_sum γ δ).
+    : raw_substitution γ' γ -> raw_substitution (scope_sum γ' δ) (scope_sum γ δ).
   Proof.
     intros f.
     simple refine (coproduct_rect (scope_is_sum) _ _ _); cbn.
@@ -46,7 +46,7 @@ Section RawSubstitution.
 
   (* Apply a raw substitution to a raw expression. *)
   Fixpoint substitute
-      {γ δ : σ} (f : raw_context_map δ γ)
+      {γ δ : σ} (f : raw_substitution δ γ)
       {cl : syntactic_class}
       (e : raw_expression Σ cl γ)
     : raw_expression Σ cl δ.
@@ -71,37 +71,37 @@ Section RawSubstitution.
 
   Lemma substitute_transport_scope
       {γ γ'} (e_γ : γ = γ') {δ}
-      (f : raw_context_map δ γ')
+      (f : raw_substitution δ γ')
       {cl} (e : raw_expression Σ cl γ)
     : substitute f (transport (raw_expression _ _) e_γ e)
-      = substitute (transport (raw_context_map _) e_γ^ f) e.
+      = substitute (transport (raw_substitution _) e_γ^ f) e.
   Proof.
     destruct e_γ; apply idpath.
   Defined.
 
 End RawSubstitution.
 
-Arguments raw_context_map [_] _ _ _.
+Arguments raw_substitution [_] _ _ _.
 
-(* Here we show that raw context maps form a category (modulo truncation assumptions).
+(* Here we show that raw substitutions form a category (modulo truncation assumptions).
 
-  Note: we assume functional extensionality throughout.  That shouldn’t be essentially necessary — it should be possible to show that e.g. [Substitution.rename] respects “recursive extensional equality” of terms, and so on, and hence to show that raw context maps form a category modulo this equality — but using funext makes life a lot simpler. *)
+  Note: we assume functional extensionality throughout.  That shouldn’t be essentially necessary — it should be possible to show that e.g. [Substitution.rename] respects “recursive extensional equality” of terms, and so on, and hence to show that raw substitutions form a category modulo this equality — but using funext makes life a lot simpler. *)
 
 Section Raw_Context_Category_Structure.
-(* Identity and composition of raw context maps. *)
+(* Identity and composition of raw substitutions. *)
 
   Context {σ : scope_system}.
   Context {Σ : signature σ}.
 
-  Definition id_raw_context (γ : σ) : raw_context_map Σ γ γ.
+  Definition id_raw_context (γ : σ) : raw_substitution Σ γ γ.
   Proof.
     exact (@raw_variable _ _ _).
   Defined.
 
   Definition comp_raw_context {γ γ' γ'': σ}
-      (f : raw_context_map Σ γ' γ)
-      (f' : raw_context_map Σ γ'' γ')
-    : raw_context_map Σ γ'' γ
+      (f : raw_substitution Σ γ' γ)
+      (f' : raw_substitution Σ γ'' γ')
+    : raw_substitution Σ γ'' γ
   := fun x => substitute f' (f x).
 
 End Raw_Context_Category_Structure.
@@ -114,7 +114,7 @@ End Raw_Context_Category_Structure.
   [ id_right_substitute : lift return = idfun : Raw_Syntax γ -> Raw_Syntax γ]
   [ associativity : (lift g) o (lift f) = lift ((lift g) o f) ]
 
-  These then suffice to show that raw context maps (roughly, the Kleisli category of this not-exactly-monad) form a category (modulo h-levels).
+  These then suffice to show that raw substitutions (roughly, the Kleisli category of this not-exactly-monad) form a category (modulo h-levels).
 
   TODO: see if this “looks like a monad” can be made more precise: does our approach fit into e.g. relative or indexed monads?
 *)
@@ -125,7 +125,7 @@ Section Substitute_Laws.
   Context {Σ : signature σ}.
 
   Definition id_left_substitute
-      {γ γ' : σ} (f : raw_context_map Σ γ' γ) (x : _)
+      {γ γ' : σ} (f : raw_substitution Σ γ' γ) (x : _)
     : substitute f (raw_variable x) = f x.
   Proof.
     apply idpath.
@@ -174,7 +174,7 @@ Section Substitute_Laws.
   Defined.
 
   Fixpoint rename_substitute {γ γ' γ'' : σ}
-      (f : raw_context_map Σ γ' γ) (g : γ' -> γ'')
+      (f : raw_substitution Σ γ' γ) (g : γ' -> γ'')
       {cl} (e : raw_expression Σ cl γ)
     : rename g (substitute f e)
       = substitute ((rename g) o f) e.
@@ -198,7 +198,7 @@ Section Substitute_Laws.
   Defined.
 
   Fixpoint substitute_rename
-      {γ γ' γ'' : σ} (f : γ -> γ') (g : raw_context_map Σ γ'' γ')
+      {γ γ' γ'' : σ} (f : γ -> γ') (g : raw_substitution Σ γ'' γ')
       {cl} (e : raw_expression Σ cl γ)
     : substitute g (rename f e)
     = substitute (g o f) e.
@@ -218,8 +218,8 @@ Section Substitute_Laws.
   Defined.
 
   Fixpoint assoc_substitute {γ γ' γ'': σ}
-      (f : raw_context_map Σ γ' γ)
-      (f' : raw_context_map Σ γ'' γ')
+      (f : raw_substitution Σ γ' γ)
+      (f' : raw_substitution Σ γ'' γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
     : substitute f' (substitute f e)
     = substitute (fun i => substitute f' (f i)) e.
@@ -247,8 +247,8 @@ Section Substitute_Laws.
   (* Alias of [assoc_substitute], to fit general naming conventions for
      equational lemmas *)
   Definition substitute_substitute {γ γ' γ'': σ}
-      (f : raw_context_map Σ γ' γ)
-      (f' : raw_context_map Σ γ'' γ')
+      (f : raw_substitution Σ γ' γ)
+      (f' : raw_substitution Σ γ'' γ')
       {cl : syntactic_class} (e : raw_expression Σ cl γ)
     : substitute f' (substitute f e)
     = substitute (fun i => substitute f' (f i)) e
@@ -256,14 +256,14 @@ Section Substitute_Laws.
 
 End Substitute_Laws.
 
-(* Finally, the category laws for raw context maps. *)
+(* Finally, the category laws for raw substitutions. *)
 Section Raw_Context_Category.
 
   Context `{H_Funext : Funext}.
   Context {σ : scope_system}.
   Context {Σ : signature σ}.
 
-  Lemma id_left_raw_context {γ} (f : raw_context_map Σ γ γ)
+  Lemma id_left_raw_context {γ} (f : raw_substitution Σ γ γ)
     : comp_raw_context (id_raw_context _) f = f.
   Proof.
     apply idpath.
@@ -271,7 +271,7 @@ Section Raw_Context_Category.
     (* [unfold comp_raw_context, id_raw_context.] *)
   Defined.
 
-  Lemma id_right_raw_context {γ} (f : raw_context_map Σ γ γ)
+  Lemma id_right_raw_context {γ} (f : raw_substitution Σ γ γ)
     : comp_raw_context f (id_raw_context _) = f.
   Proof.
     apply path_forall; intros x; cbn.
@@ -279,9 +279,9 @@ Section Raw_Context_Category.
   Defined.
 
   Lemma assoc_raw_context {γ0 γ1 γ2 γ3: σ}
-      (f0 : raw_context_map Σ γ0 γ1)
-      (f1 : raw_context_map Σ γ1 γ2)
-      (f2 : raw_context_map Σ γ2 γ3)
+      (f0 : raw_substitution Σ γ0 γ1)
+      (f1 : raw_substitution Σ γ1 γ2)
+      (f2 : raw_substitution Σ γ2 γ3)
     : comp_raw_context f2 (comp_raw_context f1 f0)
     = comp_raw_context (comp_raw_context f2 f1) f0.
   Proof.
@@ -297,35 +297,35 @@ Section Naturality.
   Context `{H_Funext : Funext}.
   Context {σ : scope_system}.
 
-  Definition raw_context_map_fmap
+  Definition raw_substitution_fmap
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {γ γ'} (g : raw_context_map Σ γ' γ)
-    : raw_context_map Σ' γ' γ
+      {γ γ'} (g : raw_substitution Σ γ' γ)
+    : raw_substitution Σ' γ' γ
   := fun i => (Expression.fmap f (g i)).
 
   Local Definition fmap_extend
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {γ γ' δ : σ} (g : raw_context_map Σ γ' γ)
-    : raw_context_map_fmap f (extend _ _ δ g)
-    = extend _ _ δ (raw_context_map_fmap f g).
+      {γ γ' δ : σ} (g : raw_substitution Σ γ' γ)
+    : raw_substitution_fmap f (extend _ _ δ g)
+    = extend _ _ δ (raw_substitution_fmap f g).
   Proof.
     apply path_forall.
     refine (coproduct_rect scope_is_sum _ _ _).
-    - intros i. unfold raw_context_map_fmap.
+    - intros i. unfold raw_substitution_fmap.
       eapply concat. { apply ap. refine (coproduct_comp_inj1 _). }
       eapply concat. { apply Expression.fmap_rename. }
       apply inverse. refine (coproduct_comp_inj1 _).
-    - intros i. unfold raw_context_map_fmap.
+    - intros i. unfold raw_substitution_fmap.
       eapply concat. { apply ap. refine (coproduct_comp_inj2 _). }
       apply inverse. refine (coproduct_comp_inj2 _).
   Defined.
 
   Fixpoint fmap_substitute
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ')
-      {γ γ'} (g : raw_context_map Σ γ' γ)
+      {γ γ'} (g : raw_substitution Σ γ' γ)
       {cl} (e : raw_expression Σ cl γ)
     : Expression.fmap f (substitute g e)
-    = substitute (raw_context_map_fmap f g) (Expression.fmap f e).
+    = substitute (raw_substitution_fmap f g) (Expression.fmap f e).
   Proof.
     destruct e as [ γ i | γ S args ].
     - apply idpath.

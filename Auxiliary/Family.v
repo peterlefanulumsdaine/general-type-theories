@@ -15,6 +15,7 @@ Here we provide:
 
  
 (** A family in [X] is given by an index type and the map taking indices to elements in [X]. *)
+(** \cref{def:family} *)
 Record family (X : Type) :=
   { family_index :> Type
   ; family_element :> family_index -> X
@@ -49,6 +50,7 @@ One can consider maps between families _over_ (or _modulo_) maps between the typ
  elements of [L], such that for any element [i : K], its realisation [K i]
  as an element of [A] is mapped under [f] to the realisation [L (ff i)] in
  [B]. *)
+(** \cref{def:family-map-over} *)
 Local Definition map_over {A B} (f : A -> B) (K : family A) (L : family B)
   := { ff : K -> L
      & forall i : K, L (ff i) = f (K i) }.
@@ -66,6 +68,7 @@ Local Definition map_over_commutes
 := pr2.
 
 (** For the special case of a map between families from the same type, a map of families is a map of their indices/elements, commuting with the evaluation map. *)
+(** \cref{def:family-map} *)
 Local Definition map {A} (K L : family A)
   := map_over idmap K L.
 

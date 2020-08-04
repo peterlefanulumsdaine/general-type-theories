@@ -8,6 +8,7 @@ Section Signature.
 
   Context {σ : scope_system}.
 
+  (** \cref{def:signature} *)
   Definition signature : Type
     := family (syntactic_class * arity σ).
 

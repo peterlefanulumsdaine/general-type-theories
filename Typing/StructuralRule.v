@@ -90,7 +90,7 @@ End RenamingRules.
 
 Section SubstitutionRules.
 
-(** General substitution along (weak) context maps:
+(** General substitution along (weakly typed) substitutions:
 
  [for each i in Γ,
     either “f acts trivially at i”, i.e.[f i = x_j] and [Γ' j = f^* Γ i],
@@ -108,7 +108,7 @@ Proof.
   exists { Γ : raw_context Σ
     & { Γ' : raw_context Σ
     & hypothetical_judgement Σ Γ
-    * { f : raw_context_map Σ Γ' Γ
+    * { f : raw_substitution Σ Γ' Γ
     & forall i : Γ, option
              { j : Γ' & (f i = raw_variable j) * (Γ' j = substitute f (Γ i)) }
     }}}.
@@ -139,7 +139,7 @@ Definition subst_equal_instance : Closure.system (judgement Σ).
 Proof.
   exists {   Γ : raw_context Σ
     & { Γ' : raw_context Σ
-    & { fg : raw_context_map Σ Γ' Γ * raw_context_map Σ Γ' Γ
+    & { fg : raw_substitution Σ Γ' Γ * raw_substitution Σ Γ' Γ
     & (forall i:Γ, option
            { j : Γ' & ((fst fg i = raw_variable j)
                       * (snd fg i = raw_variable j))
@@ -847,7 +847,7 @@ Section Substitution_Interface.
       ( J J' : judgement Σ )
       ( Γ := context_of_judgement J )
       ( Γ' := context_of_judgement J' )
-      ( f : raw_context_map Σ Γ' Γ )
+      ( f : raw_substitution Σ Γ' Γ )
       ( e : hypothetical_part J' = substitute_hypothetical_judgement f J)
       ( d_f : forall i,
         { j : Γ' & (f i = raw_variable j) * (Γ' j = substitute f (Γ i)) }
@@ -873,7 +873,7 @@ Section Substitution_Interface.
 
   Definition derive_subst_apply
       ( Γ Δ : raw_context Σ )
-      ( f : raw_context_map Σ Δ Γ )
+      ( f : raw_substitution Σ Δ Γ )
       ( J : hypothetical_judgement Σ Γ )
       ( d_f : forall i,
         { j : Δ & (f i = raw_variable j) * (Δ j = substitute f (Γ i)) }
@@ -892,7 +892,7 @@ Section Substitution_Interface.
       ( J J' : judgement Σ )
       ( Γ := context_of_judgement J )
       ( Γ' := context_of_judgement J' )
-      ( f g : raw_context_map Σ Γ' Γ )
+      ( f g : raw_substitution Σ Γ' Γ )
       ( J_obj : Judgement.is_object (form_of_judgement J) )
       ( e : hypothetical_part J'
             = substitute_equal_hypothetical_judgement f g J J_obj)
@@ -925,7 +925,7 @@ Section Substitution_Interface.
 
   Definition derive_subst_equal
       ( Γ Γ' : raw_context Σ )
-      ( f g : raw_context_map Σ Γ' Γ )
+      ( f g : raw_substitution Σ Γ' Γ )
       ( J : hypothetical_judgement Σ Γ )
       ( J_obj : Judgement.is_object (form_of_judgement J) )
       ( d_fg : forall i,
@@ -1202,7 +1202,7 @@ Section SignatureMaps.
       + exists (Context.fmap f Γ).
         exists (Context.fmap f Δ).
         split. { exact (Judgement.fmap_hypothetical_judgement f J). }
-        exists (raw_context_map_fmap f g).
+        exists (raw_substitution_fmap f g).
         intros i. refine (fmap_option _ (g_triv i)).
         intros [j [e_gi e_Δi]].
         exists j; split.
@@ -1229,7 +1229,7 @@ Section SignatureMaps.
       simple refine (_;_).
       + exists (Context.fmap f Γ).
         exists (Context.fmap f Γ').
-        exists (raw_context_map_fmap f g, raw_context_map_fmap f h).
+        exists (raw_substitution_fmap f g, raw_substitution_fmap f h).
         split.
         2: { exists jf. intro; apply (Expression.fmap f), hj. }
         intros i. refine (fmap_option _ (gh_triv i)).
@@ -1336,11 +1336,11 @@ Section Instantiation.
       simple refine (derive_subst_apply' _ _ _ _ _ _).
       + apply (Judgement.instantiate Γ I).
         exists Δ. exact J.
-      + exact (instantiate_raw_context_map I f).
+      + exact (instantiate_raw_substitution I f).
       + apply instantiate_substitute_hypothetical_judgement.
       + simpl. refine (coproduct_rect scope_is_sum _ _ _).
         * intros i; simpl.
-          unfold instantiate_raw_context_map.
+          unfold instantiate_raw_substitution.
           repeat rewrite coproduct_comp_inj1.
           apply inl.
           exists (coproduct_inj1 scope_is_sum i).
@@ -1369,7 +1369,7 @@ Section Instantiation.
             intros j; recursive_destruct j; simpl.
             ++ repeat rewrite coproduct_comp_inj2.
               apply instantiate_substitute.
-            ++ unfold instantiate_raw_context_map.
+            ++ unfold instantiate_raw_substitution.
               apply inverse; rapply coproduct_comp_inj2.
       + simple refine (Closure.hypothesis' _ _).
         { apply None. }
@@ -1379,8 +1379,8 @@ Section Instantiation.
       simple refine (derive_subst_equal' _ _ _ _ _ _ _ _).
       + apply (Judgement.instantiate Γ I).
         exists Δ. exact (Build_hypothetical_judgement _ J).
-      + exact (instantiate_raw_context_map I f).
-      + exact (instantiate_raw_context_map I g).
+      + exact (instantiate_raw_substitution I f).
+      + exact (instantiate_raw_substitution I g).
       + constructor.
       + apply eq_by_expressions_hypothetical_judgement.
         intros i; destruct cl; recursive_destruct i;
@@ -1388,7 +1388,7 @@ Section Instantiation.
       (* TODO: abstract as [instantiate_substitute_equal_hypothetical_judgement]? *)
       + simpl. refine (coproduct_rect scope_is_sum _ _ _).
         * intros i; simpl.
-          unfold instantiate_raw_context_map.
+          unfold instantiate_raw_substitution.
           repeat rewrite coproduct_comp_inj1.
           apply inl.
           exists (coproduct_inj1 scope_is_sum i).
@@ -1415,7 +1415,7 @@ Section Instantiation.
             [ apply Some; exists (i; fgi_nontriv) | ]);
             [ apply Some, Some, tt | | apply Some, None | | apply None | ];
             apply Judgement.eq_by_eta;
-            unfold instantiate_raw_context_map;
+            unfold instantiate_raw_substitution;
               repeat rewrite coproduct_comp_inj2; simpl;
               rewrite instantiate_substitute;
               apply idpath.

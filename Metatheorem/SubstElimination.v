@@ -81,7 +81,7 @@ the associated congruence rule should be derivable (?admissible). *)
 
   This is not as general as would ideally be nice: ideally we would say something like “for each object rule, the associated congruence rule is _derivable_ over T”. Unfortunately, the obvious concise ways of saying that all seem to be wrong.
 
-  For isntance, our main sense of derivable says that the rule itself is derivable over the translation of T to the metavariable extension; this is bad for two reasons.  First, applying this notion relies on being able to instantiate derivations, which requires either the subst-apply rule or a subst-elimination principle, which will not yet be available at the point we need this.  Secondly, in examples, giving derivations with non-trivial hypotheses (as one does for a congruence rule with binders) may genuinely require use of the subst-apply and subst-eq structural rules.
+  For instance, our main sense of derivable says that the rule itself is derivable over the translation of T to the metavariable extension; this is bad for two reasons.  First, applying this notion relies on being able to instantiate derivations, which requires either the subst-apply rule or a subst-elimination principle, which will not yet be available at the point we need this.  Secondly, in examples, giving derivations with non-trivial hypotheses (as one does for a congruence rule with binders) may genuinely require use of the subst-apply and subst-eq structural rules.
 
   An alternative would be to just say that the congruence rule should be _admissible_ over T, or that each instance of it should be derivable.  These would work for the present theorems, but are a bit unnatural; e.g. they’re not preserved under translation or extension of theories.
 
@@ -231,13 +231,13 @@ End Flat_Conditions.
 Section Judgement_Renamings.
 (** A lot of results can be concisely formulated in terms of maps/renamings of
 judgements.  A map/renaming of judgements from [Γ' |- J'] to [Γ |- J] is just
-a context map/renaming [f] from [Γ'] to [J], such that [J' = f^*J].
+a substitution/renaming [f] from [Γ'] to [J], such that [J' = f^*J].
 
 (Categorically, these are exactly maps in the total category of judgements,
 viewed as a discrete fibration over contexts.)
 
 This section gives judgement renamings; section [Weakly_Typed_Maps] below gives
-the analogue for (weakly) typed context maps. *)
+the analogue for (weakly) typed substitutions. *)
 
   Context `{Funext} {σ : scope_system} {Σ : signature σ}.
 
@@ -463,14 +463,14 @@ End Rename_Derivations.
 
 Section Weakly_Typed_Maps.
 (** For [sustitute_derivation], we introduce an auxiliary notion of _weakly
-typed_ context maps: maps which at each component look either like a well-typed
-context map, or like a typed renaming.
+typed_ substitutions: maps which at each component look either like a well-typed
+substitution, or like a typed renaming.
 
 This slightly subtle definition is essentially motivated by the proof
 of [substitute_derivation], and in particular, the desire to keep that proof
 structurally recursive on the derivation (and also not dependent on any kind
 of well-typedness conditions on the flat rules).  The point is that when
-passing under binders in premises of rules, we want to extend the context map
+passing under binders in premises of rules, we want to extend the substitution
 by the type-expressions of the binders, without having to check that these are
 well-formed. *)
 
@@ -478,32 +478,32 @@ well-formed. *)
 
   Local Definition weakly_typed
       (T : flat_type_theory Σ)
-      (Δ Γ : raw_context Σ) (f : raw_context_map Σ Δ Γ)
+      (Δ Γ : raw_context Σ) (f : raw_substitution Σ Δ Γ)
     : Type
   := forall i : Γ,
       { j : Δ & (f i = raw_variable j) * (Δ j = substitute f (Γ i)) }
     + subst_free_derivation T (Family.empty _)
                             [! Δ |- f i ; substitute f (Γ i) !].
 
-  Record weakly_typed_context_map
+  Record weakly_typed_substitution
     (T : flat_type_theory Σ) (Δ Γ : raw_context Σ)
   := {
-    raw_of_weakly_typed_context_map :> raw_context_map Σ Δ Γ
-  ; weakly_typed_context_map_is_weakly_typed
-                    : weakly_typed T Δ Γ raw_of_weakly_typed_context_map
+    raw_of_weakly_typed_substitution :> raw_substitution Σ Δ Γ
+  ; weakly_typed_substitution_is_weakly_typed
+                    : weakly_typed T Δ Γ raw_of_weakly_typed_substitution
   }.
 
-  Local Lemma compose_weakly_typed_context_map_renaming
+  Local Lemma compose_weakly_typed_substitution_renaming
         {T : flat_type_theory Σ} (T_sub : substitutive T)
         {Γ Γ' Γ'' : raw_context Σ}
-        (g : weakly_typed_context_map T Γ' Γ)
+        (g : weakly_typed_substitution T Γ' Γ)
         (f : typed_renaming Γ' Γ'')
-    : weakly_typed_context_map T Γ'' Γ.
+    : weakly_typed_substitution T Γ'' Γ.
   Proof.
-    simple refine (Build_weakly_typed_context_map _ _ _ _ _).
+    simple refine (Build_weakly_typed_substitution _ _ _ _ _).
     - intros i. exact (rename f (g i)).
     - intros i.
-      destruct (weakly_typed_context_map_is_weakly_typed _ _ _ g i)
+      destruct (weakly_typed_substitution_is_weakly_typed _ _ _ g i)
         as [[j [e1 e2]] | d_gi].
       + apply inl.
         exists (f j); split.
@@ -520,17 +520,17 @@ well-formed. *)
         apply rename_substitute.
   Defined.
 
-  Local Lemma compose_renaming_weakly_typed_context_map
+  Local Lemma compose_renaming_weakly_typed_substitution
         {T : flat_type_theory Σ}
         {Γ Γ' Γ'' : raw_context Σ}
         (g : typed_renaming Γ Γ')
-        (f : weakly_typed_context_map T Γ'' Γ')
-    : weakly_typed_context_map T Γ'' Γ.
+        (f : weakly_typed_substitution T Γ'' Γ')
+    : weakly_typed_substitution T Γ'' Γ.
   Proof.
-    simple refine (Build_weakly_typed_context_map _ _ _ _ _).
+    simple refine (Build_weakly_typed_substitution _ _ _ _ _).
     - intros i. exact (f (g i)).
     - intros i.
-      destruct (weakly_typed_context_map_is_weakly_typed _ _ _ f (g i))
+      destruct (weakly_typed_substitution_is_weakly_typed _ _ _ f (g i))
         as [[j [e1 e2]] | d_gi].
       + apply inl.
         exists j; split.
@@ -547,14 +547,14 @@ well-formed. *)
 
   (* TODO: possible alternate names:
      [instantiate_context_substitute_instantiation],
-     [extend_weakly_typed_context_map] *)
-  Lemma instantiate_context_over_weakly_typed_context_map
+     [extend_weakly_typed_substitution] *)
+  Lemma instantiate_context_over_weakly_typed_substitution
       {T : flat_type_theory Σ} (T_sub : substitutive T)
-      {Γ Γ' : raw_context Σ} (f : weakly_typed_context_map T Γ' Γ)
+      {Γ Γ' : raw_context Σ} (f : weakly_typed_substitution T Γ' Γ)
       {a : arity σ}
       (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
       (Δ : raw_context (Metavariable.extend Σ a))
-    : weakly_typed_context_map T
+    : weakly_typed_substitution T
         (Context.instantiate Γ' (substitute_instantiation f I) Δ)
         (Context.instantiate Γ I Δ).
   Proof.
@@ -563,7 +563,7 @@ well-formed. *)
     - intros i.
       unfold Substitution.extend; cbn.
       repeat rewrite coproduct_comp_inj1.
-        destruct (weakly_typed_context_map_is_weakly_typed _ _ _ f i)
+        destruct (weakly_typed_substitution_is_weakly_typed _ _ _ f i)
           as [[j [e1 e2]] | d_fi].
       + apply inl.
         exists (coproduct_inj1 scope_is_sum j); split.
@@ -596,19 +596,19 @@ well-formed. *)
   Record weakly_typed_judgement_map
     (T : flat_type_theory Σ) (J' J : judgement Σ)
   := {
-    weakly_typed_context_map_of_judgement_map
-      :> weakly_typed_context_map T
+    weakly_typed_substitution_of_judgement_map
+      :> weakly_typed_substitution T
            (context_of_judgement J') (context_of_judgement J)
   ; weakly_typed_judgement_map_hypothetical_part
       : substitute_hypothetical_judgement
-          weakly_typed_context_map_of_judgement_map
+          weakly_typed_substitution_of_judgement_map
           (hypothetical_part J)
         = hypothetical_part J'
   }.
 
-  Local Lemma instantiate_judgement_over_weakly_typed_context_map
+  Local Lemma instantiate_judgement_over_weakly_typed_substitution
       {T : flat_type_theory Σ} (T_sub : substitutive T)
-      {Γ Γ' : raw_context Σ} (f : weakly_typed_context_map T Γ' Γ)
+      {Γ Γ' : raw_context Σ} (f : weakly_typed_substitution T Γ' Γ)
       {a : arity σ}
       (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
       (J : judgement _)
@@ -616,7 +616,7 @@ well-formed. *)
         (Judgement.instantiate Γ' (substitute_instantiation f I) J)
         (Judgement.instantiate Γ I J).
   Proof.
-    exists (instantiate_context_over_weakly_typed_context_map T_sub f I _).
+    exists (instantiate_context_over_weakly_typed_substitution T_sub f I _).
     apply inverse, instantiate_hypothetical_judgement_substitute_instantiation.
   Defined.
 
@@ -656,9 +656,9 @@ Section Substitute_Derivations.
       (Γ' := context_of_judgement J').
 
     Local Definition substitute_flat_rule_instantiation_map
-      : weakly_typed_context_map T Γ' Γ.
+      : weakly_typed_substitution T Γ' Γ.
     Proof.
-      refine (compose_renaming_weakly_typed_context_map _ f).
+      refine (compose_renaming_weakly_typed_substitution _ f).
       apply typed_renaming_to_instantiate_context.
     Defined.
 
@@ -684,7 +684,7 @@ Section Substitute_Derivations.
       2: { apply coproduct_empty_inj1_is_equiv, R_univ. }
       (* The following can again be seen as a naturality calculation,
        involving naturality of [typed_renaming_to_instantiate_context] w.r.t.
-       weakly typed context maps. *)
+       weakly typed substitution. *)
       eapply concat. 2: { apply inverse,
                   instantiate_hypothetical_judgement_substitute_instantiation. }
       eapply concat.
@@ -706,7 +706,7 @@ Section Substitute_Derivations.
                   (flat_rule_premise R p))
           (Judgement.instantiate Γ I (flat_rule_premise R p)).
     Proof.
-      apply instantiate_judgement_over_weakly_typed_context_map.
+      apply instantiate_judgement_over_weakly_typed_substitution.
       assumption.
     Defined.
 
@@ -764,13 +764,13 @@ Section Substitute_Derivations.
       cbn in r.
       destruct r as [Γ [Γ' [g J]]].
       apply (IH tt).
-      exists (compose_renaming_weakly_typed_context_map g f).
+      exists (compose_renaming_weakly_typed_substitution g f).
       eapply concat.
         2: { apply (weakly_typed_judgement_map_hypothetical_part _ _ _ f). }
       apply inverse, @substitute_rename_hypothetical_judgement; auto.
     - (* case: variable rule *)
       destruct r as [Γ i]. cbn in f.
-      destruct (weakly_typed_context_map_is_weakly_typed _ _ _ f i)
+      destruct (weakly_typed_substitution_is_weakly_typed _ _ _ f i)
         as [[j [e1 e2]] | d_fi].
       (* TODO: add implicit args in […is_weakly_typed]!  It’s bloody long enough already *)
       + (* case: [f i = raw_variable j], [Γ' j = f^* (Γ i) ] *)
@@ -789,7 +789,7 @@ Section Substitute_Derivations.
       }
       intros p; set (p_keep := p); recursive_destruct p. cbn.
       apply (IH p_keep).
-      set (f0 := f : weakly_typed_context_map _ _ _).
+      set (f0 := f : weakly_typed_substitution _ _ _).
       cbn in f0. exists f0.
       apply eq_by_expressions_hypothetical_judgement; intros s.
       recursive_destruct s.
@@ -810,18 +810,18 @@ Section Equality_Substitution.
 
 That is: given a derivale object judgement, e.g. [ Γ |- a : A ], and two derivably judgementally equal context morphisms [ f, g : Γ' -> Γ ], we should be able to derive [ Γ |- f^*a = g^*a : f^* A ].
 
-That result, [subst_equal_derivation], is the main goal of this section; but to make the inductive proof go through we generalise its statement, to raw context maps [f g : Γ' -> Γ] that are what we call _weakly judgementally-equal_.
+That result, [subst_equal_derivation], is the main goal of this section; but to make the inductive proof go through we generalise its statement, to raw substitutions [f g : Γ' -> Γ] that are what we call _weakly judgementally-equal_.
 
 The idea of this is that it generalises judgemental equality so as to be closed under extending a pair [f, g : Δ -> Γ] to extended pairs [Δ;f^*A -> Γ;A] and [Δ;g^*A -> Γ;A], i.e. with the source context extended by either [f^*A] or [g^*A]); and we must do this without any well-formedness check on [A], so we can’t necessarily derive that the extensions are judgementally equal.  Such extensions arise when going under binders in premises of rules.
 
-Since the resulting individual maps [f], [g] may not be weakly-typed context maps, so not automatically applicable for [substitute_derivation], we also strengthen the induction statement to yield additionally that [ Γ |- f^*a : f^*A ] and [ Γ |- g^*a : g^*A ]. *)
+Since the resulting individual maps [f], [g] may not be weakly-typed substitutions, so not automatically applicable for [substitute_derivation], we also strengthen the induction statement to yield additionally that [ Γ |- f^*a : f^*A ] and [ Γ |- g^*a : g^*A ]. *)
 
   Context {σ : scope_system} {Σ : signature σ} `{Funext}.
 
   Local Definition weakly_equal
       (T : flat_type_theory Σ)
       {Δ Γ : raw_context Σ}
-      (f g : raw_context_map Σ Δ Γ)
+      (f g : raw_substitution Σ Δ Γ)
     : Type
   := forall i : Γ,
       { j : Δ & (f i = raw_variable j)
@@ -839,8 +839,8 @@ Since the resulting individual maps [f], [g] may not be weakly-typed context map
       (T : flat_type_theory Σ)
       (Δ Γ : raw_context Σ)
   := {
-    left : raw_context_map Σ Δ Γ
-  ; right : raw_context_map Σ Δ Γ
+    left : raw_substitution Σ Δ Γ
+  ; right : raw_substitution Σ Δ Γ
   ; is_weakly_equal : weakly_equal T left right
   }.
 
@@ -1608,7 +1608,7 @@ Section Subst_Elimination.
       simpl in d_prems |- *.
       simple refine (substitute_derivation _ _ (d_prems None)); try assumption.
       simple refine (Build_weakly_typed_judgement_map _ _ _ _ _);
-        [ simple refine (Build_weakly_typed_context_map _ _ _ f _) | apply idpath].
+        [ simple refine (Build_weakly_typed_substitution _ _ _ f _) | apply idpath].
       intros i.
       destruct (some_or_is_none (f_triv i)) as [[j [e_fi e_Γ'j]]| fi_nontriv].
       * apply inl. exists j; split; assumption.
