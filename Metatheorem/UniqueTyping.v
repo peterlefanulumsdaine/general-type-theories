@@ -2,6 +2,7 @@
 Require Import HoTT.
 Close Scope mc_scope. (* to make notations like [A * B] work easily *)
 
+Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Syntax.ScopeSystem.
 Require Import Syntax.All.
@@ -58,17 +59,32 @@ Definition flat_rule_object_premise {Σ : signature σ} (R : flat_rule Σ)
   := {i : flat_rule_premise R
           & Judgement.is_object (form_of_judgement (flat_rule_premise R i))}.
 
+(* TODO: unify this with the similar construction in [Presented.AlgebraicExtension.judgement_of_premise]. *)
+Definition meta_generic_application {Σ : signature σ} {a : arity σ} (i : a)
+  : raw_expression (Metavariable.extend Σ a)
+      (argument_class i) (argument_scope i).
+Proof.
+  simple refine (raw_symbol' _ _ _).
+  * apply inr, i.
+  * reflexivity.
+  * intro j. apply raw_variable.
+    exact (coproduct_inj1 scope_is_sum j).
+Defined.
+
 Definition premise_introduces_meta {Σ : signature σ} {R : flat_rule Σ}
     (p : flat_rule_object_premise R) (m : flat_rule_metas R)
   : Type.
 Proof.
-  refine (Judgement.head (flat_rule_premise R p.1) p.2 = _).
-  admit.
-  (* slightly subtle:
-  can’t just say “the head of premise p is the generic application of m”;
-   need to say “the class is the same, the scope is the same,
-   and modulo these, the head is the correct application”. *)
-Admitted.
+  simple refine { e : _ * _ & _}.
+  - exact (Judgement.class_of (form_of_judgement (flat_rule_premise R p.1))
+          = argument_class m).
+  - exact ((context_of_judgement (flat_rule_premise R p.1) : σ)
+          = argument_scope m).
+  - refine (transport _ (snd e)
+           (transport (fun cl => raw_expression _ cl _) (fst e)
+             (Judgement.head (flat_rule_premise R p.1) p.2))
+            = meta_generic_application m).
+Defined.
 
 Definition is_tight_rule {Σ : signature σ} (R : flat_rule Σ)
   : Type
