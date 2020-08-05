@@ -33,7 +33,7 @@ Section TypeTheory.
   ; tt_rule_signature : tt_rule_data -> signature σ
     := fun i => Family.fmap
         (fun (ja : Judgement.form * arity σ)
-          => (Judgement.class_of (fst ja), snd ja))
+          => (class_of (fst ja), snd ja))
         (Family.subfamily tt_rule_data
           (fun j => Judgement.is_object (tt_rule_form j) * tt_lt j i))
   (* the actual rule specification of each rule *)
@@ -52,13 +52,13 @@ Section TypeTheory.
     exists {r : T & Judgement.is_object (tt_rule_form _ r)}.
     intros r_H. set (r := pr1 r_H).
     split.
-    - exact (Judgement.class_of (tt_rule_form _ r)).
+    - exact (class_of (tt_rule_form _ r)).
     - exact (tt_rule_arity _ r).
   Defined.
     (* NOTE: it is tempting to case-analyse here and say
-      “when r is an object rule, use [(Judgement.class_of …, tt_rule_arity …)];
+      “when r is an object rule, use [(class_of …, tt_rule_arity …)];
        in case r is an equality rule, use reductio ad absurdum with Hr.”
-     But we get stronger reduction behaviour by just taking [(Judgement.class_of …, tt_rule_arity …)] without case-analysing first.  (And up to equality, we get the same result.)  *)
+     But we get stronger reduction behaviour by just taking [(class_of …, tt_rule_arity …)] without case-analysing first.  (And up to equality, we get the same result.)  *)
   (* TODO: consider making this a coercion? *)
 
   Local Definition include_rule_signature

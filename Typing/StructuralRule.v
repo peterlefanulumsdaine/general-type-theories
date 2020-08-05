@@ -893,7 +893,7 @@ Section Substitution_Interface.
       ( Γ := context_of_judgement J )
       ( Γ' := context_of_judgement J' )
       ( f g : raw_substitution Σ Γ' Γ )
-      ( J_obj : Judgement.is_object (form_of_judgement J) )
+      ( J_obj : Judgement.is_object J )
       ( e : hypothetical_part J'
             = substitute_equal_hypothetical_judgement f g J J_obj)
       ( d_fg : forall i,
@@ -927,7 +927,7 @@ Section Substitution_Interface.
       ( Γ Γ' : raw_context Σ )
       ( f g : raw_substitution Σ Γ' Γ )
       ( J : hypothetical_judgement Σ Γ )
-      ( J_obj : Judgement.is_object (form_of_judgement J) )
+      ( J_obj : Judgement.is_object J )
       ( d_fg : forall i,
         { j : Γ' & ((f i = raw_variable j)
                  * (g i = raw_variable j))

@@ -37,7 +37,7 @@ Section JudgementCombinatorics.
                      | form_equality _ => Empty
                   end.
 
-  Local Definition class_of : form -> syntactic_class
+  Definition class_of : form -> syntactic_class
     := fun jf => match jf with
                      | form_object cl => cl
                      | form_equality cl => cl
@@ -223,7 +223,7 @@ Section Judgements.
     : hypothetical_judgement_expressions >-> Funclass.
 
   Record hypothetical_judgement γ : Type
-  := { form_of_judgement : form
+  := { form_of_judgement :> form
      ; judgement_expression
          :> hypothetical_judgement_expressions form_of_judgement γ }.
   Arguments form_of_judgement {_} _.
@@ -231,8 +231,8 @@ Section Judgements.
 
   Local Definition head {γ}
       (J : hypothetical_judgement γ)
-      (J_obj : is_object (form_of_judgement J))
-    : raw_expression Σ (class_of (form_of_judgement J)) γ.
+      (J_obj : is_object J)
+    : raw_expression Σ (class_of J) γ.
   Proof.
     refine (transport (fun cl => raw_expression _ cl _) _ _).
     - apply (class_of_head_slot_from_is_object J_obj).
@@ -272,7 +272,7 @@ Section Judgements.
       {γ} (J : hypothetical_judgement γ)
     : hypothetical_boundary γ.
   Proof.
-    exists (form_of_judgement J).
+    exists J.
     intros i. destruct J as [[jf_ob | jf_eq] j];
       exact (j (the_boundary_slot i)).
   Defined.
@@ -590,7 +590,7 @@ Section JudgementFmap.
       {Σ Σ' : signature σ} (f : Signature.map Σ Σ') {γ}
     : hypothetical_judgement Σ γ -> hypothetical_judgement Σ' γ.
   Proof.
-    intros J. exists (form_of_judgement J).
+    intros J. exists J.
     exact (fmap_hypothetical_judgement_expressions f J).
   Defined.
 
@@ -758,7 +758,7 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
       (J : hypothetical_judgement Σ γ)
     : hypothetical_judgement Σ γ'.
   Proof.
-    exists (form_of_judgement J).
+    exists J.
     exact (fun j => rename f (J j)).
   Defined.
 
@@ -769,7 +769,7 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
     : judgement Σ.
   Proof.
     exists (Context.rename (context_of_judgement J) f).
-    exists (form_of_judgement J).
+    exists J.
     exact (rename_hypothetical_judgement (equiv_inverse f)
            (hypothetical_part J)).
   Defined.
@@ -879,7 +879,7 @@ _Complete_ judgements, involving contexts, admit renaming only along _isomorphis
       (J : hypothetical_judgement Σ γ)
     : hypothetical_judgement Σ γ'.
   Proof.
-    exists (form_of_judgement J).
+    exists J.
     exact (fun j => substitute f (J j)).
   Defined.
 
@@ -1173,10 +1173,10 @@ Section Combine_Judgement.
       {Σ : signature σ}
       {γ} (J K : hypothetical_judgement Σ γ)
       (e : form_of_judgement J = form_of_judgement K)
-      (J_obj : is_object (form_of_judgement J))
+      (J_obj : is_object J)
     : hypothetical_judgement Σ γ.
   Proof.
-    exists (form_equality (class_of (form_of_judgement J))).
+    exists (form_equality (class_of J)).
     intros [s | | ].
     - refine (transport (fun cl => raw_expression _ cl _) _ _).
       2: { exact (J (the_boundary_slot
@@ -1196,8 +1196,8 @@ Section Combine_Judgement.
       {γ : σ} {J J' K K' : hypothetical_judgement Σ γ}
       {e : form_of_judgement J = form_of_judgement K}
       {e' : form_of_judgement J' = form_of_judgement K'}
-      {J_obj : is_object (form_of_judgement J)}
-      {J'_obj : is_object (form_of_judgement J')}
+      {J_obj : is_object J}
+      {J'_obj : is_object J'}
       (p_J : J' = J)
       (p_K : K' = K)
       (p_e : ap form_of_judgement p_J^ @ e' @ ap form_of_judgement p_K = e)
@@ -1216,7 +1216,7 @@ Section Combine_Judgement.
     {Σ} {γ γ' : σ} (f : γ -> γ')
     (K K' : hypothetical_judgement Σ γ)
     (e : form_of_judgement K = form_of_judgement K')
-    (K_obj : is_object (form_of_judgement K))
+    (K_obj : is_object K)
     : rename_hypothetical_judgement f
                          (combine_hypothetical_judgement K K' e K_obj)
     = combine_hypothetical_judgement
@@ -1233,7 +1233,7 @@ Section Combine_Judgement.
     {Σ : signature σ} {a} {γ} (Ia : Metavariable.instantiation a Σ γ)
     {δ} (K K' : hypothetical_judgement _ δ)
     (e : form_of_judgement K = form_of_judgement K')
-    (K_obj : is_object (form_of_judgement K))
+    (K_obj : is_object K)
     : instantiate_hypothetical_judgement Ia
                          (combine_hypothetical_judgement K K' e K_obj)
     = combine_hypothetical_judgement
@@ -1254,7 +1254,7 @@ is [Δ |- f^*a = g^*A : f^*A] *)
       {Σ : signature σ}
       {δ γ} (f g : raw_substitution Σ δ γ)
       (J : hypothetical_judgement Σ γ)
-      (J_obj : is_object (form_of_judgement J))
+      (J_obj : is_object J)
     : hypothetical_judgement Σ δ.
   Proof.
     simple refine (combine_hypothetical_judgement _ _ _ _).
@@ -1267,7 +1267,7 @@ is [Δ |- f^*a = g^*A : f^*A] *)
   Definition rename_substitute_equal_hypothetical_judgement {Σ}
       {δ γ} (f g : raw_substitution Σ δ γ) {δ' : σ} {r : δ -> δ'}
       (J : hypothetical_judgement Σ γ)
-      (J_obj : is_object (form_of_judgement J))
+      (J_obj : is_object J)
     : rename_hypothetical_judgement r
         (substitute_equal_hypothetical_judgement f g J J_obj)
     = substitute_equal_hypothetical_judgement
@@ -1288,7 +1288,7 @@ is [Δ |- f^*a = g^*A : f^*A] *)
   Definition substitute_equal_rename_hypothetical_judgement {Σ}
       {γ γ' δ : σ} (r : γ -> γ') (f g : raw_substitution Σ δ γ')
       (J : hypothetical_judgement Σ γ)
-      (J_obj : is_object (form_of_judgement J))
+      (J_obj : is_object J)
     : substitute_equal_hypothetical_judgement f g
         (rename_hypothetical_judgement r J) J_obj
     = substitute_equal_hypothetical_judgement (f o r) (g o r) J J_obj.
@@ -1308,7 +1308,7 @@ is [Δ |- f^*a = g^*A : f^*A] *)
       (J : judgement Σ)
       (K : hypothetical_judgement Σ (context_of_judgement J))
       (e : form_of_judgement J = form_of_judgement K)
-      (J_obj : is_object (form_of_judgement J))
+      (J_obj : is_object J)
     : judgement Σ.
   Proof.
     exists (context_of_judgement J).
@@ -1325,7 +1325,7 @@ is [Δ |- f^*a = g^*A : f^*A] *)
       (Δ := context_of_judgement J)
       (K_hyp : hypothetical_judgement (Metavariable.extend Σ a) Δ)
       {e : form_of_judgement J = form_of_judgement K_hyp}
-      {J_obj : is_object (form_of_judgement J)}
+      {J_obj : is_object J}
       {Γ : raw_context Σ} (I : Metavariable.instantiation a Σ Γ)
       {Θ : Δ -> raw_type _ Δ}
       (K := Build_judgement (Build_raw_context _ Θ) K_hyp)

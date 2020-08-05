@@ -245,7 +245,7 @@ Section Flattening.
     (R : rule Σ a jf_concl)
     (Sr : Judgement.is_object jf_concl
           -> { S : Σ & (symbol_arity S = a)
-                       * (symbol_class S = Judgement.class_of jf_concl) })
+                       * (symbol_class S = class_of jf_concl) })
       : judgement (Metavariable.extend Σ a).
   Proof.
     exists [::], jf_concl.
@@ -279,7 +279,7 @@ Section Flattening.
     (R : rule Σ a jf_concl)
     (SR : Judgement.is_object jf_concl
         -> { S : Σ & (symbol_arity S = a)
-                     * (symbol_class S = Judgement.class_of jf_concl) })
+                     * (symbol_class S = class_of jf_concl) })
   : flat_rule Σ.
   (* This construction involves essentially two aspects:
 

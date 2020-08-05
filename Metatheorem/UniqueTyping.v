@@ -57,7 +57,7 @@ Context {σ : scope_system}.
 Definition flat_rule_object_premise {Σ : signature σ} (R : flat_rule Σ)
     : Type
   := {i : flat_rule_premise R
-          & Judgement.is_object (form_of_judgement (flat_rule_premise R i))}.
+          & Judgement.is_object (flat_rule_premise R i)}.
 
 (* TODO: unify this with the similar construction in [Presented.AlgebraicExtension.judgement_of_premise]. *)
 Definition meta_generic_application {Σ : signature σ} {a : arity σ} (i : a)
@@ -76,7 +76,7 @@ Definition premise_introduces_meta {Σ : signature σ} {R : flat_rule Σ}
   : Type.
 Proof.
   simple refine { e : _ * _ & _}.
-  - exact (Judgement.class_of (form_of_judgement (flat_rule_premise R p.1))
+  - exact (class_of (flat_rule_premise R p.1)
           = argument_class m).
   - exact ((context_of_judgement (flat_rule_premise R p.1) : σ)
           = argument_scope m).
@@ -93,7 +93,7 @@ Definition is_tight_rule {Σ : signature σ} (R : flat_rule Σ)
 Definition flat_type_theory_object_rule
     {Σ : signature σ} (T : flat_type_theory Σ)
   : Type
-:= { R :T & Judgement.is_object (form_of_judgement (flat_rule_conclusion (T R))) }.
+:= { R :T & Judgement.is_object (flat_rule_conclusion (T R)) }.
 
 (* TODO: unify this with the similar construction in [Presented.RawTypeTheory]. *)
 Definition symbol_generic_application {Σ : signature σ} (S : Σ)
@@ -114,7 +114,7 @@ Definition rule_introduces_symbol {Σ : signature σ} {T : flat_type_theory Σ}
 Proof.
   simple refine { e : _ * _ * _ & _}.
   - exact (flat_rule_metas (T R.1) = symbol_arity S).
-  - exact (Judgement.class_of (form_of_judgement (flat_rule_conclusion (T R.1)))
+  - exact (class_of (flat_rule_conclusion (T R.1))
           = symbol_class S).
   - exact ((context_of_judgement (flat_rule_conclusion (T R.1)) : σ)
           = scope_empty _).

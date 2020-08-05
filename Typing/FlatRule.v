@@ -173,7 +173,7 @@ Section Congruence.
   Definition flat_congruence_rule
       {Σ : signature σ}
       (R : flat_rule Σ)
-      (R_obj : Judgement.is_object (form_of_judgement (flat_rule_conclusion R)))
+      (R_obj : Judgement.is_object (flat_rule_conclusion R))
     : flat_rule Σ.
   Proof.
     assert (inl : (Signature.map
@@ -192,8 +192,7 @@ Section Congruence.
       + refine (Family.fmap _ (flat_rule_premise R)).
         apply Judgement.fmap, inr.
       + exists {p : flat_rule_premise R
-                    & Judgement.is_object
-                        (form_of_judgement (flat_rule_premise R p))}.
+                    & Judgement.is_object (flat_rule_premise R p)}.
         intros [p p_obj].
         set (J := flat_rule_premise R p).
         fold J in p_obj.
