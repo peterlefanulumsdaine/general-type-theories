@@ -23,6 +23,11 @@ Some parts are fairly complete, while others are very much work in progress.
 
 None of the formalisation should be considered stable.
 
+## How to use this formalisation
+
+- Install [the HoTT library](https://github.com/HoTT/HoTT) according to its instructions
+- Invoke `make` from the base directory of this repository
+
 # Detailed overview
 
 Note: the following overview is currently somewhat out of date.
