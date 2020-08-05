@@ -2,11 +2,12 @@
 
 A (formalised) general definition of type theories.
 
-## Authors
+## Contributors
 
+* Peter LeFanu Lumsdaine (lead author)
 * Andrej Bauer
-* Philipp Haselwarter
-* Peter LeFanu Lumsdaine
+* Philip Haselwarter
+* Théo Winterhalter
 
 ## Content
 
