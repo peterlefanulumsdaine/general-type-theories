@@ -8,6 +8,25 @@ A (formalised) general definition of type theories.
 * Philipp Haselwarter
 * Peter LeFanu Lumsdaine
 
+## Content
+
+This repo contains a Coq formalisation of a general notion of dependent type theories, and the development of key metatheorems for this notion.
+
+A human-readable presentation of the main notions can be found in Lumsdaine’s talk at HoTTEST Conference, 2020 [slides](https://www.uwo.ca/math/faculty/kapulkin/seminars/hottestfiles/Lumsdaine-2020-06-15-HoTTEST.pdf),
+and an article presenting the work is in preparation.
+
+## Development
+
+The formalisation is under active development.
+
+Some parts are fairly complete, while others are very much work in progress.
+
+None of the formalisation should be considered stable.
+
+# Detailed overview
+
+Note: the following overview is currently somewhat out of date.
+
 ## Directory overview
 
 * [`Auxiliary`](./Auxiliary) -- mathematical generalities, not specifically about type theory
