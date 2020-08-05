@@ -108,23 +108,41 @@ Proof.
     apply (coproduct_inj2 scope_is_sum).
 Defined.
 
-Definition rule_introduces_symbol {Σ : signature σ} {T : flat_type_theory Σ}
-    (R : flat_type_theory_object_rule T) (S : Σ)
+Definition rule_introduces_symbol {Σ : signature σ}
+    (R : flat_rule Σ) (R_obj : Judgement.is_object (flat_rule_conclusion R)) (S : Σ)
   : Type.
 Proof.
-  simple refine { e : _ * _ * _ & _}.
-  - exact (flat_rule_metas (T R.1) = symbol_arity S).
-  - exact (class_of (flat_rule_conclusion (T R.1))
+  simple refine { eq : _ * _ * _ & _}.
+  - exact (flat_rule_metas R = symbol_arity S).
+  - exact (class_of (flat_rule_conclusion R)
           = symbol_class S).
-  - exact ((context_of_judgement (flat_rule_conclusion (T R.1)) : σ)
+  - exact ((context_of_judgement (flat_rule_conclusion R) : σ)
           = scope_empty _).
-  - admit.
-Admitted.
+  - refine (_ (Judgement.head (flat_rule_conclusion R) R_obj)
+            = symbol_generic_application S).
+    intros exp.
+    apply (transport _ (snd eq)).
+    apply (transport (fun cl => raw_expression _ cl _) (snd (fst eq))).
+    apply (transport (fun a => raw_expression (_ a) _ _) (fst (fst eq))).
+    exact exp.
+Defined.
+(* Note: this definition involves transport along an equality of signatures.
+  [Metavariable.extend Σ (flat_rule_metas R))
+  = Metavariable.extend Σ (symbol_arity S)]
+coming from the equality [flat_rule_metas R = symbol_arity S].
+
+If it turns out that transport in the signature is unpleasant to work with,
+we could instead use a translation along the signature map induced by the equality,
+or even replace the equality with an equivalence of arities. 
+
+Presumably this will be easiest to work with by setting things up so that the raw rule is abstract, and so it and the equalities can be destructed. *)
 
 Definition is_tight_type_theory {Σ : signature σ} (T : flat_type_theory Σ)
     : Type
   := (forall R : T, is_tight_rule (T R))
-     * is_one_to_one_correspondence (@rule_introduces_symbol _ T).
+     * is_one_to_one_correspondence
+         (fun (R : flat_type_theory_object_rule T) S
+              => rule_introduces_symbol (T R.1) R.2 S).
 
 Theorem unique_typing {Σ : signature σ} (T : flat_type_theory Σ)
     (T_tight : is_tight_type_theory T)
