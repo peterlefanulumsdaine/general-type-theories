@@ -493,7 +493,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
     srapply (ap011D (fun p q => ap011D Context.extend p q)).
     { apply fl_gf. }
     (* If we assumed that the signature (and hence syntax in a given scope) was a set, we would be done here by the set-property. *)
-    cbn.
+    cbn. Optimize Proof.
     eapply concat.
     { refine (transport_compose (fun q => q = _) _ (fl_gf Γ) _). }
     eapply concat. { apply transport_paths_l. }
@@ -568,6 +568,7 @@ Section Induction_By_Length_vs_Inductive_Family_By_Length.
       apply concat_1p.
     }
     apply concat_Vp.
+    Optimize Proof.
   Time Qed.
   (* NOTE: if this slow compilation step later becomes too much annoyance slowing down the build, it could harmlessly be switched to [Admitted.] *)
 

@@ -400,7 +400,7 @@ Section Judgement_of_Premise.
       (Sr : Judgement.is_object (ae_form i)
            -> { S : Σ'
              & (symbol_arity S = Arity.simple (ae_scope i))
-             * (symbol_class S = Judgement.class_of (ae_form i))})
+             * (symbol_class S = class_of (ae_form i))})
    : judgement Σ'.
   Proof.
     exists (Context.fmap f (ae_raw_context i)).
@@ -432,12 +432,12 @@ Section Judgement_of_Premise.
       {Sr : Judgement.is_object (ae_form i)
            -> { S : Σ''
              & (symbol_arity S = Arity.simple (ae_scope i))
-             * (symbol_class S = Judgement.class_of (ae_form i))}}
+             * (symbol_class S = class_of (ae_form i))}}
       {Sr' : Judgement.is_object (@ae_form _ _ _ (fmap f A) i)
            -> { S : Σ''
              & (symbol_arity S = Arity.simple (@ae_scope _ _ _ (fmap f A) i))
              * (symbol_class S
-                 = Judgement.class_of (@ae_form _ _ _ (fmap f A) i))}}
+                 = class_of (@ae_form _ _ _ (fmap f A) i))}}
       (e_Sr : Sr = Sr')
    : judgement_of_premise i f' Sr
      = @judgement_of_premise _ _ (fmap f A) i _ f'' Sr'.
@@ -463,7 +463,7 @@ Section Judgement_of_Premise.
       (Sr : Judgement.is_object (ae_form i)
            -> { S : Σ'
              & (symbol_arity S = Arity.simple (ae_scope i))
-             * (symbol_class S = Judgement.class_of (ae_form i))})
+             * (symbol_class S = class_of (ae_form i))})
       (Sr' := (fun i_ob =>
            (f' (Sr i_ob).1;
               (ap snd (Family.map_commutes _ _) @ fst (Sr i_ob).2
@@ -471,7 +471,7 @@ Section Judgement_of_Premise.
          : Judgement.is_object (ae_form i)
            -> { S : Σ''
              & (symbol_arity S = Arity.simple (ae_scope i))
-             * (symbol_class S = Judgement.class_of (ae_form i))})
+             * (symbol_class S = class_of (ae_form i))})
    : Judgement.fmap f' (judgement_of_premise i f Sr)
      = @judgement_of_premise _ _ A i _ (Signature.compose f' f) Sr'.
   Proof.
@@ -523,11 +523,11 @@ Section Judgement_of_Premise.
       {Sr : Judgement.is_object (ae_form i)
            -> { S : Σ'
              & (symbol_arity S = Arity.simple (ae_scope i))
-             * (symbol_class S = Judgement.class_of (ae_form i))}}
+             * (symbol_class S = class_of (ae_form i))}}
       {Sr' : Judgement.is_object (ae_form  (g i))
            -> { S : Σ'
              & (symbol_arity S = Arity.simple (ae_scope (g i)))
-             * (symbol_class S = Judgement.class_of (ae_form (g i)))}}
+             * (symbol_class S = class_of (ae_form (g i)))}}
       (e_Sr : forall i_is_ob,
          let Sr_i := Sr i_is_ob
       in let Sr_gi := Sr' (transport _ (simple_map_form_commutes _ _) i_is_ob)

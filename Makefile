@@ -29,6 +29,7 @@ MODULES := \
 	Typing/StructuralRule \
 	Typing/RawTypeTheory \
 	Typing/StructuralRulePresuppositions \
+	Typing/All \
 	Presented/ContextVariants \
 	Presented/AlgebraicExtension \
 	Presented/PresentedRawRule \

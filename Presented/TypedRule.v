@@ -217,7 +217,7 @@ Section Congruence_Rules.
       (R_is_ob : Judgement.is_object jf_concl)
       (S : Σ)
       (e_a : symbol_arity S = a)
-      (e_cl : symbol_class S = Judgement.class_of jf_concl)
+      (e_cl : symbol_class S = class_of jf_concl)
     : is_well_typed T (congruence_rule R R_is_ob S e_a e_cl).
   Proof.
   Admitted. (* [congruence_rule_is_well_typed]: large, key stress test of functoriality framework for derivability *)

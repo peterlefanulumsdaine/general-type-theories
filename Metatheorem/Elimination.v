@@ -917,7 +917,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
          = substitute_hypothetical_judgement
            (right weakly_equal_pair_of_judgement_map)
            (hypothetical_part J))
-     + { J_obj : Judgement.is_object (form_of_judgement J)
+     + { J_obj : Judgement.is_object J
        & hypothetical_part J'
          = substitute_equal_hypothetical_judgement
            (left weakly_equal_pair_of_judgement_map)
@@ -1069,7 +1069,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
       {Γ Γ' : raw_context Σ} (fg : weakly_equal_pair T Γ' Γ)
       {a : arity σ}
       (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
-      (J : judgement _) (J_obj : Judgement.is_object (form_of_judgement J))
+      (J : judgement _) (J_obj : Judgement.is_object J)
     : weakly_equal_judgement_map T
          (combine_judgement
             (Judgement.instantiate Γ' (substitute_instantiation (left fg) I) J)
@@ -1177,7 +1177,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
       {a : arity σ}
       (I : Metavariable.instantiation a Σ Γ.(raw_context_carrier))
       (J : judgement (Metavariable.extend Σ a))
-      (J_obj : Judgement.is_object (form_of_judgement J))
+      (J_obj : Judgement.is_object J)
     : weakly_equal_judgement_map T
         (Judgement.instantiate Γ'
            (copair_instantiation (substitute_instantiation (left fg) I)
@@ -1260,9 +1260,8 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
       (I : Metavariable.instantiation (raw_rule_metas R) Σ Γ)
       (J := Judgement.instantiate Γ I (raw_rule_conclusion R))
       {J' : judgement Σ}
-      (Γ' := context_of_judgement J')
-      (is_obj_R
-        := Judgement.is_object (form_of_judgement (raw_rule_conclusion R))).
+      (Γ' := context_of_judgement J').
+
   (* We can’t include [fg : weakly_equal_judgement_map T J' J] as a section variable here, since the lemmas below need to be able to destruct it and act on the result. *)
 
   (* Since these lemmas are for internal use only, and their names are getting
@@ -1351,7 +1350,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
                             (Build_hypothetical_judgement _ K)
                             _ _)
                   _ _).
-        (* TODO: refactor using [eq_combbine_hypothetical_judgement]. *)
+        (* TODO: refactor using [eq_combine_hypothetical_judgement]. *)
         + cbn. apply path_forall; intros i.
           eapply concat. 2: { apply inverse, copair_instantiation_inl. }
           eapply concat.

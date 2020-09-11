@@ -99,9 +99,9 @@ eq_new i   0        0        0        0        i < j
     (H : Judgement.is_object jf_concl)
     (S : Σ)
     (e_a : symbol_arity S = a)
-    (e_cl : symbol_class S = Judgement.class_of jf_concl)
+    (e_cl : symbol_class S = class_of jf_concl)
     : (rule Σ (Family.sum a a)
-                 (form_equality (Judgement.class_of jf_concl))).
+                 (form_equality (class_of jf_concl))).
   Proof.
     (* TODO: refactor the following, to unify it with def of raw congruence
        rules (once given). *)
