@@ -4,7 +4,7 @@
 Require Export Typing.Context.
 Require Export Typing.Judgement.
 Require Export Typing.Presuppositions.
-Require Export Typing.FlatRule.
+Require Export Typing.RawRule.
 Require Export Typing.StructuralRule.
-Require Export Typing.FlatTypeTheory.
+Require Export Typing.RawTypeTheory.
 Require Export Typing.StructuralRulePresuppositions.

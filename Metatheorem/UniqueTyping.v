@@ -7,7 +7,7 @@ Require Import Auxiliary.Family.
 Require Import Syntax.ScopeSystem.
 Require Import Syntax.All.
 Require Import Typing.All.
-
+Require Import Presented.PresentedRawTypeTheory.
 
 (* Main goal of this file: theorem stating unique typing, for any tight type theory. *)
 
@@ -18,7 +18,6 @@ Theorem unique_typing {σ : scope_system} (T : presented_raw_type_theory σ)
     (d' : PresentedRawTypeTheory.derivation T [<>] [! Γ |- a ; A' !])
   : PresentedRawTypeTheory.derivation T [<>] [! Γ |- A ≡ A' !].
 Abort.
-
 
 (* TODO: upstream contents of this section periodically, but keep this section as a holding pen as long as the file is under heavy development. *)
 Section Auxiliary.
@@ -53,10 +52,10 @@ Section Fix_Scope_System.
 
 Context {σ : scope_system}.
 
-Definition flat_rule_object_premise {Σ : signature σ} (R : flat_rule Σ)
+Definition raw_rule_object_premise {Σ : signature σ} (R : raw_rule Σ)
     : Type
-  := {i : flat_rule_premise R
-          & Judgement.is_object (flat_rule_premise R i)}.
+  := {i : raw_rule_premise R
+          & Judgement.is_object (raw_rule_premise R i)}.
 
 (* TODO: unify this with the similar construction in [Presented.AlgebraicExtension.judgement_of_premise]. *)
 Definition meta_generic_application {Σ : signature σ} {a : arity σ} (i : a)
@@ -70,29 +69,29 @@ Proof.
     exact (coproduct_inj1 scope_is_sum j).
 Defined.
 
-Definition premise_introduces_meta {Σ : signature σ} {R : flat_rule Σ}
-    (p : flat_rule_object_premise R) (m : flat_rule_metas R)
+Definition premise_introduces_meta {Σ : signature σ} {R : raw_rule Σ}
+    (p : raw_rule_object_premise R) (m : raw_rule_metas R)
   : Type.
 Proof.
   simple refine { e : _ * _ & _}.
-  - exact (class_of (flat_rule_premise R p.1)
+  - exact (class_of (raw_rule_premise R p.1)
           = argument_class m).
-  - exact ((context_of_judgement (flat_rule_premise R p.1) : σ)
+  - exact ((context_of_judgement (raw_rule_premise R p.1) : σ)
           = argument_scope m).
   - exact (transport _ (snd e)
            (transport (fun cl => raw_expression _ cl _) (fst e)
-             (Judgement.head (flat_rule_premise R p.1) p.2))
+             (Judgement.head (raw_rule_premise R p.1) p.2))
             = meta_generic_application m).
 Defined.
 
-Definition is_tight_rule {Σ : signature σ} (R : flat_rule Σ)
+Definition is_tight_rule {Σ : signature σ} (R : raw_rule Σ)
   : Type
 := is_one_to_one_correspondence (@premise_introduces_meta _ R).
 
-Definition flat_type_theory_object_rule
-    {Σ : signature σ} (T : flat_type_theory Σ)
+Definition raw_type_theory_object_rule
+    {Σ : signature σ} (T : raw_type_theory Σ)
   : Type
-:= { R :T & Judgement.is_object (flat_rule_conclusion (T R)) }.
+:= { R :T & Judgement.is_object (raw_rule_conclusion (T R)) }.
 
 (* TODO: unify this with the similar construction in [Presented.RawTypeTheory]. *)
 Definition symbol_generic_application {Σ : signature σ} (S : Σ)
@@ -108,16 +107,16 @@ Proof.
 Defined.
 
 Definition rule_introduces_symbol {Σ : signature σ}
-    (R : flat_rule Σ) (R_obj : Judgement.is_object (flat_rule_conclusion R)) (S : Σ)
+    (R : raw_rule Σ) (R_obj : Judgement.is_object (raw_rule_conclusion R)) (S : Σ)
   : Type.
 Proof.
   simple refine { eq : _ * _ * _ & _}.
-  - exact (flat_rule_metas R = symbol_arity S).
-  - exact (class_of (flat_rule_conclusion R)
+  - exact (raw_rule_metas R = symbol_arity S).
+  - exact (class_of (raw_rule_conclusion R)
           = symbol_class S).
-  - exact ((context_of_judgement (flat_rule_conclusion R) : σ)
+  - exact ((context_of_judgement (raw_rule_conclusion R) : σ)
           = scope_empty _).
-  - refine (_ (Judgement.head (flat_rule_conclusion R) R_obj)
+  - refine (_ (Judgement.head (raw_rule_conclusion R) R_obj)
             = symbol_generic_application S).
     intros exp.
     apply (transport _ (snd eq)).
@@ -126,9 +125,9 @@ Proof.
     exact exp.
 Defined.
 (* Note: this definition involves transport along an equality of signatures.
-  [Metavariable.extend Σ (flat_rule_metas R))
+  [Metavariable.extend Σ (raw_rule_metas R))
   = Metavariable.extend Σ (symbol_arity S)]
-coming from the equality [flat_rule_metas R = symbol_arity S].
+coming from the equality [raw_rule_metas R = symbol_arity S].
 
 If it turns out that transport in the signature is unpleasant to work with,
 we could instead use a translation along the signature map induced by the equality,
@@ -136,19 +135,19 @@ or even replace the equality with an equivalence of arities.
 
 Presumably this will be easiest to work with by setting things up so that the raw rule is abstract, and so it and the equalities can be destructed. *)
 
-Definition is_tight_type_theory {Σ : signature σ} (T : flat_type_theory Σ)
+Definition is_tight_type_theory {Σ : signature σ} (T : raw_type_theory Σ)
     : Type
   := (forall R : T, is_tight_rule (T R))
      * is_one_to_one_correspondence
-         (fun (R : flat_type_theory_object_rule T) S
+         (fun (R : raw_type_theory_object_rule T) S
               => rule_introduces_symbol (T R.1) R.2 S).
 
-Theorem unique_typing {Σ : signature σ} (T : flat_type_theory Σ)
+Theorem unique_typing {Σ : signature σ} (T : raw_type_theory Σ)
     (T_tight : is_tight_type_theory T)
     (Γ : raw_context Σ) (a : raw_term Σ Γ) (A A' : raw_type Σ Γ)
-    (d : FlatTypeTheory.derivation T [<>] [! Γ |- a ; A !])
-    (d' : FlatTypeTheory.derivation T [<>] [! Γ |- a ; A' !])
-  : FlatTypeTheory.derivation T [<>] [! Γ |- A ≡ A' !].
+    (d : RawTypeTheory.derivation T [<>] [! Γ |- a ; A !])
+    (d' : RawTypeTheory.derivation T [<>] [! Γ |- a ; A' !])
+  : RawTypeTheory.derivation T [<>] [! Γ |- A ≡ A' !].
 Proof.
 Admitted.
 
