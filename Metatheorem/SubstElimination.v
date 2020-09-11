@@ -71,7 +71,7 @@ the associated congruence rule should be derivable (?admissible). *)
   Definition substitutive (T : flat_type_theory Σ)
     := forall r : T, in_universal_form (T r).
 
-  Local Definition congruous (T : flat_type_theory Σ)
+  Definition congruous (T : flat_type_theory Σ)
     : Type
   := Family.map
     (Family.bind T

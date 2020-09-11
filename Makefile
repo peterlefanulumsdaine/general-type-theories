@@ -40,6 +40,7 @@ MODULES := \
 	Metatheorem/Presuppositions \
 	Metatheorem/SubstElimination \
 	Metatheorem/UniqueTyping \
+	Metatheorem/Acceptability \
 	Example/ScopeSystemExamples \
 	Example/MartinLofTypeTheory
 
