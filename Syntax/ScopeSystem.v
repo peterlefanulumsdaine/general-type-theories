@@ -116,7 +116,7 @@ here from general lemmas about coproducts. *)
     : scope_sum γ (scope_sum δ κ) <~> scope_sum (scope_sum γ δ) κ.
   Proof.
     simple refine (equiv_adjointify scope_assoc_rtol scope_assoc_ltor _ _);
-      unfold Sect.
+      unfold pointwise_paths.
     - apply Coproduct.assoc_ltortol; apply scope_is_sum.
     - apply Coproduct.assoc_rtoltor; apply scope_is_sum.
   Defined.

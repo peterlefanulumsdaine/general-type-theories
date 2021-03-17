@@ -152,10 +152,9 @@ Local Definition assoc_equiv {X Y Z XY YZ XY_Z X_YZ}
 Proof.
   apply (equiv_adjointify
            (assoc_ltor H_XY H_XY_Z H_YZ H_X_YZ)
-           (assoc_rtol H_XY H_XY_Z H_YZ H_X_YZ));
-    unfold Sect.
-  - apply assoc_rtoltor.
-  - apply assoc_ltortol.
+           (assoc_rtol H_XY H_XY_Z H_YZ H_X_YZ)).
+  - intro; apply assoc_rtoltor.
+  - intro; apply assoc_ltortol.
 Defined.
 
 Local Definition fmap {X Y XY X' Y' XY'}
@@ -189,7 +188,7 @@ Proof.
   - apply (coproduct_rect H_XE).
     + intros i; exact i.
     + apply (empty_rect _ H_E).
-  - unfold Sect. apply (coproduct_rect H_XE).
+  - unfold pointwise_paths; apply (coproduct_rect H_XE).
     + intros i. apply ap.
       refine (coproduct_comp_inj1 _).
     + apply (empty_rect _ H_E).
@@ -204,7 +203,7 @@ Proof.
   - apply (coproduct_rect H_EY).
     + apply (empty_rect _ H_E).
     + intros i; exact i.
-  - unfold Sect. apply (coproduct_rect H_EY).
+  - unfold pointwise_paths; apply (coproduct_rect H_EY).
     + apply (empty_rect _ H_E).
     + intros i. apply ap.
       refine (coproduct_comp_inj2 _).
