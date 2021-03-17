@@ -151,7 +151,7 @@ Section Substitute_Laws.
      naming conventions for recognising it when it arises in derivations;
      [id_right_substitute] fits the monad-law structure, for when it’s being
      used in those terms. *)
-  Fixpoint id_right_substitute
+  Definition id_right_substitute
       {γ : σ} {cl : syntactic_class} (e : raw_expression Σ cl γ)
     : substitute (id_raw_context γ) e = e
   := substitute_idmap e.

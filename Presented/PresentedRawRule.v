@@ -204,7 +204,7 @@ Module Span.
   := fun x y => match x, y with
                 | left, top => True
                 | right, top => True
-                | x, y => False
+                | _, _ => False
   end.
 
   Definition lt_well_founded : is_well_founded lt_relation.
