@@ -1,3 +1,37 @@
 -R . GTT
 -arg -noinit
 -arg -indices-matter
+Auxiliary/General.v
+Auxiliary/WellFounded.v
+Auxiliary/Family.v
+Auxiliary/Coproduct.v
+Auxiliary/Closure.v
+Syntax/ScopeSystem.v
+Syntax/SyntacticClass.v
+Syntax/Arity.v
+Syntax/Signature.v
+Syntax/Expression.v
+Syntax/Substitution.v
+Syntax/Metavariable.v
+Syntax/All.v
+Typing/Context.v
+Typing/Judgement.v
+Typing/Presuppositions.v
+Typing/RawRule.v
+Typing/StructuralRule.v
+Typing/RawTypeTheory.v
+Typing/StructuralRulePresuppositions.v
+Typing/All.v
+Presented/ContextVariants.v
+Presented/AlgebraicExtension.v
+Presented/PresentedRawRule.v
+Presented/CongruenceRule.v
+Presented/PresentedRawTypeTheory.v
+Presented/TypedRule.v
+Presented/TypeTheory.v
+Metatheorem/Presuppositions.v
+Metatheorem/Elimination.v
+Metatheorem/UniqueTyping.v
+Metatheorem/Acceptability.v
+Example/ScopeSystemExamples.v
+Example/MartinLofTypeTheory.v
