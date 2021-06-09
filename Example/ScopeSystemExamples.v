@@ -1,4 +1,4 @@
-Require Import HoTT.
+Require Import HoTT.HoTT.
 Require Import Syntax.All.
 Require Import Auxiliary.Coproduct.
 Require Import Syntax.ScopeSystem.

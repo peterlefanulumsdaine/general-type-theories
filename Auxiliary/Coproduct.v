@@ -1,4 +1,4 @@
-Require Import HoTT.
+Require Import HoTT.HoTT.
 
 (** A slightly idiosyncratic approach to binary coproducts, coproduct with unit, and empty types. *)
 

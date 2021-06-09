@@ -1,4 +1,4 @@
-Require Import HoTT.
+Require Import HoTT.HoTT.
 Require Import Syntax.ScopeSystem.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.

@@ -1,4 +1,4 @@
-Require Import HoTT.
+Require Import HoTT.HoTT.
 
 (** Library for _families_. 
 

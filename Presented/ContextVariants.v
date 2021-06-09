@@ -8,7 +8,7 @@ As such, and since the content of the file necessitates many parallel definition
 
 *)
 
-Require Import HoTT.
+Require Import HoTT.HoTT.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.

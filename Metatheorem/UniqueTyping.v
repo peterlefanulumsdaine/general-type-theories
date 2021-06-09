@@ -1,5 +1,5 @@
 
-Require Import HoTT.
+Require Import HoTT.HoTT.
 Close Scope mc_scope. (* to make notations like [A * B] work easily *)
 
 Require Import Auxiliary.Coproduct.

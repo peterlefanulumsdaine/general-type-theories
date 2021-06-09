@@ -1,4 +1,4 @@
-Require Import HoTT.
+Require Import HoTT.HoTT.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.Coproduct.
@@ -622,7 +622,7 @@ Section Instantiations.
       (* Now that we are under [raw_symbol S], we fold/abstract [Σ S], [Σ' (f S)], and then destruct [Family.map_commutes f S], to avoid having to deal explicitly with the transports. Making sure all instances are folded is a little fiddly. *)
       unfold symbol_arity in *. cbn in *.
       set (ΣS := Σ S) in *. set (ΣfS := Σ' (f S)) in *.
-      change (Σ' (f.(proj1_sig) S)) with ΣfS.
+      change (Σ' (f.1 S)) with ΣfS.
       change (Family.map_over_commutes f) with (Family.map_commutes f).
       set (e_S := Family.map_commutes f S : ΣfS = ΣS).
       clearbody e_S ΣS ΣfS.

@@ -1,6 +1,6 @@
 (** General-purpose auxiliary material for the development. *)
 
-Require Import HoTT.
+Require Import HoTT.HoTT.
 
 Global Open Scope type_scope.
 (* NOTE: The reason for this “Open Scope” is that when the HoTT library is imported, [mc_scope] overrides use of notations such as [A + B] for types, or at least, make them require explicit scope annotations.  If there’s a better way to make such notations easily usable (besides this or closing [mc_scope]), we should ue that here instead. *)

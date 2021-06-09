@@ -1,4 +1,4 @@
-Require Import HoTT.
+Require Import HoTT.HoTT.
 Require Import Auxiliary.Coproduct.
 
 (* A _Scope_ abstract the kind of scopes that contexts and bindings can have.

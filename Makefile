@@ -46,14 +46,11 @@ MODULES := \
 
 VS      := $(MODULES:%=%.v)
 
-# The HoTT coq binaries (“hoqc” etc.) are used by default.  These can
-# be overridden by explicitly passing a different value of COQC, e.g.
-#     make COQC=coqc
-# COQDEP and COQDOC are set automatically based on COQC, but we are not
-# very clever about this, so if it doesn’t work, these can be explicitly
-# specified too.
+# For older versions of the HoTT library, use the dedicate “hoqc”:
+#     make COQC=hoqc
 
-COQC ?= hoqc
+
+COQC ?= coqc
 
 ifeq ($(COQC),hoqc)
 	COQDEP ?= hoqdep
@@ -66,7 +63,7 @@ COQDOC ?= coqdoc
 export COQC COQDEP COQDOC
 
 # coq_makefile hack:
-# Recent versions of coq_makefile (in coq trunk) don’t play nicely with
+# Some versions of coq_makefile (in coq trunk) don’t play nicely with
 # the HoTT binaries; but the HoTT library doesn’t (yet) provide an installed
 # hook to its own coq_makefile binary.  So we allow the user to pass this in
 # by an explicit environment variable $HOQBIN or $COQBIN.  The latter takes
@@ -89,7 +86,7 @@ coq: Makefile.coq
 	$(MAKE) -f Makefile.coq
 
 Makefile.coq: Makefile $(VS)
-	$(COQMAKEFILE) -Q . "''" COQC = "$(COQC)" COQDEP = "$(COQDEP)" $(VS) -o Makefile.coq
+	$(COQMAKEFILE) -f _CoqProject COQC = "$(COQC)" COQDEP = "$(COQDEP)" $(VS) -o Makefile.coq
 
 install: Makefile.coq
 	$(MAKE) -f Makefile.coq install

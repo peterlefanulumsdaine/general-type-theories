@@ -1,0 +1,3 @@
+-R . GTT
+-arg -noinit
+-arg -indices-matter
