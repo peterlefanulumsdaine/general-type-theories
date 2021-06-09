@@ -81,7 +81,7 @@ Section TypeTheory.
     - refine (Family.subfamily (tt_rule_data T) _).
       intros j. exact (tt_lt _ j i).
     - refine (WellFounded.pullback _ (tt_lt T)).
-      exact (projT1).
+      exact proj1.
     - cbn. intros [j lt_j_i].
       refine (PresentedRawRule.fmap _ (tt_rule _ j)).
       apply Family.map_fmap.

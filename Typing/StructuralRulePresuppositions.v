@@ -104,10 +104,10 @@ Section StructuralRulePresups.
       [|- Closure.derivation ?TT ?HH _ ]
       => set (T := (TT)); set (Hs := (HH))
     end.
-    assert (d_f : forall i : Γ,
+    assert (d_f : (forall i : Γ,
       {j : Γ'.(raw_context_carrier)
         & (f i = raw_variable j) * (Γ' j = substitute f (Γ i))}
-      + Closure.derivation T Hs [!Γ' |- f i; substitute f (Γ i) !]).
+      + Closure.derivation T Hs [!Γ' |- f i; substitute f (Γ i) !])%type).
     { intros i.
       destruct (some_or_is_none (fg_triv i)) as [ fgi_triv | fgi_nontriv].
       - apply inl. destruct fgi_triv as [ j [[? _] [? _]]].
@@ -116,10 +116,10 @@ Section StructuralRulePresups.
         { apply inl, Some. exists (i;fgi_nontriv). apply Some, Some, tt. }
         apply idpath.
     }
-    assert (d_g : forall i : Γ,
+    assert (d_g : (forall i : Γ,
       {j : Γ'.(raw_context_carrier)
         & (g i = raw_variable j) * (Γ' j = substitute g (Γ i))}
-      + Closure.derivation T Hs [!Γ' |- g i; substitute g (Γ i) !]).
+      + Closure.derivation T Hs [!Γ' |- g i; substitute g (Γ i) !])%type).
     { intros i.
       destruct (some_or_is_none (fg_triv i)) as [ fgi_triv | fgi_nontriv].
       - apply inl. destruct fgi_triv as [ j [[_ ?] [_ ?]]].

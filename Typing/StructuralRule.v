@@ -832,7 +832,7 @@ Section Variable_Interface.
   Defined.
 
 End Variable_Interface.
-
+  
 Section Substitution_Interface.
   (** Interface to the substitution structural rules *)
 
@@ -850,8 +850,8 @@ Section Substitution_Interface.
       ( f : raw_substitution Σ Γ' Γ )
       ( e : hypothetical_part J' = substitute_hypothetical_judgement f J)
       ( d_f : forall i,
-        { j : Γ' & (f i = raw_variable j) * (Γ' j = substitute f (Γ i)) }
-        + derivation T H [! Γ' |- f i ; substitute f (Γ i) !])
+        ({ j : Γ' & (f i = raw_variable j) * (Γ' j = substitute f (Γ i)) }
+        + derivation T H [! Γ' |- f i ; substitute f (Γ i) !])%type)
       ( d_J : derivation T H J)
     : derivation T H J'.
   Proof.
@@ -875,9 +875,9 @@ Section Substitution_Interface.
       ( Γ Δ : raw_context Σ )
       ( f : raw_substitution Σ Δ Γ )
       ( J : hypothetical_judgement Σ Γ )
-      ( d_f : forall i,
+      ( d_f : (forall i,
         { j : Δ & (f i = raw_variable j) * (Δ j = substitute f (Γ i)) }
-        + derivation T H [! Δ |- f i ; substitute f (Γ i) !])
+        + derivation T H [! Δ |- f i ; substitute f (Γ i) !])%type)
       ( d_J : derivation T H (Build_judgement Γ J))
     : derivation T H
              (Build_judgement Δ (substitute_hypothetical_judgement f J)).
@@ -897,13 +897,13 @@ Section Substitution_Interface.
       ( e : hypothetical_part J'
             = substitute_equal_hypothetical_judgement f g J J_obj)
       ( d_fg : forall i,
-        { j : Γ' & ((f i = raw_variable j)
+        ({ j : Γ' & ((f i = raw_variable j)
                  * (g i = raw_variable j))
                  * ((Γ' j = substitute f (Γ i))
                  * (Γ' j = substitute g (Γ i))) }
         + (derivation T H [! Γ' |- f i ; substitute f (Γ i) !]
           * derivation T H [! Γ' |- g i ; substitute g (Γ i) !]
-          * derivation T H [! Γ' |- f i ≡ g i ; substitute f (Γ i) !]))
+          * derivation T H [! Γ' |- f i ≡ g i ; substitute f (Γ i) !]))%type)
       ( d_J : derivation T H (Build_judgement Γ J))
     : derivation T H J'.
   Proof.
@@ -929,13 +929,13 @@ Section Substitution_Interface.
       ( J : hypothetical_judgement Σ Γ )
       ( J_obj : Judgement.is_object J )
       ( d_fg : forall i,
-        { j : Γ' & ((f i = raw_variable j)
+        ({ j : Γ' & ((f i = raw_variable j)
                  * (g i = raw_variable j))
                  * ((Γ' j = substitute f (Γ i))
                  * (Γ' j = substitute g (Γ i))) }
         + (derivation T H [! Γ' |- f i ; substitute f (Γ i) !]
           * derivation T H [! Γ' |- g i ; substitute g (Γ i) !]
-          * derivation T H [! Γ' |- f i ≡ g i ; substitute f (Γ i) !]))
+          * derivation T H [! Γ' |- f i ≡ g i ; substitute f (Γ i) !]))%type)
       ( d_J : derivation T H (Build_judgement Γ J))
     : derivation T H (Build_judgement Γ'
                          (substitute_equal_hypothetical_judgement f g J J_obj)).
@@ -1287,7 +1287,7 @@ Section Instantiation.
     : Closure.map_over
         (Judgement.instantiate Γ I)
         (RawRule.closure_system (RawRule.fmap include_symbol r))
-        (structural_rule Σ + RawRule.closure_system r).
+        (structural_rule Σ + RawRule.closure_system r)%family.
   Proof.
     intros [Δ J].
     (* The derivation essentially consists of the instance

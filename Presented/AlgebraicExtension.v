@@ -497,7 +497,7 @@ Section Judgement_of_Premise.
         unfold symbol_arity, symbol_class in *. cbn in *.
         set (ΣS := Σ' S) in *.
         set (ΣfS := Σ'' (f' S)) in *.
-        change (Σ'' (f'.(proj1_sig) _)) with ΣfS in *.
+        change (Σ'' (f'.1 _)) with ΣfS in *.
         change (Family.map_over_commutes f') with (Family.map_commutes f') in *.
         set (e_S := Family.map_commutes f' _ : ΣfS = ΣS).
         clearbody e_S ΣfS ΣS; destruct e_S.

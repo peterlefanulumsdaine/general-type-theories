@@ -480,10 +480,10 @@ well-formed. *)
       (T : raw_type_theory Σ)
       (Δ Γ : raw_context Σ) (f : raw_substitution Σ Δ Γ)
     : Type
-  := forall i : Γ,
+  := (forall i : Γ,
       { j : Δ & (f i = raw_variable j) * (Δ j = substitute f (Γ i)) }
     + subst_free_derivation T (Family.empty _)
-                            [! Δ |- f i ; substitute f (Γ i) !].
+                            [! Δ |- f i ; substitute f (Γ i) !])%type.
 
   Record weakly_typed_substitution
     (T : raw_type_theory Σ) (Δ Γ : raw_context Σ)
@@ -823,7 +823,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
       {Δ Γ : raw_context Σ}
       (f g : raw_substitution Σ Δ Γ)
     : Type
-  := forall i : Γ,
+  := (forall i : Γ,
       { j : Δ & (f i = raw_variable j)
                 * (g i = raw_variable j)
                 * ((Δ j = substitute f (Γ i))
@@ -833,7 +833,7 @@ Since the resulting individual maps [f], [g] may not be weakly-typed substitutio
       * subst_free_derivation T (Family.empty _)
           [! Δ |- g i ; substitute g (Γ i) !]
       * subst_free_derivation T (Family.empty _)
-          [! Δ |- f i ≡ g i ; substitute f (Γ i) !].
+          [! Δ |- f i ≡ g i ; substitute f (Γ i) !])%type.
 
   Record weakly_equal_pair
       (T : raw_type_theory Σ)
