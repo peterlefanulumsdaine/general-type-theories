@@ -3,10 +3,13 @@
 *.vos
 *.glob
 *.v.d
-.coqdeps.d
 *.aux
+html
+.coqdeps.d
 Makefile.bak
 Makefile.coq
 Makefile.coq.conf
-html
 .Makefile.coq.d
+CoqMakefile
+CoqMakefile.conf
+.CoqMakefile.d
