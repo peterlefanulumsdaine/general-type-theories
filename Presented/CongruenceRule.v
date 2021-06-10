@@ -1,6 +1,6 @@
 (** * The congruence rules associated with a given rule *)
 
-Require Import HoTT.HoTT.
+From HoTT Require Import HoTT.
 Require Import Auxiliary.Coproduct.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.

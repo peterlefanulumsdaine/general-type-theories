@@ -1,4 +1,4 @@
-Require Import HoTT.HoTT.
+From HoTT Require Import HoTT.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.
 Require Import Auxiliary.Coproduct.

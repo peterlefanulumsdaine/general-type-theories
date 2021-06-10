@@ -1,4 +1,4 @@
-Require Import HoTT.HoTT.
+From HoTT Require Import HoTT.
 Require Import Syntax.ScopeSystem.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Closure.

@@ -1,6 +1,6 @@
 (** * Well-scoped rules *)
 
-Require Import HoTT.HoTT.
+From HoTT Require Import HoTT.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Family.
 Require Import Auxiliary.WellFounded.

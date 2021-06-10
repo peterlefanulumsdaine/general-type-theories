@@ -1,5 +1,5 @@
-Require Import HoTT.HoTT.
-Require Import HoTT.EquivGroupoids.
+From HoTT Require Import HoTT.
+From HoTT Require Import EquivGroupoids.
 Require Import Auxiliary.General.
 Require Import Auxiliary.Coproduct.
 Require Import Syntax.ScopeSystem.

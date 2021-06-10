@@ -1,5 +1,5 @@
 
-Require Import HoTT.HoTT.
+From HoTT Require Import HoTT.
 
 Require Import Syntax.All.
 Require Import Typing.All.
