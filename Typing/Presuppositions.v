@@ -229,7 +229,7 @@ Section Presuppositive_Raw_Rules.
         apply (Family.sum_fmap (Family.idmap _)).
         refine (Family.compose (Family.bind_fmap_mid _ _ _) _).
         apply Family.bind_fmap2. intros a.
-        rapply fmap_presupposition_family.
+        apply fmap_presupposition_family.
       + (* TODO: the following could possibly be better abstracted in terms of the fibrational properties of raw type theory maps? *)
         intros R.
         refine (transport _ _
