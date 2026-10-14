@@ -18,7 +18,7 @@ jobs:
         ocaml_version: ['default']
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: coq-community/docker-coq-action@v1
         with:
           opam_file: 'rocq-general-type-theories.opam'
