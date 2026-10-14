@@ -1,0 +1,26 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Monthly, to catch breakage from upstream changes (e.g. new HoTT patch releases).
+    - cron: '0 6 1 * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # container actions require GNU/Linux
+    strategy:
+      matrix:
+        # Should match the versions in rocq-general-type-theories.opam and README.md.
+        coq_version: ['9.1']
+        ocaml_version: ['default']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: coq-community/docker-coq-action@v1
+        with:
+          opam_file: 'rocq-general-type-theories.opam'
+          coq_version: ${{ matrix.coq_version }}
+          ocaml_version: ${{ matrix.ocaml_version }}
