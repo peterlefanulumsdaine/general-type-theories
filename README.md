@@ -50,7 +50,7 @@ Note: the following overview is currently somewhat out of date.
 
 * [`Auxiliary`](./Auxiliary) -- mathematical generalities, not specifically about type theory
 * [`Syntax`](./Syntax) -- raw syntax
-* [`Typing`](./Typing) -- judgements, flat rules, flat type theories, typing derivations
+* [`Typing`](./Typing) -- judgements, raw rules, raw type theories, typing derivations, presuppositions
 * [`Presented`](./Presented) -- well-presented rules, type theories
 * [`Metatheorem`](./Metatheorem) -- basic metatheorems about these type theories
 * [`Example`](./Example) -- examples of scope systems, type theories, etc.
