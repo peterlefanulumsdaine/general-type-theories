@@ -94,9 +94,9 @@ Local Definition graft {X} (C : system X)
 Proof.
   induction d.
   (* hypothesis *)
-  - now apply f.
+  - by apply f.
   (* deduction step *)
-  - now apply (deduce _ _ r).
+  - by apply (deduce _ _ r).
 Defined.
 
 (** For using [graft] interactively, similar to [deduce'], [hypothesis']. 
@@ -184,7 +184,7 @@ Proof.
   intro i.
   apply deduce.
   intro p.
-  now apply hypothesis.
+  by apply hypothesis.
 Defined.
 
 (** More generally, a family map between closure systems gives a closure map between them.
@@ -374,13 +374,13 @@ Proof.
   split.
   - intro d. refine (graft _ (derivation_fmap1 inl d) _).
     intros [h1 | h2].
-    + refine (deduce (T+Family.fmap axiom H1) _ (Datatypes.inr h1) _).
+    + refine (deduce (T+Family.fmap axiom H1) _ (Overture.inr h1) _).
       intros [].
     + exact (hypothesis _ _ h2).
   - intros d; induction d as [ h2 | [r | h1] _ ds ].
-    + exact (hypothesis _ (_+_) (Datatypes.inr h2)).
+    + exact (hypothesis _ (_+_) (Overture.inr h2)).
     + exact (deduce _ _ r ds). 
-    + exact (hypothesis _ (H1+_) (Datatypes.inl h1)).
+    + exact (hypothesis _ (H1+_) (Overture.inl h1)).
 Defined.
 
 End Axioms.
@@ -439,7 +439,7 @@ Section Presuppositions.
     intros H_r. apply snd in H_r. (* we only need the second half of [H_r] *)
     intro c_presup.
     apply (graft _ (H_r c_presup)).
-    intros i. refine (hypothesis _ (_ + _) (Datatypes.inl i)).
+    intros i. refine (hypothesis _ (_ + _) (Overture.inl i)).
   Defined.
 
   (** A closure system [C] is strongly presuppositive if all its rules are. *)
@@ -469,13 +469,13 @@ Section Presuppositions.
   Proof.
     induction d as [ x_hyp | r d_r_prems IH].
     - (* case: derivation was just finding [p] as a hypothesis *)
-      refine (hypothesis _ (_ + Family.bind _ _) (Datatypes.inr (_ ; _))).
+      refine (hypothesis _ (_ + Family.bind _ _) (Overture.inr (_ ; _))).
     - (* case: derivation ended with a rule of [T] *)
       refine (graft _ _ _).
       + apply C_weakly_presuppositive.
       + intros [ p | [p p_presup]].
         * refine (graft _ (d_r_prems _) _).
-          intros i. refine (hypothesis _ (_ + _) (Datatypes.inl i)).
+          intros i. refine (hypothesis _ (_ + _) (Overture.inl i)).
         * apply IH.
   Defined.
 

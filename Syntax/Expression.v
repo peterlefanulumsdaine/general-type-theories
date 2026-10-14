@@ -52,7 +52,7 @@ Section Syntax.
     : raw_expression cl γ.
   Proof.
     refine (transport (fun cl => raw_expression cl _) e _).
-    now apply raw_symbol.
+    by apply raw_symbol.
   Defined.
 
 End Syntax.

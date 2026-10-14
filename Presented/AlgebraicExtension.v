@@ -325,7 +325,7 @@ Section Simple_Maps.
       {p : A}
     : ae_scope p <~> ae_scope (f p).
   Proof.
-    refine (equiv_transport _ _ _ _).
+    refine (equiv_transport _ _).
     apply simple_map_scope_commutes.
   Defined.
 

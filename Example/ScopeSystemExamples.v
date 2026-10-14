@@ -34,7 +34,7 @@ Section Types_as_scopes.
         plusone_inj := @Some A
         |}.
     - intros P e f [x|].
-      + now apply f.
+      + by apply f.
       + exact e.
     - reflexivity.
     - reflexivity.
@@ -95,7 +95,7 @@ Section DeBruijn.
   Lemma DB_is_empty : is_empty (DB_positions 0).
   Proof.
     constructor; intros P.
-    assert (H : forall k i (p : k = 0), P (transport _ p i)).
+    assert (H : forall (k : nat) i (p : k = 0%nat), P (transport _ p i)).
     {
       intros n i.
       destruct i as [ k | k ? ];
@@ -120,12 +120,12 @@ Section DeBruijn.
   Proof.
     destruct n.
     - exact x.
-    - now apply succ_db, DB_inr; exact x.
+    - by apply succ_db, DB_inr; exact x.
   Defined.
 
   Lemma S_injective {n m : nat} : S n = S m -> n = m.
   Proof.
-    intro p. exact (ap pred p).
+    intro p. exact (ap nat_pred p).
   Defined.
 
   (* NOTE: this is the only sticking point for computation of [DB_is_plusone], [DB_is_coproduct].  If we could find an alternative proof of [ap_S_S_injective] which makes [ap_S_S_injective_idpath] a judgemental equality, then those would all compute.
@@ -134,7 +134,7 @@ Section DeBruijn.
   Lemma ap_S_S_injective {n m : nat} (p : S n = S m) :
     ap S (S_injective p) = p.
   Proof.
-    apply hset_nat.
+    apply path_ishprop.
   Defined.
 
   Lemma ap_S_S_injective_idpath (n: nat) :
@@ -213,7 +213,7 @@ Section DeBruijn.
   Proof.
     refine {| scope_carrier := nat ;
               scope_position := DB_positions ;
-              scope_empty := 0 ;
+              scope_empty := 0%nat ;
               scope_sum := (fun n m => (n + m)%nat) ;
               scope_extend := S
            |}.

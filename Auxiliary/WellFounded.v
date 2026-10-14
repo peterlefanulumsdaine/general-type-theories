@@ -101,7 +101,7 @@ Proof.
   apply p.
   intros ? ?.
   apply H.
-  now apply f_embeds.
+  by apply f_embeds.
 Defined.
 
 Local Definition sum {X Y} :
@@ -120,16 +120,16 @@ Proof.
       intros ? H.
       apply f.
       intros [? | ?]; [intros ? | intros []].
-      now apply H.
+      by apply H.
     + apply (push_along_embedding lt_Y lt inr P) ; auto.
       intros ? H.
       apply f.
       intros [? | ?]; [intros [] | intros ?].
-      now apply H.
+      by apply H.
   - intros [x1|y1] [x2|y2] [x3|y3] H1 H2;
-      try (now destruct H1 || now destruct H2).
-    + now apply (transitive _ _ x2).
-    + now apply (transitive _ _ y2).
+      try (by destruct H1 || by destruct H2).
+    + by apply (transitive _ _ x2).
+    + by apply (transitive _ _ y2).
 Defined.
 
 Local Definition empty : well_founded_order Empty.
@@ -155,16 +155,16 @@ Proof.
       intros ? H.
       apply f.
       intros [? | ]; [ intros ? | intros []].
-      now apply H.
+      by apply H.
     + apply f.
       intros [? | ]; [ intros ? | intros []].
       apply (well_founded lt_X (fun z => P (Some z))).
       intros ? H.
       apply f.
       intros [? | ]; [ intros ? | intros []].
-      now apply H.
-  - intros [x|] [y|] [z|] lt_x_y lt_y_z ; try now destruct lt_x_y.
-    + now apply (transitive lt_X _ y).
+      by apply H.
+  - intros [x|] [y|] [z|] lt_x_y lt_y_z ; try by destruct lt_x_y.
+    + by apply (transitive lt_X _ y).
     + constructor.
 Defined.
 
@@ -184,11 +184,11 @@ Proof.
       intros ? H.
       apply f.
       intros [? | ]; [ intros ? | intros []].
-      now apply H.
+      by apply H.
     + apply f.
       intros [y|] [].
-  - intros [x|] [y|] [z|] lt_x_y lt_y_z ; try now destruct lt_x_y.
-    + now apply (transitive lt_X _ y).
+  - intros [x|] [y|] [z|] lt_x_y lt_y_z ; try by destruct lt_x_y.
+    + by apply (transitive lt_X _ y).
     + destruct lt_y_z.
 Defined.
 
@@ -205,7 +205,7 @@ Ltac use_flat_order :=
   match goal with
   | |- well_founded_order Empty => exact empty
   | |- well_founded_order (option _) => apply linear_option ; use_flat_order
-  | |- well_founded_order (Datatypes.sum _ _) => apply sum ; use_flat_order
+  | |- well_founded_order (Overture.sum _ _) => apply sum ; use_flat_order
   | _ => fail
   end.
 
