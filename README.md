@@ -79,13 +79,13 @@ Formally, there are two **syntactic classes**: **terms** and **types**. A **raw 
 
 **Raw expressions** over a signature Σ are then defined as an inductive family, as usual, indexed by class and scope: for each scope γ, there are sets of (raw) **type expressions** and **term expressions** over  Σ in scope γ.  We call these **raw** terms and types to emphasise they need not be well-formed.
 
-(The strict separation of syntactic classes mean in particular our theories can have Tarski-style universes, not Russell-style.) 
+(The strict separation of syntactic classes means in particular our theories can only have Tarski-style universes, not Russell-style.) 
 
 ### Judgments
 
 Well-formedness will be given by an inductively defined **derivability** relation on judgements.
 
-There are four primary **judgment forms:**
+There are four primary **judgment forms**:
 
 1. `Γ ⊢ A type` – "`A` is type in context `Γ`"
 2. `Γ ⊢ t : A` – "`t` is a term of type `A` in context `Γ`"
@@ -105,40 +105,48 @@ Less conventionally, we take `⊢ Γ context` to be an abbreviation for the judg
 
 ### Rules
 
-Given a raw signature `Σ`, we may form **(inference) rules**. Each inference rule consists of two parts:
+Derivability over a signature `Σ` will be defined from  **inference rules**. 
+At this stage, rules need not be well-formed — derivability only requires the underlying syntactic expressions, **raw rules**.
 
-* the **raw rule** specifying a family of **premises** and a **conclusion**
-* evidence that the **raw rule** is well-formed
+A raw rule may contain contains **meta-variables**, additional type/term symbols to extend the signature. Given these, it consists of a family of **premises** and a **conclusion**, all judgments over `Σ` extended by the meta-variables.
 
-The precise structure of a raw rule is as follows:
+For instance, the lambda-abstraction rule has meta-variables for the two types and one term it mentions, and may have up three premises (though the type premises may also be omitted):
 
-* A raw rule refers to a family **meta-variables**, each of which is either a **type meta-variable** or a **term meta-variable**.
-* The premises and the conclusion are judgments over `Σ` that may refer to the meta-variables.
+        ⊢ A type
+    x:A ⊢ B type
+    x:A ⊢ b : B
+  ————————————————————————————
+    ⊢ λ_{A, x.B} x.b : A → B
 
-The evidence that a raw rule is well-formed consists of, for each premise and the conclusion, a derivations witnessing the fact that the boundaries are well-formed, under the hypotheses that the meta-variables signify well-formed terms and types.
+Typically the premises will be ordered, and will introduce the metavariables, as here; but we do not assume that in general.
+
+An **instance** of a rule is specified by a context, together with actual type-/term-expressions instantiating the metavariables in suitable extensions of that context. Replacing the metavariables with these throughout the premises and conclusion yields judgements over extensions of the context.
 
 #### Structural rules
 
-There are rules which we insist on having, called the **structural rules**. These are:
+Besides whatever rules are specified in a particular theory, we assume that certain **structural rules** are always also available. These are:
 
-* rules governing formation of contexts
-* variable rules
+* the variable rule
 * reflexivity, symmetry and transitivity of equality
-* equality is a congruence with respect to all type and term formers
-
-#### Rule instances
-
-Given a rule, we may form a **rule instance** by replacing the meta-variables appearing in it with suitable instances. Of course, when doing so, we need to provide evidence that the instances are well-formed typed and terms.
+* all judgements are stable under context substitutions 
+* all judgements are stable under equality of their presuppositions
+* all type and term formers respect equality
 
 ### Derivations
 
-A **general type theory** `T` is given by a scope `σ`, a signature `Σ` over `σ`, and a family of inference rules over `Σ`.
+A **(raw) type theory** `T` is specified by a scope system, a signature `Σ` over this, and a family of raw inference rules over `Σ`.
 
-A derivation of a judgment `J` from a family of rules `R` hypotheses `H` is an inductively generated tree whose conclusion is `J`, the leaves are the elements of `H`, and the nodes are rule instances from `R`.
+A **derivation** of a judgment `J` over `T` is then, as traditionally, a tree built up from instances of rules of `T`, together with structural rules, and possibly **hypotheses** at the leaves.
 
-### The interdependence of derivations and rules
+We can now say that arule is **well-formed** over a type theory if all presuppostions of its premises and conclusion are derivable, assuming the premises as hypotheses; and a type theory is **well-formed** if all its rules are.
 
-While a scope `σ` and a raw signature `Σ` may be given without many complications, there is considerable interdependence between inference rules because giving the evidence that a rule is well-formed requires one to provide derivations, but to know what a derivation is, we need to be given inference rules.
+These are the minimal well-formedness requirements traditionally expected in presentations of theories by rules, and ensuring basic well-behavedness of the resulting theory.  Further to these, we can define various other desirable properties often (but not always) followed: for instance, that the premises of a rule are ordered, introducing the metavariables, with the presuppositions of each premise derivable from the preceding ones.
+
+### Metatheorems.
+
+The main results in this development are various standard well-behavedness metatheorems for type theories: derivability of presuppositions, admissibility of substitution, uniqueness of typing…
+
+These theorems and their proof techniques are entirely standard, for specific theories.  The novelty here is having a precise, rather than merely heuristically outlined, definition of a wide range of type theories for which they hold, recovering standard examples (such as Martin-Löf’s original type theories) directly.
 
 ## Coding conventions
 
