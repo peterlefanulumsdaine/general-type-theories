@@ -1,0 +1,23 @@
+opam-version: "2.0"
+synopsis: "A general definition of dependent type theories, formalised in Rocq"
+description: """
+A formalised general definition of dependent type theories, and the
+development of key metatheorems for it, over the HoTT library.
+"""
+maintainer: "Peter LeFanu Lumsdaine <p.l.lumsdaine@gmail.com>"
+authors: [
+  "Peter LeFanu Lumsdaine"
+  "Andrej Bauer"
+  "Philip Haselwarter"
+  "Théo Winterhalter"
+]
+homepage: "https://github.com/peterlefanulumsdaine/general-type-theories"
+bug-reports: "https://github.com/peterlefanulumsdaine/general-type-theories/issues"
+dev-repo: "git+https://github.com/peterlefanulumsdaine/general-type-theories.git"
+depends: [
+  "rocq-core" {>= "9.1" & < "9.2~"}
+  "coq-hott" {>= "9.1"}
+]
+build: [
+  [make "-j%{jobs}%"]
+]

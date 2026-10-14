@@ -26,8 +26,21 @@ None of the formalisation should be considered stable.
 
 ## How to use this formalisation
 
-- Install [the HoTT library](https://github.com/HoTT/HoTT) according to its instructions
-- Invoke `make` from the base directory of this repository
+The formalisation is written over [the HoTT library](https://github.com/HoTT/Coq-HoTT), and is currently tested with Rocq 9.1 and HoTT 9.1.
+
+- Install Rocq and the HoTT library, e.g. via [opam](https://opam.ocaml.org).  We recommend doing this in a dedicated opam switch, since the HoTT library is tied closely to specific Rocq versions:
+
+  ```
+  opam switch create general-type-theories ocaml-base-compiler.5.3.0
+  eval $(opam env --switch=general-type-theories)
+  opam repo add coq-released https://coq.inria.fr/opam/released
+  opam install rocq-core.9.1.1 coq-hott.9.1
+  opam switch set-invariant "rocq-core=9.1.1"   # optional: guards against accidental upgrades
+  ```
+
+- Invoke `make` from the base directory of this repository.
+
+The build flags `-noinit` and `-indices-matter`, required by the HoTT library, are set in [`_CoqProject`](./_CoqProject).  Editors with Rocq support (Proof General, VsRocq, coq-lsp) pick them up from there automatically.
 
 # Detailed overview
 
