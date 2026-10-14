@@ -57,33 +57,51 @@ Note: the following overview is currently somewhat out of date.
 
 ## Mathematical overview
 
-We call the class of type theories we define *Martin-Löf style*. In this section we lay down the basic concepts but do *not* discuss how they are formalized. You will find here the *naive mathematical decscription* of the concepts we intend to formalize. For the purposes of formalization we may introduce additional intermediate concepts (but it is better if we do not have to, so eventually we should have a perfect match between the formalized notions and the intended mathematical ones).
+We define a broad class of dependent type theories, which we call *Martin-Löf style*: roughly, theories with just the syntactic classes and judgement forms as Martin-Löf’s original, and arbitrary type- and term-formers, specified by rules that are *well-formed* in the generally-understood sense.
+
+The main contribution is precisely codifying this traditional sense of **well-formed**.
+
+This overview discusses the non-formalised mathematical intent. Some extra technical devices used in the formalisation are glossed over here.
+
+### Variable-handling
+
+We abstract variable-handling in terms of **scope systems**.  A scope specifies the variables of a context: so for de Bruijn indices it is just a number, the length; or for named variables, a finite set of identifiers.
+
+Formally, a **system of scopes** is an indexed family of sets (typically but not necessarily finite) equipped with operations for sums and extension-by-one, and an empty scope.
 
 ### Syntactic entities
 
-There are two syntactic classes: **terms** and **types**. An expression can be one or the other but not both. (In particular this means we shall have Tarski-style universes.) We call these **raw** terms and types in order to emphasize that they are just syntactic entities which need not be well-formed.
+A type theory will be specified by **raw syntax** plus **typing rules**; we set up the raw syntax first, specified by a **signature**.
 
-The theory is **dependent** (types depend on terms) and has **binding operators** (such as ∏, Σ, λ). Therefore, we need to describe **scopes** of contexts and binding operators. Two possibilities for scopes are *de Bruijn indices* and *named variables*, but these are not the only ones. Thus we define a general abstract notion of *scope systems*, which we then use to express the structure of contexts and binding operators.
+Our theories will include **binding operators** (such as ∏, Σ, λ); so signatures must be higher-order to specify the arities of these. 
 
-The raw syntax is generated from a **raw signature** (we use the qualifier "raw" to remind ourselves that such a signature describes only the raw syntax, i.e., the syntactic classes and the binding structure). The raw signature lists a number of term and type constructors, together with their arities. An **arity** is a higher-order one, i.e., it tells us not only how many arguments the constructor expects, but also how it binds variables.
+Formally, there are two **syntactic classes**: **terms** and **types**. A **raw signature** consists of a collection of symbols, each with a class and an **arity** specifying its arguments and their bindings.
+
+**Raw expressions** over a signature Σ are then defined as an inductive family, as usual, indexed by class and scope: for each scope γ, there are sets of (raw) **type expressions** and **term expressions** over  Σ in scope γ.  We call these **raw** terms and types to emphasise they need not be well-formed.
+
+(The strict separation of syntactic classes mean in particular our theories can have Tarski-style universes, not Russell-style.) 
 
 ### Judgments
 
-There are the following **judgment forms:**
+Well-formedness will be given by an inductively defined **derivability** relation on judgements.
 
-1. `Γ context` – "`Γ` is a context"
-2. `Γ ⊢ A type` – "`A` is type in context `Γ`"
-3. `Γ ⊢ t : A` – "`t` is a term of type `A` in context `Γ`"
-4. `Γ ⊢ A ≡ B` – "type `A` and `B` are equal in context `Γ`"
-5. `Γ ⊢ s ≡ t : A` – "terms `s` and `t` of type `A` are equal in context `Γ`"
+There are four primary **judgment forms:**
 
-Each judgment has a **boundary**, which consists of several structurally smaller judgments (by "structurally smaller" we mean that the syntactic entities appearing in the boundary are subentities of the judgment). We say that a boundary is **well-formed** when the judgments in its boundary are derivable. The boundaries are as follows:
+1. `Γ ⊢ A type` – "`A` is type in context `Γ`"
+2. `Γ ⊢ t : A` – "`t` is a term of type `A` in context `Γ`"
+3. `Γ ⊢ A ≡ B` – "type `A` and `B` are equal in context `Γ`"
+4. `Γ ⊢ s ≡ t : A` – "terms `s` and `t` of type `A` are equal in context `Γ`"
 
-1. the boundary of `Γ context` is empty
-2. the boundary of `Γ ⊢ A type` is `Γ context`
-3. the boundary of `Γ ⊢ t : A` is `Γ ⊢ A type`
-4. the boundary of `Γ ⊢ A ≡ B` is ``Γ context``,  `Γ ⊢ A type`, and `Γ ⊢ B type`
-5. the boundary of `Γ ⊢ s ≡ t : A` is ``Γ context``, `Γ ⊢ A type`, `Γ ⊢ s : A`, and `Γ ⊢ s : A`
+Other possible judgement forms — contexts and substitutions — will be defined afterwards from these, as **derived judgements**.
+
+Each judgment has various **presuppositions**, which together form its **boundary**:
+
+1. `Γ ⊢ A type` has no presuppositions
+2. `Γ ⊢ t : A` has one presupposition, `Γ ⊢ A type`
+3. `Γ ⊢ A ≡ B` has presuppositions `Γ ⊢ A type` and `Γ ⊢ B type`
+4. `Γ ⊢ s ≡ t : A` has presuppositions `Γ ⊢ A type`, `Γ ⊢ s : A`, `Γ ⊢ s : A`
+
+Less conventionally, we take `⊢ Γ context` to be an abbreviation for the judgements `Γ ⊢ A type`, for all types `A` of `Γ`.  So contexts are **flat** — no ordering is assumed, and well-formedness of their types is assumed just for the point of use.  Typically contexts will be built up sequentially as usual, but we don’t assume this.  Similary we define a derived judgement of **substitutions** between contexts.
 
 ### Rules
 

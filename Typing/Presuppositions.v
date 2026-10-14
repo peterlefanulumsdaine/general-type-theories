@@ -18,7 +18,7 @@ Require Import Typing.RawTypeTheory.
 
 For instance, the judgement [ Γ |- a : A ] has just one presupposition: [ Γ |- A type ].  The judgement [ Γ |- A ≡ B ] has two presuppositions, [ Γ |- A type ] and [ Γ |- B type ].
 
-As with judgements themselves, we first describe set up the combinatorics indexing the constructions involved. *)
+As with judgements themselves, we first set up the combinatorics indexing the constructions involved. *)
 
 Section PresuppositionsCombinatorics.
 
