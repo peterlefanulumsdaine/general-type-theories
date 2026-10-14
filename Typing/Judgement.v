@@ -17,7 +17,7 @@ The motivation of this is so that definitions like “to translate a judgement u
 *)
 Section JudgementCombinatorics.
 
-  (** We take as primitive only the _hypothetical_ judgment forms:
+  (** We take as primitive only the _hypothetical_ judgement forms:
   [! Γ |- A !],
   [! Γ |- A ≡ A' !],
   [! Γ |- a ; A !],

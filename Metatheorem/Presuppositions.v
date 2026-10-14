@@ -158,7 +158,7 @@ Section Presuppositivity.
   Defined.
 
   (** Over a well-typed type theory [T],
-      if a judgment [j] is derivable without hypotheses,
+      if a judgement [j] is derivable without hypotheses,
       then every presupposition of [j] is also derivable. *)
   Corollary derive_presupposition_closed
       {T : presented_raw_type_theory σ} (T_WT : TypeTheory.is_well_typed T)

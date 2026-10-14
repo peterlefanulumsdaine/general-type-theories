@@ -44,9 +44,9 @@ The build flags `-noinit` and `-indices-matter`, required by the HoTT library, a
 
 # Detailed overview
 
-Note: the following overview is currently somewhat out of date.
+Caveat: this overview may be out of date with the formalisation.
 
-## Directory overview
+## Directory structure
 
 * [`Auxiliary`](./Auxiliary) -- mathematical generalities, not specifically about type theory
 * [`Syntax`](./Syntax) -- raw syntax
@@ -55,9 +55,9 @@ Note: the following overview is currently somewhat out of date.
 * [`Metatheorem`](./Metatheorem) -- basic metatheorems about these type theories
 * [`Example`](./Example) -- examples of scope systems, type theories, etc.
 
-## Mathematical overview
+## Mathematical contents
 
-We define a broad class of dependent type theories, which we call *Martin-Löf style*: roughly, theories with just the syntactic classes and judgement forms as Martin-Löf’s original, and arbitrary type- and term-formers, specified by rules that are *well-formed* in the generally-understood sense.
+We define a broad class of dependent type theories, which we call *Martin-Löf style*: roughly, theories with just the syntactic classes and judgement forms of Martin-Löf’s original, and arbitrary type- and term-formers, specified by rules that are *well-formed* in the generally-understood sense.
 
 The main contribution is precisely codifying this traditional sense of **well-formed**.
 
@@ -81,42 +81,39 @@ Formally, there are two **syntactic classes**: **terms** and **types**. A **raw 
 
 (The strict separation of syntactic classes means in particular our theories can only have Tarski-style universes, not Russell-style.) 
 
-### Judgments
+### Judgements
 
 Well-formedness will be given by an inductively defined **derivability** relation on judgements.
 
-There are four primary **judgment forms**:
+There are four primary **judgement forms**:
 
-1. `Γ ⊢ A type` – "`A` is type in context `Γ`"
+1. `Γ ⊢ A type` – "`A` is a type in context `Γ`"
 2. `Γ ⊢ t : A` – "`t` is a term of type `A` in context `Γ`"
-3. `Γ ⊢ A ≡ B` – "type `A` and `B` are equal in context `Γ`"
+3. `Γ ⊢ A ≡ B` – "types `A` and `B` are equal in context `Γ`"
 4. `Γ ⊢ s ≡ t : A` – "terms `s` and `t` of type `A` are equal in context `Γ`"
 
-Other possible judgement forms — contexts and substitutions — will be defined afterwards from these, as **derived judgements**.
+Less conventionally, we omit a context judgement `⊢ Γ context`. Contexts are unordered, and well-formedness of their types is checked at the point of use, in the variable rule.  Contexts will typically be built up sequentially as usual, but this is not needed for the basic definitions.  Our structural rules do however make use of a derived judgement of well-formed **substitutions** between contexts.
 
-Each judgment has various **presuppositions**, which together form its **boundary**:
+Each judgement has various **presuppositions**, which together form its **boundary**:
 
 1. `Γ ⊢ A type` has no presuppositions
 2. `Γ ⊢ t : A` has one presupposition, `Γ ⊢ A type`
 3. `Γ ⊢ A ≡ B` has presuppositions `Γ ⊢ A type` and `Γ ⊢ B type`
-4. `Γ ⊢ s ≡ t : A` has presuppositions `Γ ⊢ A type`, `Γ ⊢ s : A`, `Γ ⊢ s : A`
-
-Less conventionally, we take `⊢ Γ context` to be an abbreviation for the judgements `Γ ⊢ A type`, for all types `A` of `Γ`.  So contexts are **flat** — no ordering is assumed, and well-formedness of their types is assumed just for the point of use.  Typically contexts will be built up sequentially as usual, but we don’t assume this.  Similary we define a derived judgement of **substitutions** between contexts.
+4. `Γ ⊢ s ≡ t : A` has presuppositions `Γ ⊢ A type`, `Γ ⊢ s : A`, `Γ ⊢ t : A`
 
 ### Rules
 
-Derivability over a signature `Σ` will be defined from  **inference rules**. 
-At this stage, rules need not be well-formed — derivability only requires the underlying syntactic expressions, **raw rules**.
+Derivability over a signature `Σ` will be defined from **inference rules**. At this stage, rules need not be well-formed — derivability only requires the underlying syntactic expressions, **raw rules**.
 
-A raw rule may contain contains **meta-variables**, additional type/term symbols to extend the signature. Given these, it consists of a family of **premises** and a **conclusion**, all judgments over `Σ` extended by the meta-variables.
+A raw rule assumes some **metavariables**, additional type/term symbols to extend the signature. Given these, it consists of a family of **premises** and a **conclusion**, all judgements over `Σ` extended by the metavariables.
 
-For instance, the lambda-abstraction rule has meta-variables for the two types and one term it mentions, and may have up three premises (though the type premises may also be omitted):
+For instance, the lambda-abstraction rule has metavariables for the two types and one term it mentions, and up to three premises (as the type premises may be omitted):
 
-        ⊢ A type
-    x:A ⊢ B type
-    x:A ⊢ b : B
-  ————————————————————————————
-    ⊢ λ_{A, x.B} x.b : A → B
+          ⊢ A type
+      x:A ⊢ B type
+      x:A ⊢ b : B
+    ————————————————————————————
+      ⊢ λ_{A, x.B} x.b : A → B
 
 Typically the premises will be ordered, and will introduce the metavariables, as here; but we do not assume that in general.
 
@@ -128,23 +125,24 @@ Besides whatever rules are specified in a particular theory, we assume that cert
 
 * the variable rule
 * reflexivity, symmetry and transitivity of equality
-* all judgements are stable under context substitutions 
-* all judgements are stable under equality of their presuppositions
-* all type and term formers respect equality
+* stability of all judgements under context substitutions 
+* stability of term judgements under type equality
+* (optional) congruence rules: all type and term formers respect equality
 
 ### Derivations
 
 A **(raw) type theory** `T` is specified by a scope system, a signature `Σ` over this, and a family of raw inference rules over `Σ`.
 
-A **derivation** of a judgment `J` over `T` is then, as traditionally, a tree built up from instances of rules of `T`, together with structural rules, and possibly **hypotheses** at the leaves.
+A **derivation** of a judgement `J` over `T` is then, as traditionally, a tree built up from instances of rules of `T`, together with structural rules, and possibly **hypotheses** at the leaves.
 
-We can now say that arule is **well-formed** over a type theory if all presuppostions of its premises and conclusion are derivable, assuming the premises as hypotheses; and a type theory is **well-formed** if all its rules are.
+We can now define the various well-formedness requirements traditionally expected in presentations of theories by rules, and ensuring basic well-behavedness of the resulting theory:
+for instance, that all presuppositions of each rule are derivable, assuming the premises as hypotheses;
+or, stronger, that the premises of each rule are ordered, introducing the metavariables, with the presuppositions of each premise derivable from the preceding ones;
+or that the whole type theory is ordered with well-formedness of each rule relying just on earlier ones. 
 
-These are the minimal well-formedness requirements traditionally expected in presentations of theories by rules, and ensuring basic well-behavedness of the resulting theory.  Further to these, we can define various other desirable properties often (but not always) followed: for instance, that the premises of a rule are ordered, introducing the metavariables, with the presuppositions of each premise derivable from the preceding ones.
+### Metatheorems
 
-### Metatheorems.
-
-The main results in this development are various standard well-behavedness metatheorems for type theories: derivability of presuppositions, admissibility of substitution, uniqueness of typing…
+The main goals of this development (some completed, some under development) are various standard well-behavedness metatheorems for type theories: derivability of presuppositions, admissibility of substitution, uniqueness of typing…
 
 These theorems and their proof techniques are entirely standard, for specific theories.  The novelty here is having a precise, rather than merely heuristically outlined, definition of a wide range of type theories for which they hold, recovering standard examples (such as Martin-Löf’s original type theories) directly.
 
@@ -166,7 +164,7 @@ Names of files and sections should be written in the `CamelCase` style: each wor
 
 ### Lower case with underscores for identifiers
 
-All identifier names are in all lower letters, with underscores between words. Thus it is `judgment_boundary` and *not* `JudgmentBdry` or `Judgment_Boundary`.
+All identifier names are in all lower letters, with underscores between words. Thus it is `judgement_boundary` and *not* `judgementBdry` or `judgement_Boundary`.
 
 ### Make definitions `Local`
 
@@ -197,7 +195,7 @@ Many key constructions have a lot of related boilerplate — typically some of t
 - coercion declarations
 - equality lemmas (how to conveniently prove two widgets are equal; or, better, an equivalence between the equality type on widgets and some tractable type)
 - functoriality lemmas (widgets are functorial in maps of some of their arguments)
-- category structure (widgets form a category, or a displayed category over some of their arguments
+- category structure (widgets form a category, or a displayed category over some of their arguments)
 
 Such boilerplate should typically be given straight after the definition of widgets, in roughly the above order, except when there are specific reasons to defer it.
 

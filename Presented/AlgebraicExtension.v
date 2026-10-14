@@ -17,8 +17,8 @@ Record algebraic_extension
   {a : arity σ} (* arity listing the _object_ premises of the extension *)
 :=
   {
-  (* The arity [a] supplies the family of object-judgment premises. *)
-  (* The family of equality-judgment premises: *)
+  (* The arity [a] supplies the family of object-judgement premises. *)
+  (* The family of equality-judgement premises: *)
     ae_equality_premise : arity σ
   (* family indexing the premises of the extension, and giving for each… *)
   ; ae_premise :> family (Judgement.form * σ)

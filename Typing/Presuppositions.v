@@ -94,7 +94,7 @@ Section Presuppositions.
 
   Context {σ : scope_system}.
 
-  (** The presuppositions of a judgment boundary [jb] *)
+  (** The presuppositions of a judgement boundary [jb] *)
   Definition presupposition_of_boundary
       {Σ : signature σ} (B : boundary Σ)
     : family (judgement Σ).
