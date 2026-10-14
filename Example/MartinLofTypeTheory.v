@@ -43,12 +43,13 @@ Section MartinLöfTypeTheory.
            - simple refine [< >]. (* no equality premises *)
            - simple refine (@Build_well_founded_order _ _ _ _).
              + intros x y.
-               refine (match (x, y) with (inl x', inl y') => _ | z => _ end).
+               refine (match (x, y) with (inl x', inl y') => _ | _z => _ end).
+               (* [_z] annotated since unused here but used below *)
                * cbn in x'.
                  exact True.
-               * destruct z.
+               * destruct _z.
                  destruct f2.
-               * destruct z.
+               * destruct _z.
                  destruct f1.
              + admit.
              + admit.
